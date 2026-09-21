@@ -393,12 +393,21 @@
                 const { data, error } = await supabaseClient
                     .from('vouchers')
                     .select('*')
-                    .order('provider_name', { ascending: true })
-                    .order('product_name', { ascending: true });
+                    .order('sort_order', { ascending: true });
 
                 if (error) throw error;
 
                 allVouchers = data || [];
+                // Sort by sort_order to match KSP Check exactly
+                allVouchers.sort((a, b) => {
+                    let sA = (a.sort_order !== undefined && a.sort_order !== null && a.sort_order > 0) ? a.sort_order : 99999;
+                    let sB = (b.sort_order !== undefined && b.sort_order !== null && b.sort_order > 0) ? b.sort_order : 99999;
+                    if (sA !== sB) return sA - sB;
+                    let pA = (a.provider_name || '');
+                    let pB = (b.provider_name || '');
+                    if (pA !== pB) return pA.localeCompare(pB);
+                    return (a.product_name || '').localeCompare(b.product_name || '');
+                });
                 populateDeviceDropdown();
                 renderProductList();
                 renderAuditTable();
