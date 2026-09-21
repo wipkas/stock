@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Stock</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				display: grid;
+				place-items: center;
+				height: 100vh;
+				margin: 0;
+				background: #f4f7fb;
+				color: #1f2937;
+			}
+			main {
+				text-align: center;
+			}
+			button {
+				padding: 0.75rem 1.25rem;
+				border: none;
+				border-radius: 8px;
+				background: #2563eb;
+				color: white;
+				cursor: pointer;
+				font-size: 1rem;
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<h1 id="greeting">Hello world</h1>
+			<button id="runBtn" type="button">Klik saya</button>
+		</main>
+
+		<script>
+			const button = document.getElementById('runBtn');
+			const greeting = document.getElementById('greeting');
+
+			button.addEventListener('click', () => {
+				const time = new Date().toLocaleTimeString();
+				greeting.textContent = 'Hello world — diklik pada ' + time;
+				console.log('Button clicked at', time);
+			});
+		</script>
+	</body>
+</html>
+
+
+
