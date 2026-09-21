@@ -1,51 +1,516 @@
-<!doctype html>
-<html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Stock</title>
-		<style>
-			body {
-				font-family: Arial, sans-serif;
-				display: grid;
-				place-items: center;
-				height: 100vh;
-				margin: 0;
-				background: #f4f7fb;
-				color: #1f2937;
-			}
-			main {
-				text-align: center;
-			}
-			button {
-				padding: 0.75rem 1.25rem;
-				border: none;
-				border-radius: 8px;
-				background: #2563eb;
-				color: white;
-				cursor: pointer;
-				font-size: 1rem;
-			}
-		</style>
-	</head>
-	<body>
-		<main>
-			<h1 id="greeting">Hello world</h1>
-			<button id="runBtn" type="button">Klik saya</button>
-		</main>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KSP Check - Voucher Stock Cloud Viewer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- CryptoJS CDN for AES decryption -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <style>
+        body { background-color: #0F172A; color: #F8FAFC; }
+        .badge-critical { background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-warning { background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-safe { background: rgba(34, 197, 94, 0.15); color: #22C55E; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .glass-card { background: #1E293B; border: 1px solid #334155; }
+        .table-row:hover { background-color: rgba(51, 65, 85, 0.5); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans">
 
-		<script>
-			const button = document.getElementById('runBtn');
-			const greeting = document.getElementById('greeting');
+    <!-- Header Navigation -->
+    <header class="glass-card sticky top-0 z-30 px-4 py-3 border-b border-slate-700/80 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">⚡</span>
+                <div>
+                    <h1 class="text-lg font-bold text-white tracking-wide">KSP Check <span class="text-indigo-400 text-sm font-normal">Cloud Viewer</span></h1>
+                    <p class="text-xs text-slate-400">Live Voucher Stock &amp; Audit Trail</p>
+                </div>
+            </div>
 
-			button.addEventListener('click', () => {
-				const time = new Date().toLocaleTimeString();
-				greeting.textContent = 'Hello world — diklik pada ' + time;
-				console.log('Button clicked at', time);
-			});
-		</script>
-	</body>
+            <div class="flex items-center gap-2">
+                <!-- Device Selector -->
+                <select id="deviceFilter" onchange="applyFilters()" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:border-indigo-500">
+                    <option value="all">📱 Semua Perangkat</option>
+                </select>
+
+                <!-- Refresh Button -->
+                <button onclick="fetchVoucherData()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
+                    <span id="refreshIcon">🔄</span> Refresh
+                </button>
+
+                <!-- Reset PIN Button -->
+                <button onclick="lockViewer()" title="Kunci & Keluar" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2 rounded-lg text-xs transition">
+                    🔒
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
+
+        <!-- Top Stat Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="glass-card rounded-xl p-4">
+                <div class="text-xs text-slate-400 font-medium">Total Jenis Voucher</div>
+                <div class="text-2xl font-bold text-white mt-1" id="statTotalItems">0</div>
+                <div class="text-[11px] text-slate-500 mt-0.5">Produk aktif terdaftar</div>
+            </div>
+            <div class="glass-card rounded-xl p-4">
+                <div class="text-xs text-slate-400 font-medium">Total Fisik Stok</div>
+                <div class="text-2xl font-bold text-indigo-400 mt-1" id="statTotalStock">0 <span class="text-xs text-slate-400 font-normal">pcs</span></div>
+                <div class="text-[11px] text-slate-500 mt-0.5">Semua etalase</div>
+            </div>
+            <div class="glass-card rounded-xl p-4">
+                <div class="text-xs text-slate-400 font-medium">Total Nilai Modal</div>
+                <div class="text-2xl font-bold text-emerald-400 mt-1" id="statTotalCost">Rp 0</div>
+                <div class="text-[11px] text-slate-500 mt-0.5">Estimasi modal etalase</div>
+            </div>
+            <div class="glass-card rounded-xl p-4">
+                <div class="text-xs text-slate-400 font-medium">Perlu Di-Restock</div>
+                <div class="text-2xl font-bold text-rose-400 mt-1" id="statLowStock">0</div>
+                <div class="text-[11px] text-slate-500 mt-0.5">Stok &le; batas minimum</div>
+            </div>
+        </div>
+
+        <!-- Controls: Search & Filter Chips -->
+        <div class="glass-card rounded-xl p-4 flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
+            <div class="relative flex-1">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-sm">🔍</span>
+                <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Cari nama voucher, provider, atau kategori..." class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500">
+            </div>
+
+            <!-- Chips -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="setStatusFilter('all', this)" class="chip-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white">Semua</button>
+                <button onclick="setStatusFilter('critical', this)" class="chip-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">🔴 Habis (0)</button>
+                <button onclick="setStatusFilter('warning', this)" class="chip-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">⚠️ Menipis</button>
+                <button onclick="setStatusFilter('safe', this)" class="chip-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">🟢 Aman</button>
+            </div>
+        </div>
+
+        <!-- Voucher Table Container -->
+        <div class="glass-card rounded-xl overflow-hidden border border-slate-700">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900/90 text-slate-400 text-[11px] uppercase tracking-wider border-b border-slate-700">
+                        <tr>
+                            <th class="py-3 px-4">Nama Voucher</th>
+                            <th class="py-3 px-3">Provider</th>
+                            <th class="py-3 px-3">Kategori</th>
+                            <th class="py-3 px-3 text-center">Stok</th>
+                            <th class="py-3 px-3 text-right">Modal</th>
+                            <th class="py-3 px-3 text-right">Jual</th>
+                            <th class="py-3 px-4">Perubahan Terakhir</th>
+                            <th class="py-3 px-3 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="voucherTableBody" class="divide-y divide-slate-800">
+                        <tr>
+                            <td colspan="8" class="text-center py-12 text-slate-500">Memuat data dari cloud...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="emptyMessage" class="hidden py-12 text-center text-slate-500 text-sm">
+                Tidak ada data voucher yang cocok dengan filter.
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Riwayat Perubahan (Audit Trail) -->
+    <div id="historyModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="glass-card rounded-2xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-600">
+            <div class="px-5 py-4 border-b border-slate-700 flex justify-between items-center">
+                <div>
+                    <h3 class="text-base font-bold text-white" id="modalProductName">Nama Voucher</h3>
+                    <p class="text-xs text-slate-400 mt-0.5" id="modalProductMeta">Provider • Kategori • Perangkat</p>
+                </div>
+                <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-white text-xl p-1">&times;</button>
+            </div>
+
+            <!-- Timeline Body -->
+            <div class="p-5 overflow-y-auto flex-1 space-y-4" id="modalTimelineContainer">
+                <!-- Timeline items rendered here -->
+            </div>
+
+            <div class="px-5 py-3 border-t border-slate-700 bg-slate-900/50 flex justify-end">
+                <button onclick="closeHistoryModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg transition">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Kunci PIN (Authentication Gate) -->
+    <div id="pinModal" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4">
+        <div class="glass-card rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-700">
+            <div class="w-12 h-12 bg-indigo-600/20 text-indigo-400 text-2xl rounded-full flex items-center justify-center mx-auto mb-4">
+                🔒
+            </div>
+            <h2 class="text-lg font-bold text-white mb-1">Akses Cloud Viewer</h2>
+            <p class="text-xs text-slate-400 mb-5">Masukkan PIN Toko untuk mendekripsi konfigurasi dan melihat stok voucher.</p>
+
+            <form onsubmit="handlePinSubmit(event)">
+                <input type="password" id="pinInput" placeholder="Masukkan PIN Toko" autofocus class="w-full bg-slate-900 border border-slate-700 text-center text-lg font-bold tracking-widest text-white rounded-lg px-4 py-3 outline-none focus:border-indigo-500 mb-3">
+                
+                <div class="flex items-center justify-center gap-2 mb-5">
+                    <input type="checkbox" id="rememberPin" class="rounded bg-slate-900 border-slate-700 text-indigo-600">
+                    <label for="rememberPin" class="text-xs text-slate-400 cursor-pointer">Ingat PIN di perangkat ini</label>
+                </div>
+
+                <div id="pinError" class="text-xs text-rose-400 mb-3 hidden">PIN salah atau file config.enc tidak ditemukan!</div>
+
+                <button type="submit" id="btnUnlock" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-lg transition">
+                    Buka Dashboard
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script App Logic -->
+    <script>
+        let supabaseClient = null;
+        let allVouchers = [];
+        let currentStatusFilter = 'all';
+
+        // 1. Initial Load: Check stored PIN
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedPin = localStorage.getItem('kspcheck_viewer_pin');
+            if (savedPin) {
+                document.getElementById('pinInput').value = savedPin;
+                unlockWithPin(savedPin);
+            }
+        });
+
+        function handlePinSubmit(e) {
+            e.preventDefault();
+            const pin = document.getElementById('pinInput').value.trim();
+            if (!pin) return;
+            unlockWithPin(pin);
+        }
+
+        // 2. Decrypt config.enc using PIN
+        async function unlockWithPin(pin) {
+            const btn = document.getElementById('btnUnlock');
+            const errBox = document.getElementById('pinError');
+            btn.innerText = 'Membuka...';
+            btn.disabled = true;
+            errBox.classList.add('hidden');
+
+            try {
+                // Fetch config.enc from the same folder
+                const res = await fetch('./config.enc?t=' + Date.now());
+                if (!res.ok) throw new Error('File config.enc tidak ditemukan.');
+                const base64Encrypted = await res.text();
+
+                // Decrypt AES-256-CBC
+                const combined = CryptoJS.enc.Base64.parse(base64Encrypted.trim());
+                
+                // Extract 16 bytes IV
+                const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4), 16);
+                
+                // Extract Ciphertext
+                const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4), combined.sigBytes - 16);
+                const cipherParams = CryptoJS.lib.CipherParams.create({ ciphertext: ciphertext });
+
+                // Key derived from SHA-256(PIN)
+                const key = CryptoJS.SHA256(pin);
+
+                const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
+                    iv: iv,
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+
+                const decryptedJson = decrypted.toString(CryptoJS.enc.Utf8);
+                if (!decryptedJson) throw new Error('PIN Salah!');
+
+                const config = JSON.parse(decryptedJson);
+                if (!config.supabase_url || !config.supabase_anon_key) {
+                    throw new Error('Format konfigurasi tidak valid.');
+                }
+
+                // Success! Save PIN if requested
+                if (document.getElementById('rememberPin')?.checked) {
+                    localStorage.setItem('kspcheck_viewer_pin', pin);
+                }
+
+                // Initialize Supabase
+                supabaseClient = supabase.createClient(config.supabase_url, config.supabase_anon_key);
+                document.getElementById('pinModal').classList.add('hidden');
+
+                // Load Data
+                fetchVoucherData();
+
+            } catch (err) {
+                console.error(err);
+                errBox.innerText = err.message || 'Gagal membuka dashboard. Periksa PIN!';
+                errBox.classList.remove('hidden');
+            } finally {
+                btn.innerText = 'Buka Dashboard';
+                btn.disabled = false;
+            }
+        }
+
+        function lockViewer() {
+            localStorage.removeItem('kspcheck_viewer_pin');
+            document.getElementById('pinInput').value = '';
+            document.getElementById('pinModal').classList.remove('hidden');
+        }
+
+        // 3. Fetch Data from Supabase
+        async function fetchVoucherData() {
+            if (!supabaseClient) return;
+            const refreshIcon = document.getElementById('refreshIcon');
+            refreshIcon.classList.add('animate-spin');
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('vouchers')
+                    .select('*')
+                    .order('product_name', { ascending: true });
+
+                if (error) throw error;
+
+                allVouchers = data || [];
+                populateDeviceDropdown();
+                updateStats();
+                applyFilters();
+
+            } catch (err) {
+                console.error('Fetch vouchers error:', err);
+                alert('Gagal mengambil data dari Supabase: ' + err.message);
+            } finally {
+                refreshIcon.classList.remove('animate-spin');
+            }
+        }
+
+        // 4. Populate Devices
+        function populateDeviceDropdown() {
+            const select = document.getElementById('deviceFilter');
+            const currentVal = select.value;
+            const devices = new Map();
+
+            allVouchers.forEach(v => {
+                if (v.device_id && !devices.has(v.device_id)) {
+                    devices.set(v.device_id, v.device_name || v.device_id);
+                }
+            });
+
+            select.innerHTML = '<option value="all">📱 Semua Perangkat (' + devices.size + ')</option>';
+            devices.forEach((name, id) => {
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = '📱 ' + name;
+                select.appendChild(opt);
+            });
+
+            if (devices.has(currentVal)) {
+                select.value = currentVal;
+            }
+        }
+
+        // 5. Update Stat Cards
+        function updateStats() {
+            const selectedDev = document.getElementById('deviceFilter')?.value || 'all';
+            const filtered = (selectedDev === 'all') 
+                ? allVouchers 
+                : allVouchers.filter(v => v.device_id === selectedDev);
+
+            let totalItems = filtered.length;
+            let totalStock = 0;
+            let totalCost = 0;
+            let lowStockCount = 0;
+
+            filtered.forEach(v => {
+                const stock = parseInt(v.stock || 0);
+                const cost = parseInt(v.cost_price || 0);
+                const min = parseInt(v.min_limit || 0);
+
+                totalStock += stock;
+                totalCost += (stock * cost);
+                if (stock <= min) lowStockCount++;
+            });
+
+            document.getElementById('statTotalItems').innerText = totalItems;
+            document.getElementById('statTotalStock').innerHTML = totalStock.toLocaleString('id-ID') + ' <span class="text-xs text-slate-400 font-normal">pcs</span>';
+            document.getElementById('statTotalCost').innerText = 'Rp ' + totalCost.toLocaleString('id-ID');
+            document.getElementById('statLowStock').innerText = lowStockCount;
+        }
+
+        // 6. Filter & Render Table
+        function setStatusFilter(status, btn) {
+            currentStatusFilter = status;
+            document.querySelectorAll('.chip-btn').forEach(b => {
+                b.classList.remove('bg-indigo-600', 'text-white');
+                b.classList.add('bg-slate-800', 'text-slate-300');
+            });
+            btn.classList.add('bg-indigo-600', 'text-white');
+            btn.classList.remove('bg-slate-800', 'text-slate-300');
+            applyFilters();
+        }
+
+        function applyFilters() {
+            updateStats();
+            const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+            const device = document.getElementById('deviceFilter')?.value || 'all';
+
+            const filtered = allVouchers.filter(v => {
+                // Device check
+                if (device !== 'all' && v.device_id !== device) return false;
+
+                // Search check
+                const name = (v.product_name || '').toLowerCase();
+                const provider = (v.provider_name || '').toLowerCase();
+                const cat = (v.category_name || '').toLowerCase();
+                if (search && !name.includes(search) && !provider.includes(search) && !cat.includes(search)) {
+                    return false;
+                }
+
+                // Status check
+                const stock = parseInt(v.stock || 0);
+                const min = parseInt(v.min_limit || 0);
+                if (currentStatusFilter === 'critical') return stock === 0;
+                if (currentStatusFilter === 'warning') return stock > 0 && stock <= min;
+                if (currentStatusFilter === 'safe') return stock > min;
+
+                return true;
+            });
+
+            renderTable(filtered);
+        }
+
+        function renderTable(list) {
+            const tbody = document.getElementById('voucherTableBody');
+            const emptyMsg = document.getElementById('emptyMessage');
+
+            if (list.length === 0) {
+                tbody.innerHTML = '';
+                emptyMsg.classList.remove('hidden');
+                return;
+            }
+
+            emptyMsg.classList.add('hidden');
+            let html = '';
+
+            list.forEach(v => {
+                const stock = parseInt(v.stock || 0);
+                const min = parseInt(v.min_limit || 0);
+                const cost = parseInt(v.cost_price || 0);
+                const price = parseInt(v.sell_price || 0);
+
+                let badgeClass = 'badge-safe';
+                let statusLabel = 'Aman';
+                if (stock === 0) {
+                    badgeClass = 'badge-critical';
+                    statusLabel = 'Habis';
+                } else if (stock <= min) {
+                    badgeClass = 'badge-warning';
+                    statusLabel = 'Menipis';
+                }
+
+                const lastChangeText = v.last_change || '-';
+
+                html += `
+                <tr class="table-row border-b border-slate-800 transition">
+                    <td class="py-3 px-4">
+                        <div class="font-bold text-white text-sm">${escapeHtml(v.product_name)}</div>
+                        <div class="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                            <span>📱 ${escapeHtml(v.device_name || 'Kasir')}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-3 font-medium text-slate-300">${escapeHtml(v.provider_name || '-')}</td>
+                    <td class="py-3 px-3 text-slate-400">${escapeHtml(v.category_name || '-')}</td>
+                    <td class="py-3 px-3 text-center">
+                        <span class="inline-block px-2.5 py-1 rounded-md text-xs font-bold ${badgeClass}">
+                            ${stock} pcs
+                        </span>
+                    </td>
+                    <td class="py-3 px-3 text-right text-slate-400">Rp ${cost.toLocaleString('id-ID')}</td>
+                    <td class="py-3 px-3 text-right font-semibold text-white">Rp ${price.toLocaleString('id-ID')}</td>
+                    <td class="py-3 px-4">
+                        <div class="text-[11px] text-slate-300 truncate max-w-xs" title="${escapeHtml(lastChangeText)}">
+                            ${escapeHtml(lastChangeText)}
+                        </div>
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                        <button onclick="openHistoryModal('${v.id}')" class="bg-slate-800 hover:bg-slate-700 text-indigo-400 text-xs px-2.5 py-1 rounded-md border border-slate-700 transition">
+                            📋 Riwayat
+                        </button>
+                    </td>
+                </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // 7. Audit Trail Modal
+        function openHistoryModal(voucherId) {
+            const v = allVouchers.find(item => item.id === voucherId);
+            if (!v) return;
+
+            document.getElementById('modalProductName').innerText = v.product_name;
+            document.getElementById('modalProductMeta').innerText = (v.provider_name || '') + ' • ' + (v.category_name || '') + ' • ' + (v.device_name || 'Kasir');
+
+            const container = document.getElementById('modalTimelineContainer');
+            const history = v.change_history || [];
+
+            if (!Array.isArray(history) || history.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-500 text-xs">
+                        Belum ada riwayat perubahan terekam.<br>
+                        Riwayat akan otomatis tercatat setiap kali kasir melakukan sync perubahan stok/harga.
+                    </div>`;
+            } else {
+                let timelineHtml = '<div class="relative border-l-2 border-slate-700 ml-3 space-y-6">';
+                // Render from newest to oldest
+                const reversed = [...history].reverse();
+
+                reversed.forEach(item => {
+                    const time = item.timestamp || '-';
+                    const summary = item.summary || 'Perubahan data';
+                    const diff = item.stock_diff;
+                    let diffBadge = '';
+                    if (diff !== undefined && diff !== null) {
+                        if (diff > 0) diffBadge = `<span class="text-emerald-400 font-bold ml-1">(+${diff})</span>`;
+                        else if (diff < 0) diffBadge = `<span class="text-rose-400 font-bold ml-1">(${diff})</span>`;
+                    }
+
+                    timelineHtml += `
+                    <div class="relative pl-6">
+                        <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-indigo-600 border-2 border-slate-900"></div>
+                        <div class="text-xs font-bold text-white">${escapeHtml(summary)} ${diffBadge}</div>
+                        <div class="text-[11px] text-slate-400 mt-0.5">⏱️ ${escapeHtml(time)} WIB</div>
+                        <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800 mt-2 text-[11px] space-y-1">
+                            ${item.old_stock !== undefined ? `<div class="text-slate-400">Stok: <span class="text-slate-200">${item.old_stock} → ${item.new_stock}</span></div>` : ''}
+                            ${item.old_sell_price !== undefined ? `<div class="text-slate-400">Harga Jual: <span class="text-slate-200">Rp ${Number(item.old_sell_price).toLocaleString('id-ID')} → Rp ${Number(item.new_sell_price).toLocaleString('id-ID')}</span></div>` : ''}
+                            ${item.old_cost_price !== undefined ? `<div class="text-slate-400">Harga Modal: <span class="text-slate-200">Rp ${Number(item.old_cost_price).toLocaleString('id-ID')} → Rp ${Number(item.new_cost_price).toLocaleString('id-ID')}</span></div>` : ''}
+                        </div>
+                    </div>`;
+                });
+
+                timelineHtml += '</div>';
+                container.innerHTML = timelineHtml;
+            }
+
+            document.getElementById('historyModal').classList.remove('hidden');
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('historyModal').classList.add('hidden');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
+    </script>
+</body>
 </html>
-
-
-
