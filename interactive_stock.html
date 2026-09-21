@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KSP Check - Interactive Stock & Order</title>
+    <!-- Supabase JS Client & CryptoJS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+
+    <style>
+        :root {
+            --top-nav-height: 64px;
+            --bg-color: #0F1117;
+            --card-bg: #181C27;
+            --card-border: #262B3D;
+            --primary: #4F8EF7;
+            --primary-hover: #3B7ADF;
+            --success: #2ECC87;
+            --warning: #F5A623;
+            --danger: #E55353;
+            --text-main: #FFFFFF;
+            --text-muted: #8A92A6;
+            --chip-bg: #222736;
+            --nav-bg: rgba(15, 17, 23, 0.95);
+            --nav-wrapper: #141824;
+            --bottom-bar-bg: #141824;
+            --header-grad-1: #1A233A;
+            --header-grad-2: #121624;
+            --stepper-btn-bg: #202738;
+            --stepper-btn-hover: #2B3448;
+            --input-bg: #11141F;
+            --card-selected-bg: #1B2436;
+            --checkbox-border: #3E465E;
+        }
+
+        body.light-theme {
+            --bg-color: #F8F5EE;
+            --card-bg: #FFFFFF;
+            --card-border: #E8E1D5;
+            --primary: #2B6CB0;
+            --primary-hover: #2C5282;
+            --success: #2F855A;
+            --warning: #C05621;
+            --danger: #C53030;
+            --text-main: #2D3748;
+            --text-muted: #718096;
+            --chip-bg: #EFE8DC;
+            --nav-bg: rgba(248, 245, 238, 0.96);
+            --nav-wrapper: #E8E1D5;
+            --bottom-bar-bg: #FFFFFF;
+            --header-grad-1: #FAF5EB;
+            --header-grad-2: #EDE3D1;
+            --stepper-btn-bg: #EFE8DC;
+            --stepper-btn-hover: #E2DACB;
+            --input-bg: #FAF8F5;
+            --card-selected-bg: #F0F7FF;
+            --checkbox-border: #CBD5E0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding-bottom: 90px; min-height: 100vh; transition: background-color 0.25s ease, color 0.25s ease; }
+        .container { max-width: 900px; margin: 0 auto; padding: 14px; }
+
+        /* Top Nav Bar */
+        .top-nav-bar { position: sticky; top: 0; z-index: 100; background: var(--nav-bg); backdrop-filter: blur(12px); border-bottom: 1px solid var(--card-border); padding: 10px 14px; margin-bottom: 14px; }
+        .nav-container { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .nav-tabs-wrapper { flex: 1; display: flex; background: var(--nav-wrapper); padding: 4px; border-radius: 12px; border: 1px solid var(--card-border); gap: 4px; min-width: 250px; }
+        .nav-tab-btn { flex: 1; padding: 8px 12px; font-size: 13px; font-weight: 700; border-radius: 8px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease; }
+        .nav-tab-btn.active { background: var(--primary); color: #FFFFFF; box-shadow: 0 2px 8px rgba(79, 142, 247, 0.35); }
+        .btn-nav-action { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--card-border); background: var(--nav-wrapper); color: var(--text-main); font-size: 15px; display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; }
+        .device-select { background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main); font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 8px; outline: none; }
+
+        /* Cards & Stats */
+        .header-card { background: linear-gradient(135deg, var(--header-grad-1) 0%, var(--header-grad-2) 100%); border: 1px solid var(--card-border); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
+        .header-title { font-size: 18px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+        .header-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        .stats-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
+        @media (max-width: 600px) { .stats-summary { grid-template-columns: repeat(2, 1fr); } }
+        .stat-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px; text-align: center; }
+        .stat-num { font-size: 18px; font-weight: 800; }
+        .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        .stat-num.danger { color: var(--danger); }
+        .stat-num.warning { color: var(--warning); }
+        .stat-num.success { color: var(--success); }
+        .stat-num.primary { color: var(--primary); }
+
+        /* Controls & Filter Chips */
+        .controls-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; margin-bottom: 14px; }
+        .search-box { width: 100%; padding: 10px 14px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; color: var(--text-main); font-size: 13px; outline: none; margin-bottom: 10px; }
+        .filter-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+        .filter-row::-webkit-scrollbar { display: none; }
+        .chip { padding: 6px 12px; background: var(--chip-bg); border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; white-space: nowrap; }
+        .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .quick-select-row { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+        .btn-select-action { padding: 6px 10px; background: var(--chip-bg); border: 1px solid var(--card-border); border-radius: 8px; font-size: 11px; font-weight: 700; color: var(--text-main); cursor: pointer; }
+
+        /* Provider Section & Product Card */
+        .provider-section { margin-bottom: 20px; }
+        .provider-header { font-size: 14px; font-weight: 800; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; padding-left: 2px; }
+        .product-card { display: flex; align-items: center; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; gap: 10px; cursor: pointer; transition: all 0.15s; }
+        .product-card.selected { background: var(--card-selected-bg); border-color: var(--primary); }
+        .checkbox-custom { width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--checkbox-border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .product-card.selected .checkbox-custom { background: var(--primary); border-color: var(--primary); }
+        .product-card.selected .checkbox-custom::after { content: '✓'; color: #fff; font-size: 13px; font-weight: bold; }
+        .product-info { flex: 1; min-width: 0; }
+        .product-name { font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .prov-pill { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: rgba(79, 142, 247, 0.15); color: var(--primary); }
+        body.hide-provider-badge .prov-pill { display: none; }
+        .product-meta { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .stock-zero { color: var(--danger); font-weight: bold; }
+        .stock-low { color: var(--warning); font-weight: bold; }
+        .stock-normal { color: var(--success); font-weight: bold; }
+        .badge-reorder-simple { display: inline-flex; align-items: center; background: rgba(229, 83, 83, 0.15); color: var(--danger); border: 1px solid rgba(229, 83, 83, 0.35); padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; }
+        .badge-projection { display: inline-flex; align-items: center; background: rgba(79, 142, 247, 0.15); color: var(--primary); border: 1px solid rgba(79, 142, 247, 0.35); padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; }
+
+        /* Qty Stepper */
+        .qty-stepper { display: flex; align-items: center; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+        .qty-btn { width: 30px; height: 30px; background: var(--stepper-btn-bg); color: var(--text-main); border: none; font-size: 15px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .qty-input { width: 38px; height: 30px; background: transparent; border: none; text-align: center; color: var(--text-main); font-size: 13px; font-weight: bold; outline: none; }
+
+        /* Bottom Bar */
+        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: var(--bottom-bar-bg); border-top: 1px solid var(--card-border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(12px); }
+        .bottom-info { display: flex; flex-direction: column; }
+        .selected-count { font-size: 13px; font-weight: 800; color: var(--text-main); }
+        .selected-subtext { font-size: 11px; color: var(--primary); font-weight: 700; }
+        .bottom-actions { display: flex; gap: 8px; }
+        .btn-action { padding: 9px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .btn-copy { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--card-border); }
+        .btn-wa { background: #25D366; color: #FFFFFF; }
+
+        /* Tab 2 Audit Trail Table */
+        .audit-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+        .audit-table th { background: var(--card-border); padding: 10px; font-size: 11px; text-transform: uppercase; color: var(--text-muted); }
+        .audit-table td { padding: 10px; border-bottom: 1px solid var(--card-border); }
+
+        /* Toast notification */
+        .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1E293B; color: #fff; border: 1px solid #475569; padding: 10px 18px; border-radius: 10px; font-size: 12px; font-weight: 600; z-index: 200; box-shadow: 0 8px 20px rgba(0,0,0,0.5); display: none; }
+        
+        /* PIN Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 999; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .modal-card { background: #1E293B; border: 1px solid #334155; border-radius: 16px; max-width: 360px; width: 100%; padding: 24px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <!-- TOP NAVIGATION -->
+    <div class="top-nav-bar">
+        <div class="nav-container">
+            <div class="nav-tabs-wrapper">
+                <button class="nav-tab-btn active" id="tabBtnOrder" onclick="switchTab('order')">
+                    🛒 Order Restock
+                </button>
+                <button class="nav-tab-btn" id="tabBtnAudit" onclick="switchTab('audit')">
+                    📊 Riwayat &amp; Laporan
+                </button>
+            </div>
+
+            <!-- Device Selector -->
+            <select id="navDeviceFilter" class="device-select" onchange="onDeviceChange()">
+                <option value="all">📱 Semua Perangkat</option>
+            </select>
+
+            <!-- Refresh Button -->
+            <button class="btn-nav-action" onclick="fetchVouchersFromSupabase()" title="Refresh Data">🔄</button>
+
+            <!-- Mode Switcher (Go to Table view) -->
+            <a href="index.html" class="btn-nav-action" title="Buka Mode Tabel Ringkas">📋</a>
+
+            <!-- Theme Toggle -->
+            <button class="btn-nav-action" id="btnThemeToggle" onclick="toggleTheme()" title="Ganti Tema">🌙</button>
+
+            <!-- Lock PIN -->
+            <button class="btn-nav-action" onclick="lockViewer()" title="Kunci PIN">🔒</button>
+        </div>
+    </div>
+
+    <!-- ==================== TAB 1: ORDER RESTOCK ==================== -->
+    <div id="tabContentOrder" class="container">
+        <!-- Header -->
+        <div class="header-card">
+            <div class="header-title">
+                <span>⚡</span> Stock Monitor &amp; Restock Assistant
+            </div>
+            <div class="header-subtitle" id="orderHeaderSubtitle">
+                Live Data dari Supabase Cloud
+            </div>
+
+            <div class="stats-summary">
+                <div class="stat-box">
+                    <div class="stat-num danger" id="statHabis">0</div>
+                    <div class="stat-label">Stok Habis</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num warning" id="statMenipis">0</div>
+                    <div class="stat-label">Stok Menipis</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num success" id="statAman">0</div>
+                    <div class="stat-label">Stok Aman</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num primary" id="statEstCost">Rp 0</div>
+                    <div class="stat-label">Est. Biaya Order</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-card">
+            <input type="text" id="searchInput" class="search-box" placeholder="🔍 Cari nama produk, provider, atau kategori..." oninput="filterOrderProducts()">
+
+            <div class="filter-row">
+                <div class="chip active" onclick="setOrderFilter('all', this)">Semua</div>
+                <div class="chip" onclick="setOrderFilter('reorder', this)">⚡ Perlu Restock</div>
+                <div class="chip" onclick="setOrderFilter('low', this)">⚠️ Menipis &amp; Habis</div>
+                <div class="chip" onclick="setOrderFilter('habis', this)">🔴 Habis (0 pcs)</div>
+                <div class="chip" onclick="setOrderFilter('aman', this)">🟢 Aman</div>
+                <div class="chip" id="chipProviderBadge" onclick="toggleProviderBadge(this)">🏷️ Badge Provider</div>
+            </div>
+
+            <div class="quick-select-row">
+                <button class="btn-select-action" onclick="autoFillByTargetDays(7)">🎯 ~7 Hari</button>
+                <button class="btn-select-action" onclick="autoFillByTargetDays(14)">🎯 ~14 Hari</button>
+                <button class="btn-select-action" onclick="autoFillByTargetDays(30)">🎯 ~1 Bulan</button>
+                <button class="btn-select-action" onclick="selectByFilter('low')">⚠️ Stok Menipis</button>
+                <button class="btn-select-action" onclick="selectAll(false)">❌ Reset</button>
+            </div>
+        </div>
+
+        <!-- Dynamic Product List from Supabase -->
+        <div id="productList">
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                Memuat data dari cloud...
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Action Bar (Tab 1) -->
+    <div id="bottomBarOrder" class="bottom-bar">
+        <div class="bottom-info">
+            <div class="selected-count" id="selectedCount">0 produk (0 pcs)</div>
+            <div class="selected-subtext" id="selectedEstCost">Est. Biaya: Rp 0</div>
+        </div>
+
+        <div class="bottom-actions">
+            <button class="btn-action btn-copy" onclick="copyWaText()">📋 Salin Teks</button>
+            <button class="btn-action btn-wa" onclick="sendToWa()">💬 Kirim WA</button>
+        </div>
+    </div>
+
+    <!-- ==================== TAB 2: AUDIT TRAIL / LAPORAN ==================== -->
+    <div id="tabContentAudit" class="container" style="display: none;">
+        <div class="header-card">
+            <div class="header-title">📊 Riwayat Perubahan Stok (Audit Trail)</div>
+            <div class="header-subtitle">Catatan perubahan stok dan harga otomatis yang dikirim dari kasir</div>
+        </div>
+
+        <div class="controls-card">
+            <input type="text" id="auditSearchInput" class="search-box" placeholder="🔍 Cari nama voucher di riwayat..." oninput="renderAuditTable()">
+        </div>
+
+        <div class="controls-card" style="padding: 0; overflow-x: auto;">
+            <table class="audit-table">
+                <thead>
+                    <tr>
+                        <th>Waktu (WIB)</th>
+                        <th>Perangkat</th>
+                        <th>Nama Voucher</th>
+                        <th>Perubahan Stok</th>
+                        <th>Perubahan Harga</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody id="auditTableBody">
+                    <tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">Memuat riwayat...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- PIN Unlock Modal -->
+    <div id="pinModal" class="modal-overlay">
+        <div class="modal-card">
+            <div style="font-size: 36px; margin-bottom: 10px;">🔒</div>
+            <h2 style="font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 4px;">Akses Cloud Restock</h2>
+            <p style="font-size: 12px; color: #94A3B8; margin-bottom: 20px;">Masukkan PIN Toko untuk memuat stok &amp; order restock.</p>
+
+            <form onsubmit="handlePinSubmit(event)">
+                <input type="password" id="pinInput" placeholder="Masukkan PIN Toko" autofocus style="width: 100%; padding: 12px; background: #0F172A; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 18px; font-weight: 700; text-align: center; letter-spacing: 4px; margin-bottom: 12px; outline: none;">
+                
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 18px;">
+                    <input type="checkbox" id="rememberPin" checked style="accent-color: #4F8EF7;">
+                    <label for="rememberPin" style="font-size: 12px; color: #94A3B8; cursor: pointer;">Ingat PIN di perangkat ini</label>
+                </div>
+
+                <div id="pinError" style="color: #EF4444; font-size: 12px; margin-bottom: 12px; display: none;">PIN salah atau file config.enc tidak ditemukan!</div>
+
+                <button type="submit" id="btnUnlock" style="width: 100%; padding: 12px; background: #4F8EF7; border: none; border-radius: 8px; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;">
+                    Buka Stok &amp; Restock
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- APP LOGIC -->
+    <script>
+        let supabaseClient = null;
+        let allVouchers = [];
+        let currentOrderFilterType = 'all';
+        let currentTab = 'order';
+
+        // 1. PIN & Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            const savedPin = localStorage.getItem('kspcheck_viewer_pin');
+            if (savedPin) {
+                document.getElementById('pinInput').value = savedPin;
+                unlockWithPin(savedPin);
+            }
+        });
+
+        function handlePinSubmit(e) {
+            e.preventDefault();
+            const pin = document.getElementById('pinInput').value.trim();
+            if (pin) unlockWithPin(pin);
+        }
+
+        async function unlockWithPin(pin) {
+            const btn = document.getElementById('btnUnlock');
+            const errBox = document.getElementById('pinError');
+            btn.innerText = 'Membuka...';
+            btn.disabled = true;
+            errBox.style.display = 'none';
+
+            try {
+                const res = await fetch('./config.enc?t=' + Date.now());
+                if (!res.ok) throw new Error('File config.enc tidak ditemukan.');
+                const base64Encrypted = await res.text();
+
+                const combined = CryptoJS.enc.Base64.parse(base64Encrypted.trim());
+                const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4), 16);
+                const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4), combined.sigBytes - 16);
+                const cipherParams = CryptoJS.lib.CipherParams.create({ ciphertext: ciphertext });
+
+                const key = CryptoJS.SHA256(pin);
+                const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
+                    iv: iv,
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+
+                const decryptedJson = decrypted.toString(CryptoJS.enc.Utf8);
+                if (!decryptedJson) throw new Error('PIN Salah!');
+
+                const config = JSON.parse(decryptedJson);
+                if (!config.supabase_url || !config.supabase_anon_key) throw new Error('Format config tidak valid.');
+
+                if (document.getElementById('rememberPin')?.checked) {
+                    localStorage.setItem('kspcheck_viewer_pin', pin);
+                }
+
+                supabaseClient = supabase.createClient(config.supabase_url, config.supabase_anon_key);
+                document.getElementById('pinModal').style.display = 'none';
+
+                fetchVouchersFromSupabase();
+
+            } catch (err) {
+                console.error(err);
+                errBox.innerText = err.message || 'Gagal membuka. Periksa PIN!';
+                errBox.style.display = 'block';
+            } finally {
+                btn.innerText = 'Buka Stok & Restock';
+                btn.disabled = false;
+            }
+        }
+
+        function lockViewer() {
+            localStorage.removeItem('kspcheck_viewer_pin');
+            document.getElementById('pinInput').value = '';
+            document.getElementById('pinModal').style.display = 'flex';
+        }
+
+        // 2. Fetch Data from Supabase
+        async function fetchVouchersFromSupabase() {
+            if (!supabaseClient) return;
+            showToast('🔄 Memperbarui data dari cloud...');
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('vouchers')
+                    .select('*')
+                    .order('provider_name', { ascending: true })
+                    .order('product_name', { ascending: true });
+
+                if (error) throw error;
+
+                allVouchers = data || [];
+                populateDeviceDropdown();
+                renderProductList();
+                renderAuditTable();
+                updateStatsSummary();
+                showToast('✅ Data berhasil diperbarui!');
+
+            } catch (err) {
+                console.error('Fetch error:', err);
+                alert('Gagal mengambil data: ' + err.message);
+            }
+        }
+
+        // 3. Populate Device Dropdown
+        function populateDeviceDropdown() {
+            const select = document.getElementById('navDeviceFilter');
+            const currentVal = select.value;
+            const devices = new Map();
+
+            allVouchers.forEach(v => {
+                if (v.device_id && !devices.has(v.device_id)) {
+                    devices.set(v.device_id, v.device_name || v.device_id);
+                }
+            });
+
+            select.innerHTML = '<option value="all">📱 Semua Perangkat (' + devices.size + ')</option>';
+            devices.forEach((name, id) => {
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = '📱 ' + name;
+                select.appendChild(opt);
+            });
+
+            if (devices.has(currentVal)) select.value = currentVal;
+        }
+
+        function onDeviceChange() {
+            renderProductList();
+            renderAuditTable();
+            updateStatsSummary();
+        }
+
+        // 4. Render Dynamic Product List (Tab 1)
+        function renderProductList() {
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const filtered = (selectedDevice === 'all')
+                ? allVouchers
+                : allVouchers.filter(v => v.device_id === selectedDevice);
+
+            const container = document.getElementById('productList');
+            if (filtered.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--text-muted);">Tidak ada data voucher untuk perangkat ini</div>';
+                return;
+            }
+
+            // Group by Provider
+            const providerGroups = new Map();
+            filtered.forEach(v => {
+                const prov = v.provider_name || 'Lainnya';
+                if (!providerGroups.has(prov)) providerGroups.set(prov, []);
+                providerGroups.get(prov).push(v);
+            });
+
+            let html = '';
+            let idCounter = 1;
+
+            providerGroups.forEach((items, provName) => {
+                html += `<div class="provider-section">`;
+                html += `<div class="provider-header">🏷️ ${escapeHtml(provName)} (${items.length} item)</div>`;
+
+                items.forEach(prod => {
+                    const stock = parseInt(prod.stock || 0);
+                    const limit = parseInt(prod.min_limit || 5);
+                    const cost = parseInt(prod.cost_price || 0);
+                    const price = parseInt(prod.sell_price || 0);
+
+                    const isOut = (stock === 0);
+                    const isLow = (stock <= limit);
+                    const needsRestock = isOut || isLow;
+
+                    let sisaHtml = isOut
+                        ? `Sisa: <span class="stock-zero">0 pcs</span>`
+                        : (isLow ? `Sisa: <span class="stock-low">${stock} pcs</span>` : `Sisa: <span class="stock-normal">${stock} pcs</span>`);
+
+                    let badgeHtml = needsRestock
+                        ? `<span class="badge-reorder-simple">Perlu Restock</span>`
+                        : ``;
+
+                    html += `
+                    <div class="product-card" 
+                         data-id="${idCounter}"
+                         data-provider="${escapeHtml(provName)}"
+                         data-name="${escapeHtml(prod.product_name)}"
+                         data-stock="${stock}"
+                         data-limit="${limit}"
+                         data-cost="${cost}"
+                         data-price="${price}"
+                         data-demand="1.0"
+                         data-needs-restock="${needsRestock}"
+                         data-qty="0"
+                         onclick="toggleSelectCard(this)">
+                        
+                        <div class="checkbox-custom"></div>
+                        
+                        <div class="product-info">
+                            <div class="product-name">
+                                <span class="prov-pill">${escapeHtml(shortenProvider(provName))}</span>
+                                ${escapeHtml(prod.product_name)}
+                            </div>
+                            <div class="product-meta">
+                                ${sisaHtml}
+                                <span class="reorder-tag-container">${badgeHtml}</span>
+                            </div>
+                        </div>
+
+                        <div class="qty-stepper" onclick="event.stopPropagation()">
+                            <button type="button" class="qty-btn" onclick="changeQty(event, this, -1)">-</button>
+                            <input type="number" class="qty-input" min="0" value="0" 
+                                   onclick="event.stopPropagation()" 
+                                   onchange="onQtyInputChange(event, this)" 
+                                   oninput="onQtyInputChange(event, this)">
+                            <button type="button" class="qty-btn" onclick="changeQty(event, this, 1)">+</button>
+                        </div>
+                    </div>`;
+                    idCounter++;
+                });
+
+                html += `</div>`;
+            });
+
+            container.innerHTML = html;
+            filterOrderProducts();
+            updateSelectedCount();
+        }
+
+        // 5. Card Selection & Quantity Steppers
+        function toggleSelectCard(card) {
+            const isSelected = card.classList.contains('selected');
+            const input = card.querySelector('.qty-input');
+            let currentQty = parseInt(card.getAttribute('data-qty') || '0');
+
+            if (!isSelected) {
+                card.classList.add('selected');
+                if (currentQty <= 0) {
+                    const stock = parseInt(card.getAttribute('data-stock') || '0');
+                    const limit = parseInt(card.getAttribute('data-limit') || '5');
+                    let suggested = (limit > stock) ? (limit - stock) : 1;
+                    if (suggested <= 0) suggested = 1;
+                    if (input) input.value = suggested;
+                    card.setAttribute('data-qty', String(suggested));
+                    updateCardBadge(card, suggested);
+                }
+            } else {
+                card.classList.remove('selected');
+                if (input) input.value = 0;
+                card.setAttribute('data-qty', '0');
+                updateCardBadge(card, 0);
+            }
+            updateSelectedCount();
+        }
+
+        function changeQty(event, btn, delta) {
+            event.stopPropagation();
+            const card = btn.closest('.product-card');
+            if (!card) return;
+            const input = card.querySelector('.qty-input');
+            let current = parseInt(input.value || '0') + delta;
+            if (current < 0) current = 0;
+            input.value = current;
+            card.setAttribute('data-qty', String(current));
+
+            if (current > 0) card.classList.add('selected');
+            else card.classList.remove('selected');
+
+            updateCardBadge(card, current);
+            updateSelectedCount();
+        }
+
+        function onQtyInputChange(event, input) {
+            event.stopPropagation();
+            const card = input.closest('.product-card');
+            if (!card) return;
+            let val = parseInt(input.value || '0');
+            if (val < 0) val = 0;
+            input.value = val;
+            card.setAttribute('data-qty', String(val));
+
+            if (val > 0) card.classList.add('selected');
+            else card.classList.remove('selected');
+
+            updateCardBadge(card, val);
+            updateSelectedCount();
+        }
+
+        function updateCardBadge(card, qty) {
+            const container = card.querySelector('.reorder-tag-container');
+            if (!container) return;
+
+            if (qty > 0) {
+                const stock = parseInt(card.getAttribute('data-stock') || '0');
+                const days = Math.max(1, Math.round((stock + qty) / 1.5));
+                container.innerHTML = `<span class="badge-projection">⏳ Cukup ~${days} hari</span>`;
+            } else {
+                const needs = (card.getAttribute('data-needs-restock') === 'true');
+                container.innerHTML = needs ? `<span class="badge-reorder-simple">Perlu Restock</span>` : '';
+            }
+        }
+
+        function updateSelectedCount() {
+            const selectedCards = document.querySelectorAll('.product-card.selected');
+            let totalQty = 0;
+            let count = 0;
+            let totalCost = 0;
+
+            selectedCards.forEach(c => {
+                const q = parseInt(c.getAttribute('data-qty') || '0');
+                const cost = parseInt(c.getAttribute('data-cost') || '0');
+                if (q > 0) {
+                    totalQty += q;
+                    count++;
+                    totalCost += (q * cost);
+                }
+            });
+
+            document.getElementById('selectedCount').innerText = `${count} produk (${totalQty} pcs)`;
+            document.getElementById('selectedEstCost').innerText = `Est. Biaya: Rp ${totalCost.toLocaleString('id-ID')}`;
+            document.getElementById('statEstCost').innerText = `Rp ${totalCost.toLocaleString('id-ID')}`;
+        }
+
+        function updateStatsSummary() {
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const filtered = (selectedDevice === 'all')
+                ? allVouchers
+                : allVouchers.filter(v => v.device_id === selectedDevice);
+
+            let habis = 0, menipis = 0, aman = 0;
+            filtered.forEach(v => {
+                const stock = parseInt(v.stock || 0);
+                const limit = parseInt(v.min_limit || 5);
+                if (stock === 0) habis++;
+                else if (stock <= limit) menipis++;
+                else aman++;
+            });
+
+            document.getElementById('statHabis').innerText = habis;
+            document.getElementById('statMenipis').innerText = menipis;
+            document.getElementById('statAman').innerText = aman;
+        }
+
+        // 6. Quick Select & Filters
+        function autoFillByTargetDays(days) {
+            const cards = document.querySelectorAll('.product-card');
+            let filled = 0;
+            let totalPcs = 0;
+
+            cards.forEach(card => {
+                const stock = parseInt(card.getAttribute('data-stock') || '0');
+                const limit = parseInt(card.getAttribute('data-limit') || '5');
+                const input = card.querySelector('.qty-input');
+
+                // Target stock estimate
+                let target = Math.max(limit, Math.ceil(limit * (days / 7)));
+                let needed = Math.max(0, target - stock);
+
+                if (needed > 0) {
+                    card.classList.add('selected');
+                    if (input) input.value = needed;
+                    card.setAttribute('data-qty', String(needed));
+                    updateCardBadge(card, needed);
+                    filled++;
+                    totalPcs += needed;
+                } else {
+                    card.classList.remove('selected');
+                    if (input) input.value = 0;
+                    card.setAttribute('data-qty', '0');
+                    updateCardBadge(card, 0);
+                }
+            });
+
+            updateSelectedCount();
+            showToast(`🎯 Auto-fill ~${days} Hari: ${filled} produk (+${totalPcs} pcs)`);
+        }
+
+        function selectByFilter(type) {
+            const cards = document.querySelectorAll('.product-card');
+            cards.forEach(card => {
+                const stock = parseInt(card.getAttribute('data-stock') || '0');
+                const limit = parseInt(card.getAttribute('data-limit') || '5');
+                const input = card.querySelector('.qty-input');
+
+                if (type === 'low' && stock <= limit) {
+                    card.classList.add('selected');
+                    let cur = parseInt(card.getAttribute('data-qty') || '0');
+                    let needed = (limit > stock) ? (limit - stock) : 1;
+                    if (cur <= 0) {
+                        if (input) input.value = needed;
+                        card.setAttribute('data-qty', String(needed));
+                    }
+                    updateCardBadge(card, parseInt(card.getAttribute('data-qty') || '1'));
+                }
+            });
+            updateSelectedCount();
+        }
+
+        function selectAll(check) {
+            const cards = document.querySelectorAll('.product-card');
+            cards.forEach(card => {
+                const input = card.querySelector('.qty-input');
+                if (check) {
+                    card.classList.add('selected');
+                    let cur = parseInt(card.getAttribute('data-qty') || '0');
+                    if (cur <= 0) {
+                        if (input) input.value = 1;
+                        card.setAttribute('data-qty', '1');
+                    }
+                    updateCardBadge(card, parseInt(card.getAttribute('data-qty') || '1'));
+                } else {
+                    card.classList.remove('selected');
+                    if (input) input.value = 0;
+                    card.setAttribute('data-qty', '0');
+                    updateCardBadge(card, 0);
+                }
+            });
+            updateSelectedCount();
+        }
+
+        function setOrderFilter(type, chipEl) {
+            document.querySelectorAll('.filter-row .chip').forEach(c => c.classList.remove('active'));
+            if (chipEl) chipEl.classList.add('active');
+            currentOrderFilterType = type;
+            filterOrderProducts();
+        }
+
+        function filterOrderProducts() {
+            const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+            const filterType = currentOrderFilterType || 'all';
+
+            document.querySelectorAll('.provider-section').forEach(sec => {
+                let visibleCount = 0;
+                sec.querySelectorAll('.product-card').forEach(card => {
+                    const name = (card.getAttribute('data-name') || '').toLowerCase();
+                    const prov = (card.getAttribute('data-provider') || '').toLowerCase();
+                    const stock = parseInt(card.getAttribute('data-stock') || '0');
+                    const limit = parseInt(card.getAttribute('data-limit') || '5');
+                    const needs = (card.getAttribute('data-needs-restock') === 'true');
+
+                    let matchSearch = name.includes(search) || prov.includes(search);
+                    let matchFilter = true;
+                    if (filterType === 'low') matchFilter = (stock <= limit);
+                    else if (filterType === 'habis') matchFilter = (stock === 0);
+                    else if (filterType === 'aman') matchFilter = (stock > limit);
+                    else if (filterType === 'reorder') matchFilter = needs;
+
+                    if (matchSearch && matchFilter) {
+                        card.style.display = 'flex';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+                sec.style.display = (visibleCount > 0) ? 'block' : 'none';
+            });
+        }
+
+        function toggleProviderBadge(btn) {
+            document.body.classList.toggle('hide-provider-badge');
+            btn.classList.toggle('active');
+        }
+
+        // 7. WhatsApp Text Formatting
+        function generateWaText() {
+            const selectedCards = document.querySelectorAll('.product-card.selected');
+            if (selectedCards.length === 0) return '';
+
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+            let text = `*ORDER RESTOCK VOUCHER*\n📅 ${dateStr}\n---------------------------------\n`;
+            let totalPcs = 0;
+            let totalEstCost = 0;
+
+            const providerMap = new Map();
+            selectedCards.forEach(card => {
+                const prov = card.getAttribute('data-provider') || 'Lainnya';
+                const name = card.getAttribute('data-name') || '';
+                const qty = parseInt(card.getAttribute('data-qty') || '0');
+                const cost = parseInt(card.getAttribute('data-cost') || '0');
+
+                if (qty > 0) {
+                    if (!providerMap.has(prov)) providerMap.set(prov, []);
+                    providerMap.get(prov).push({ name, qty, cost });
+                    totalPcs += qty;
+                    totalEstCost += (qty * cost);
+                }
+            });
+
+            providerMap.forEach((items, prov) => {
+                text += `\n*${prov.toUpperCase()}*\n`;
+                items.forEach(item => {
+                    text += `• ${item.name}: *${item.qty} pcs*\n`;
+                });
+            });
+
+            text += `\n---------------------------------\n`;
+            text += `Total Produk: *${selectedCards.length} jenis*\n`;
+            text += `Total Quantity: *${totalPcs} pcs*\n`;
+            text += `Estimasi Biaya: *Rp ${totalEstCost.toLocaleString('id-ID')}*\n`;
+
+            return text;
+        }
+
+        function copyWaText() {
+            const text = generateWaText();
+            if (!text) {
+                showToast('Pilih minimal 1 produk dengan quantity > 0');
+                return;
+            }
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('✅ Teks order restock berhasil disalin!');
+            }).catch(e => {
+                prompt('Salin teks order:', text);
+            });
+        }
+
+        function sendToWa() {
+            const text = generateWaText();
+            if (!text) {
+                showToast('Pilih minimal 1 produk dengan quantity > 0');
+                return;
+            }
+            const url = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
+            window.open(url, '_blank');
+        }
+
+        // 8. Tab 2: Audit Trail Table
+        function renderAuditTable() {
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const search = (document.getElementById('auditSearchInput')?.value || '').toLowerCase();
+            const tbody = document.getElementById('auditTableBody');
+
+            let allLogs = [];
+            allVouchers.forEach(v => {
+                if (selectedDevice !== 'all' && v.device_id !== selectedDevice) return;
+                const history = v.change_history || [];
+                if (Array.isArray(history)) {
+                    history.forEach(entry => {
+                        allLogs.push({
+                            timestamp: entry.timestamp || v.updated_at,
+                            deviceName: v.device_name || 'Kasir',
+                            productName: v.product_name,
+                            summary: entry.summary || '-',
+                            stockDiff: entry.stock_diff,
+                            oldStock: entry.old_stock,
+                            newStock: entry.new_stock,
+                            oldPrice: entry.old_sell_price,
+                            newPrice: entry.new_sell_price
+                        });
+                    });
+                }
+            });
+
+            // Sort newest first
+            allLogs.sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+
+            const filteredLogs = allLogs.filter(log => {
+                return (log.productName || '').toLowerCase().includes(search) ||
+                       (log.deviceName || '').toLowerCase().includes(search);
+            });
+
+            if (filteredLogs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">Tidak ada riwayat perubahan ditemukan.</td></tr>';
+                return;
+            }
+
+            let html = '';
+            filteredLogs.slice(0, 100).forEach(log => {
+                let diffBadge = '';
+                if (log.stockDiff !== undefined && log.stockDiff !== null) {
+                    if (log.stockDiff > 0) diffBadge = `<span style="color:var(--success); font-weight:bold;">(+${log.stockDiff})</span>`;
+                    else if (log.stockDiff < 0) diffBadge = `<span style="color:var(--danger); font-weight:bold;">(${log.stockDiff})</span>`;
+                }
+
+                html += `
+                <tr>
+                    <td style="color:var(--text-muted); font-size:11px; white-space:nowrap;">${escapeHtml(log.timestamp || '-')}</td>
+                    <td style="font-weight:600;">📱 ${escapeHtml(log.deviceName)}</td>
+                    <td style="font-weight:700; color:#fff;">${escapeHtml(log.productName)}</td>
+                    <td>${log.oldStock !== undefined ? `${log.oldStock} → ${log.newStock} ${diffBadge}` : '-'}</td>
+                    <td>${log.newPrice ? `Rp ${Number(log.newPrice).toLocaleString('id-ID')}` : '-'}</td>
+                    <td style="color:var(--text-muted); font-size:11px;">${escapeHtml(log.summary)}</td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // 9. Tabs & Themes
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('tabBtnOrder').classList.toggle('active', tab === 'order');
+            document.getElementById('tabBtnAudit').classList.toggle('active', tab === 'audit');
+            document.getElementById('tabContentOrder').style.display = (tab === 'order') ? 'block' : 'none';
+            document.getElementById('tabContentAudit').style.display = (tab === 'audit') ? 'block' : 'none';
+            document.getElementById('bottomBarOrder').style.display = (tab === 'order') ? 'flex' : 'none';
+        }
+
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light-theme');
+            localStorage.setItem('kspcheck_theme', isLight ? 'light' : 'dark');
+            document.getElementById('btnThemeToggle').innerText = isLight ? '☀️' : '🌙';
+        }
+
+        function initTheme() {
+            const saved = localStorage.getItem('kspcheck_theme');
+            if (saved === 'light') {
+                document.body.classList.add('light-theme');
+                document.getElementById('btnThemeToggle').innerText = '☀️';
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.display = 'block';
+            setTimeout(() => { t.style.display = 'none'; }, 3000);
+        }
+
+        function shortenProvider(name) {
+            if (!name) return '';
+            const u = name.toUpperCase();
+            if (u.includes('TELKOMSEL') || u.includes('TSEL')) return 'TSEL';
+            if (u.includes('INDOSAT') || u.includes('ISAT')) return 'ISAT';
+            if (u.includes('AXIS')) return 'AXIS';
+            if (u.includes('XL')) return 'XL';
+            if (u.includes('TRI') || u.includes('3')) return 'TRI';
+            if (u.includes('SMART')) return 'SF';
+            return name;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+    </script>
+</body>
+</html>
