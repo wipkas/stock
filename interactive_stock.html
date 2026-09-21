@@ -140,6 +140,14 @@
         .stock-normal { color: var(--success); font-weight: bold; }
         .badge-reorder-simple { display: inline-flex; align-items: center; background: rgba(229, 83, 83, 0.15); color: var(--danger); border: 1px solid rgba(229, 83, 83, 0.35); padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; }
         .badge-projection { display: inline-flex; align-items: center; background: rgba(79, 142, 247, 0.15); color: var(--primary); border: 1px solid rgba(79, 142, 247, 0.35); padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; }
+        
+        /* Mode Keuntungan Tab 1 (Order Restock) */
+        .order-profit-info { display: inline; }
+        body:not(.show-order-profit) .order-profit-info { display: none !important; }
+        .order-margin-badge { display: inline-flex; align-items: center; font-weight: 700; padding: 1px 6px; border-radius: 6px; font-size: 10px; }
+        .order-margin-badge.profit-pos { background: rgba(46, 204, 135, 0.15); color: var(--success); border: 1px solid rgba(46, 204, 135, 0.35); }
+        .order-margin-badge.profit-neg { background: rgba(229, 83, 83, 0.15); color: var(--danger); border: 1px solid rgba(229, 83, 83, 0.35); }
+        .order-margin-badge.profit-zero { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.3); }
 
         /* Qty Stepper */
         .qty-stepper { display: flex; align-items: center; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; overflow: hidden; flex-shrink: 0; }
@@ -282,6 +290,7 @@
                 <div class="chip" onclick="setOrderFilter('low', this)">⚠️ Menipis &amp; Habis</div>
                 <div class="chip" onclick="setOrderFilter('habis', this)">🔴 Habis (0 pcs)</div>
                 <div class="chip" onclick="setOrderFilter('aman', this)">🟢 Aman</div>
+                <div class="chip" id="chipOrderProfitMode" onclick="toggleOrderProfitMode(this)">💰 Mode Keuntungan</div>
                 <div class="chip" id="chipProviderBadge" onclick="toggleProviderBadge(this)">🏷️ Badge Provider</div>
             </div>
 
@@ -424,7 +433,7 @@
     <div id="toast" class="toast"></div>
 
     <!-- PIN Unlock Modal -->
-    <div id="pinModal" class="modal-overlay">
+    <div id="pinModal" class="modal-overlay" style="display: none;">
         <div class="modal-card">
             <div style="font-size: 36px; margin-bottom: 10px;">🔒</div>
             <h2 style="font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 4px;">Akses Cloud Restock</h2>
@@ -449,11 +458,31 @@
 
     <!-- APP LOGIC -->
     <script>
+        // ============================================================================
+        // ⚙️ PENGATURAN KUNCI PIN & KONEKSI CLOUD (SUPABASE)
+        // ============================================================================
+        // Set ke 'false' untuk MENONAKTIFKAN kunci PIN (halaman langsung terbuka).
+        // Set ke 'true' untuk MENGAKTIFKAN kembali kunci PIN (proteksi password toko).
+        const REQUIRE_PIN = false;
+
+        // Opsi A: Jika REQUIRE_PIN = false dan menggunakan file config.enc terenkripsi,
+        // isi PIN toko Anda di bawah ini agar didekripsi otomatis tanpa modal popup:
+        const DEFAULT_PIN = "";
+
+        // Opsi B: ATAU jika tidak ingin menggunakan file config.enc sama sekali,
+        // Anda dapat mengisi langsung kredensial Supabase di bawah ini:
+        const DIRECT_SUPABASE_URL = "";
+        const DIRECT_SUPABASE_ANON_KEY = "";
+        // ============================================================================
+
         let supabaseClient = null;
         let allVouchers = [];
         let allDailyReports = new Map(); // device_id -> report_data
         let currentOrderFilterType = 'all';
         let currentTab = 'order';
+
+        // State Tab 1: Mode Keuntungan (Modal, Jual, Margin)
+        let orderProfitMode = false;
 
         // State Tab 2: Laporan Stok Harian
         let dailyShift = 0; // 0: Semua, 1: Pagi, 2: Malam, 4: Rincian P|M
@@ -462,29 +491,94 @@
         let dailyProfitMode = false;
         let dailyHideZeroSell = true;
 
-        // 1. PIN & Initialization
+        // 1. Initialization & PIN System
         document.addEventListener('DOMContentLoaded', () => {
             initTheme();
             initTts();
-            const savedPin = localStorage.getItem('kspcheck_viewer_pin');
-            if (savedPin) {
-                document.getElementById('pinInput').value = savedPin;
-                unlockWithPin(savedPin);
+            initOrderProfitMode();
+
+            if (!REQUIRE_PIN) {
+                // PIN dinonaktifkan: pastikan modal PIN tertutup
+                const pinModal = document.getElementById('pinModal');
+                if (pinModal) pinModal.style.display = 'none';
+
+                // Prioritas 1: Kredensial Supabase langsung
+                if (DIRECT_SUPABASE_URL && DIRECT_SUPABASE_ANON_KEY) {
+                    supabaseClient = supabase.createClient(DIRECT_SUPABASE_URL, DIRECT_SUPABASE_ANON_KEY);
+                    fetchVouchersFromSupabase();
+                    return;
+                }
+
+                // Prioritas 2: Gunakan DEFAULT_PIN atau PIN yang tersimpan di browser
+                const pinToUse = DEFAULT_PIN || localStorage.getItem('kspcheck_viewer_pin');
+                if (pinToUse) {
+                    unlockWithPin(pinToUse, false);
+                } else {
+                    // Jika belum ada PIN sama sekali dan kredensial kosong, buka modal dengan panduan
+                    unlockWithPin('', false);
+                }
+            } else {
+                // PIN aktif: Cek apakah ada PIN tersimpan di localStorage
+                const savedPin = localStorage.getItem('kspcheck_viewer_pin');
+                if (savedPin) {
+                    document.getElementById('pinInput').value = savedPin;
+                    unlockWithPin(savedPin, true);
+                } else {
+                    document.getElementById('pinModal').style.display = 'flex';
+                }
             }
         });
+
+        // Tab 1: Mode Keuntungan (Modal, Jual, Margin) Logic
+        function initOrderProfitMode() {
+            const saved = localStorage.getItem('kspcheck_order_profit_mode');
+            orderProfitMode = (saved === 'true');
+            applyOrderProfitModeUI();
+        }
+
+        function toggleOrderProfitMode(el) {
+            orderProfitMode = !orderProfitMode;
+            applyOrderProfitModeUI();
+            localStorage.setItem('kspcheck_order_profit_mode', orderProfitMode ? 'true' : 'false');
+            updateSelectedCount();
+        }
+
+        function applyOrderProfitModeUI() {
+            document.body.classList.toggle('show-order-profit', orderProfitMode);
+            const chip = document.getElementById('chipOrderProfitMode');
+            if (chip) {
+                if (orderProfitMode) chip.classList.add('active-warning');
+                else chip.classList.remove('active-warning');
+            }
+        }
 
         function handlePinSubmit(e) {
             e.preventDefault();
             const pin = document.getElementById('pinInput').value.trim();
-            if (pin) unlockWithPin(pin);
+            if (pin) unlockWithPin(pin, true);
         }
 
-        async function unlockWithPin(pin) {
+        async function unlockWithPin(pin, isExplicitModal = true) {
             const btn = document.getElementById('btnUnlock');
             const errBox = document.getElementById('pinError');
-            btn.innerText = 'Membuka...';
-            btn.disabled = true;
-            errBox.style.display = 'none';
+            if (btn) {
+                btn.innerText = 'Membuka...';
+                btn.disabled = true;
+            }
+            if (errBox) errBox.style.display = 'none';
+
+            if (!pin) {
+                document.getElementById('pinModal').style.display = 'flex';
+                if (!REQUIRE_PIN && errBox) {
+                    errBox.innerText = 'Kunci PIN dinonaktifkan di kode, tetapi file config.enc memerlukan PIN untuk didekripsi pertama kali. Masukkan PIN toko Anda (akan diingat otomatis):';
+                    errBox.style.display = 'block';
+                }
+                if (btn) {
+                    btn.innerText = 'Buka Stok & Restock';
+                    btn.disabled = false;
+                }
+                return;
+            }
 
             try {
                 const res = await fetch('./config.enc?t=' + Date.now());
@@ -509,9 +603,8 @@
                 const config = JSON.parse(decryptedJson);
                 if (!config.supabase_url || !config.supabase_anon_key) throw new Error('Format config tidak valid.');
 
-                if (document.getElementById('rememberPin')?.checked) {
-                    localStorage.setItem('kspcheck_viewer_pin', pin);
-                }
+                // Selalu simpan PIN agar sesi berikutnya langsung jalan tanpa perlu modal
+                localStorage.setItem('kspcheck_viewer_pin', pin);
 
                 supabaseClient = supabase.createClient(config.supabase_url, config.supabase_anon_key);
                 document.getElementById('pinModal').style.display = 'none';
@@ -520,15 +613,24 @@
 
             } catch (err) {
                 console.error(err);
-                errBox.innerText = err.message || 'Gagal membuka. Periksa PIN!';
-                errBox.style.display = 'block';
+                document.getElementById('pinModal').style.display = 'flex';
+                if (errBox) {
+                    errBox.innerText = err.message || 'Gagal membuka. Periksa PIN!';
+                    errBox.style.display = 'block';
+                }
             } finally {
-                btn.innerText = 'Buka Stok & Restock';
-                btn.disabled = false;
+                if (btn) {
+                    btn.innerText = 'Buka Stok & Restock';
+                    btn.disabled = false;
+                }
             }
         }
 
         function lockViewer() {
+            if (!REQUIRE_PIN) {
+                showToast('ℹ️ Proteksi PIN sedang dinonaktifkan (REQUIRE_PIN = false).');
+                return;
+            }
             localStorage.removeItem('kspcheck_viewer_pin');
             document.getElementById('pinInput').value = '';
             document.getElementById('pinModal').style.display = 'flex';
@@ -658,6 +760,7 @@
                     const limit = parseInt(prod.min_limit || 5);
                     const cost = parseInt(prod.cost_price || 0);
                     const price = parseInt(prod.sell_price || 0);
+                    const margin = price - cost;
 
                     const isOut = (stock === 0);
                     const isLow = (stock <= limit);
@@ -671,6 +774,10 @@
                         ? `<span class="badge-reorder-simple">Perlu Restock</span>`
                         : ``;
 
+                    let marginBadgeClass = (margin > 0) ? 'profit-pos' : ((margin < 0) ? 'profit-neg' : 'profit-zero');
+                    let marginSign = (margin > 0) ? '+' : '';
+                    let marginText = `${marginSign}Rp ${margin.toLocaleString('id-ID')}`;
+
                     html += `
                     <div class="product-card" 
                          data-id="${idCounter}"
@@ -680,6 +787,7 @@
                          data-limit="${limit}"
                          data-cost="${cost}"
                          data-price="${price}"
+                         data-margin="${margin}"
                          data-demand="1.0"
                          data-needs-restock="${needsRestock}"
                          data-qty="0"
@@ -694,10 +802,12 @@
                             </div>
                             <div class="product-meta">
                                 ${sisaHtml}
-                                <span>•</span>
-                                <span>Modal: Rp ${cost.toLocaleString('id-ID')}</span>
-                                <span>•</span>
-                                <span>Jual: Rp ${price.toLocaleString('id-ID')}</span>
+                                <span class="order-profit-info">•</span>
+                                <span class="order-profit-info">Modal: Rp ${cost.toLocaleString('id-ID')}</span>
+                                <span class="order-profit-info">•</span>
+                                <span class="order-profit-info">Jual: Rp ${price.toLocaleString('id-ID')}</span>
+                                <span class="order-profit-info">•</span>
+                                <span class="order-profit-info"><span class="order-margin-badge ${marginBadgeClass}">Margin: ${marginText}</span></span>
                                 <div class="reorder-tag-container">${badgeHtml}</div>
                             </div>
                         </div>
@@ -797,19 +907,27 @@
             let totalQty = 0;
             let count = 0;
             let totalCost = 0;
+            let totalMargin = 0;
 
             selectedCards.forEach(c => {
                 const q = parseInt(c.getAttribute('data-qty') || '0');
                 const cost = parseInt(c.getAttribute('data-cost') || '0');
+                const price = parseInt(c.getAttribute('data-price') || '0');
                 if (q > 0) {
                     totalQty += q;
                     count++;
                     totalCost += (q * cost);
+                    totalMargin += (q * (price - cost));
                 }
             });
 
             document.getElementById('selectedCount').innerText = `${count} produk (${totalQty} pcs)`;
-            document.getElementById('selectedEstCost').innerText = `Est. Biaya: Rp ${totalCost.toLocaleString('id-ID')}`;
+            let estText = `Est. Biaya: Rp ${totalCost.toLocaleString('id-ID')}`;
+            if (orderProfitMode && totalQty > 0) {
+                const sign = totalMargin >= 0 ? '+' : '';
+                estText += ` (Margin: ${sign}Rp ${totalMargin.toLocaleString('id-ID')})`;
+            }
+            document.getElementById('selectedEstCost').innerText = estText;
             document.getElementById('statEstCost').innerText = `Rp ${totalCost.toLocaleString('id-ID')}`;
         }
 
