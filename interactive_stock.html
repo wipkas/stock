@@ -32,6 +32,18 @@
             --input-bg: #11141F;
             --card-selected-bg: #1B2436;
             --checkbox-border: #3E465E;
+
+            --table-header: #141824;
+            --table-border: #20273A;
+            --table-alt-row: rgba(255, 255, 255, 0.02);
+            --table-footer-bg: #121624;
+            --row-prov-bg: #1E293B;
+            --row-prov-text: #60A5FA;
+            --row-cat-bg: #19202E;
+            --row-cat-text: #94A3B8;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --btn-copy-bg: #222736;
+            --btn-copy-text: #FFFFFF;
         }
 
         body.light-theme {
@@ -56,6 +68,18 @@
             --input-bg: #FAF8F5;
             --card-selected-bg: #F0F7FF;
             --checkbox-border: #CBD5E0;
+
+            --table-header: #E8E1D5;
+            --table-border: #E2DACB;
+            --table-alt-row: rgba(0, 0, 0, 0.015);
+            --table-footer-bg: #EDE3D1;
+            --row-prov-bg: #E2E8F0;
+            --row-prov-text: #1E3A8A;
+            --row-cat-bg: #EDF2F7;
+            --row-cat-text: #475569;
+            --shadow-color: rgba(0, 0, 0, 0.06);
+            --btn-copy-bg: #FFFFFF;
+            --btn-copy-text: #2D3748;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -75,8 +99,9 @@
         .header-card { background: linear-gradient(135deg, var(--header-grad-1) 0%, var(--header-grad-2) 100%); border: 1px solid var(--card-border); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
         .header-title { font-size: 18px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
         .header-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-        .stats-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
-        @media (max-width: 600px) { .stats-summary { grid-template-columns: repeat(2, 1fr); } }
+        .stats-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+        .stats-summary-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
+        @media (max-width: 600px) { .stats-summary, .stats-summary-4 { grid-template-columns: repeat(2, 1fr); } }
         .stat-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px; text-align: center; }
         .stat-num { font-size: 18px; font-weight: 800; }
         .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
@@ -88,14 +113,16 @@
         /* Controls & Filter Chips */
         .controls-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; margin-bottom: 14px; }
         .search-box { width: 100%; padding: 10px 14px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; color: var(--text-main); font-size: 13px; outline: none; margin-bottom: 10px; }
-        .filter-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+        .filter-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; flex-wrap: wrap; }
         .filter-row::-webkit-scrollbar { display: none; }
-        .chip { padding: 6px 12px; background: var(--chip-bg); border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; white-space: nowrap; }
+        .chip { padding: 6px 12px; background: var(--chip-bg); border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.15s ease; }
         .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .chip.active-warning { background: rgba(245, 166, 35, 0.15); color: var(--warning); border-color: var(--warning); }
         .quick-select-row { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-        .btn-select-action { padding: 6px 10px; background: var(--chip-bg); border: 1px solid var(--card-border); border-radius: 8px; font-size: 11px; font-weight: 700; color: var(--text-main); cursor: pointer; }
+        .btn-select-action { padding: 6px 10px; background: var(--chip-bg); border: 1px solid var(--card-border); border-radius: 8px; font-size: 11px; font-weight: 700; color: var(--text-main); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-select-action.active-warning { background: rgba(245, 166, 35, 0.2); color: var(--warning); border-color: var(--warning); }
 
-        /* Provider Section & Product Card */
+        /* Provider Section & Product Card (Tab 1) */
         .provider-section { margin-bottom: 20px; }
         .provider-header { font-size: 14px; font-weight: 800; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; padding-left: 2px; }
         .product-card { display: flex; align-items: center; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; gap: 10px; cursor: pointer; transition: all 0.15s; }
@@ -119,7 +146,7 @@
         .qty-btn { width: 30px; height: 30px; background: var(--stepper-btn-bg); color: var(--text-main); border: none; font-size: 15px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .qty-input { width: 38px; height: 30px; background: transparent; border: none; text-align: center; color: var(--text-main); font-size: 13px; font-weight: bold; outline: none; }
 
-        /* Bottom Bar */
+        /* Bottom Bar (Tab 1) */
         .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: var(--bottom-bar-bg); border-top: 1px solid var(--card-border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(12px); }
         .bottom-info { display: flex; flex-direction: column; }
         .selected-count { font-size: 13px; font-weight: 800; color: var(--text-main); }
@@ -129,7 +156,39 @@
         .btn-copy { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--card-border); }
         .btn-wa { background: #25D366; color: #FFFFFF; }
 
-        /* Tab 2 Audit Trail Table */
+        /* ==================== TAB 2: DAILY REPORT STYLES ==================== */
+        .daily-table-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; overflow: visible; box-shadow: 0 8px 24px var(--shadow-color); margin-bottom: 16px; }
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table.daily-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; white-space: nowrap; }
+        table.daily-table th { background: var(--table-header); color: var(--text-main); font-weight: 700; font-size: 11px; padding: 8px 6px; border-bottom: 2px solid var(--card-border); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+        table.daily-table th:first-child, table.daily-table td:first-child { min-width: 110px; max-width: 180px; width: auto; white-space: normal; word-break: break-word; }
+        table.daily-table th:not(:first-child), table.daily-table td:not(:first-child) { width: 1%; white-space: nowrap; padding: 6px 6px; }
+        @media (max-width: 600px) {
+            table.daily-table { font-size: 11px; }
+            table.daily-table th { padding: 6px 3px; font-size: 10px; }
+            table.daily-table td { padding: 6px 3px; }
+            table.daily-table th:first-child, table.daily-table td:first-child { min-width: 95px; max-width: 130px; font-size: 11px; }
+            table.daily-table th:not(:first-child), table.daily-table td:not(:first-child) { padding: 6px 3px; }
+        }
+        table.daily-table th.center, table.daily-table td.center { text-align: center; }
+        table.daily-table th.right, table.daily-table td.right { text-align: right; }
+        table.daily-table td { padding: 7px 6px; border-bottom: 1px solid var(--table-border); color: var(--text-main); }
+        table.daily-table tr:nth-child(even) { background: var(--table-alt-row); }
+        table.daily-table tr:hover { background: var(--card-selected-bg); }
+        .row-provider-header td { background: var(--row-prov-bg) !important; color: var(--row-prov-text) !important; font-weight: 700; font-size: 12px; padding: 10px 10px; border-top: 2px solid var(--card-border); border-bottom: 1px solid var(--card-border); letter-spacing: 0.5px; }
+        .row-category-header td { background: var(--row-cat-bg) !important; color: var(--row-cat-text) !important; font-weight: 600; font-size: 11px; padding: 6px 12px; }
+        .tag-baru { background: rgba(46, 204, 135, 0.2); color: var(--success); font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; margin-left: 4px; border: 1px solid rgba(46, 204, 135, 0.4); }
+        .strikethrough-del { text-decoration: line-through; color: var(--text-muted) !important; opacity: 0.7; }
+        .sold-val { color: var(--danger); font-weight: 700; }
+        .tts-speaking-row { background: rgba(43, 108, 176, 0.25) !important; outline: 2px solid var(--primary); transition: background 0.2s ease; }
+        .restock-val { color: var(--success); font-size: 10px; font-weight: 600; margin-left: 2px; }
+        .profit-pos { color: var(--success); font-weight: 600; }
+        .profit-neg { color: var(--danger); font-weight: 600; }
+        .demand-pill { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: rgba(245, 166, 35, 0.15); color: var(--warning); margin-left: 4px; border: 1px solid rgba(245, 166, 35, 0.3); }
+        .table-footer-grand { background: var(--table-footer-bg); border-top: 2px solid var(--primary); font-weight: 700; font-size: 12px; }
+        .table-footer-grand td { padding: 12px 8px; color: var(--text-main); }
+
+        /* Audit Trail Table */
         .audit-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
         .audit-table th { background: var(--card-border); padding: 10px; font-size: 11px; text-transform: uppercase; color: var(--text-muted); }
         .audit-table td { padding: 10px; border-bottom: 1px solid var(--card-border); }
@@ -140,6 +199,17 @@
         /* PIN Modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 999; display: flex; align-items: center; justify-content: center; padding: 16px; }
         .modal-card { background: #1E293B; border: 1px solid #334155; border-radius: 16px; max-width: 360px; width: 100%; padding: 24px; text-align: center; }
+
+        /* Print styles */
+        @media print {
+            body { background: #FFFFFF; color: #000000; padding-bottom: 0; }
+            .top-nav-bar, .controls-card, .bottom-bar, .modal-overlay, .toast, .btn-action, #auditTrailSection { display: none !important; }
+            #tabContentOrder { display: none !important; }
+            #tabContentDaily { display: block !important; }
+            .daily-table-card { border: 1px solid #CCCCCC; box-shadow: none; }
+            table.daily-table th { background: #EEEEEE; color: #000000; }
+            table.daily-table td { color: #000000; }
+        }
     </style>
 </head>
 <body>
@@ -151,8 +221,8 @@
                 <button class="nav-tab-btn active" id="tabBtnOrder" onclick="switchTab('order')">
                     🛒 Order Restock
                 </button>
-                <button class="nav-tab-btn" id="tabBtnAudit" onclick="switchTab('audit')">
-                    📊 Riwayat &amp; Laporan
+                <button class="nav-tab-btn" id="tabBtnDaily" onclick="switchTab('daily')">
+                    📊 Laporan Stok Harian
                 </button>
             </div>
 
@@ -179,17 +249,13 @@
     <div id="tabContentOrder" class="container">
         <!-- Header -->
         <div class="header-card">
-            <div class="header-title">
-                <span>⚡</span> Stock Monitor &amp; Restock Assistant
-            </div>
-            <div class="header-subtitle" id="orderHeaderSubtitle">
-                Live Data dari Supabase Cloud
-            </div>
+            <div class="header-title">📦 Monitoring Stok &amp; Restock</div>
+            <div class="header-subtitle">Centang voucher yang ingin direstock lalu kirimkan ke agen / sales via WhatsApp</div>
 
-            <div class="stats-summary">
+            <div class="stats-summary-4">
                 <div class="stat-box">
                     <div class="stat-num danger" id="statHabis">0</div>
-                    <div class="stat-label">Stok Habis</div>
+                    <div class="stat-label">Habis (0 pcs)</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-num warning" id="statMenipis">0</div>
@@ -249,34 +315,109 @@
         </div>
     </div>
 
-    <!-- ==================== TAB 2: AUDIT TRAIL / LAPORAN ==================== -->
-    <div id="tabContentAudit" class="container" style="display: none;">
+    <!-- ==================== TAB 2: LAPORAN STOK HARIAN ==================== -->
+    <div id="tabContentDaily" class="container" style="display: none;">
+        
+        <!-- Header Card -->
         <div class="header-card">
-            <div class="header-title">📊 Riwayat Perubahan Stok (Audit Trail)</div>
-            <div class="header-subtitle">Catatan perubahan stok dan harga otomatis yang dikirim dari kasir</div>
+            <div class="header-title">📊 Laporan Stok Harian</div>
+            <div class="header-subtitle" id="dailyReportDateTitle">📅 Tanggal: -</div>
+
+            <div class="stats-summary">
+                <div class="stat-box">
+                    <div class="stat-num danger" id="dailyTotalSold">0 pcs</div>
+                    <div class="stat-label">Total Terjual (Laku)</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num primary" id="dailyTotalRevenue">Rp 0</div>
+                    <div class="stat-label">Total Omset</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num success" id="dailyTotalProfit">Rp 0</div>
+                    <div class="stat-label">Total Keuntungan</div>
+                </div>
+            </div>
         </div>
 
+        <!-- Controls for Daily Report -->
         <div class="controls-card">
-            <input type="text" id="auditSearchInput" class="search-box" placeholder="🔍 Cari nama voucher di riwayat..." oninput="renderAuditTable()">
+            <input type="text" id="dailySearchInput" class="search-box" placeholder="🔍 Cari nama produk / provider di laporan harian..." oninput="renderDailyReportTable()">
+
+            <!-- Shift Filters -->
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 6px; margin-bottom: 4px;">PILIH SHIFT:</div>
+            <div class="filter-row" id="shiftFilterRow">
+                <div class="chip active" onclick="setDailyShift(0, this)">🌐 Semua Shift</div>
+                <div class="chip" onclick="setDailyShift(1, this)">☀️ Shift 1 (Pagi)</div>
+                <div class="chip" onclick="setDailyShift(2, this)">🌙 Shift 2 (Malam)</div>
+                <div class="chip" onclick="setDailyShift(4, this)">🔄 Rincian (P | M)</div>
+            </div>
+
+            <!-- Mode Filters -->
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 10px; margin-bottom: 4px;">OPSI TAMPILAN:</div>
+            <div class="filter-row">
+                <div class="chip active" id="chipDays1" onclick="setDailyDays(1, this)">1 Hari</div>
+                <div class="chip" id="chipDays2" onclick="setDailyDays(2, this)">2 Hari</div>
+                <div class="chip" id="chipDays3" onclick="setDailyDays(3, this)">3 Hari</div>
+                <div class="chip" id="chipProfitMode" onclick="toggleProfitMode(this)">💰 Mode Keuntungan</div>
+                <div class="chip active" id="chipHideZero" onclick="toggleHideZeroSell(this)">👁️ Sembunyikan 0 Laku</div>
+                <div class="chip" id="chipDailyProviderBadge" onclick="toggleProviderBadge(this)">🏷️ Badge Provider</div>
+                <div class="chip" id="chipToggleAudit" onclick="toggleAuditView(this)">📜 Riwayat Audit</div>
+            </div>
+
+            <!-- Single Day Date Selector (Khusus Mode 1 Hari) -->
+            <div id="singleDayPickerRow" style="display: flex; align-items: center; gap: 6px; margin-top: 10px; margin-bottom: 4px; flex-wrap: wrap;">
+                <span style="font-size: 11px; font-weight: 700; color: var(--primary);">PILIH TANGGAL:</span>
+                <div class="chip" id="chipSingleD1" onclick="setDailySingleDay(1, this)">📅 <span id="labelSingleD1">D-2</span></div>
+                <div class="chip" id="chipSingleD2" onclick="setDailySingleDay(2, this)">📅 <span id="labelSingleD2">Kemarin</span></div>
+                <div class="chip active" id="chipSingleD3" onclick="setDailySingleDay(3, this)">📅 <span id="labelSingleD3">Hari Ini</span></div>
+            </div>
+
+            <div class="quick-select-row">
+                <button class="btn-select-action" id="btnTtsDaily" onclick="speakStockReportTts()"><span id="ttsIcon">🔊</span> <span id="ttsBtnText">Bacakan Terjual (TTS)</span></button>
+                <button class="btn-select-action" id="btnTtsStock" onclick="speakRemainingStockTts()"><span id="ttsStockIcon">📢</span> <span id="ttsStockBtnText">Bacakan Sisa Stok</span></button>
+                <button class="btn-select-action" id="btnTtsSpeed" onclick="cycleTtsSpeed()">⚡ <span id="ttsSpeedLabel">1.5x</span></button>
+                <button class="btn-select-action" onclick="copyDailySummaryText()">📋 Salin Teks Rekap</button>
+                <button class="btn-select-action" onclick="window.print()">🖨️ Cetak / PDF</button>
+            </div>
         </div>
 
-        <div class="controls-card" style="padding: 0; overflow-x: auto;">
-            <table class="audit-table">
-                <thead>
-                    <tr>
-                        <th>Waktu (WIB)</th>
-                        <th>Perangkat</th>
-                        <th>Nama Voucher</th>
-                        <th>Perubahan Stok</th>
-                        <th>Perubahan Harga</th>
-                        <th>Keterangan</th>
-                    </tr>
-                </thead>
-                <tbody id="auditTableBody">
-                    <tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">Memuat riwayat...</td></tr>
-                </tbody>
-            </table>
+        <!-- Daily Report Table Card -->
+        <div class="daily-table-card">
+            <div class="table-responsive" id="dailyTableContainer">
+                <div style="text-align:center; padding: 40px; color: var(--text-muted);">Memuat laporan harian...</div>
+            </div>
         </div>
+
+        <!-- Collapsible Audit Trail Section (Riwayat Perubahan) -->
+        <div id="auditTrailSection" style="display: none; margin-top: 24px;">
+            <div class="header-card" style="margin-bottom: 12px;">
+                <div class="header-title">📜 Riwayat Perubahan Stok (Audit Trail)</div>
+                <div class="header-subtitle">Catatan perubahan stok dan harga otomatis yang dikirim dari kasir</div>
+            </div>
+
+            <div class="controls-card">
+                <input type="text" id="auditSearchInput" class="search-box" placeholder="🔍 Cari nama voucher di riwayat..." oninput="renderAuditTable()">
+            </div>
+
+            <div class="controls-card" style="padding: 0; overflow-x: auto;">
+                <table class="audit-table">
+                    <thead>
+                        <tr>
+                            <th>Waktu (WIB)</th>
+                            <th>Perangkat</th>
+                            <th>Nama Voucher</th>
+                            <th>Perubahan Stok</th>
+                            <th>Perubahan Harga</th>
+                            <th>Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditTableBody">
+                        <tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">Memuat riwayat...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
     <!-- Toast -->
@@ -310,12 +451,21 @@
     <script>
         let supabaseClient = null;
         let allVouchers = [];
+        let allDailyReports = new Map(); // device_id -> report_data
         let currentOrderFilterType = 'all';
         let currentTab = 'order';
+
+        // State Tab 2: Laporan Stok Harian
+        let dailyShift = 0; // 0: Semua, 1: Pagi, 2: Malam, 4: Rincian P|M
+        let dailyDaysMode = 1; // 1, 2, atau 3
+        let dailySingleDaySelected = 3; // 1: D1, 2: D2, 3: D3
+        let dailyProfitMode = false;
+        let dailyHideZeroSell = true;
 
         // 1. PIN & Initialization
         document.addEventListener('DOMContentLoaded', () => {
             initTheme();
+            initTts();
             const savedPin = localStorage.getItem('kspcheck_viewer_pin');
             if (savedPin) {
                 document.getElementById('pinInput').value = savedPin;
@@ -384,20 +534,26 @@
             document.getElementById('pinModal').style.display = 'flex';
         }
 
-        // 2. Fetch Data from Supabase
+        // 2. Fetch Data from Supabase (Vouchers Catalog & Daily Reports Snapshot)
         async function fetchVouchersFromSupabase() {
             if (!supabaseClient) return;
             showToast('🔄 Memperbarui data dari cloud...');
 
             try {
-                const { data, error } = await supabaseClient
-                    .from('vouchers')
-                    .select('*')
-                    .order('sort_order', { ascending: true });
+                // Fetch vouchers & daily_reports in parallel
+                const [vouchersRes, reportsRes] = await Promise.all([
+                    supabaseClient
+                        .from('vouchers')
+                        .select('*')
+                        .order('sort_order', { ascending: true }),
+                    supabaseClient
+                        .from('daily_reports')
+                        .select('*')
+                ]);
 
-                if (error) throw error;
+                if (vouchersRes.error) throw vouchersRes.error;
 
-                allVouchers = data || [];
+                allVouchers = vouchersRes.data || [];
                 // Sort by sort_order to match KSP Check exactly
                 allVouchers.sort((a, b) => {
                     let sA = (a.sort_order !== undefined && a.sort_order !== null && a.sort_order > 0) ? a.sort_order : 99999;
@@ -408,8 +564,20 @@
                     if (pA !== pB) return pA.localeCompare(pB);
                     return (a.product_name || '').localeCompare(b.product_name || '');
                 });
+
+                // Store daily reports per device
+                allDailyReports.clear();
+                if (reportsRes.data && Array.isArray(reportsRes.data)) {
+                    reportsRes.data.forEach(r => {
+                        if (r.device_id && r.report_data) {
+                            allDailyReports.set(r.device_id, r.report_data);
+                        }
+                    });
+                }
+
                 populateDeviceDropdown();
                 renderProductList();
+                initDailyReport();
                 renderAuditTable();
                 updateStatsSummary();
                 showToast('✅ Data berhasil diperbarui!');
@@ -432,6 +600,13 @@
                 }
             });
 
+            // Also check daily reports devices
+            allDailyReports.forEach((val, devId) => {
+                if (!devices.has(devId)) {
+                    devices.set(devId, devId);
+                }
+            });
+
             select.innerHTML = '<option value="all">📱 Semua Perangkat (' + devices.size + ')</option>';
             devices.forEach((name, id) => {
                 const opt = document.createElement('option');
@@ -445,11 +620,12 @@
 
         function onDeviceChange() {
             renderProductList();
+            initDailyReport();
             renderAuditTable();
             updateStatsSummary();
         }
 
-        // 4. Render Dynamic Product List (Tab 1)
+        // 4. Render Dynamic Product List (Tab 1: Order Restock)
         function renderProductList() {
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             const filtered = (selectedDevice === 'all')
@@ -518,17 +694,18 @@
                             </div>
                             <div class="product-meta">
                                 ${sisaHtml}
-                                <span class="reorder-tag-container">${badgeHtml}</span>
+                                <span>•</span>
+                                <span>Modal: Rp ${cost.toLocaleString('id-ID')}</span>
+                                <span>•</span>
+                                <span>Jual: Rp ${price.toLocaleString('id-ID')}</span>
+                                <div class="reorder-tag-container">${badgeHtml}</div>
                             </div>
                         </div>
 
                         <div class="qty-stepper" onclick="event.stopPropagation()">
-                            <button type="button" class="qty-btn" onclick="changeQty(event, this, -1)">-</button>
-                            <input type="number" class="qty-input" min="0" value="0" 
-                                   onclick="event.stopPropagation()" 
-                                   onchange="onQtyInputChange(event, this)" 
-                                   oninput="onQtyInputChange(event, this)">
-                            <button type="button" class="qty-btn" onclick="changeQty(event, this, 1)">+</button>
+                            <button class="qty-btn" onclick="changeQty(event, this, -1)">-</button>
+                            <input type="number" class="qty-input" value="0" min="0" oninput="onQtyInputChange(event, this)">
+                            <button class="qty-btn" onclick="changeQty(event, this, 1)">+</button>
                         </div>
                     </div>`;
                     idCounter++;
@@ -542,11 +719,11 @@
             updateSelectedCount();
         }
 
-        // 5. Card Selection & Quantity Steppers
+        // 5. Card Selection & Qty Stepper Logic
         function toggleSelectCard(card) {
             const isSelected = card.classList.contains('selected');
             const input = card.querySelector('.qty-input');
-            let currentQty = parseInt(card.getAttribute('data-qty') || '0');
+            let currentQty = parseInt(input.value || '0');
 
             if (!isSelected) {
                 card.classList.add('selected');
@@ -656,7 +833,7 @@
             document.getElementById('statAman').innerText = aman;
         }
 
-        // 6. Quick Select & Filters
+        // 6. Quick Select & Order Filters
         function autoFillByTargetDays(days) {
             const cards = document.querySelectorAll('.product-card');
             let filled = 0;
@@ -667,7 +844,6 @@
                 const limit = parseInt(card.getAttribute('data-limit') || '5');
                 const input = card.querySelector('.qty-input');
 
-                // Target stock estimate
                 let target = Math.max(limit, Math.ceil(limit * (days / 7)));
                 let needed = Math.max(0, target - stock);
 
@@ -734,7 +910,7 @@
         }
 
         function setOrderFilter(type, chipEl) {
-            document.querySelectorAll('.filter-row .chip').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('#tabContentOrder .filter-row .chip').forEach(c => c.classList.remove('active'));
             if (chipEl) chipEl.classList.add('active');
             currentOrderFilterType = type;
             filterOrderProducts();
@@ -773,10 +949,15 @@
 
         function toggleProviderBadge(btn) {
             document.body.classList.toggle('hide-provider-badge');
-            btn.classList.toggle('active');
+            if (btn) btn.classList.toggle('active');
+            const chip1 = document.getElementById('chipProviderBadge');
+            const chip2 = document.getElementById('chipDailyProviderBadge');
+            const isHidden = document.body.classList.contains('hide-provider-badge');
+            if (chip1) chip1.classList.toggle('active', !isHidden);
+            if (chip2) chip2.classList.toggle('active', !isHidden);
         }
 
-        // 7. WhatsApp Text Formatting
+        // 7. WhatsApp Text Formatting (Tab 1: Order Restock)
         function generateWaText() {
             const selectedCards = document.querySelectorAll('.product-card.selected');
             if (selectedCards.length === 0) return '';
@@ -824,11 +1005,7 @@
                 showToast('Pilih minimal 1 produk dengan quantity > 0');
                 return;
             }
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('✅ Teks order restock berhasil disalin!');
-            }).catch(e => {
-                prompt('Salin teks order:', text);
-            });
+            copyToClipboard(text, '✅ Teks order restock berhasil disalin!');
         }
 
         function sendToWa() {
@@ -841,11 +1018,661 @@
             window.open(url, '_blank');
         }
 
-        // 8. Tab 2: Audit Trail Table
+        // ==================== 8. TAB 2: LAPORAN STOK HARIAN (KSP CHECK ENGINE) ====================
+        function initDailyReport() {
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            let reportData = null;
+
+            if (selectedDevice !== 'all' && allDailyReports.has(selectedDevice)) {
+                reportData = allDailyReports.get(selectedDevice);
+            } else if (allDailyReports.size > 0) {
+                if (allDailyReports.size === 1) {
+                    reportData = allDailyReports.values().next().value;
+                } else {
+                    reportData = mergeDailyReports(Array.from(allDailyReports.values()));
+                }
+            }
+
+            // Fallback: If no daily report snapshot in Supabase yet, synthesize from allVouchers!
+            if (!reportData) {
+                reportData = buildFallbackDailyReportData();
+            }
+
+            window.DAILY_REPORT_DATA = reportData;
+
+            const titleEl = document.getElementById('dailyReportDateTitle');
+            if (titleEl && reportData && reportData.displayDate) {
+                titleEl.innerText = '📅 ' + reportData.displayDate;
+            }
+
+            if (reportData && reportData.filters) {
+                if (reportData.filters.shift !== undefined) dailyShift = reportData.filters.shift;
+                if (reportData.filters.daysMode !== undefined) dailyDaysMode = reportData.filters.daysMode;
+                if (reportData.filters.profitMode !== undefined) dailyProfitMode = !!reportData.filters.profitMode;
+                if (reportData.filters.hideZeroSell !== undefined) dailyHideZeroSell = !!reportData.filters.hideZeroSell;
+            }
+
+            updateDailyFilterUI();
+            renderDailyReportTable();
+        }
+
+        function buildFallbackDailyReportData() {
+            const now = new Date();
+            const d3 = new Date(now);
+            const d2 = new Date(now); d2.setDate(d2.getDate() - 1);
+            const d1 = new Date(now); d1.setDate(d1.getDate() - 2);
+
+            const optIndo = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+            const optShort = { day: 'numeric', month: 'short' };
+
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const filtered = (selectedDevice === 'all')
+                ? allVouchers
+                : allVouchers.filter(v => v.device_id === selectedDevice);
+
+            // Group items by provider
+            const items = [];
+            let curProv = null;
+            let curCat = null;
+
+            filtered.forEach(v => {
+                const prov = v.provider_name || 'Lainnya';
+                const cat = v.category_name || 'Umum';
+
+                if (curProv !== prov) {
+                    items.push({ type: 'header', providerName: prov });
+                    curProv = prov;
+                    curCat = null;
+                }
+                if (curCat !== cat) {
+                    items.push({ type: 'category', categoryName: cat });
+                    curCat = cat;
+                }
+
+                items.push({
+                    type: 'product',
+                    productId: v.product_id,
+                    productName: v.product_name,
+                    providerName: prov,
+                    categoryName: cat,
+                    currentStock: parseInt(v.stock || 0),
+                    lowStockThreshold: parseInt(v.min_limit || 5),
+                    isActive: true,
+                    price: String(v.sell_price || 0),
+                    cost: String(v.cost_price || 0),
+                    soldD1Total: 0, soldD1Pagi: 0, soldD1Malam: 0, addedD1: 0, restockedD1: 0,
+                    soldD2Total: 0, soldD2Pagi: 0, soldD2Malam: 0, addedD2: 0, restockedD2: 0,
+                    soldD3Total: 0, soldD3Pagi: 0, soldD3Malam: 0, addedD3: 0, restockedD3: 0,
+                    soldAfter: 0, addedAfter: 0,
+                    isNew: false, isDeleted: false,
+                    demandDaily: 0, suggestedOrder: 0
+                });
+            });
+
+            return {
+                dateStr: d3.toISOString().split('T')[0],
+                displayDate: d3.toLocaleDateString('id-ID', optIndo),
+                d1Date: d1.toLocaleDateString('id-ID', optShort),
+                d2Date: d2.toLocaleDateString('id-ID', optShort),
+                d3Date: d3.toLocaleDateString('id-ID', optShort),
+                filters: { shift: 0, daysMode: 1, profitMode: false, hideZeroSell: false },
+                items: items
+            };
+        }
+
+        function mergeDailyReports(reports) {
+            if (!reports || reports.length === 0) return buildFallbackDailyReportData();
+            if (reports.length === 1) return reports[0];
+
+            // Use first report as base for dates and filters
+            const base = JSON.parse(JSON.stringify(reports[0]));
+            const productMap = new Map();
+
+            (base.items || []).forEach(it => {
+                if (it.type === 'product' && it.productName) {
+                    productMap.set(it.productName, it);
+                }
+            });
+
+            for (let i = 1; i < reports.length; i++) {
+                const rep = reports[i];
+                (rep.items || []).forEach(it => {
+                    if (it.type === 'product' && it.productName) {
+                        if (productMap.has(it.productName)) {
+                            const p = productMap.get(it.productName);
+                            p.currentStock = (p.currentStock || 0) + (it.currentStock || 0);
+                            p.soldD1Total = (p.soldD1Total || 0) + (it.soldD1Total || 0);
+                            p.soldD1Pagi = (p.soldD1Pagi || 0) + (it.soldD1Pagi || 0);
+                            p.soldD1Malam = (p.soldD1Malam || 0) + (it.soldD1Malam || 0);
+                            p.addedD1 = (p.addedD1 || 0) + (it.addedD1 || 0);
+
+                            p.soldD2Total = (p.soldD2Total || 0) + (it.soldD2Total || 0);
+                            p.soldD2Pagi = (p.soldD2Pagi || 0) + (it.soldD2Pagi || 0);
+                            p.soldD2Malam = (p.soldD2Malam || 0) + (it.soldD2Malam || 0);
+                            p.addedD2 = (p.addedD2 || 0) + (it.addedD2 || 0);
+
+                            p.soldD3Total = (p.soldD3Total || 0) + (it.soldD3Total || 0);
+                            p.soldD3Pagi = (p.soldD3Pagi || 0) + (it.soldD3Pagi || 0);
+                            p.soldD3Malam = (p.soldD3Malam || 0) + (it.soldD3Malam || 0);
+                            p.addedD3 = (p.addedD3 || 0) + (it.addedD3 || 0);
+                        } else {
+                            base.items.push(it);
+                            productMap.set(it.productName, it);
+                        }
+                    }
+                });
+            }
+
+            return base;
+        }
+
+        function updateDailyFilterUI() {
+            // Update shift chips
+            const shiftChips = document.querySelectorAll('#shiftFilterRow .chip');
+            const shiftMap = [0, 1, 2, 4];
+            shiftChips.forEach((chip, index) => {
+                if (shiftMap[index] === dailyShift) chip.classList.add('active');
+                else chip.classList.remove('active');
+            });
+
+            // Update days chips
+            document.querySelectorAll('#chipDays1, #chipDays2, #chipDays3').forEach(c => c.classList.remove('active'));
+            if (dailyDaysMode === 1) document.getElementById('chipDays1')?.classList.add('active');
+            else if (dailyDaysMode === 2) document.getElementById('chipDays2')?.classList.add('active');
+            else if (dailyDaysMode === 3) document.getElementById('chipDays3')?.classList.add('active');
+
+            // Update single day date selector chips and visibility
+            const singlePicker = document.getElementById('singleDayPickerRow');
+            if (singlePicker) {
+                singlePicker.style.display = (dailyDaysMode === 1) ? 'flex' : 'none';
+            }
+            document.querySelectorAll('#singleDayPickerRow .chip').forEach(c => c.classList.remove('active'));
+            if (dailySingleDaySelected === 1) document.getElementById('chipSingleD1')?.classList.add('active');
+            else if (dailySingleDaySelected === 2) document.getElementById('chipSingleD2')?.classList.add('active');
+            else document.getElementById('chipSingleD3')?.classList.add('active');
+
+            const data = window.DAILY_REPORT_DATA;
+            if (data) {
+                if (data.d1Date && document.getElementById('labelSingleD1')) document.getElementById('labelSingleD1').innerText = data.d1Date;
+                if (data.d2Date && document.getElementById('labelSingleD2')) document.getElementById('labelSingleD2').innerText = data.d2Date;
+                if (data.d3Date && document.getElementById('labelSingleD3')) document.getElementById('labelSingleD3').innerText = data.d3Date + ' (Hari Ini)';
+            }
+
+            // Update profit mode chip
+            const profitChip = document.getElementById('chipProfitMode');
+            if (profitChip) {
+                if (dailyProfitMode) profitChip.classList.add('active-warning');
+                else profitChip.classList.remove('active-warning');
+            }
+
+            // Update hide zero sell chip
+            const hideZeroChip = document.getElementById('chipHideZero');
+            if (hideZeroChip) {
+                if (dailyHideZeroSell) hideZeroChip.classList.add('active');
+                else hideZeroChip.classList.remove('active');
+            }
+        }
+
+        function setDailyShift(shift, el) {
+            dailyShift = shift;
+            document.querySelectorAll('#shiftFilterRow .chip').forEach(c => c.classList.remove('active'));
+            if (el) el.classList.add('active');
+            renderDailyReportTable();
+        }
+
+        function setDailyDays(days, el) {
+            dailyDaysMode = days;
+            document.querySelectorAll('#chipDays1, #chipDays2, #chipDays3').forEach(c => c.classList.remove('active'));
+            if (el) el.classList.add('active');
+
+            const singlePicker = document.getElementById('singleDayPickerRow');
+            if (singlePicker) {
+                singlePicker.style.display = (dailyDaysMode === 1) ? 'flex' : 'none';
+            }
+            renderDailyReportTable();
+        }
+
+        function setDailySingleDay(day, el) {
+            dailySingleDaySelected = day;
+            document.querySelectorAll('#singleDayPickerRow .chip').forEach(c => c.classList.remove('active'));
+            if (el) el.classList.add('active');
+            renderDailyReportTable();
+        }
+
+        function toggleProfitMode(el) {
+            dailyProfitMode = !dailyProfitMode;
+            if (dailyProfitMode) el.classList.add('active-warning');
+            else el.classList.remove('active-warning');
+            renderDailyReportTable();
+        }
+
+        function toggleHideZeroSell(el) {
+            dailyHideZeroSell = !dailyHideZeroSell;
+            if (dailyHideZeroSell) el.classList.add('active');
+            else el.classList.remove('active');
+            renderDailyReportTable();
+        }
+
+        function renderDailyReportTable() {
+            const container = document.getElementById('dailyTableContainer');
+            if (!container) return;
+
+            const data = window.DAILY_REPORT_DATA;
+            if (!data || !data.items || data.items.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--text-muted);">Tidak ada data laporan harian</div>';
+                return;
+            }
+
+            const search = (document.getElementById('dailySearchInput')?.value || '').toLowerCase();
+            const d1DateStr = data.d1Date || 'D-2';
+            const d2DateStr = data.d2Date || 'D-1';
+            const d3DateStr = data.d3Date || 'Hari Ini';
+
+            const selDay = dailySingleDaySelected || 3;
+            const selDateStr = (selDay === 1 ? d1DateStr : (selDay === 2 ? d2DateStr : d3DateStr));
+
+            const dateTitleEl = document.getElementById('dailyReportDateTitle');
+            if (dateTitleEl) {
+                if (dailyDaysMode === 1) {
+                    dateTitleEl.innerText = '📅 Tanggal: ' + selDateStr;
+                } else if (dailyDaysMode === 2) {
+                    dateTitleEl.innerText = '📅 Tanggal: ' + d2DateStr + ' - ' + d3DateStr + ' (' + (data.displayDate || '') + ')';
+                } else {
+                    dateTitleEl.innerText = '📅 Tanggal: ' + d1DateStr + ' - ' + d3DateStr + ' (' + (data.displayDate || '') + ')';
+                }
+            }
+
+            let items = data.items;
+
+            let lakuLabelD1 = 'LAKU ' + d1DateStr;
+            let lakuLabelD2 = 'LAKU ' + d2DateStr;
+            let lakuLabelD3 = 'LAKU ' + d3DateStr;
+            let lakuLabelSel = 'LAKU';
+            if (dailyShift === 1) {
+                lakuLabelD1 = 'LAKU ' + d1DateStr + ' (P)';
+                lakuLabelD2 = 'LAKU ' + d2DateStr + ' (P)';
+                lakuLabelD3 = 'LAKU ' + d3DateStr + ' (P)';
+                lakuLabelSel = 'LAKU (P)';
+            } else if (dailyShift === 2) {
+                lakuLabelD1 = 'LAKU ' + d1DateStr + ' (M)';
+                lakuLabelD2 = 'LAKU ' + d2DateStr + ' (M)';
+                lakuLabelD3 = 'LAKU ' + d3DateStr + ' (M)';
+                lakuLabelSel = 'LAKU (M)';
+            } else if (dailyShift === 4) {
+                lakuLabelD1 = 'LAKU ' + d1DateStr + ' (P|M)';
+                lakuLabelD2 = 'LAKU ' + d2DateStr + ' (P|M)';
+                lakuLabelD3 = 'LAKU ' + d3DateStr + ' (P|M)';
+                lakuLabelSel = 'LAKU (P|M)';
+            }
+
+            let totalGrandSold = 0;
+            let totalGrandRevenue = 0;
+            let totalGrandProfit = 0;
+
+            let html = '<table class="daily-table">';
+            html += '<thead><tr>';
+            html += '<th>PRODUK</th>';
+
+            if (dailyProfitMode) {
+                html += '<th class="right">HARGA</th>';
+                html += '<th class="right">MODAL</th>';
+                html += '<th class="right">MARGIN</th>';
+                if (dailyDaysMode === 1) {
+                    html += '<th class="center">' + lakuLabelSel + '</th>';
+                } else {
+                    html += '<th class="center">TOTAL LAKU (' + dailyDaysMode + ' HARI)</th>';
+                }
+                html += '<th class="right">OMSET</th>';
+                html += '<th class="right">PROFIT</th>';
+            } else {
+                html += '<th class="right">HARGA</th>';
+
+                if (dailyDaysMode === 1) {
+                    html += '<th class="center">STOK</th>';
+                    html += '<th class="center">' + lakuLabelSel + '</th>';
+                    html += '<th class="center">SISA</th>';
+                    html += '<th class="right">OMSET</th>';
+                } else {
+                    if (dailyDaysMode === 3) {
+                        html += '<th class="center">STOK ' + d1DateStr + '</th>';
+                        html += '<th class="center">' + lakuLabelD1 + '</th>';
+                    }
+                    if (dailyDaysMode >= 2) {
+                        html += '<th class="center">STOK ' + d2DateStr + '</th>';
+                        html += '<th class="center">' + lakuLabelD2 + '</th>';
+                    }
+                    html += '<th class="center">STOK ' + d3DateStr + '</th>';
+                    html += '<th class="center">' + lakuLabelD3 + '</th>';
+                    html += '<th class="center">SISA</th>';
+                    html += '<th class="right">OMSET</th>';
+                }
+            }
+            html += '</tr></thead><tbody>';
+
+            let currentProvName = '';
+            let currentCatName = '';
+            let visibleRows = 0;
+
+            for (let i = 0; i < items.length; i++) {
+                let item = items[i];
+
+                if (item.type === 'header') {
+                    currentProvName = item.providerName;
+                    html += '<tr class="row-provider-header"><td colspan="15">📦 ' + escapeHtml(currentProvName) + '</td></tr>';
+                    continue;
+                }
+
+                if (item.type === 'category') {
+                    currentCatName = item.categoryName;
+                    html += '<tr class="row-category-header"><td colspan="15">📁 ' + escapeHtml(currentCatName) + '</td></tr>';
+                    continue;
+                }
+
+                if (item.type === 'product') {
+                    let prodName = (item.productName || '').toLowerCase();
+                    let provName = (item.providerName || currentProvName || '').toLowerCase();
+                    if (search && !prodName.includes(search) && !provName.includes(search)) {
+                        continue;
+                    }
+
+                    let currentStock = item.currentStock || 0;
+                    let soldAfter = item.soldAfter || 0;
+                    let addedAfter = item.addedAfter || 0;
+                    let stockAkhir = currentStock + soldAfter - addedAfter;
+
+                    let soldD1Total = item.soldD1Total || 0;
+                    let soldD1Pagi = item.soldD1Pagi || 0;
+                    let soldD1Malam = item.soldD1Malam || 0;
+                    let addedD1 = (item.addedD1 || 0) + (item.restockedD1 || 0);
+
+                    let soldD2Total = item.soldD2Total || 0;
+                    let soldD2Pagi = item.soldD2Pagi || 0;
+                    let soldD2Malam = item.soldD2Malam || 0;
+                    let addedD2 = (item.addedD2 || 0) + (item.restockedD2 || 0);
+
+                    let soldD3Total = item.soldD3Total || 0;
+                    let soldD3Pagi = item.soldD3Pagi || 0;
+                    let soldD3Malam = item.soldD3Malam || 0;
+                    let addedD3 = (item.addedD3 || 0) + (item.restockedD3 || 0);
+
+                    let activeSoldD1 = (dailyShift === 1 ? soldD1Pagi : (dailyShift === 2 ? soldD1Malam : soldD1Total));
+                    let activeSoldD2 = (dailyShift === 1 ? soldD2Pagi : (dailyShift === 2 ? soldD2Malam : soldD2Total));
+                    let activeSoldD3 = (dailyShift === 1 ? soldD3Pagi : (dailyShift === 2 ? soldD3Malam : soldD3Total));
+
+                    // Backward stock calculation from Sisa Akhir
+                    let d3Awal = stockAkhir + soldD3Total - addedD3;
+                    let d2Awal = d3Awal + soldD2Total - addedD2;
+                    let d1Awal = d2Awal + soldD1Total - addedD1;
+
+                    let singleStokAwal = d3Awal;
+                    let singleAdded = addedD3;
+                    let singleSold = activeSoldD3;
+                    let singleSoldPagi = soldD3Pagi;
+                    let singleSoldMalam = soldD3Malam;
+                    let singleSisa = stockAkhir;
+
+                    if (selDay === 1) {
+                        singleStokAwal = d1Awal;
+                        singleAdded = addedD1;
+                        singleSold = activeSoldD1;
+                        singleSoldPagi = soldD1Pagi;
+                        singleSoldMalam = soldD1Malam;
+                        singleSisa = d1Awal + addedD1 - soldD1Total;
+                    } else if (selDay === 2) {
+                        singleStokAwal = d2Awal;
+                        singleAdded = addedD2;
+                        singleSold = activeSoldD2;
+                        singleSoldPagi = soldD2Pagi;
+                        singleSoldMalam = soldD2Malam;
+                        singleSisa = d2Awal + addedD2 - soldD2Total;
+                    }
+
+                    let totalPeriodSold = singleSold;
+                    if (dailyDaysMode === 2) totalPeriodSold = activeSoldD2 + activeSoldD3;
+                    if (dailyDaysMode === 3) totalPeriodSold = activeSoldD1 + activeSoldD2 + activeSoldD3;
+
+                    if (dailyHideZeroSell && totalPeriodSold === 0 && !item.isNew && !item.isDeleted) {
+                        continue;
+                    }
+
+                    visibleRows++;
+
+                    let price = parseLong(item.price);
+                    let cost = parseLong(item.cost);
+                    let margin = price - cost;
+                    let revenue = price * totalPeriodSold;
+                    let profit = margin * totalPeriodSold;
+
+                    totalGrandSold += totalPeriodSold;
+                    totalGrandRevenue += revenue;
+                    totalGrandProfit += profit;
+
+                    let nameClass = item.isDeleted ? 'strikethrough-del' : '';
+                    let newBadge = item.isNew ? '<span class="tag-baru">Baru</span>' : '';
+                    let delBadge = item.isDeleted ? ' <span style="color:var(--danger); font-size:10px; font-weight:bold;">[Dihapus]</span>' : '';
+                    let provPillHtml = (item.providerName || currentProvName) ? ('<span class="prov-pill">' + escapeHtml(item.providerName || currentProvName) + '</span> ') : '';
+                    let demandPillHtml = (item.demandDaily > 0) ? ('<span class="demand-pill" title="Demand 30h berbobot: ' + item.demandDaily + '/hr">⚡ ' + item.demandDaily + '/hr</span>') : '';
+
+                    html += '<tr>';
+                    html += '<td class="' + nameClass + '">' + provPillHtml + '<b>' + escapeHtml(item.productName) + '</b>' + newBadge + delBadge + ' ' + demandPillHtml + '</td>';
+
+                    if (dailyProfitMode) {
+                        html += '<td class="right ' + nameClass + '">' + formatK(price) + '</td>';
+                        html += '<td class="right ' + nameClass + '">' + formatK(cost) + '</td>';
+                        html += '<td class="right ' + (margin >= 0 ? 'profit-pos' : 'profit-neg') + ' ' + nameClass + '">' + (margin >= 0 ? '+' : '') + formatK(margin) + '</td>';
+                        if (dailyDaysMode > 1) {
+                            html += '<td class="center ' + nameClass + '"><b>' + totalPeriodSold + '</b></td>';
+                        } else {
+                            if (dailyShift === 4) {
+                                let p1 = singleSoldPagi > 0 ? ('<span class="sold-val">' + singleSoldPagi + '</span>') : '0';
+                                let m1 = singleSoldMalam > 0 ? ('<span class="sold-val">' + singleSoldMalam + '</span>') : '0';
+                                html += '<td class="center ' + nameClass + '">' + p1 + ' | ' + m1 + '</td>';
+                            } else {
+                                let l1 = (singleSold > 0) ? ('<span class="sold-val">' + singleSold + '</span>') : '0';
+                                html += '<td class="center ' + nameClass + '">' + l1 + '</td>';
+                            }
+                        }
+                        html += '<td class="right ' + nameClass + '"><b>' + formatK(revenue) + '</b></td>';
+                        html += '<td class="right ' + (profit >= 0 ? 'profit-pos' : 'profit-neg') + ' ' + nameClass + '"><b>' + (profit >= 0 ? '+' : '') + formatK(profit) + '</b></td>';
+                    } else {
+                        html += '<td class="right ' + nameClass + '">' + formatK(price) + '</td>';
+
+                        if (dailyDaysMode === 1) {
+                            let addSingle = (singleAdded > 0) ? '<span class="restock-val">+' + singleAdded + '</span>' : '';
+                            html += '<td class="center ' + nameClass + '">' + singleStokAwal + addSingle + '</td>';
+                            if (dailyShift === 4) {
+                                let p1 = singleSoldPagi > 0 ? ('<span class="sold-val">' + singleSoldPagi + '</span>') : '0';
+                                let m1 = singleSoldMalam > 0 ? ('<span class="sold-val">' + singleSoldMalam + '</span>') : '0';
+                                html += '<td class="center ' + nameClass + '">' + p1 + ' | ' + m1 + '</td>';
+                            } else {
+                                let l1 = (singleSold > 0) ? ('<span class="sold-val">' + singleSold + '</span>') : '0';
+                                html += '<td class="center ' + nameClass + '">' + l1 + '</td>';
+                            }
+                            html += '<td class="center ' + nameClass + '"><b>' + singleSisa + '</b></td>';
+                            html += '<td class="right ' + nameClass + '"><b>' + formatK(revenue) + '</b></td>';
+                        } else {
+                            if (dailyDaysMode === 3) {
+                                let add1 = (addedD1 > 0) ? '<span class="restock-val">+' + addedD1 + '</span>' : '';
+                                html += '<td class="center ' + nameClass + '">' + d1Awal + add1 + '</td>';
+                                if (dailyShift === 4) {
+                                    let pagi1 = soldD1Pagi > 0 ? ('<span class="sold-val">' + soldD1Pagi + '</span>') : '0';
+                                    let malam1 = soldD1Malam > 0 ? ('<span class="sold-val">' + soldD1Malam + '</span>') : '0';
+                                    html += '<td class="center ' + nameClass + '">' + pagi1 + ' | ' + malam1 + '</td>';
+                                } else {
+                                    let laku1 = (activeSoldD1 > 0) ? ('<span class="sold-val">' + activeSoldD1 + '</span>') : '0';
+                                    html += '<td class="center ' + nameClass + '">' + laku1 + '</td>';
+                                }
+                            }
+
+                            if (dailyDaysMode >= 2) {
+                                let add2 = (addedD2 > 0) ? '<span class="restock-val">+' + addedD2 + '</span>' : '';
+                                html += '<td class="center ' + nameClass + '">' + d2Awal + add2 + '</td>';
+                                if (dailyShift === 4) {
+                                    let pagi2 = soldD2Pagi > 0 ? ('<span class="sold-val">' + soldD2Pagi + '</span>') : '0';
+                                    let malam2 = soldD2Malam > 0 ? ('<span class="sold-val">' + soldD2Malam + '</span>') : '0';
+                                    html += '<td class="center ' + nameClass + '">' + pagi2 + ' | ' + malam2 + '</td>';
+                                } else {
+                                    let laku2 = (activeSoldD2 > 0) ? ('<span class="sold-val">' + activeSoldD2 + '</span>') : '0';
+                                    html += '<td class="center ' + nameClass + '">' + laku2 + '</td>';
+                                }
+                            }
+
+                            let add3 = (addedD3 > 0) ? '<span class="restock-val">+' + addedD3 + '</span>' : '';
+                            html += '<td class="center ' + nameClass + '">' + d3Awal + add3 + '</td>';
+                            if (dailyShift === 4) {
+                                let pagi3 = soldD3Pagi > 0 ? ('<span class="sold-val">' + soldD3Pagi + '</span>') : '0';
+                                let malam3 = soldD3Malam > 0 ? ('<span class="sold-val">' + soldD3Malam + '</span>') : '0';
+                                html += '<td class="center ' + nameClass + '">' + pagi3 + ' | ' + malam3 + '</td>';
+                            } else {
+                                let laku3 = (activeSoldD3 > 0) ? ('<span class="sold-val">' + activeSoldD3 + '</span>') : '0';
+                                html += '<td class="center ' + nameClass + '">' + laku3 + '</td>';
+                            }
+
+                            html += '<td class="center ' + nameClass + '"><b>' + stockAkhir + '</b></td>';
+                            html += '<td class="right ' + nameClass + '"><b>' + formatK(revenue) + '</b></td>';
+                        }
+                    }
+
+                    html += '</tr>';
+                }
+            }
+
+            let colSpanBefore = dailyProfitMode ? 4 : 2;
+            html += '<tr class="table-footer-grand">';
+            html += '<td colspan="' + colSpanBefore + '">GRAND TOTAL (' + visibleRows + ' Produk)</td>';
+            if (dailyDaysMode === 3 && !dailyProfitMode) html += '<td></td><td></td>';
+            if (dailyDaysMode >= 2 && !dailyProfitMode) html += '<td></td><td></td>';
+            if (!dailyProfitMode) html += '<td></td>';
+            html += '<td class="center" style="color:var(--danger);">' + totalGrandSold + ' pcs</td>';
+            if (!dailyProfitMode) html += '<td></td>';
+            html += '<td class="right" style="color:var(--primary);">' + formatRupiah(totalGrandRevenue) + '</td>';
+            if (dailyProfitMode) {
+                html += '<td class="right" style="color:var(--success);">' + formatRupiah(totalGrandProfit) + '</td>';
+            }
+            html += '</tr>';
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+
+            document.getElementById('dailyTotalSold').innerText = totalGrandSold + ' pcs';
+            document.getElementById('dailyTotalRevenue').innerText = formatRupiah(totalGrandRevenue);
+            document.getElementById('dailyTotalProfit').innerText = formatRupiah(totalGrandProfit);
+        }
+
+        function copyDailySummaryText() {
+            const data = window.DAILY_REPORT_DATA;
+            if (!data) return;
+
+            const d1DateStr = data.d1Date || 'D-2';
+            const d2DateStr = data.d2Date || 'D-1';
+            const d3DateStr = data.d3Date || 'Hari Ini';
+
+            const selDay = dailySingleDaySelected || 3;
+            const selDateStr = (selDay === 1 ? d1DateStr : (selDay === 2 ? d2DateStr : d3DateStr));
+
+            let dateHeaderStr = selDateStr;
+            if (dailyDaysMode === 2) dateHeaderStr = d2DateStr + ' - ' + d3DateStr + ' (' + (data.displayDate || '') + ')';
+            if (dailyDaysMode === 3) dateHeaderStr = d1DateStr + ' - ' + d3DateStr + ' (' + (data.displayDate || '') + ')';
+
+            let items = data.items || [];
+
+            let shiftStr = 'Semua Shift';
+            if (dailyShift === 1) shiftStr = 'Shift 1 (Pagi)';
+            else if (dailyShift === 2) shiftStr = 'Shift 2 (Malam)';
+            else if (dailyShift === 4) shiftStr = 'Rincian Shift (P|M)';
+
+            let sb = '📊 *REKAP LAPORAN STOK HARIAN*\n';
+            sb += '📅 ' + dateHeaderStr + '\n';
+            sb += '⏱️ Shift: ' + shiftStr + '\n';
+            sb += '━━━━━━━━━━━━━━━━━━━━\n';
+
+            let totalSold = 0;
+            let totalRev = 0;
+            let totalProf = 0;
+
+            let provGroups = {};
+            let currentProv = 'Lainnya';
+
+            for (let i = 0; i < items.length; i++) {
+                let it = items[i];
+                if (it.type === 'header') {
+                    currentProv = it.providerName || 'Lainnya';
+                    continue;
+                }
+                if (it.type === 'product') {
+                    let soldD1 = (dailyShift === 1 ? it.soldD1Pagi : (dailyShift === 2 ? it.soldD1Malam : it.soldD1Total)) || 0;
+                    let soldD2 = (dailyShift === 1 ? it.soldD2Pagi : (dailyShift === 2 ? it.soldD2Malam : it.soldD2Total)) || 0;
+                    let soldD3 = (dailyShift === 1 ? it.soldD3Pagi : (dailyShift === 2 ? it.soldD3Malam : it.soldD3Total)) || 0;
+
+                    let sold = soldD3;
+                    if (dailyDaysMode === 1) {
+                        if (selDay === 1) sold = soldD1;
+                        else if (selDay === 2) sold = soldD2;
+                        else sold = soldD3;
+                    } else if (dailyDaysMode === 2) {
+                        sold = soldD2 + soldD3;
+                    } else if (dailyDaysMode === 3) {
+                        sold = soldD1 + soldD2 + soldD3;
+                    }
+
+                    if (sold === 0 && dailyHideZeroSell) continue;
+
+                    let price = parseLong(it.price);
+                    let cost = parseLong(it.cost);
+                    let rev = price * sold;
+                    let prof = (price - cost) * sold;
+
+                    totalSold += sold;
+                    totalRev += rev;
+                    totalProf += prof;
+
+                    if (!provGroups[currentProv]) {
+                        provGroups[currentProv] = [];
+                    }
+                    provGroups[currentProv].push({
+                        name: it.productName,
+                        sold: sold,
+                        rev: rev
+                    });
+                }
+            }
+
+            for (let prov in provGroups) {
+                let prods = provGroups[prov];
+                if (prods && prods.length > 0) {
+                    sb += '\n🔹 *' + prov + '*\n';
+                    for (let j = 0; j < prods.length; j++) {
+                        sb += '  • ' + prods[j].name + ': ' + prods[j].sold + ' pcs (' + formatK(prods[j].rev) + ')\n';
+                    }
+                }
+            }
+
+            sb += '\n━━━━━━━━━━━━━━━━━━━━\n';
+            sb += '📦 Total Terjual: *' + totalSold + ' pcs*\n';
+            sb += '💵 Total Omset: *' + formatRupiah(totalRev) + '*\n';
+            sb += '📈 Total Keuntungan: *' + formatRupiah(totalProf) + '*\n';
+
+            copyToClipboard(sb.trim(), '✓ Teks rekap laporan harian berhasil disalin!');
+        }
+
+        // ==================== 9. TAB 2 SUB-VIEW: AUDIT TRAIL TABLE ====================
+        function toggleAuditView(btn) {
+            const sec = document.getElementById('auditTrailSection');
+            if (!sec) return;
+            const isHidden = (sec.style.display === 'none' || !sec.style.display);
+            sec.style.display = isHidden ? 'block' : 'none';
+            if (btn) btn.classList.toggle('active', isHidden);
+            if (isHidden) {
+                renderAuditTable();
+                sec.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
         function renderAuditTable() {
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             const search = (document.getElementById('auditSearchInput')?.value || '').toLowerCase();
             const tbody = document.getElementById('auditTableBody');
+            if (!tbody) return;
 
             let allLogs = [];
             allVouchers.forEach(v => {
@@ -868,7 +1695,6 @@
                 }
             });
 
-            // Sort newest first
             allLogs.sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
 
             const filteredLogs = allLogs.filter(log => {
@@ -903,14 +1729,356 @@
             tbody.innerHTML = html;
         }
 
-        // 9. Tabs & Themes
+        // ==================== 10. TEXT-TO-SPEECH (TTS) SYSTEM ====================
+        let ttsSpeed = 1.5;
+        let isTtsSpeaking = false;
+        let ttsCurrentMode = '';
+        let ttsQueue = [];
+        let ttsCurrentIndex = -1;
+
+        function initTts() {
+            try {
+                const savedSpeed = localStorage.getItem('stock_tts_speed');
+                if (savedSpeed) ttsSpeed = parseFloat(savedSpeed) || 1.5;
+            } catch (e) {
+                ttsSpeed = 1.5;
+            }
+            updateTtsSpeedUI();
+        }
+
+        function cycleTtsSpeed() {
+            const speeds = [1.0, 1.25, 1.5, 1.75, 2.0];
+            let idx = speeds.indexOf(ttsSpeed);
+            if (idx === -1) idx = 2;
+            idx = (idx + 1) % speeds.length;
+            ttsSpeed = speeds[idx];
+            try {
+                localStorage.setItem('stock_tts_speed', String(ttsSpeed));
+            } catch (e) {}
+            updateTtsSpeedUI();
+            showToast('⚡ Kecepatan TTS: ' + ttsSpeed + 'x');
+        }
+
+        function updateTtsSpeedUI() {
+            const el = document.getElementById('ttsSpeedLabel');
+            if (el) el.innerText = ttsSpeed + 'x';
+        }
+
+        function stopTts() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            isTtsSpeaking = false;
+            ttsCurrentMode = '';
+            ttsQueue = [];
+            ttsCurrentIndex = -1;
+            clearTtsHighlight();
+            updateTtsButtonUI();
+        }
+
+        function clearTtsHighlight() {
+            document.querySelectorAll('.tts-speaking-row').forEach(tr => tr.classList.remove('tts-speaking-row'));
+        }
+
+        function updateTtsButtonUI() {
+            const iconSold = document.getElementById('ttsIcon');
+            const textSold = document.getElementById('ttsBtnText');
+            const btnSold = document.getElementById('btnTtsDaily');
+
+            const iconStock = document.getElementById('ttsStockIcon');
+            const textStock = document.getElementById('ttsStockBtnText');
+            const btnStock = document.getElementById('btnTtsStock');
+
+            if (btnSold && iconSold && textSold) {
+                if (isTtsSpeaking && ttsCurrentMode === 'sold') {
+                    btnSold.classList.add('active-warning');
+                    iconSold.innerText = '⏹️';
+                    textSold.innerText = 'Stop TTS';
+                } else {
+                    btnSold.classList.remove('active-warning');
+                    iconSold.innerText = '🔊';
+                    textSold.innerText = 'Bacakan Terjual';
+                }
+            }
+
+            if (btnStock && iconStock && textStock) {
+                if (isTtsSpeaking && ttsCurrentMode === 'stock') {
+                    btnStock.classList.add('active-warning');
+                    iconStock.innerText = '⏹️';
+                    textStock.innerText = 'Stop TTS';
+                } else {
+                    btnStock.classList.remove('active-warning');
+                    iconStock.innerText = '📢';
+                    textStock.innerText = 'Bacakan Sisa Stok';
+                }
+            }
+        }
+
+        function numberToIndonesian(number) {
+            number = Math.floor(Math.abs(number));
+            if (number === 0) return 'nol';
+            const ones = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan'];
+            const teens = ['sepuluh', 'sebelas', 'dua belas', 'tiga belas', 'empat belas',
+                           'lima belas', 'enam belas', 'tujuh belas', 'delapan belas', 'sembilan belas'];
+
+            let result = '';
+            if (number >= 1000000) {
+                const millions = Math.floor(number / 1000000);
+                result += numberToIndonesian(millions) + ' juta ';
+                number %= 1000000;
+            }
+            if (number >= 1000) {
+                const thousands = Math.floor(number / 1000);
+                if (thousands === 1) {
+                    result += 'seribu ';
+                } else {
+                    result += numberToIndonesian(thousands) + ' ribu ';
+                }
+                number %= 1000;
+            }
+            if (number >= 100) {
+                const hundreds = Math.floor(number / 100);
+                if (hundreds === 1) {
+                    result += 'seratus ';
+                } else {
+                    result += ones[hundreds] + ' ratus ';
+                }
+                number %= 100;
+            }
+            if (number >= 20) {
+                const tens = Math.floor(number / 10);
+                result += ones[tens] + ' puluh ';
+                number %= 10;
+            } else if (number >= 10) {
+                result += teens[number - 10] + ' ';
+                number = 0;
+            }
+            if (number > 0 && number < 10) {
+                result += ones[number] + ' ';
+            }
+            return result.trim();
+        }
+
+        function priceToTtsWords(priceInRupiah) {
+            const ribu = Math.floor(priceInRupiah / 1000);
+            if (ribu === 0) return 'nol';
+            return numberToIndonesian(ribu);
+        }
+
+        function speakStockReportTts() {
+            if (!('speechSynthesis' in window)) {
+                alert('Fitur Text-to-Speech (TTS) tidak didukung di browser ini.');
+                return;
+            }
+
+            if (isTtsSpeaking && ttsCurrentMode === 'sold') {
+                stopTts();
+                return;
+            }
+            stopTts();
+
+            const data = window.DAILY_REPORT_DATA;
+            if (!data || !data.items || data.items.length === 0) {
+                showToast('Tidak ada data untuk dibacakan');
+                return;
+            }
+
+            const selDay = dailySingleDaySelected || 3;
+            const items = data.items;
+            ttsQueue = [];
+
+            const tableRows = document.querySelectorAll('#dailyTableContainer table.daily-table tbody tr');
+            let rowIdx = 0;
+            let grandTotalRevenue = 0;
+
+            for (let i = 0; i < items.length; i++) {
+                let it = items[i];
+                if (it.type === 'header' || it.type === 'category') {
+                    rowIdx++;
+                    continue;
+                }
+
+                if (it.type === 'product') {
+                    let soldD1 = (dailyShift === 1 ? it.soldD1Pagi : (dailyShift === 2 ? it.soldD1Malam : it.soldD1Total)) || 0;
+                    let soldD2 = (dailyShift === 1 ? it.soldD2Pagi : (dailyShift === 2 ? it.soldD2Malam : it.soldD2Total)) || 0;
+                    let soldD3 = (dailyShift === 1 ? it.soldD3Pagi : (dailyShift === 2 ? it.soldD3Malam : it.soldD3Total)) || 0;
+
+                    let sold = soldD3;
+                    if (dailyDaysMode === 1) {
+                        if (selDay === 1) sold = soldD1;
+                        else if (selDay === 2) sold = soldD2;
+                        else sold = soldD3;
+                    } else if (dailyDaysMode === 2) {
+                        sold = soldD2 + soldD3;
+                    } else if (dailyDaysMode === 3) {
+                        sold = soldD1 + soldD2 + soldD3;
+                    }
+
+                    const currentRowElem = tableRows[rowIdx];
+                    rowIdx++;
+
+                    if (sold > 0) {
+                        let price = parseLong(it.price);
+                        grandTotalRevenue += (price * sold);
+                        let priceWord = priceToTtsWords(price);
+
+                        let words = [];
+                        for (let j = 0; j < sold; j++) {
+                            words.push(priceWord);
+                        }
+
+                        ttsQueue.push({
+                            text: words.join(', '),
+                            rowElem: currentRowElem
+                        });
+                    }
+                }
+            }
+
+            if (grandTotalRevenue > 0) {
+                ttsQueue.push({
+                    text: 'Total: ' + priceToTtsWords(grandTotalRevenue),
+                    rowElem: document.querySelector('.table-footer-grand')
+                });
+            }
+
+            if (ttsQueue.length === 0) {
+                showToast('Tidak ada item terjual untuk dibacakan');
+                return;
+            }
+
+            isTtsSpeaking = true;
+            ttsCurrentMode = 'sold';
+            updateTtsButtonUI();
+            ttsCurrentIndex = 0;
+            playNextTtsItem();
+        }
+
+        function speakRemainingStockTts() {
+            if (!('speechSynthesis' in window)) {
+                alert('Fitur Text-to-Speech (TTS) tidak didukung di browser ini.');
+                return;
+            }
+
+            if (isTtsSpeaking && ttsCurrentMode === 'stock') {
+                stopTts();
+                return;
+            }
+            stopTts();
+
+            const data = window.DAILY_REPORT_DATA;
+            if (!data || !data.items || data.items.length === 0) {
+                showToast('Tidak ada data stok untuk dibacakan');
+                return;
+            }
+
+            const selDay = dailySingleDaySelected || 3;
+            const items = data.items;
+            ttsQueue = [];
+
+            const tableRows = document.querySelectorAll('#dailyTableContainer table.daily-table tbody tr');
+            let rowIdx = 0;
+
+            for (let i = 0; i < items.length; i++) {
+                let it = items[i];
+                if (it.type === 'header' || it.type === 'category') {
+                    rowIdx++;
+                    continue;
+                }
+
+                if (it.type === 'product') {
+                    let currentStock = it.currentStock || 0;
+                    let soldAfter = item.soldAfter || 0;
+                    let addedAfter = item.addedAfter || 0;
+                    let stockAkhir = currentStock + soldAfter - addedAfter;
+
+                    let soldD1Total = it.soldD1Total || 0;
+                    let addedD1 = (it.addedD1 || 0) + (it.restockedD1 || 0);
+                    let soldD2Total = it.soldD2Total || 0;
+                    let addedD2 = (it.addedD2 || 0) + (it.restockedD2 || 0);
+                    let soldD3Total = it.soldD3Total || 0;
+                    let addedD3 = (it.addedD3 || 0) + (it.restockedD3 || 0);
+
+                    let d3Awal = stockAkhir + soldD3Total - addedD3;
+                    let d2Awal = d3Awal + soldD2Total - addedD2;
+                    let d1Awal = d2Awal + soldD1Total - addedD1;
+
+                    let sisa = stockAkhir;
+                    if (dailyDaysMode === 1) {
+                        if (selDay === 1) sisa = d1Awal + addedD1 - soldD1Total;
+                        else if (selDay === 2) sisa = d2Awal + addedD2 - soldD2Total;
+                    }
+
+                    const currentRowElem = tableRows[rowIdx];
+                    rowIdx++;
+
+                    let sisaWord = (sisa === 0) ? 'habis' : ('sisa ' + numberToIndonesian(sisa) + ' pcs');
+                    ttsQueue.push({
+                        text: it.productName + ', ' + sisaWord,
+                        rowElem: currentRowElem
+                    });
+                }
+            }
+
+            if (ttsQueue.length === 0) {
+                showToast('Tidak ada produk untuk dibacakan');
+                return;
+            }
+
+            isTtsSpeaking = true;
+            ttsCurrentMode = 'stock';
+            updateTtsButtonUI();
+            ttsCurrentIndex = 0;
+            playNextTtsItem();
+        }
+
+        function playNextTtsItem() {
+            if (!isTtsSpeaking || ttsCurrentIndex >= ttsQueue.length) {
+                stopTts();
+                return;
+            }
+
+            clearTtsHighlight();
+            const currentItem = ttsQueue[ttsCurrentIndex];
+            if (currentItem.rowElem) {
+                currentItem.rowElem.classList.add('tts-speaking-row');
+                currentItem.rowElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            const utterance = new SpeechSynthesisUtterance(currentItem.text);
+            utterance.lang = 'id-ID';
+            utterance.rate = ttsSpeed;
+            utterance.pitch = 1.0;
+
+            utterance.onend = () => {
+                if (isTtsSpeaking) {
+                    ttsCurrentIndex++;
+                    setTimeout(playNextTtsItem, 200);
+                }
+            };
+
+            utterance.onerror = () => {
+                if (isTtsSpeaking) {
+                    ttsCurrentIndex++;
+                    playNextTtsItem();
+                }
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // ==================== 11. TABS & THEMES & UTILITIES ====================
         function switchTab(tab) {
             currentTab = tab;
             document.getElementById('tabBtnOrder').classList.toggle('active', tab === 'order');
-            document.getElementById('tabBtnAudit').classList.toggle('active', tab === 'audit');
+            document.getElementById('tabBtnDaily').classList.toggle('active', tab === 'daily');
             document.getElementById('tabContentOrder').style.display = (tab === 'order') ? 'block' : 'none';
-            document.getElementById('tabContentAudit').style.display = (tab === 'audit') ? 'block' : 'none';
+            document.getElementById('tabContentDaily').style.display = (tab === 'daily') ? 'block' : 'none';
             document.getElementById('bottomBarOrder').style.display = (tab === 'order') ? 'flex' : 'none';
+
+            if (tab === 'daily') {
+                initDailyReport();
+            }
         }
 
         function toggleTheme() {
@@ -929,9 +2097,34 @@
 
         function showToast(msg) {
             const t = document.getElementById('toast');
+            if (!t) return;
             t.innerText = msg;
             t.style.display = 'block';
             setTimeout(() => { t.style.display = 'none'; }, 3000);
+        }
+
+        function parseLong(val) {
+            if (!val) return 0;
+            if (typeof val === 'number') return val;
+            try {
+                return parseInt(String(val).replace(/[^0-9]/g, '')) || 0;
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        function formatK(num) {
+            if (!num || num === 0) return '0';
+            if (Math.abs(num) >= 1000) {
+                let k = num / 1000.0;
+                return (k % 1 === 0 ? k : k.toFixed(1)) + 'k';
+            }
+            return String(num);
+        }
+
+        function formatRupiah(num) {
+            if (!num) return 'Rp 0';
+            return 'Rp ' + Number(num).toLocaleString('id-ID');
         }
 
         function shortenProvider(name) {
@@ -949,6 +2142,32 @@
         function escapeHtml(str) {
             if (!str) return '';
             return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+
+        function copyToClipboard(text, successMsg) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast(successMsg || '✓ Teks berhasil disalin!');
+                }).catch(err => {
+                    fallbackCopy(text, successMsg);
+                });
+            } else {
+                fallbackCopy(text, successMsg);
+            }
+        }
+
+        function fallbackCopy(text, successMsg) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast(successMsg || '✓ Teks berhasil disalin!');
+            } catch (e) {
+                prompt('Salin teks:', text);
+            }
+            document.body.removeChild(textArea);
         }
     </script>
 </body>
