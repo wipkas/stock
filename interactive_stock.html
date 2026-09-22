@@ -221,16 +221,21 @@
         .header-card { background: linear-gradient(135deg, var(--header-grad-1) 0%, var(--header-grad-2) 100%); border: 1px solid var(--card-border); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
         .header-title { font-size: 18px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
         .header-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-        .stats-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
-        .stats-summary-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
-        @media (max-width: 600px) { .stats-summary, .stats-summary-4 { grid-template-columns: repeat(2, 1fr); } }
-        .stat-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px; text-align: center; }
-        .stat-num { font-size: 18px; font-weight: 800; }
-        .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        .stats-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+        .stat-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px; text-align: center; min-width: 0; }
+        .stat-num { font-size: 18px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .stat-num.danger { color: var(--danger); }
         .stat-num.warning { color: var(--warning); }
         .stat-num.success { color: var(--success); }
         .stat-num.primary { color: var(--primary); }
+        @media (max-width: 600px) {
+            .header-card { padding: 14px 12px; }
+            .stats-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+            .stat-box { padding: 8px 4px; border-radius: 10px; }
+            .stat-num { font-size: 15px; }
+            .stat-label { font-size: 10px; }
+        }
 
         /* Controls & Filter Chips */
         .controls-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; margin-bottom: 14px; }
@@ -242,8 +247,124 @@
         .chip.active-warning { background: rgba(245, 166, 35, 0.15); color: var(--warning); border-color: var(--warning); }
         .quick-select-row { display: flex; gap: 6px; margin-top: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
         .quick-select-row::-webkit-scrollbar { display: none; }
-        .btn-select-action { padding: 6px 10px; background: var(--chip-bg); border: 1px solid var(--card-border); border-radius: 8px; font-size: 11px; font-weight: 700; color: var(--text-main); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; flex-shrink: 0; }
+        .btn-select-action { padding: 6px 10px; background: var(--chip-bg); border: 1px solid var(--card-border); border-radius: 8px; font-size: 11px; font-weight: 700; color: var(--text-main); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; flex-shrink: 0; transition: all 0.15s ease; }
+        .btn-select-action.active { background: var(--primary); color: #fff; border-color: var(--primary); }
         .btn-select-action.active-warning { background: rgba(245, 166, 35, 0.2); color: var(--warning); border-color: var(--warning); }
+
+        /* History Date Navigation Bar */
+        .history-date-bar {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 10px 16px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+        .btn-date-nav {
+            background: var(--chip-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+            flex-shrink: 0;
+            padding: 0;
+            padding-bottom: 2px;
+        }
+        .btn-date-nav:hover, .btn-date-nav:active {
+            background: rgba(79, 142, 247, 0.15);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .history-date-label {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 10px;
+            transition: background 0.15s;
+            user-select: none;
+        }
+        .history-date-label:hover, .history-date-label:active {
+            background: var(--chip-bg);
+        }
+        .history-date-icon {
+            font-size: 15px;
+        }
+
+        /* Daily Report Dropdowns Row */
+        .daily-dropdowns-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .daily-dropdown-group {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .daily-dropdown-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.04em;
+        }
+        .daily-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .daily-dropdown-select {
+            width: 100%;
+            padding: 8px 28px 8px 10px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 9px;
+            color: var(--text-main);
+            font-size: 12px;
+            font-weight: 700;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: all 0.15s ease;
+        }
+        .daily-dropdown-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 1px var(--primary);
+        }
+        .daily-select-arrow {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 8px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
 
         /* Search Chip in Quick Select Row */
         .search-chip-group {
@@ -498,6 +619,9 @@
                         </div>
                         <div class="settings-group" id="settingsOrderGroup">
                             <div class="settings-title">Order Restock</div>
+                            <button class="settings-item" id="settingOrderSortStock" onclick="toggleOrderSortStockFromMenu()">
+                                <span class="settings-icon">📶</span><span class="settings-label">Urut Stok Terkecil</span><span class="settings-state" id="settingOrderSortStockState">Aktif</span>
+                            </button>
                             <button class="settings-item" id="settingOrderHistory" onclick="toggleOrderHistoryFromMenu()">
                                 <span class="settings-icon">📋</span><span class="settings-label">Riwayat Order</span><span class="settings-state" id="settingOrderHistoryState">Tersembunyi</span>
                             </button>
@@ -549,12 +673,12 @@
     <div id="tabContentOrder" class="container">
         <!-- Header -->
         <div class="header-card">
-            <div class="header-title">📦 Monitoring Stok &amp; Restock</div>
+            <div class="header-title" id="orderHeaderTitle">📦 Monitoring Stok</div>
 
-            <div class="stats-summary-4">
+            <div class="stats-summary">
                 <div class="stat-box">
                     <div class="stat-num danger" id="statHabis">0</div>
-                    <div class="stat-label">Habis (0 pcs)</div>
+                    <div class="stat-label">Habis</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-num warning" id="statMenipis">0</div>
@@ -563,10 +687,6 @@
                 <div class="stat-box">
                     <div class="stat-num success" id="statAman">0</div>
                     <div class="stat-label">Stok Aman</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-num primary" id="statEstCost">Rp 0</div>
-                    <div class="stat-label">Est. Biaya Order</div>
                 </div>
             </div>
         </div>
@@ -577,7 +697,7 @@
                 <div class="chip active" onclick="setOrderFilter('all', this)">Semua</div>
                 <div class="chip" onclick="setOrderFilter('reorder', this)">⚡ Perlu Restock</div>
                 <div class="chip" onclick="setOrderFilter('low', this)">⚠️ Menipis &amp; Habis</div>
-                <div class="chip" onclick="setOrderFilter('habis', this)">🔴 Habis (0 pcs)</div>
+                <div class="chip" onclick="setOrderFilter('habis', this)">🔴 Habis</div>
                 <div class="chip" onclick="setOrderFilter('aman', this)">🟢 Aman</div>
             </div>
 
@@ -588,6 +708,8 @@
                     <input type="text" id="searchInput" class="search-chip-input" placeholder="Cari produk..." oninput="onOrderSearchInput()" onkeydown="if(event.key==='Escape') clearOrderSearch()" style="display: none;">
                     <button type="button" class="search-chip-clear" id="btnOrderSearchClear" onclick="clearOrderSearch()" title="Hapus pencarian" style="display: none;">✕</button>
                 </div>
+
+                <button type="button" class="btn-select-action active" id="btnToggleOrderSort" onclick="toggleOrderSortStock()" title="Urutkan stok terkecil ke terbesar per provider (Aktif)"><span id="orderSortStockIcon">📶</span> <span id="orderSortStockText">Stok Terkecil</span></button>
 
                 <button class="btn-select-action" onclick="autoFillByTargetDays(7)">🎯 ~7 Hari</button>
                 <button class="btn-select-action" onclick="autoFillByTargetDays(14)">🎯 ~14 Hari</button>
@@ -626,10 +748,21 @@
                     <div class="header-title">📊 Riwayat Order &amp; Pencocokan Biaya</div>
                 </div>
                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                    <button class="btn-select-action" onclick="refreshRestockOrders()" title="Cek ulang kecocokan dengan riwayat terkini">🔄 Cek Ulang</button>
+                    <button class="btn-select-action" onclick="refreshRestockOrders(this)" title="Cek ulang kecocokan dengan riwayat terkini">🔄 Cek Ulang</button>
                     <button class="btn-select-action" onclick="switchTab('order')">➕ Buat Order Baru</button>
                 </div>
             </div>
+        </div>
+
+        <!-- Controls for History: Date Navigation -->
+        <div class="history-date-bar">
+            <button type="button" class="btn-date-nav" onclick="navigateHistoryDate(-1)" title="Hari Sebelumnya" aria-label="Hari Sebelumnya">‹</button>
+            <label for="historyDateInput" class="history-date-label" onclick="try{document.getElementById('historyDateInput').showPicker()}catch(e){}" title="Klik untuk pilih tanggal">
+                <span class="history-date-icon">📅</span>
+                <span id="historyDateDisplay">Sen, 22 Sep 2026</span>
+            </label>
+            <input type="date" id="historyDateInput" onchange="onHistoryDateInputChange(this)" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
+            <button type="button" class="btn-date-nav" onclick="navigateHistoryDate(1)" title="Hari Berikutnya" aria-label="Hari Berikutnya">›</button>
         </div>
 
         <div id="orderHistoryList">
@@ -645,7 +778,7 @@
         <!-- Header Card -->
         <div class="header-card">
             <div class="header-title">📊 Laporan Stok Harian</div>
-            <div class="header-subtitle" id="dailyReportDateTitle">📅 Tanggal: -</div>
+            <div class="header-subtitle" id="dailyReportDateTitle" style="display: none;">📅 Tanggal: -</div>
 
             <div class="stats-summary">
                 <div class="stat-box">
@@ -663,34 +796,44 @@
             </div>
         </div>
 
+        <!-- Controls for Daily Report: Date Navigation -->
+        <div class="history-date-bar">
+            <button type="button" class="btn-date-nav" onclick="navigateDailyDate(-1)" title="Hari Sebelumnya" aria-label="Hari Sebelumnya">‹</button>
+            <label for="dailyDateInput" class="history-date-label" onclick="try{document.getElementById('dailyDateInput').showPicker()}catch(e){}" title="Klik untuk pilih tanggal">
+                <span class="history-date-icon">📅</span>
+                <span id="dailyDateDisplay">-</span>
+            </label>
+            <input type="date" id="dailyDateInput" onchange="onDailyDateInputChange(this)" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
+            <button type="button" class="btn-date-nav" onclick="navigateDailyDate(1)" title="Hari Berikutnya" aria-label="Hari Berikutnya">›</button>
+        </div>
+
         <!-- Controls for Daily Report -->
         <div class="controls-card">
-            <input type="text" id="dailySearchInput" class="search-box" placeholder="🔍 Cari nama produk / provider di laporan harian..." oninput="renderDailyReportTable()">
+            <div class="daily-dropdowns-row">
+                <div class="daily-dropdown-group">
+                    <label class="daily-dropdown-label" for="dailyShiftSelect">PILIH SHIFT</label>
+                    <div class="daily-select-wrapper">
+                        <select id="dailyShiftSelect" class="daily-dropdown-select" onchange="onDailyShiftSelect(this)">
+                            <option value="0">🌐 Semua Shift</option>
+                            <option value="1">☀️ Shift 1 (Pagi)</option>
+                            <option value="2">🌙 Shift 2 (Malam)</option>
+                            <option value="4">🔄 Rincian (P | M)</option>
+                        </select>
+                        <span class="daily-select-arrow">▼</span>
+                    </div>
+                </div>
 
-            <!-- Shift Filters -->
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 6px; margin-bottom: 4px;">PILIH SHIFT:</div>
-            <div class="filter-row" id="shiftFilterRow">
-                <div class="chip active" onclick="setDailyShift(0, this)">🌐 Semua Shift</div>
-                <div class="chip" onclick="setDailyShift(1, this)">☀️ Shift 1 (Pagi)</div>
-                <div class="chip" onclick="setDailyShift(2, this)">🌙 Shift 2 (Malam)</div>
-                <div class="chip" onclick="setDailyShift(4, this)">🔄 Rincian (P | M)</div>
-            </div>
-
-            <!-- Mode Filters -->
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 10px; margin-bottom: 4px;">OPSI TAMPILAN:</div>
-            <div class="filter-row">
-                <div class="chip active" id="chipDays1" onclick="setDailyDays(1, this)">1 Hari</div>
-                <div class="chip" id="chipDays2" onclick="setDailyDays(2, this)">2 Hari</div>
-                <div class="chip" id="chipDays3" onclick="setDailyDays(3, this)">3 Hari</div>
-                <div class="chip" id="chipDailyOrderHistory" onclick="switchToTabOrderHistory()">📦 Pencocokan Order</div>
-            </div>
-
-            <!-- Single Day Date Selector (Khusus Mode 1 Hari) -->
-            <div id="singleDayPickerRow" style="display: flex; align-items: center; gap: 6px; margin-top: 10px; margin-bottom: 4px; overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; -webkit-overflow-scrolling: touch;">
-                <span style="font-size: 11px; font-weight: 700; color: var(--primary); flex-shrink: 0;">PILIH TANGGAL:</span>
-                <div class="chip" id="chipSingleD1" onclick="setDailySingleDay(1, this)">📅 <span id="labelSingleD1">D-2</span></div>
-                <div class="chip" id="chipSingleD2" onclick="setDailySingleDay(2, this)">📅 <span id="labelSingleD2">Kemarin</span></div>
-                <div class="chip active" id="chipSingleD3" onclick="setDailySingleDay(3, this)">📅 <span id="labelSingleD3">Hari Ini</span></div>
+                <div class="daily-dropdown-group">
+                    <label class="daily-dropdown-label" for="dailyDaysSelect">OPSI TAMPILAN</label>
+                    <div class="daily-select-wrapper">
+                        <select id="dailyDaysSelect" class="daily-dropdown-select" onchange="onDailyDaysSelect(this)">
+                            <option value="1">📅 1 Hari</option>
+                            <option value="2">📅 2 Hari</option>
+                            <option value="3">📅 3 Hari</option>
+                        </select>
+                        <span class="daily-select-arrow">▼</span>
+                    </div>
+                </div>
             </div>
 
             <div class="quick-select-row">
@@ -818,6 +961,8 @@
 
         // State Tab 1: Mode Keuntungan (Modal, Jual, Margin)
         let orderProfitMode = false;
+        // State Tab 1: Urutkan Stok Terkecil ke Terbesar per Provider (Default: true / aktif)
+        let orderSortByStockAsc = (localStorage.getItem('kspcheck_order_sort_stock') !== 'false');
 
         // State Tab 2: Laporan Stok Harian
         let dailyShift = 0; // 0: Semua, 1: Pagi, 2: Malam, 4: Rincian P|M
@@ -831,6 +976,7 @@
             initTheme();
             initTts();
             initOrderProfitMode();
+            initOrderSortStock();
             initRestockOrders();
 
             // ── Prioritas Tertinggi: PIN dari URL ──
@@ -927,6 +1073,49 @@
                 else chip.classList.remove('active-warning');
             }
             updateSettingsMenuUI();
+        }
+
+        // Tab 1: Urutkan Stok Terkecil ke Terbesar per Provider Logic
+        function initOrderSortStock() {
+            updateOrderSortStockUI();
+        }
+
+        function toggleOrderSortStock() {
+            orderSortByStockAsc = !orderSortByStockAsc;
+            try {
+                localStorage.setItem('kspcheck_order_sort_stock', String(orderSortByStockAsc));
+            } catch (e) {}
+            updateOrderSortStockUI();
+            updateSettingsMenuUI();
+            renderProductList();
+            showToast(orderSortByStockAsc
+                ? '📶 Urutan stok terkecil ke terbesar aktif'
+                : '📶 Urutan produk kembali ke standar Supabase');
+        }
+
+        function toggleOrderSortStockFromMenu() {
+            toggleOrderSortStock();
+            closeSettingsMenu();
+        }
+
+        function updateOrderSortStockUI() {
+            const btn = document.getElementById('btnToggleOrderSort');
+            const textEl = document.getElementById('orderSortStockText');
+            const menuState = document.getElementById('settingOrderSortStockState');
+
+            if (btn) {
+                btn.classList.toggle('active', orderSortByStockAsc);
+                if (textEl) {
+                    textEl.innerText = orderSortByStockAsc ? 'Stok Terkecil' : 'Urut Standar';
+                }
+                btn.title = orderSortByStockAsc
+                    ? 'Urutan stok terkecil ke terbesar per provider (Aktif). Klik untuk urutan standar.'
+                    : 'Urutan standar Supabase. Klik untuk urutkan dari stok terkecil.';
+            }
+
+            if (menuState) {
+                menuState.innerText = orderSortByStockAsc ? 'Aktif' : 'Standar';
+            }
         }
 
         function handlePinSubmit(e) {
@@ -1116,6 +1305,7 @@
             });
 
             if (devices.has(currentVal)) select.value = currentVal;
+            updateOrderHeaderTitle();
 
             // Munculkan dialog pilihan perangkat di awal load halaman jika perangkat ada > 1
             if (devices.size > 1 && !hasPromptedInitialDevice) {
@@ -1212,7 +1402,30 @@
             if (modal) modal.style.display = 'none';
         }
 
+        function updateOrderHeaderTitle() {
+            const el = document.getElementById('orderHeaderTitle');
+            if (!el) return;
+            const select = document.getElementById('navDeviceFilter');
+            const selectedDevice = select?.value || 'all';
+
+            if (selectedDevice === 'all') {
+                el.innerHTML = '📦 Stok Semua Perangkat';
+                return;
+            }
+
+            let devName = '';
+            if (select && select.selectedIndex >= 0) {
+                devName = select.options[select.selectedIndex].text.replace(/^[^\w\d]+/, '').trim();
+            }
+            if (!devName || devName.toLowerCase().startsWith('semua perangkat')) {
+                const match = allVouchers.find(v => v.device_id === selectedDevice);
+                devName = match ? (match.device_name || match.device_id) : selectedDevice;
+            }
+            el.innerHTML = `📦 Stok ${escapeHtml(devName)}`;
+        }
+
         function onDeviceChange() {
+            updateOrderHeaderTitle();
             renderProductList();
             initDailyReport();
             renderAuditTable();
@@ -1222,6 +1435,7 @@
 
         // 4. Render Dynamic Product List (Tab 1: Order Restock)
         function renderProductList() {
+            updateOrderHeaderTitle();
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             const filtered = (selectedDevice === 'all')
                 ? allVouchers
@@ -1233,11 +1447,23 @@
                 return;
             }
 
-            // Group by Provider
+            // Snapshot existing selected quantities so toggling sort preserves user input
+            const existingQtyMap = new Map();
+            container.querySelectorAll('.product-card').forEach(card => {
+                const qty = parseInt(card.getAttribute('data-qty') || '0', 10);
+                const name = card.getAttribute('data-name');
+                const prov = card.getAttribute('data-provider');
+                if (qty > 0 && name && prov) {
+                    existingQtyMap.set(prov + '||' + name, qty);
+                }
+            });
+
+            // Group by Provider while tracking original Supabase index in filtered list
             const providerGroups = new Map();
-            filtered.forEach(v => {
+            filtered.forEach((v, originalIdx) => {
                 const prov = v.provider_name || 'Lainnya';
                 if (!providerGroups.has(prov)) providerGroups.set(prov, []);
+                v._supabaseIndex = originalIdx;
                 providerGroups.get(prov).push(v);
             });
 
@@ -1247,6 +1473,32 @@
             providerGroups.forEach((items, provName) => {
                 html += `<div class="provider-section">`;
                 html += `<div class="provider-header">🏷️ ${escapeHtml(provName)} (${items.length} item)</div>`;
+
+                // Stamp provider original index
+                items.forEach((item, idx) => {
+                    item._providerOrigIndex = idx;
+                });
+
+                if (orderSortByStockAsc) {
+                    items.sort((a, b) => {
+                        const stockA = parseInt(a.stock || 0, 10);
+                        const stockB = parseInt(b.stock || 0, 10);
+                        if (stockA !== stockB) {
+                            return stockA - stockB; // Stok terkecil ke terbesar
+                        }
+                        // Jika stok sama (misal 3 item sama-sama stok 0), urutan sama persis dengan urutan Supabase
+                        const origA = (a._providerOrigIndex !== undefined) ? a._providerOrigIndex : (a._supabaseIndex || 0);
+                        const origB = (b._providerOrigIndex !== undefined) ? b._providerOrigIndex : (b._supabaseIndex || 0);
+                        return origA - origB;
+                    });
+                } else {
+                    // Urutan default Supabase
+                    items.sort((a, b) => {
+                        const origA = (a._providerOrigIndex !== undefined) ? a._providerOrigIndex : (a._supabaseIndex || 0);
+                        const origB = (b._providerOrigIndex !== undefined) ? b._providerOrigIndex : (b._supabaseIndex || 0);
+                        return origA - origB;
+                    });
+                }
 
                 items.forEach(prod => {
                     const stock = parseInt(prod.stock || 0);
@@ -1259,20 +1511,28 @@
                     const isLow = (stock <= limit);
                     const needsRestock = isOut || isLow;
 
+                    const savedQty = existingQtyMap.get(provName + '||' + prod.product_name) || 0;
+                    const isSelected = savedQty > 0;
+                    const cardSelectedClass = isSelected ? ' selected' : '';
+
                     let sisaHtml = isOut
                         ? `Sisa: <span class="stock-zero">0 pcs</span>`
                         : (isLow ? `Sisa: <span class="stock-low">${stock} pcs</span>` : `Sisa: <span class="stock-normal">${stock} pcs</span>`);
 
-                    let badgeHtml = needsRestock
-                        ? `<span class="badge-reorder-simple">Perlu Restock</span>`
-                        : ``;
+                    let badgeHtml = '';
+                    if (savedQty > 0) {
+                        const days = Math.max(1, Math.round((stock + savedQty) / 1.5));
+                        badgeHtml = `<span class="badge-projection">⏳ Cukup ~${days} hari</span>`;
+                    } else if (needsRestock) {
+                        badgeHtml = `<span class="badge-reorder-simple">Perlu Restock</span>`;
+                    }
 
                     let marginBadgeClass = (margin > 0) ? 'profit-pos' : ((margin < 0) ? 'profit-neg' : 'profit-zero');
                     let marginSign = (margin > 0) ? '+' : '';
                     let marginText = `${marginSign}Rp ${margin.toLocaleString('id-ID')}`;
 
                     html += `
-                    <div class="product-card" 
+                    <div class="product-card${cardSelectedClass}" 
                          data-id="${idCounter}"
                          data-provider="${escapeHtml(provName)}"
                          data-name="${escapeHtml(prod.product_name)}"
@@ -1283,7 +1543,7 @@
                          data-margin="${margin}"
                          data-demand="1.0"
                          data-needs-restock="${needsRestock}"
-                         data-qty="0"
+                         data-qty="${savedQty}"
                          onclick="toggleSelectCard(this)">
                         
                         <div class="checkbox-custom"></div>
@@ -1307,7 +1567,7 @@
 
                         <div class="qty-stepper" onclick="event.stopPropagation()">
                             <button class="qty-btn" onclick="changeQty(event, this, -1)">-</button>
-                            <input type="number" class="qty-input" value="0" min="0" oninput="onQtyInputChange(event, this)">
+                            <input type="number" class="qty-input" value="${savedQty}" min="0" oninput="onQtyInputChange(event, this)">
                             <button class="qty-btn" onclick="changeQty(event, this, 1)">+</button>
                         </div>
                     </div>`;
@@ -1421,7 +1681,8 @@
                 estText += ` (Margin: ${sign}Rp ${totalMargin.toLocaleString('id-ID')})`;
             }
             document.getElementById('selectedEstCost').innerText = estText;
-            document.getElementById('statEstCost').innerText = `Rp ${totalCost.toLocaleString('id-ID')}`;
+            const statEstCostEl = document.getElementById('statEstCost');
+            if (statEstCostEl) statEstCostEl.innerText = `Rp ${totalCost.toLocaleString('id-ID')}`;
         }
 
         function updateStatsSummary() {
@@ -1783,6 +2044,7 @@
                 }).catch(err => console.warn('Supabase restock_orders err:', err));
             }
 
+            historySelectedDateStr = getLocalDateString(new Date());
             reconcileAllOrders();
             renderOrderHistoryList();
             showToast(`✅ Order ${orderId} (${totalPcs} pcs) dicatat ke tab 📊 history!`);
@@ -1791,7 +2053,12 @@
         function parseDateSafe(str) {
             if (!str) return 0;
             if (str instanceof Date) return str.getTime();
+            if (typeof str === 'number') return str;
             let s = String(str).trim();
+            if (/^\d{10,13}$/.test(s)) {
+                const n = parseInt(s);
+                return (s.length === 10) ? n * 1000 : n;
+            }
             if (s.includes(' ') && !s.includes('T')) {
                 s = s.replace(' ', 'T') + '+07:00';
             }
@@ -1816,14 +2083,15 @@
                     let receivedQty = 0;
                     let latestUnitCost = item.cost_price || 0;
 
-                    // Cari voucher yang cocok di allVouchers
+                    // Cari voucher yang cocok di allVouchers (berdasarkan product_id atau nama produk)
                     const vMatches = allVouchers.filter(v => {
+                        if (order.device_id && order.device_id !== 'all' && v.device_id && v.device_id !== order.device_id) return false;
+                        if (item.product_id && v.product_id && item.product_id === v.product_id) return true;
                         const vName = (v.product_name || '').toLowerCase().trim();
-                        if (vName !== prodNameLower) return false;
-                        if (order.device_id && order.device_id !== 'all' && v.device_id !== order.device_id) return false;
-                        return true;
+                        return (vName === prodNameLower);
                     });
 
+                    // 1. Cek audit trail riwayat perubahan (change_history)
                     vMatches.forEach(v => {
                         const history = v.change_history || [];
                         if (Array.isArray(history)) {
@@ -1847,6 +2115,45 @@
                             latestUnitCost = vCost;
                         }
                     });
+
+                    // 2. Fallback jika change_history kosong (misal trigger SQL belum aktif di Supabase):
+                    // Cek selisih stok saat ini vs stok saat order dibuat (item.stock_at_order)
+                    if (receivedQty === 0) {
+                        vMatches.forEach(v => {
+                            const curStock = parseInt(v.stock || 0);
+                            const stockAtOrder = (item.stock_at_order !== undefined && item.stock_at_order !== null)
+                                ? parseInt(item.stock_at_order) : -1;
+                            if (stockAtOrder >= 0 && curStock > stockAtOrder) {
+                                receivedQty += (curStock - stockAtOrder);
+                            }
+                            const vCost = parseInt(v.cost_price || 0);
+                            if (vCost > 0) {
+                                latestUnitCost = vCost;
+                            }
+                        });
+                    }
+
+                    // 3. Fallback snapshot laporan harian (allDailyReports)
+                    if (receivedQty === 0 && allDailyReports && allDailyReports.size > 0) {
+                        allDailyReports.forEach((rep, devId) => {
+                            if (order.device_id && order.device_id !== 'all' && devId !== order.device_id) return;
+                            if (!rep || !Array.isArray(rep.items)) return;
+                            const rItem = rep.items.find(ri =>
+                                (item.product_id && ri.productId === item.product_id) ||
+                                (ri.productName && ri.productName.toLowerCase().trim() === prodNameLower)
+                            );
+                            if (rItem) {
+                                const added = (rItem.restockedD3 || 0) + (rItem.addedD3 || 0);
+                                if (added > 0) {
+                                    receivedQty = Math.max(receivedQty, added);
+                                    if (rItem.cost) {
+                                        const parsedCost = parseInt(String(rItem.cost).replace(/[^\d]/g, '')) || 0;
+                                        if (parsedCost > 0) latestUnitCost = parsedCost;
+                                    }
+                                }
+                            }
+                        });
+                    }
 
                     item.received_qty = receivedQty;
                     item.actual_unit_cost = latestUnitCost;
@@ -1893,21 +2200,92 @@
             });
         }
 
+        let historySelectedDateStr = getLocalDateString(new Date());
+
+        function getLocalDateString(d = new Date()) {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatHistoryDateDisplay(dateStr) {
+            if (!dateStr) return '-';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+
+            const dayName = d.toLocaleDateString('id-ID', { weekday: 'short' });
+            const dateFormatted = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+
+            return `${dayName}, ${dateFormatted}`;
+        }
+
+        function isOrderOnDate(order, targetDateStr) {
+            if (!order || !order.created_at) return false;
+            const t = parseDateSafe(order.created_at);
+            if (!t) return false;
+            const orderDate = new Date(t);
+            return getLocalDateString(orderDate) === targetDateStr;
+        }
+
+        function updateHistoryDateControls() {
+            const displayEl = document.getElementById('historyDateDisplay');
+            const inputEl = document.getElementById('historyDateInput');
+
+            if (displayEl) {
+                displayEl.innerText = formatHistoryDateDisplay(historySelectedDateStr);
+            }
+            if (inputEl) {
+                inputEl.value = historySelectedDateStr;
+            }
+        }
+
+        function navigateHistoryDate(deltaDays) {
+            const parts = historySelectedDateStr.split('-');
+            const cur = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            cur.setDate(cur.getDate() + deltaDays);
+            historySelectedDateStr = getLocalDateString(cur);
+            renderOrderHistoryList();
+        }
+
+        function setHistoryDateToday() {
+            historySelectedDateStr = getLocalDateString(new Date());
+            renderOrderHistoryList();
+        }
+
+        function onHistoryDateInputChange(input) {
+            if (input && input.value) {
+                historySelectedDateStr = input.value;
+                renderOrderHistoryList();
+            }
+        }
+
         function renderOrderHistoryList() {
             const container = document.getElementById('orderHistoryList');
             if (!container) return;
 
-            if (allRestockOrders.length === 0) {
+            updateHistoryDateControls();
+
+            // Filter riwayat order hanya untuk tanggal yang dipilih (default: today)
+            const filteredOrders = allRestockOrders.filter(order => isOrderOnDate(order, historySelectedDateStr));
+
+            if (filteredOrders.length === 0) {
+                const isToday = (historySelectedDateStr === getLocalDateString(new Date()));
+                const dateLabel = formatHistoryDateDisplay(historySelectedDateStr);
                 container.innerHTML = `
-                    <div style="text-align: center; padding: 24px; color: var(--text-muted); background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px;">
-                        Belum ada riwayat order restock yang tersimpan.
+                    <div style="text-align: center; padding: 36px 20px; color: var(--text-muted); background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px;">
+                        <div style="font-size: 28px; margin-bottom: 8px;">📭</div>
+                        <div style="font-weight: 700; font-size: 14px; color: var(--text-main); margin-bottom: 4px;">Tidak ada riwayat order untuk ${escapeHtml(dateLabel)}</div>
+                        
+                        ${!isToday ? `<button type="button" class="btn-select-action" onclick="setHistoryDateToday()" style="background: rgba(79, 142, 247, 0.15); color: var(--primary); font-weight: 700; margin: 0 auto;">🎯 Kembali ke Hari Ini</button>` : ''}
                     </div>`;
                 return;
             }
 
             let html = '';
-            allRestockOrders.forEach((order, index) => {
-                const orderTimeStr = new Date(order.created_at).toLocaleDateString('id-ID', {
+            filteredOrders.forEach((order, index) => {
+                const orderTimeStr = new Date(parseDateSafe(order.created_at)).toLocaleDateString('id-ID', {
                     weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
                 });
 
@@ -2041,7 +2419,7 @@
                     <div class="order-actions-bar">
                         <button class="btn-order-action" onclick="inputManualOrderCost('${order.id}')" title="Input total tagihan nota fisik dari distributor">✏️ Input Biaya Nota</button>
                         ${order.status !== 'completed' ? `<button class="btn-order-action success" onclick="markOrderCompleted('${order.id}')" title="Tandai pesanan ini sudah selesai">✅ Tandai Selesai</button>` : ''}
-                        <button class="btn-order-action" onclick="refreshRestockOrders()" title="Cek ulang log penambahan stok">🔄 Cek Ulang</button>
+                        <button class="btn-order-action" onclick="refreshRestockOrders(this)" title="Cek ulang log penambahan stok">🔄 Cek Ulang</button>
                         <button class="btn-order-action danger" onclick="deleteRestockOrder('${order.id}')" title="Hapus order ini dari riwayat">🗑️ Hapus</button>
                     </div>
                 </div>`;
@@ -2066,16 +2444,59 @@
             switchTab('history');
         }
 
-        function switchToTabOrderHistory() {
-            switchTab('history');
-        }
 
-        function refreshRestockOrders() {
-            showToast('🔄 Mencocokkan dengan riwayat audit stok...');
-            reconcileAllOrders();
-            renderOrderHistoryList();
-            updateActiveOrderBadge();
-            showToast('✅ Pencocokan riwayat selesai!');
+        async function refreshRestockOrders(btnEl = null) {
+            const origText = btnEl ? btnEl.innerText : '';
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.innerText = '🔄 Memeriksa...';
+            }
+
+            // 1. Cek ketersediaan koneksi Supabase
+            if (!supabaseClient) {
+                showToast('⚠️ Supabase Cloud belum terhubung (cek PIN atau file config.enc). Memeriksa data lokal...');
+                reconcileAllOrders();
+                renderOrderHistoryList();
+                updateActiveOrderBadge();
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.innerText = origText || '🔄 Cek Ulang';
+                }
+                return;
+            }
+
+            showToast('🔄 Menghubungkan ke Supabase & mengambil data stok terkini...');
+
+            try {
+                // Ambil data terbaru dari cloud (vouchers, daily_reports, restock_orders)
+                await fetchVouchersFromSupabase();
+
+                // Sinkronkan order lokal ke Supabase jika ada yang belum tersinkron
+                if (allRestockOrders.length > 0) {
+                    try {
+                        const { error } = await supabaseClient.from('restock_orders').upsert(allRestockOrders);
+                        if (error) console.warn('Supabase restock_orders upsert:', error);
+                    } catch (eSync) {
+                        console.warn('Supabase restock_orders sync error:', eSync);
+                    }
+                }
+
+                reconcileAllOrders();
+                renderOrderHistoryList();
+                updateActiveOrderBadge();
+                showToast(`✅ Data stok & riwayat berhasil disinkronkan (${allRestockOrders.length} order)!`);
+            } catch (err) {
+                console.error('Refresh Restock Orders error:', err);
+                showToast(`⚠️ Gagal koneksi Supabase: ${err.message || 'Error'}. Mencocokkan data lokal.`);
+                reconcileAllOrders();
+                renderOrderHistoryList();
+                updateActiveOrderBadge();
+            } finally {
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.innerText = origText || '🔄 Cek Ulang';
+                }
+            }
         }
 
         function inputManualOrderCost(orderId) {
@@ -2294,37 +2715,133 @@
             return base;
         }
 
-        function updateDailyFilterUI() {
-            // Update shift chips
-            const shiftChips = document.querySelectorAll('#shiftFilterRow .chip');
-            const shiftMap = [0, 1, 2, 4];
-            shiftChips.forEach((chip, index) => {
-                if (shiftMap[index] === dailyShift) chip.classList.add('active');
-                else chip.classList.remove('active');
-            });
-
-            // Update days chips
-            document.querySelectorAll('#chipDays1, #chipDays2, #chipDays3').forEach(c => c.classList.remove('active'));
-            if (dailyDaysMode === 1) document.getElementById('chipDays1')?.classList.add('active');
-            else if (dailyDaysMode === 2) document.getElementById('chipDays2')?.classList.add('active');
-            else if (dailyDaysMode === 3) document.getElementById('chipDays3')?.classList.add('active');
-
-            // Update single day date selector chips and visibility
-            const singlePicker = document.getElementById('singleDayPickerRow');
-            if (singlePicker) {
-                singlePicker.style.display = (dailyDaysMode === 1) ? 'flex' : 'none';
-            }
-            document.querySelectorAll('#singleDayPickerRow .chip').forEach(c => c.classList.remove('active'));
-            if (dailySingleDaySelected === 1) document.getElementById('chipSingleD1')?.classList.add('active');
-            else if (dailySingleDaySelected === 2) document.getElementById('chipSingleD2')?.classList.add('active');
-            else document.getElementById('chipSingleD3')?.classList.add('active');
-
+        function getDailyBaseDate() {
             const data = window.DAILY_REPORT_DATA;
-            if (data) {
-                if (data.d1Date && document.getElementById('labelSingleD1')) document.getElementById('labelSingleD1').innerText = data.d1Date;
-                if (data.d2Date && document.getElementById('labelSingleD2')) document.getElementById('labelSingleD2').innerText = data.d2Date;
-                if (data.d3Date && document.getElementById('labelSingleD3')) document.getElementById('labelSingleD3').innerText = data.d3Date + ' (Hari Ini)';
+            if (data && data.dateStr) {
+                const parts = data.dateStr.split('-');
+                if (parts.length === 3) {
+                    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                }
             }
+            return new Date();
+        }
+
+        function getDailyDateObj(dayIndex) {
+            const d = getDailyBaseDate();
+            const offset = (dayIndex === 1 ? -2 : (dayIndex === 2 ? -1 : 0));
+            d.setDate(d.getDate() + offset);
+            return d;
+        }
+
+        function formatDailyDateDisplay() {
+            const data = window.DAILY_REPORT_DATA;
+            if (dailyDaysMode === 1) {
+                const d = getDailyDateObj(dailySingleDaySelected || 3);
+                return formatHistoryDateDisplay(getLocalDateString(d));
+            } else if (dailyDaysMode === 2) {
+                const d2 = getDailyDateObj(2);
+                const d3 = getDailyDateObj(3);
+                const opt = { day: 'numeric', month: 'short' };
+                return `${d2.toLocaleDateString('id-ID', opt)} - ${d3.toLocaleDateString('id-ID', opt)} (2 Hari)`;
+            } else {
+                const d1 = getDailyDateObj(1);
+                const d3 = getDailyDateObj(3);
+                const opt = { day: 'numeric', month: 'short' };
+                return `${d1.toLocaleDateString('id-ID', opt)} - ${d3.toLocaleDateString('id-ID', opt)} (3 Hari)`;
+            }
+        }
+
+        function updateDailyDateControls() {
+            const displayEl = document.getElementById('dailyDateDisplay');
+            const inputEl = document.getElementById('dailyDateInput');
+
+            if (displayEl) {
+                displayEl.innerText = formatDailyDateDisplay();
+            }
+            if (inputEl) {
+                const minD = getDailyDateObj(1);
+                const maxD = getDailyDateObj(3);
+                inputEl.min = getLocalDateString(minD);
+                inputEl.max = getLocalDateString(maxD);
+                const activeD = getDailyDateObj(dailySingleDaySelected || 3);
+                inputEl.value = getLocalDateString(activeD);
+            }
+        }
+
+        function navigateDailyDate(deltaDays) {
+            if (dailyDaysMode !== 1) {
+                dailyDaysMode = 1;
+                dailySingleDaySelected = (deltaDays < 0) ? 2 : 3;
+            } else {
+                const nextDay = (dailySingleDaySelected || 3) + deltaDays;
+                if (nextDay < 1) {
+                    showToast('⚠️ Data laporan tersedia dari H-2 s/d Hari Ini');
+                    return;
+                } else if (nextDay > 3) {
+                    showToast('⚠️ Sudah di tanggal terbaru (Hari Ini)');
+                    return;
+                }
+                dailySingleDaySelected = nextDay;
+            }
+            updateDailyFilterUI();
+            renderDailyReportTable();
+        }
+
+        function onDailyDateInputChange(input) {
+            if (!input || !input.value) return;
+            const chosen = input.value;
+            const d1Str = getLocalDateString(getDailyDateObj(1));
+            const d2Str = getLocalDateString(getDailyDateObj(2));
+            const d3Str = getLocalDateString(getDailyDateObj(3));
+
+            dailyDaysMode = 1;
+            if (chosen === d1Str) {
+                dailySingleDaySelected = 1;
+            } else if (chosen === d2Str) {
+                dailySingleDaySelected = 2;
+            } else if (chosen === d3Str) {
+                dailySingleDaySelected = 3;
+            } else {
+                if (chosen < d1Str) {
+                    dailySingleDaySelected = 1;
+                    showToast('ℹ️ Data laporan tersedia sampai ' + d1Str + ' (H-2)');
+                } else {
+                    dailySingleDaySelected = 3;
+                    showToast('ℹ️ Data laporan tersedia sampai ' + d3Str + ' (Hari Ini)');
+                }
+            }
+            updateDailyFilterUI();
+            renderDailyReportTable();
+        }
+
+        function onDailyShiftSelect(select) {
+            if (!select) return;
+            dailyShift = parseInt(select.value, 10);
+            renderDailyReportTable();
+        }
+
+        function onDailyDaysSelect(select) {
+            if (!select) return;
+            dailyDaysMode = parseInt(select.value, 10);
+            updateDailyFilterUI();
+            renderDailyReportTable();
+        }
+
+        function updateDailyFilterUI() {
+            // Update shift select dropdown
+            const shiftSelect = document.getElementById('dailyShiftSelect');
+            if (shiftSelect) {
+                shiftSelect.value = String(dailyShift);
+            }
+
+            // Update days select dropdown
+            const daysSelect = document.getElementById('dailyDaysSelect');
+            if (daysSelect) {
+                daysSelect.value = String(dailyDaysMode);
+            }
+
+            // Update date navigation bar
+            updateDailyDateControls();
 
             // Update profit mode chip
             const profitChip = document.getElementById('chipProfitMode');
@@ -2343,27 +2860,25 @@
 
         function setDailyShift(shift, el) {
             dailyShift = shift;
-            document.querySelectorAll('#shiftFilterRow .chip').forEach(c => c.classList.remove('active'));
-            if (el) el.classList.add('active');
+            const shiftSelect = document.getElementById('dailyShiftSelect');
+            if (shiftSelect) shiftSelect.value = String(shift);
             renderDailyReportTable();
         }
 
         function setDailyDays(days, el) {
             dailyDaysMode = days;
-            document.querySelectorAll('#chipDays1, #chipDays2, #chipDays3').forEach(c => c.classList.remove('active'));
-            if (el) el.classList.add('active');
-
-            const singlePicker = document.getElementById('singleDayPickerRow');
-            if (singlePicker) {
-                singlePicker.style.display = (dailyDaysMode === 1) ? 'flex' : 'none';
-            }
+            const daysSelect = document.getElementById('dailyDaysSelect');
+            if (daysSelect) daysSelect.value = String(days);
+            updateDailyFilterUI();
             renderDailyReportTable();
         }
 
         function setDailySingleDay(day, el) {
             dailySingleDaySelected = day;
-            document.querySelectorAll('#singleDayPickerRow .chip').forEach(c => c.classList.remove('active'));
-            if (el) el.classList.add('active');
+            dailyDaysMode = 1;
+            const daysSelect = document.getElementById('dailyDaysSelect');
+            if (daysSelect) daysSelect.value = '1';
+            updateDailyFilterUI();
             renderDailyReportTable();
         }
 
@@ -2415,6 +2930,8 @@
                     dateTitleEl.innerText = '📅 Tanggal: ' + d1DateStr + ' - ' + d3DateStr + ' (' + (data.displayDate || '') + ')';
                 }
             }
+
+            updateDailyDateControls();
 
             let items = data.items;
 
@@ -3286,6 +3803,7 @@
             updateSettingsState('settingThemeState', isLight ? 'Terang' : 'Gelap', 'on');
 
             updateSettingsState('settingOrderProfitState', orderProfitMode ? 'Aktif' : 'Mati', orderProfitMode ? 'warn' : '');
+            updateSettingsState('settingOrderSortStockState', orderSortByStockAsc ? 'Aktif' : 'Standar', orderSortByStockAsc ? 'on' : '');
             updateSettingsState('settingProviderBadgeState', providerVisible ? 'Aktif' : 'Mati', providerVisible ? 'on' : '');
             updateSettingsState('settingOrderHistoryState', orderHistoryVisible ? 'Terbuka' : 'Tersembunyi', orderHistoryVisible ? 'on' : '');
             updateSettingsState('settingHideZeroState', dailyHideZeroSell ? 'Aktif' : 'Mati', dailyHideZeroSell ? 'on' : '');
