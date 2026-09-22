@@ -362,15 +362,12 @@
             <!-- Refresh Button -->
             <button class="btn-nav-action" onclick="fetchVouchersFromSupabase()" title="Refresh Data">🔄</button>
 
-            <!-- Mode Switcher (Go to Table view) -->
-            <a href="index.html" class="btn-nav-action" title="Buka Mode Tabel Ringkas">📋</a>
-
             <!-- Unified Settings / Toggle Menu -->
             <div class="header-settings" id="headerSettings">
                 <button class="btn-nav-action btn-settings" id="btnSettingsToggle" onclick="toggleSettingsMenu(event)" title="Pengaturan tampilan" aria-label="Pengaturan tampilan" aria-expanded="false">⚙️</button>
                 <div class="settings-dropdown" id="settingsDropdown" role="menu">
                     <div class="settings-group">
-                        <div class="settings-title">Tampilan & mode</div>
+                        <div class="settings-title">Tampilan &amp; mode</div>
                         <button class="settings-item" id="settingTheme" onclick="toggleThemeFromMenu()">
                             <span class="settings-icon">🌙</span><span class="settings-label">Tema</span><span class="settings-state" id="settingThemeState">Gelap</span>
                         </button>
@@ -396,11 +393,20 @@
                             <span class="settings-icon">📜</span><span class="settings-label">Riwayat Audit</span><span class="settings-state" id="settingAuditState">Tersembunyi</span>
                         </button>
                     </div>
+                    <div class="settings-group">
+                        <div class="settings-title">Navigasi</div>
+                        <a href="index.html" class="settings-item" style="text-decoration:none">
+                            <span class="settings-icon">📋</span><span class="settings-label">Mode Tabel Ringkas</span><span class="settings-state">Buka →</span>
+                        </a>
+                        <a href="stock_margin.html" class="settings-item" style="text-decoration:none">
+                            <span class="settings-icon">💹</span><span class="settings-label">Cek Margin Voucher</span><span class="settings-state">Buka →</span>
+                        </a>
+                        <button class="settings-item" onclick="lockViewer(); closeSettingsMenu()">
+                            <span class="settings-icon">🔒</span><span class="settings-label">Kunci PIN</span><span class="settings-state" id="settingLockState">–</span>
+                        </button>
+                    </div>
                 </div>
             </div>
-
-            <!-- Lock PIN -->
-            <button class="btn-nav-action" onclick="lockViewer()" title="Kunci PIN">🔒</button>
         </div>
     </div>
 
@@ -2986,6 +2992,7 @@
             updateSettingsState('settingOrderHistoryState', orderHistoryVisible ? 'Terbuka' : 'Tersembunyi', orderHistoryVisible ? 'on' : '');
             updateSettingsState('settingHideZeroState', dailyHideZeroSell ? 'Aktif' : 'Mati', dailyHideZeroSell ? 'on' : '');
             updateSettingsState('settingAuditState', auditVisible ? 'Terbuka' : 'Tersembunyi', auditVisible ? 'on' : '');
+            updateSettingsState('settingLockState', REQUIRE_PIN ? 'Aktif' : 'Nonaktif', REQUIRE_PIN ? 'on' : '');
 
             const orderGroup = document.getElementById('settingsOrderGroup');
             const dailyGroup = document.getElementById('settingsDailyGroup');
@@ -3037,7 +3044,8 @@
             const saved = localStorage.getItem('kspcheck_theme');
             if (saved === 'light') {
                 document.body.classList.add('light-theme');
-                document.getElementById('btnThemeToggle').innerText = '☀️';
+                const oldBtn = document.getElementById('btnThemeToggle');
+                if (oldBtn) oldBtn.innerText = '☀️';
             }
         }
 
