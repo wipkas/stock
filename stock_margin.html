@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>KSP Check — Margin Voucher</title>
+<!-- Supabase JS Client & CryptoJS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+<style>
+/* ═══════════════════════════════════════
+   THEME TOKENS
+═══════════════════════════════════════ */
+:root{
+  --bg:#F7F8FA;--surface:#fff;--border:#E4E7EC;--border-strong:#C9CDD6;
+  --text-primary:#111827;--text-secondary:#6B7280;--text-hint:#9CA3AF;
+  --blue:#185FA5;--blue-bg:#EBF4FF;--blue-soft:#D1E8FF;
+  --green:#1A6B3C;--green-bg:#EDFAF3;
+  --amber:#92400E;--amber-bg:#FEF3C7;
+  --red:#991B1B;--red-bg:#FEE2E2;
+  --purple:#5B21B6;--purple-bg:#EDE9FE;
+  --warn-bg:#FFF7ED;--warn-border:#FED7AA;--warn-text:#9A3412;
+  --r:6px;
+  --cols: 20px minmax(0,1fr) 60px 70px 70px 40px 120px;
+}
+[data-theme="dark"]{
+  --bg:#0F1117;--surface:#1A1D27;--border:#2A2D3A;--border-strong:#3A3D4E;
+  --text-primary:#F1F3F9;--text-secondary:#8B8FA8;--text-hint:#555870;
+  --blue:#4B9FE8;--blue-bg:#162036;--blue-soft:#1E3550;
+  --green:#34D399;--green-bg:#0C2820;
+  --amber:#FBB040;--amber-bg:#2A1F08;
+  --red:#F87171;--red-bg:#2A0E0E;
+  --purple:#A78BFA;--purple-bg:#1E1533;
+  --warn-bg:#2A1A08;--warn-border:#7C3A10;--warn-text:#FB923C;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  background:var(--bg);color:var(--text-primary);font-size:14px;min-height:100vh;
+  transition:background .2s,color .2s;}
+
+/* ── Sticky shell ── */
+.sticky-shell{position:sticky;top:0;z-index:50;}
+
+/* ── Header ── */
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:13px 16px 0;transition:background .2s,border-color .2s;}
+.hdr-top{display:flex;align-items:center;gap:10px;margin-bottom:11px;}
+.logo{width:32px;height:32px;border-radius:var(--r);background:var(--blue);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:11px;font-weight:700;letter-spacing:-.3px;flex-shrink:0;}
+.hdr-title{font-size:15px;font-weight:600;}
+.hdr-subtitle{font-size:11px;color:var(--text-hint);margin-top:1px;}
+.hdr-right{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.hdr-meta{font-size:11px;color:var(--text-hint);text-align:right;}
+
+/* Dark mode toggle */
+.dark-toggle{
+  width:30px;height:30px;border-radius:50%;border:1px solid var(--border-strong);
+  background:var(--surface);color:var(--text-secondary);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:15px;transition:all .15s;flex-shrink:0;
+}
+.dark-toggle:hover{background:var(--bg);color:var(--text-primary);}
+
+/* Provider tabs */
+.prov-tabs{display:flex;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px;}
+.prov-tabs::-webkit-scrollbar{display:none;}
+.ptab{flex-shrink:0;padding:8px 14px;font-size:12px;font-weight:600;
+  color:var(--text-secondary);cursor:pointer;border:none;background:none;
+  border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s;}
+.ptab.on{color:var(--blue);border-bottom-color:var(--blue);}
+
+/* ── Toolbar ── */
+.toolbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;
+  display:flex;flex-direction:column;gap:8px;transition:background .2s,border-color .2s;}
+.search-box{position:relative;}
+.search-box input{width:100%;height:36px;padding:0 30px 0 34px;border:1px solid var(--border-strong);
+  border-radius:var(--r);font-size:13px;background:var(--bg);color:var(--text-primary);outline:none;
+  transition:background .2s,border-color .2s,color .2s;}
+.search-box input:focus{border-color:var(--blue);background:var(--surface);}
+.si{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-hint);pointer-events:none;width:14px;height:14px;}
+.sc{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--text-hint);
+  border:none;cursor:pointer;color:#fff;font-size:10px;font-weight:700;
+  width:16px;height:16px;border-radius:50%;display:none;align-items:center;justify-content:center;line-height:1;}
+.search-box.hv .sc{display:flex;}
+
+.chip-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;align-items:center;}
+.chip-row::-webkit-scrollbar{display:none;}
+.fchip{flex-shrink:0;padding:5px 10px;font-size:11px;font-weight:600;border-radius:99px;cursor:pointer;
+  border:1px solid var(--border-strong);background:var(--surface);color:var(--text-secondary);
+  white-space:nowrap;transition:all .15s;line-height:1;}
+.fchip.on-neg {background:var(--red-bg);   color:var(--red);   border-color:var(--warn-border);}
+.fchip.on-r500{background:var(--blue-bg);  color:var(--blue);  border-color:var(--blue-soft);}
+.fchip.on-r1k {background:var(--purple-bg);color:var(--purple);border-color:var(--purple);}
+.fchip.on-r2k {background:var(--green-bg); color:var(--green); border-color:var(--green);}
+.fchip.on-stock{background:var(--amber-bg);color:var(--amber); border-color:var(--warn-border);}
+.chip-divider{flex-shrink:0;width:1px;height:20px;background:var(--border-strong);margin:0 2px;}
+.cbtn{flex-shrink:0;display:inline-flex;align-items:center;gap:4px;
+  padding:5px 10px;font-size:11px;font-weight:600;border-radius:99px;
+  cursor:pointer;white-space:nowrap;line-height:1;transition:all .15s;}
+.cbtn.chg{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-soft);}
+.cbtn.chg:hover{background:var(--blue-soft);}
+.cbtn.chg:disabled{opacity:.35;cursor:not-allowed;background:var(--surface);color:var(--text-hint);border-color:var(--border-strong);}
+.cbtn.all{background:var(--surface);color:var(--text-secondary);border:1px solid var(--border-strong);}
+.cbtn.all:hover{background:var(--bg);color:var(--text-primary);}
+.cbtn.done{background:var(--green-bg)!important;color:var(--green)!important;border-color:var(--green)!important;}
+.cbtn.refresh{background:var(--surface);color:var(--blue);border:1px solid var(--blue-soft);}
+.cbtn.refresh:hover{background:var(--blue-bg);}
+
+/* ── Table head ── */
+.table-head{
+  position:sticky;z-index:40;
+  display:grid;grid-template-columns:var(--cols);
+  padding:0 16px;
+  background:var(--bg);
+  border-bottom:1px solid var(--border);
+  transition:background .2s,border-color .2s;
+}
+.th{font-size:10px;font-weight:700;color:var(--text-hint);
+  text-transform:uppercase;letter-spacing:.06em;padding:6px 0;user-select:none;}
+.th.r{text-align:right;}.th.c{text-align:center;}
+.th.sortable{cursor:pointer;display:flex;align-items:center;gap:3px;white-space:nowrap;}
+.th.sortable.r{justify-content:flex-end;}
+.th.sortable:hover{color:var(--text-secondary);}
+.th.sortable.asc,.th.sortable.desc{color:var(--blue);}
+.sort-arrow{font-size:9px;opacity:.6;}
+.th.sortable.asc .sort-arrow::after{content:'↑';}
+.th.sortable.desc .sort-arrow::after{content:'↓';}
+.th.sortable:not(.asc):not(.desc) .sort-arrow::after{content:'↕';opacity:.4;}
+
+/* ── Item rows ── */
+.item-row{
+  display:grid;grid-template-columns:var(--cols);
+  align-items:center;padding:0 16px;min-height:40px;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  transition:background .1s;
+}
+.item-row:hover{background:var(--bg);}
+.item-row.changed{background:var(--blue-bg);border-left:3px solid var(--blue);padding-left:13px;}
+.item-row.changed:hover{background:var(--blue-soft);}
+.item-row.dim{opacity:.35;}.item-row.hidden{display:none;}
+.item-row.warn-margin{background:var(--warn-bg)!important;border-left:3px solid var(--warn-border);padding-left:13px;}
+.item-row.warn-margin:hover{filter:brightness(.97);}
+.item-row.changed.warn-margin{background:var(--blue-bg)!important;border-left-color:var(--blue);}
+
+.row-num{font-size:11px;color:var(--text-hint);font-weight:600;font-variant-numeric:tabular-nums;}
+.name-cell{padding-right:4px;overflow:hidden;}
+.iname{font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3;white-space:normal;word-break:break-word;}
+.iname-sub{font-size:10px;color:var(--text-hint);margin-top:1px;}
+
+/* Stock badge */
+.stock-badge{display:inline-flex;align-items:center;gap:2px;
+  font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;line-height:1.4;
+  margin-top:2px;white-space:nowrap;}
+.stock-ok  {background:#DCFCE7;color:#15803D;}
+.stock-low {background:#FEF3C7;color:#92400E;}
+.stock-zero{background:#FEE2E2;color:#B91C1C;}
+[data-theme="dark"] .stock-ok  {background:#064E3B;color:#6EE7B7;}
+[data-theme="dark"] .stock-low {background:#451A03;color:#FCD34D;}
+[data-theme="dark"] .stock-zero{background:#4C0519;color:#FDA4AF;}
+
+.cost-cell{text-align:right;padding-right:4px;}
+.cost-val{font-size:12px;font-weight:500;color:var(--text-secondary);font-variant-numeric:tabular-nums;}
+.cost-none{font-size:11px;color:var(--text-hint);}
+
+.mval-cell{text-align:right;padding-right:4px;}
+.mval{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.mval.pos{color:var(--green);}.mval.neg{color:var(--red);}.mval.zero,.mval.na{color:var(--text-hint);font-weight:400;}
+.item-row.warn-margin .mval{color:var(--warn-text);}
+
+.pct-cell{text-align:right;padding-right:4px;}
+.mpct{font-size:11px;font-weight:600;white-space:nowrap;display:inline-block;padding:1px 4px;border-radius:4px;line-height:1.4;}
+.mpct.pos{background:#DCFCE7;color:#15803D;}
+.mpct.neg{background:#FEE2E2;color:#B91C1C;}
+.mpct.na{color:var(--text-hint);background:none;font-weight:400;font-size:12px;}
+[data-theme="dark"] .mpct.pos{background:#064E3B;color:#6EE7B7;}
+[data-theme="dark"] .mpct.neg{background:#4C0519;color:#FDA4AF;}
+
+.price-cell{display:flex;align-items:center;justify-content:flex-end;gap:1px;}
+.pbtn{width:22px;height:28px;border:1px solid var(--border-strong);background:var(--bg);
+  color:var(--text-primary);font-size:15px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;user-select:none;flex-shrink:0;transition:background .1s;}
+.pbtn:first-child{border-radius:var(--r) 0 0 var(--r);}
+.pbtn:last-child{border-radius:0 var(--r) var(--r) 0;}
+.pbtn:hover{background:var(--border);}.pbtn:active{background:var(--border-strong);}
+.pval{min-width:60px;height:28px;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;color:var(--text-primary);background:var(--surface);
+  border-top:1px solid var(--border-strong);border-bottom:1px solid var(--border-strong);
+  font-variant-numeric:tabular-nums;white-space:nowrap;}
+.pval.ch{color:var(--blue);background:var(--blue-bg);}
+
+/* Section header (All view) */
+.prov-section-hdr{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 16px;background:var(--bg);
+  border-bottom:1px solid var(--border);border-top:2px solid var(--border);
+  position:sticky;z-index:30;transition:background .2s,border-color .2s;
+}
+.prov-section-hdr:first-child{border-top:none;}
+.psh-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.psh-name{font-size:11px;font-weight:700;color:var(--text-primary);letter-spacing:.04em;text-transform:uppercase;}
+.psh-count{font-size:11px;color:var(--text-hint);margin-left:auto;}
+
+.empty-state{padding:48px 16px;text-align:center;display:none;}
+.empty-state.show{display:block;}
+.empty-state p{font-size:14px;color:var(--text-secondary);}
+.empty-state span{font-size:28px;display:block;margin-bottom:8px;}
+
+/* Loading skeleton */
+.skeleton-row{height:40px;background:var(--border);border-radius:4px;margin:1px 0;
+  background: linear-gradient(90deg, var(--border) 25%, var(--border-strong) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+.loading-hint{padding:12px 16px;text-align:center;font-size:12px;color:var(--text-hint);}
+
+/* Config banner */
+.config-banner{
+  margin:16px;padding:14px 16px;border-radius:var(--r);
+  background:var(--warn-bg);border:1px solid var(--warn-border);color:var(--warn-text);
+  font-size:13px;line-height:1.6;display:none;
+}
+.config-banner.show{display:block;}
+.config-banner code{background:rgba(0,0,0,.08);border-radius:3px;padding:1px 4px;font-family:monospace;font-size:12px;}
+.config-banner a{color:var(--blue);text-decoration:underline;}
+
+/* Device filter */
+.device-row{display:flex;align-items:center;gap:8px;}
+.device-select{flex:1;height:32px;padding:0 8px;border:1px solid var(--border-strong);
+  border-radius:var(--r);font-size:12px;background:var(--bg);color:var(--text-primary);outline:none;
+  transition:border-color .15s;}
+.device-select:focus{border-color:var(--blue);}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:#111827;color:#fff;font-size:13px;font-weight:500;
+  padding:10px 18px;border-radius:99px;
+  transition:transform .25s ease,opacity .25s ease;
+  opacity:0;z-index:999;pointer-events:none;white-space:nowrap;}
+[data-theme="dark"] .toast{background:#F1F3F9;color:#111827;}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+
+/* Stats bar */
+.stats-bar{
+  display:flex;gap:0;overflow-x:auto;scrollbar-width:none;
+  border-bottom:1px solid var(--border);background:var(--surface);
+}
+.stats-bar::-webkit-scrollbar{display:none;}
+.stat-item{flex:1;min-width:80px;padding:8px 12px;text-align:center;border-right:1px solid var(--border);}
+.stat-item:last-child{border-right:none;}
+.stat-label{font-size:10px;color:var(--text-hint);font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+.stat-value{font-size:13px;font-weight:700;color:var(--text-primary);margin-top:2px;font-variant-numeric:tabular-nums;}
+.stat-value.green{color:var(--green);}
+.stat-value.red{color:var(--red);}
+.stat-value.amber{color:var(--amber);}
+</style>
+</head>
+<body>
+
+<div class="sticky-shell" id="stickyShell">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="logo" id="provLogo">KM</div>
+      <div>
+        <div class="hdr-title" id="provName">Margin Voucher</div>
+        <div class="hdr-subtitle" id="provSubtitle">Memuat data dari cloud…</div>
+      </div>
+      <div class="hdr-right">
+        <div class="hdr-meta" id="lastUpdatedMeta"></div>
+        <button class="dark-toggle" id="darkToggle" onclick="toggleDark()" aria-label="Toggle dark mode">🌙</button>
+      </div>
+    </div>
+    <div class="prov-tabs" id="provTabs"></div>
+  </div>
+
+  <div class="toolbar">
+    <!-- Device selector -->
+    <div class="device-row">
+      <select class="device-select" id="deviceFilter" onchange="onDeviceChange()">
+        <option value="all">📱 Semua Perangkat</option>
+      </select>
+      <button class="cbtn refresh" onclick="refreshData()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>Refresh
+      </button>
+    </div>
+
+    <div class="search-box" id="searchBox">
+      <svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+      </svg>
+      <input type="text" id="searchInput" placeholder="Cari nama produk…" autocomplete="off">
+      <button class="sc" id="searchClear" aria-label="Hapus">✕</button>
+    </div>
+
+    <div class="chip-row">
+      <button class="fchip" data-f="neg"   onclick="toggleF(this,'neg')">⬇ Minus</button>
+      <button class="fchip" data-f="r500"  onclick="toggleF(this,'r500')">&lt;500</button>
+      <button class="fchip" data-f="r1k"   onclick="toggleF(this,'r1k')">&lt;1.000</button>
+      <button class="fchip" data-f="r2k"   onclick="toggleF(this,'r2k')">&lt;2.000</button>
+      <button class="fchip" data-f="stock" onclick="toggleF(this,'stock')">📦 Stok Rendah</button>
+      <div class="chip-divider"></div>
+      <button class="cbtn chg" id="btnChg" onclick="copyChanges()" disabled>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="9 11 12 14 22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>Salin perubahan
+      </button>
+      <button class="cbtn all" id="btnAll" onclick="copyAll()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <rect x="9" y="9" width="13" height="13" rx="2"/>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>Salin ini
+      </button>
+      <button class="cbtn all" id="btnAllProv" onclick="copyAllProviders()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>Salin semua
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Stats bar -->
+<div class="stats-bar" id="statsBar" style="display:none">
+  <div class="stat-item">
+    <div class="stat-label">Total Produk</div>
+    <div class="stat-value" id="statTotal">—</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Margin &gt; 0</div>
+    <div class="stat-value green" id="statPos">—</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Margin Minus</div>
+    <div class="stat-value red" id="statNeg">—</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Tanpa Modal</div>
+    <div class="stat-value amber" id="statNoCost">—</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Stok Rendah</div>
+    <div class="stat-value amber" id="statLowStock">—</div>
+  </div>
+</div>
+
+<!-- Config banner (shown only when credentials missing) -->
+<div class="config-banner" id="configBanner">
+  ⚠️ <strong>Belum terhubung ke Supabase.</strong><br>
+  Edit konstanta <code>DIRECT_SUPABASE_URL</code> dan <code>DIRECT_SUPABASE_ANON_KEY</code> di bagian atas skrip file ini,
+  atau letakkan file <code>config.enc</code> (sama seperti yang dipakai di <a href="./interactive_stock.html">interactive_stock.html</a>)
+  di folder yang sama dan isi <code>DEFAULT_PIN</code>.
+</div>
+
+<!-- Table head with sortable columns -->
+<div class="table-head" id="tableHead">
+  <div class="th">#</div>
+  <div class="th sortable" data-col="name" onclick="sortBy('name')">Nama <span class="sort-arrow"></span></div>
+  <div class="th r sortable" data-col="stock" onclick="sortBy('stock')">Stok <span class="sort-arrow"></span></div>
+  <div class="th r sortable" data-col="cost" onclick="sortBy('cost')">Modal <span class="sort-arrow"></span></div>
+  <div class="th r sortable" data-col="margin" onclick="sortBy('margin')">Margin <span class="sort-arrow"></span></div>
+  <div class="th r sortable" data-col="pct" onclick="sortBy('pct')">% <span class="sort-arrow"></span></div>
+  <div class="th c sortable" data-col="price" onclick="sortBy('price')">Harga Jual <span class="sort-arrow"></span></div>
+</div>
+
+<div id="itemList"></div>
+<div class="empty-state" id="emptyState"><span>🔍</span><p>Tidak ada item yang cocok.</p></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================================
+// ⚙️ KONFIGURASI SUPABASE
+// ============================================================================
+// Opsi A: Isi langsung Supabase URL dan Anon Key di sini:
+const DIRECT_SUPABASE_URL = "";
+const DIRECT_SUPABASE_ANON_KEY = "";
+
+// Opsi B: Gunakan file config.enc terenkripsi (sama seperti interactive_stock.html).
+// Isi PIN di bawah agar didekripsi otomatis tanpa perlu input manual:
+const DEFAULT_PIN = "";
+// ============================================================================
+
+const WARN_THRESHOLD = 1000; // Warning jika margin < nilai ini (dan modal diketahui)
+const ALL = '__ALL__';
+const CACHE_KEY = 'kspch_sm_cache_v2';
+
+let supabaseClient = null;
+let allVouchers = []; // raw data from Supabase
+let DATA = {};        // { ProviderName: { color, items: [{id, n, p, c, stock, minLimit}] } }
+let PROVS = [];       // ordered list of provider names
+let active = ALL;
+let overrides = {};   // { "PROVNAME_idx": newPrice }
+let activeF = null;
+let searchVal = '';
+let sortCol = null;
+let sortDir = 1;
+let selectedDevice = 'all';
+let showStock = true;
+
+// ── Dark mode ──
+function toggleDark() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('darkToggle').textContent = isDark ? '🌙' : '☀️';
+  try { localStorage.setItem('kspch_sm_theme', isDark ? 'light' : 'dark'); } catch(e) {}
+}
+(function initTheme() {
+  try {
+    const saved = localStorage.getItem('kspch_sm_theme');
+    if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme:dark)').matches)) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.getElementById('darkToggle').textContent = '☀️';
+    }
+  } catch(e) {}
+})();
+
+// ── Supabase init ──
+document.addEventListener('DOMContentLoaded', async () => {
+  showLoading();
+  // Try direct credentials first
+  if (DIRECT_SUPABASE_URL && DIRECT_SUPABASE_ANON_KEY) {
+    supabaseClient = supabase.createClient(DIRECT_SUPABASE_URL, DIRECT_SUPABASE_ANON_KEY);
+    await loadFromSupabase();
+    return;
+  }
+  // Try config.enc with DEFAULT_PIN
+  const pinToTry = DEFAULT_PIN || (function() { try { return localStorage.getItem('kspcheck_viewer_pin') || ''; } catch(e) { return ''; } })();
+  if (pinToTry) {
+    const ok = await tryDecryptConfig(pinToTry);
+    if (ok) { await loadFromSupabase(); return; }
+  }
+  // Try cache
+  const cached = loadCache();
+  if (cached) {
+    allVouchers = cached.vouchers;
+    showToast('📦 Menampilkan data cache lokal.');
+    buildFromVouchers();
+    showConfigBanner();
+    return;
+  }
+  // Nothing available
+  showLoading(false);
+  showConfigBanner();
+  document.getElementById('provSubtitle').textContent = 'Tidak terhubung ke cloud. Isi konfigurasi Supabase.';
+});
+
+async function tryDecryptConfig(pin) {
+  try {
+    const res = await fetch('./config.enc?t=' + Date.now());
+    if (!res.ok) return false;
+    const base64Encrypted = await res.text();
+    const combined = CryptoJS.enc.Base64.parse(base64Encrypted.trim());
+    const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4), 16);
+    const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4), combined.sigBytes - 16);
+    const cipherParams = CryptoJS.lib.CipherParams.create({ ciphertext });
+    const key = CryptoJS.SHA256(pin);
+    const decrypted = CryptoJS.AES.decrypt(cipherParams, key, { iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+    const json = decrypted.toString(CryptoJS.enc.Utf8);
+    if (!json) return false;
+    const config = JSON.parse(json);
+    if (!config.supabase_url || !config.supabase_anon_key) return false;
+    supabaseClient = supabase.createClient(config.supabase_url, config.supabase_anon_key);
+    try { localStorage.setItem('kspcheck_viewer_pin', pin); } catch(e) {}
+    return true;
+  } catch(e) { return false; }
+}
+
+// ── Load from Supabase ──
+async function loadFromSupabase() {
+  if (!supabaseClient) return;
+  showLoading(true);
+  try {
+    const { data, error } = await supabaseClient
+      .from('vouchers')
+      .select('id, product_name, provider_name, sell_price, cost_price, stock, min_limit, sort_order, device_id, device_name, updated_at')
+      .order('sort_order', { ascending: true });
+    if (error) throw error;
+    allVouchers = data || [];
+    saveCache(allVouchers);
+    buildFromVouchers();
+    const ts = new Date().toLocaleString('id-ID', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    document.getElementById('lastUpdatedMeta').textContent = 'Update: ' + ts;
+    document.getElementById('configBanner').classList.remove('show');
+    showToast('✅ Data berhasil diperbarui!');
+  } catch(err) {
+    console.error(err);
+    const cached = loadCache();
+    if (cached) {
+      allVouchers = cached.vouchers;
+      buildFromVouchers();
+      showToast('⚠️ Gagal refresh. Menampilkan cache.');
+    } else {
+      showLoading(false);
+      showToast('❌ Gagal memuat: ' + err.message);
+    }
+  }
+}
+
+async function refreshData() {
+  overrides = {};
+  await loadFromSupabase();
+}
+
+// ── Device filter ──
+function populateDeviceDropdown() {
+  const sel = document.getElementById('deviceFilter');
+  const current = sel.value;
+  const devices = new Map();
+  allVouchers.forEach(v => {
+    if (v.device_id && !devices.has(v.device_id)) {
+      devices.set(v.device_id, v.device_name || v.device_id);
+    }
+  });
+  sel.innerHTML = `<option value="all">📱 Semua Perangkat (${devices.size})</option>`;
+  devices.forEach((name, id) => {
+    const opt = document.createElement('option');
+    opt.value = id; opt.textContent = '📱 ' + name;
+    sel.appendChild(opt);
+  });
+  if (devices.has(current)) sel.value = current;
+}
+
+function onDeviceChange() {
+  selectedDevice = document.getElementById('deviceFilter').value;
+  buildFromVouchers();
+}
+
+// ── Build DATA structure from allVouchers ──
+function buildFromVouchers() {
+  const filtered = (selectedDevice === 'all')
+    ? allVouchers
+    : allVouchers.filter(v => v.device_id === selectedDevice);
+
+  // Group by provider_name preserving sort_order within each provider
+  const provMap = new Map(); // provName -> [vouchers]
+  filtered.forEach(v => {
+    const prov = (v.provider_name || 'Lainnya').trim();
+    if (!provMap.has(prov)) provMap.set(prov, []);
+    provMap.get(prov).push(v);
+  });
+
+  // Sort providers by first item's sort_order
+  const provEntries = Array.from(provMap.entries()).map(([name, items]) => {
+    const minSort = Math.min(...items.map(i => i.sort_order > 0 ? i.sort_order : 99999));
+    return { name, items, minSort };
+  });
+  provEntries.sort((a, b) => a.minSort - b.minSort);
+
+  // Provider colors — auto-assign from palette
+  const PALETTE = ['#CC0000','#E6002D','#3D0099','#003087','#F7A800','#E20714','#00796B','#5D4037','#1565C0','#6A1B9A','#00695C','#558B2F'];
+  DATA = {};
+  PROVS = [];
+  provEntries.forEach(({ name, items }, pi) => {
+    PROVS.push(name);
+    DATA[name] = {
+      abbr: name.substring(0, 4).toUpperCase(),
+      color: PALETTE[pi % PALETTE.length],
+      items: items.map(v => ({
+        id: v.id,
+        n: v.product_name || '-',
+        p: parseInt(v.sell_price || 0),
+        c: parseInt(v.cost_price || 0),
+        stock: parseInt(v.stock || 0),
+        minLimit: parseInt(v.min_limit || 5),
+      }))
+    };
+  });
+
+  if (PROVS.length > 0 && !PROVS.includes(active) && active !== ALL) {
+    active = PROVS[0];
+  }
+  if (PROVS.length === 0) active = ALL;
+
+  populateDeviceDropdown();
+  showLoading(false);
+  updateStats();
+  buildTabs();
+  updHdr();
+  buildList();
+  setStickyTop();
+  document.getElementById('statsBar').style.display = '';
+  document.getElementById('provSubtitle').textContent =
+    `${filtered.length} produk dari ${provEntries.length} provider`;
+}
+
+// ── Stats bar ──
+function updateStats() {
+  let total = 0, pos = 0, neg = 0, noCost = 0, lowStock = 0;
+  PROVS.forEach(prov => {
+    DATA[prov].items.forEach((it, i) => {
+      total++;
+      const price = getP(prov, i);
+      if (!it.c) { noCost++; return; }
+      const m = price - it.c;
+      if (m > 0) pos++;
+      else if (m < 0) neg++;
+      if (it.stock <= it.minLimit) lowStock++;
+    });
+  });
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statPos').textContent = pos;
+  document.getElementById('statNeg').textContent = neg;
+  document.getElementById('statNoCost').textContent = noCost;
+  document.getElementById('statLowStock').textContent = lowStock;
+}
+
+// ── Key/price helpers ──
+const key   = (p, i) => p + '_' + i;
+const getP  = (p, i) => overrides[key(p, i)] !== undefined ? overrides[key(p, i)] : DATA[p].items[i].p;
+const fmt   = n => Math.round(n).toLocaleString('id-ID');
+const fmtRp = n => 'Rp' + fmt(n);
+const elId  = (prov, i, prefix) => prefix + '_' + prov.replace(/\s+/g,'_') + '_' + i;
+
+function computeM(price, cost) {
+  if (!cost) return null;
+  const v = price - cost;
+  return { val: v, pct: Math.round((v / cost) * 100) };
+}
+function mCells(m) {
+  if (!m) return { mv: `<div class="mval na">—</div>`, mp: `<div class="mpct na">—</div>` };
+  const c = m.val > 0 ? 'pos' : m.val < 0 ? 'neg' : 'zero';
+  const pc = m.val > 0 ? 'pos' : m.val < 0 ? 'neg' : 'na';
+  const s = m.val > 0 ? '+' : '';
+  return {
+    mv: `<div class="mval ${c}">${s}${fmt(m.val)}</div>`,
+    mp: `<div class="mpct ${pc}">${s}${m.pct}%</div>`
+  };
+}
+function isWarn(margin) { return margin !== null && margin < WARN_THRESHOLD; }
+
+// ── Stock badge ──
+function stockBadge(it) {
+  if (!showStock) return '';
+  const cls = it.stock === 0 ? 'stock-zero' : it.stock <= it.minLimit ? 'stock-low' : 'stock-ok';
+  const label = it.stock === 0 ? '0 pcs' : it.stock + ' pcs';
+  return `<div class="stock-badge ${cls}">📦 ${label}</div>`;
+}
+
+// ── Sort ──
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = 1; }
+  updateSortArrows();
+  buildList();
+}
+function updateSortArrows() {
+  document.querySelectorAll('.th.sortable').forEach(th => {
+    const c = th.dataset.col;
+    th.classList.remove('asc', 'desc');
+    if (c === sortCol) th.classList.add(sortDir === 1 ? 'asc' : 'desc');
+  });
+}
+function sortItems(items, prov) {
+  if (!sortCol) return items.map((it, i) => ({ it, i, prov }));
+  const entries = items.map((it, i) => {
+    const price = getP(prov, i);
+    const m = computeM(price, it.c);
+    return {
+      it, i, prov,
+      _name: it.n.toLowerCase(),
+      _stock: it.stock,
+      _cost: it.c || 0,
+      _margin: m ? m.val : -Infinity,
+      _pct: m ? m.pct : -Infinity,
+      _price: price
+    };
+  });
+  const colMap = { name: '_name', stock: '_stock', cost: '_cost', margin: '_margin', pct: '_pct', price: '_price' };
+  const k = colMap[sortCol];
+  entries.sort((a, b) => {
+    if (a[k] < b[k]) return -sortDir;
+    if (a[k] > b[k]) return sortDir;
+    return 0;
+  });
+  return entries;
+}
+
+// ── Sticky top ──
+function setStickyTop() {
+  const shellH = document.getElementById('stickyShell').offsetHeight;
+  const th = document.getElementById('tableHead');
+  th.style.top = shellH + 'px';
+  const thH = th.offsetHeight;
+  document.querySelectorAll('.prov-section-hdr').forEach(h => h.style.top = (shellH + thH) + 'px');
+}
+
+// ── Tabs ──
+function buildTabs() {
+  const el = document.getElementById('provTabs');
+  el.innerHTML = '';
+  const all = document.createElement('button');
+  all.className = 'ptab' + (active === ALL ? ' on' : '');
+  all.textContent = 'Semua';
+  all.onclick = () => { active = ALL; resetFilters(); buildTabs(); buildList(); updHdr(); setStickyTop(); };
+  el.appendChild(all);
+  PROVS.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'ptab' + (p === active ? ' on' : '');
+    b.textContent = p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    b.onclick = () => { active = p; resetFilters(); buildTabs(); buildList(); updHdr(); setStickyTop(); };
+    el.appendChild(b);
+  });
+}
+function resetFilters() { activeF = null; searchVal = ''; sortCol = null; sortDir = 1; updateFChips(); updateSearch(); updateSortArrows(); }
+
+function updHdr() {
+  const l = document.getElementById('provLogo');
+  if (active === ALL) {
+    l.textContent = 'ALL'; l.style.background = '#374151';
+    document.getElementById('provName').textContent = 'Semua Provider — Margin Voucher';
+  } else {
+    const d = DATA[active] || {};
+    l.textContent = (d.abbr || active.substring(0,3)).toUpperCase();
+    l.style.background = d.color || '#374151';
+    document.getElementById('provName').textContent = active + ' — Margin Voucher';
+  }
+}
+
+// ── Build one item row ──
+function buildRow(prov, it, i, globalNum) {
+  const price = getP(prov, i);
+  const changed = overrides[key(prov, i)] !== undefined;
+  const m = computeM(price, it.c);
+  const { mv, mp } = mCells(m);
+  const warn = isWarn(m ? m.val : null);
+  const costH = it.c ? `<div class="cost-val">${fmt(it.c)}</div>` : `<div class="cost-none">—</div>`;
+  const safeProv = prov.replace(/\s+/g, '_');
+  const row = document.createElement('div');
+  let cls = 'item-row';
+  if (changed) cls += ' changed';
+  if (warn && !changed) cls += ' warn-margin';
+  if (warn && changed) cls += ' changed warn-margin';
+  row.className = cls;
+  row.dataset.idx = i;
+  row.dataset.prov = prov;
+  row.dataset.margin = m ? m.val : '';
+  row.dataset.name = it.n.toLowerCase();
+  row.dataset.stock = it.stock;
+  row.dataset.minLimit = it.minLimit;
+  row.innerHTML = `
+    <div class="row-num">${globalNum}</div>
+    <div class="name-cell">
+      <div class="iname">${escHtml(it.n)}</div>
+      ${stockBadge(it)}
+    </div>
+    <div class="cost-cell" id="${elId(prov,i,'st')}">
+      <div class="cost-val" style="color:${it.stock===0?'var(--red)':it.stock<=it.minLimit?'var(--amber)':'var(--text-secondary)'}">${it.stock}</div>
+    </div>
+    <div class="cost-cell">${costH}</div>
+    <div class="mval-cell" id="${elId(prov,i,'mv')}">${mv}</div>
+    <div class="pct-cell"  id="${elId(prov,i,'mp')}">${mp}</div>
+    <div class="price-cell">
+      <button class="pbtn" onclick="adj('${safeProv}',${i},-1,this)">−</button>
+      <div class="pval${changed?' ch':''}" id="${elId(prov,i,'pv')}">${fmtRp(price)}</div>
+      <button class="pbtn" onclick="adj('${safeProv}',${i},+1,this)">+</button>
+    </div>`;
+  return row;
+}
+
+function buildProvHeader(prov) {
+  const d = DATA[prov] || {};
+  const hdr = document.createElement('div');
+  hdr.className = 'prov-section-hdr';
+  hdr.dataset.provhdr = prov;
+  hdr.innerHTML = `<span class="psh-dot" style="background:${d.color||'#374151'}"></span><span class="psh-name">${escHtml(prov)}</span><span class="psh-count">${(d.items||[]).length} item</span>`;
+  return hdr;
+}
+
+// ── Build list ──
+function buildList() {
+  const list = document.getElementById('itemList');
+  list.innerHTML = '';
+  if (!PROVS.length) return;
+  if (active === ALL) {
+    let g = 1;
+    PROVS.forEach(prov => {
+      list.appendChild(buildProvHeader(prov));
+      sortItems(DATA[prov].items, prov).forEach(e => list.appendChild(buildRow(e.prov, e.it, e.i, g++)));
+    });
+  } else {
+    sortItems(DATA[active].items, active).forEach((e, gi) => list.appendChild(buildRow(e.prov, e.it, e.i, gi + 1)));
+  }
+  applyFilters();
+  updateCopyBtns();
+  setStickyTop();
+}
+
+// ── Adjust price ──
+function adj(safeProv, idx, dir, btn) {
+  // Find real prov name
+  const prov = PROVS.find(p => p.replace(/\s+/g,'_') === safeProv) || safeProv;
+  overrides[key(prov, idx)] = Math.max(0, getP(prov, idx) + dir * 1000);
+  refreshRow(prov, idx);
+  updateCopyBtns();
+  updateStats();
+}
+function refreshRow(prov, idx) {
+  const it = DATA[prov].items[idx];
+  const price = getP(prov, idx);
+  const changed = overrides[key(prov, idx)] !== undefined;
+  const m = computeM(price, it.c);
+  const { mv, mp } = mCells(m);
+  const warn = isWarn(m ? m.val : null);
+  const pe = document.getElementById(elId(prov, idx, 'pv'));
+  const me = document.getElementById(elId(prov, idx, 'mv'));
+  const mpe = document.getElementById(elId(prov, idx, 'mp'));
+  const row = document.querySelector(`.item-row[data-prov="${prov}"][data-idx="${idx}"]`);
+  if (pe) { pe.textContent = fmtRp(price); pe.className = 'pval' + (changed ? ' ch' : ''); }
+  if (me) me.innerHTML = mv;
+  if (mpe) mpe.innerHTML = mp;
+  if (row) {
+    let cls = 'item-row';
+    if (changed) cls += ' changed';
+    if (warn) cls += ' warn-margin';
+    row.className = cls;
+    if (m) row.dataset.margin = m.val;
+    applyFilters();
+  }
+}
+
+// ── Filters ──
+function toggleF(btn, f) { activeF = activeF === f ? null : f; updateFChips(); applyFilters(); }
+function updateFChips() {
+  const map = { neg: 'on-neg', r500: 'on-r500', r1k: 'on-r1k', r2k: 'on-r2k', stock: 'on-stock' };
+  document.querySelectorAll('.fchip').forEach(b => {
+    b.className = 'fchip' + (activeF === b.dataset.f ? ' ' + map[b.dataset.f] : '');
+  });
+}
+function applyFilters() {
+  const rows = document.querySelectorAll('.item-row');
+  let vis = 0;
+  rows.forEach(row => {
+    const name = row.dataset.name || '';
+    const mRaw = row.dataset.margin;
+    const margin = mRaw !== '' ? parseInt(mRaw) : null;
+    const stk = parseInt(row.dataset.stock || '0');
+    const minL = parseInt(row.dataset.minLimit || '5');
+    let show = true;
+    if (searchVal && !name.includes(searchVal.toLowerCase())) show = false;
+    if (show && activeF) {
+      if (activeF === 'neg')   show = margin !== null && margin < 0;
+      if (activeF === 'r500')  show = margin !== null && margin > 0 && margin < 500;
+      if (activeF === 'r1k')   show = margin !== null && margin > 0 && margin < 1000;
+      if (activeF === 'r2k')   show = margin !== null && margin > 0 && margin < 2000;
+      if (activeF === 'stock') show = stk <= minL;
+    }
+    if (show) { row.classList.remove('hidden', 'dim'); vis++; }
+    else { row.classList.add('hidden'); row.classList.remove('dim'); }
+  });
+  if (active === ALL) {
+    document.querySelectorAll('.prov-section-hdr').forEach(hdr => {
+      const prov = hdr.dataset.provhdr;
+      const provRows = document.querySelectorAll(`.item-row[data-prov="${prov}"]`);
+      const anyVis = Array.from(provRows).some(r => !r.classList.contains('hidden'));
+      hdr.style.display = anyVis ? '' : 'none';
+      const cnt = hdr.querySelector('.psh-count');
+      if (cnt) cnt.textContent = Array.from(provRows).filter(r => !r.classList.contains('hidden')).length + ' item';
+    });
+  }
+  document.getElementById('emptyState').classList.toggle('show', vis === 0);
+}
+
+// ── Search ──
+function updateSearch() { document.getElementById('searchBox').classList.toggle('hv', searchVal.length > 0); }
+document.getElementById('searchInput').addEventListener('input', e => { searchVal = e.target.value.trim(); updateSearch(); applyFilters(); });
+document.getElementById('searchClear').onclick = () => { searchVal = ''; document.getElementById('searchInput').value = ''; updateSearch(); applyFilters(); };
+
+// ── Copy buttons ──
+function updateCopyBtns() {
+  const anyChanged = active === ALL
+    ? Object.keys(overrides).length > 0
+    : Object.keys(overrides).some(k => k.startsWith(active + '_'));
+  const btn = document.getElementById('btnChg');
+  btn.disabled = !anyChanged;
+  btn.classList.remove('done');
+  btn.innerHTML = icoChk() + 'Salin perubahan';
+  document.getElementById('btnAll').classList.remove('done');
+  document.getElementById('btnAll').innerHTML = icoCpy() + (active === ALL ? 'Salin semua' : 'Salin ini');
+  document.getElementById('btnAllProv').classList.remove('done');
+  document.getElementById('btnAllProv').innerHTML = icoUsers() + 'Salin semua';
+}
+const icoCpy   = () => `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+const icoChk   = () => `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`;
+const icoUsers = () => `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+
+// ── Copy logic ──
+function mkLine(it, price, oldP) {
+  const diff = oldP !== undefined ? price - oldP : null;
+  const m = computeM(price, it.c);
+  const mTxt = m ? `  margin: ${fmt(m.val)} (${m.pct >= 0 ? '+' : ''}${m.pct}%)` : '';
+  const dTxt = diff !== null ? `  (${diff >= 0 ? '+' : ''}${fmt(diff)})` : '';
+  return `${it.n}  |  ${fmtRp(price)}${dTxt}${mTxt}`;
+}
+function copyChanges() {
+  const date = new Date().toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
+  const lines = []; let total = 0;
+  const provList = active === ALL ? PROVS : [active];
+  provList.forEach(prov => {
+    const items = DATA[prov].items;
+    const changed = Object.keys(overrides).filter(k => k.startsWith(prov + '_'));
+    if (!changed.length) return;
+    if (active === ALL) lines.push(`── ${prov} ──`);
+    changed.sort((a, b) => parseInt(a.split('_').pop()) - parseInt(b.split('_').pop()))
+      .forEach(k => { const idx = parseInt(k.split('_').pop()); lines.push(mkLine(items[idx], overrides[k], items[idx].p)); total++; });
+    if (active === ALL) lines.push('');
+  });
+  if (!total) return;
+  lines.unshift(`=== Perubahan Harga${active === ALL ? ' Semua Provider' : ' ' + active} — ${date} ===`, `${total} item berubah`, '');
+  doClip(lines.join('\n'), 'btnChg', `✓ ${total} perubahan disalin`);
+}
+function copyAll() {
+  if (active === ALL) { copyAllProviders(); return; }
+  const items = DATA[active].items;
+  const date = new Date().toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
+  const lines = [`=== Daftar Harga ${active} — ${date} ===`, `${items.length} item`, ''];
+  items.forEach((it, i) => lines.push(mkLine(it, getP(active, i))));
+  doClip(lines.join('\n'), 'btnAll', `✓ ${items.length} item disalin`);
+}
+function copyAllProviders() {
+  const date = new Date().toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
+  const lines = [`=== Daftar Harga Semua Provider — ${date} ===`, '']; let total = 0;
+  PROVS.forEach(prov => {
+    const items = DATA[prov].items;
+    lines.push(`── ${prov} (${items.length} item) ──`);
+    items.forEach((it, i) => lines.push(mkLine(it, getP(prov, i))));
+    lines.push(''); total += items.length;
+  });
+  lines.splice(1, 0, `Total: ${total} item di ${PROVS.length} provider`);
+  doClip(lines.join('\n'), 'btnAllProv', `✓ ${total} item disalin`);
+}
+function doClip(text, btnId, msg) {
+  const done = () => {
+    showToast(msg);
+    const b = document.getElementById(btnId);
+    if (b) { b.classList.add('done'); b.textContent = '✓ Tersalin'; }
+    setTimeout(() => updateCopyBtns(), 2500);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(text).then(done).catch(() => fbClip(text, done));
+  else fbClip(text, done);
+}
+function fbClip(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta); if (cb) cb();
+}
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ── Loading state ──
+function showLoading(state = true) {
+  const list = document.getElementById('itemList');
+  if (state) {
+    list.innerHTML = Array(8).fill(0).map(() =>
+      `<div style="padding:4px 16px;"><div class="skeleton-row"></div></div>`
+    ).join('') + `<div class="loading-hint">Mengambil data dari Supabase…</div>`;
+    document.getElementById('emptyState').classList.remove('show');
+  } else {
+    list.innerHTML = '';
+  }
+}
+
+// ── Config banner ──
+function showConfigBanner() {
+  document.getElementById('configBanner').classList.add('show');
+}
+
+// ── Cache ──
+function saveCache(vouchers) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ vouchers, ts: Date.now() })); } catch(e) {}
+}
+function loadCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    // Accept cache up to 24h old
+    if (Date.now() - obj.ts > 86400000) return null;
+    return obj;
+  } catch(e) { return null; }
+}
+
+// ── Escape HTML ──
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Init sort arrows
+updateSortArrows();
+</script>
+</body>
+</html>
