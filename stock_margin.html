@@ -21,7 +21,7 @@
   --purple:#5B21B6;--purple-bg:#EDE9FE;
   --warn-bg:#FFF7ED;--warn-border:#FED7AA;--warn-text:#9A3412;
   --r:6px;
-  --cols: 20px minmax(0,1fr) 60px 70px 70px 40px 120px;
+  --cols: 18px minmax(0,1fr) 58px 58px 36px 110px;
 }
 [data-theme="dark"]{
   --bg:#0F1117;--surface:#1A1D27;--border:#2A2D3A;--border-strong:#3A3D4E;
@@ -61,6 +61,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   cursor:pointer;font-size:15px;transition:all .15s;flex-shrink:0;
 }
 .dark-toggle:hover{background:var(--bg);color:var(--text-primary);}
+
+/* Back / nav link button */
+.back-btn{
+  width:30px;height:30px;border-radius:50%;border:1px solid var(--border-strong);
+  background:var(--surface);color:var(--text-secondary);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;text-decoration:none;transition:all .15s;flex-shrink:0;
+}
+.back-btn:hover{background:var(--bg);color:var(--text-primary);}
 
 /* Provider tabs */
 .prov-tabs{display:flex;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px;}
@@ -266,6 +275,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
       </div>
       <div class="hdr-right">
         <div class="hdr-meta" id="lastUpdatedMeta"></div>
+        <a href="interactive_stock.html" class="back-btn" title="Kembali ke Stok & Order">🛒</a>
         <button class="dark-toggle" id="darkToggle" onclick="toggleDark()" aria-label="Toggle dark mode">🌙</button>
       </div>
     </div>
@@ -360,7 +370,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="table-head" id="tableHead">
   <div class="th">#</div>
   <div class="th sortable" data-col="name" onclick="sortBy('name')">Nama <span class="sort-arrow"></span></div>
-  <div class="th r sortable" data-col="stock" onclick="sortBy('stock')">Stok <span class="sort-arrow"></span></div>
   <div class="th r sortable" data-col="cost" onclick="sortBy('cost')">Modal <span class="sort-arrow"></span></div>
   <div class="th r sortable" data-col="margin" onclick="sortBy('margin')">Margin <span class="sort-arrow"></span></div>
   <div class="th r sortable" data-col="pct" onclick="sortBy('pct')">% <span class="sort-arrow"></span></div>
@@ -746,10 +755,6 @@ function buildRow(prov, it, i, globalNum) {
     <div class="row-num">${globalNum}</div>
     <div class="name-cell">
       <div class="iname">${escHtml(it.n)}</div>
-      ${stockBadge(it)}
-    </div>
-    <div class="cost-cell" id="${elId(prov,i,'st')}">
-      <div class="cost-val" style="color:${it.stock===0?'var(--red)':it.stock<=it.minLimit?'var(--amber)':'var(--text-secondary)'}">${it.stock}</div>
     </div>
     <div class="cost-cell">${costH}</div>
     <div class="mval-cell" id="${elId(prov,i,'mv')}">${mv}</div>
