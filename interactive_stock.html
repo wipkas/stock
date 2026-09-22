@@ -95,6 +95,90 @@
         .btn-nav-action { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--card-border); background: var(--nav-wrapper); color: var(--text-main); font-size: 15px; display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; }
         .device-select { background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main); font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 8px; outline: none; }
 
+        /* Header Settings Dropdown */
+        .header-settings { position: relative; }
+        .btn-settings { position: relative; }
+        .settings-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 280px;
+            max-width: calc(100vw - 28px);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            box-shadow: 0 14px 36px var(--shadow-color);
+            padding: 8px;
+            display: none;
+            z-index: 300;
+            animation: settingsDropIn 0.16s ease-out;
+        }
+        .settings-dropdown.open { display: block; }
+        @keyframes settingsDropIn {
+            from { opacity: 0; transform: translateY(-5px) scale(.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .settings-title {
+            padding: 7px 9px 6px;
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .7px;
+            text-transform: uppercase;
+        }
+        .settings-group + .settings-group {
+            border-top: 1px solid var(--card-border);
+            margin-top: 6px;
+            padding-top: 6px;
+        }
+        .settings-item {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            color: var(--text-main);
+            border-radius: 10px;
+            padding: 9px 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 650;
+            transition: background .15s ease;
+        }
+        .settings-item:hover { background: var(--chip-bg); }
+        .settings-item .settings-icon { width: 20px; text-align: center; font-size: 15px; flex-shrink: 0; }
+        .settings-item .settings-label { flex: 1; }
+        .settings-state {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 7px;
+            border-radius: 999px;
+            background: var(--chip-bg);
+            color: var(--text-muted);
+            border: 1px solid var(--card-border);
+        }
+        .settings-state.on {
+            color: var(--success);
+            border-color: rgba(46,204,135,.35);
+            background: rgba(46,204,135,.12);
+        }
+        .settings-state.warn {
+            color: var(--warning);
+            border-color: rgba(245,166,35,.35);
+            background: rgba(245,166,35,.12);
+        }
+        @media (max-width: 600px) {
+            .settings-dropdown {
+                position: fixed;
+                top: 64px;
+                right: 10px;
+                width: min(300px, calc(100vw - 20px));
+            }
+        }
+
+
         /* Cards & Stats */
         .header-card { background: linear-gradient(135deg, var(--header-grad-1) 0%, var(--header-grad-2) 100%); border: 1px solid var(--card-border); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
         .header-title { font-size: 18px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
@@ -281,8 +365,39 @@
             <!-- Mode Switcher (Go to Table view) -->
             <a href="index.html" class="btn-nav-action" title="Buka Mode Tabel Ringkas">📋</a>
 
-            <!-- Theme Toggle -->
-            <button class="btn-nav-action" id="btnThemeToggle" onclick="toggleTheme()" title="Ganti Tema">🌙</button>
+            <!-- Unified Settings / Toggle Menu -->
+            <div class="header-settings" id="headerSettings">
+                <button class="btn-nav-action btn-settings" id="btnSettingsToggle" onclick="toggleSettingsMenu(event)" title="Pengaturan tampilan" aria-label="Pengaturan tampilan" aria-expanded="false">⚙️</button>
+                <div class="settings-dropdown" id="settingsDropdown" role="menu">
+                    <div class="settings-group">
+                        <div class="settings-title">Tampilan & mode</div>
+                        <button class="settings-item" id="settingTheme" onclick="toggleThemeFromMenu()">
+                            <span class="settings-icon">🌙</span><span class="settings-label">Tema</span><span class="settings-state" id="settingThemeState">Gelap</span>
+                        </button>
+                        <button class="settings-item" id="settingOrderProfit" onclick="toggleOrderProfitFromMenu()">
+                            <span class="settings-icon">💰</span><span class="settings-label">Mode Keuntungan</span><span class="settings-state" id="settingOrderProfitState">Mati</span>
+                        </button>
+                        <button class="settings-item" id="settingProviderBadge" onclick="toggleProviderBadgeFromMenu()">
+                            <span class="settings-icon">🏷️</span><span class="settings-label">Badge Provider</span><span class="settings-state" id="settingProviderBadgeState">Aktif</span>
+                        </button>
+                    </div>
+                    <div class="settings-group" id="settingsOrderGroup">
+                        <div class="settings-title">Order Restock</div>
+                        <button class="settings-item" id="settingOrderHistory" onclick="toggleOrderHistoryFromMenu()">
+                            <span class="settings-icon">📋</span><span class="settings-label">Riwayat Order</span><span class="settings-state" id="settingOrderHistoryState">Tersembunyi</span>
+                        </button>
+                    </div>
+                    <div class="settings-group" id="settingsDailyGroup">
+                        <div class="settings-title">Laporan Harian</div>
+                        <button class="settings-item" id="settingHideZero" onclick="toggleHideZeroFromMenu()">
+                            <span class="settings-icon">👁️</span><span class="settings-label">Sembunyikan 0 Laku</span><span class="settings-state" id="settingHideZeroState">Aktif</span>
+                        </button>
+                        <button class="settings-item" id="settingAudit" onclick="toggleAuditFromMenu()">
+                            <span class="settings-icon">📜</span><span class="settings-label">Riwayat Audit</span><span class="settings-state" id="settingAuditState">Tersembunyi</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <!-- Lock PIN -->
             <button class="btn-nav-action" onclick="lockViewer()" title="Kunci PIN">🔒</button>
@@ -326,9 +441,6 @@
                 <div class="chip" onclick="setOrderFilter('low', this)">⚠️ Menipis &amp; Habis</div>
                 <div class="chip" onclick="setOrderFilter('habis', this)">🔴 Habis (0 pcs)</div>
                 <div class="chip" onclick="setOrderFilter('aman', this)">🟢 Aman</div>
-                <div class="chip" id="chipOrderProfitMode" onclick="toggleOrderProfitMode(this)">💰 Mode Keuntungan</div>
-                <div class="chip" id="chipProviderBadge" onclick="toggleProviderBadge(this)">🏷️ Badge Provider</div>
-                <div class="chip" id="chipToggleOrderHistory" onclick="toggleOrderHistoryView(this)">📋 Riwayat Order (<span id="badgeActiveOrderCount">0</span>)</div>
             </div>
 
             <div class="quick-select-row">
@@ -425,10 +537,6 @@
                 <div class="chip active" id="chipDays1" onclick="setDailyDays(1, this)">1 Hari</div>
                 <div class="chip" id="chipDays2" onclick="setDailyDays(2, this)">2 Hari</div>
                 <div class="chip" id="chipDays3" onclick="setDailyDays(3, this)">3 Hari</div>
-                <div class="chip" id="chipProfitMode" onclick="toggleProfitMode(this)">💰 Mode Keuntungan</div>
-                <div class="chip active" id="chipHideZero" onclick="toggleHideZeroSell(this)">👁️ Sembunyikan 0 Laku</div>
-                <div class="chip" id="chipDailyProviderBadge" onclick="toggleProviderBadge(this)">🏷️ Badge Provider</div>
-                <div class="chip" id="chipToggleAudit" onclick="toggleAuditView(this)">📜 Riwayat Audit</div>
                 <div class="chip" id="chipDailyOrderHistory" onclick="switchToTabOrderHistory()">📦 Pencocokan Order</div>
             </div>
 
@@ -650,6 +758,7 @@
                 if (orderProfitMode) chip.classList.add('active-warning');
                 else chip.classList.remove('active-warning');
             }
+            updateSettingsMenuUI();
         }
 
         function handlePinSubmit(e) {
@@ -1194,6 +1303,7 @@
             const isHidden = document.body.classList.contains('hide-provider-badge');
             if (chip1) chip1.classList.toggle('active', !isHidden);
             if (chip2) chip2.classList.toggle('active', !isHidden);
+            updateSettingsMenuUI();
         }
 
         // 7. WhatsApp Text Formatting (Tab 1: Order Restock)
@@ -1661,6 +1771,7 @@
             const isHidden = (sec.style.display === 'none' || !sec.style.display);
             sec.style.display = isHidden ? 'block' : 'none';
             if (btn) btn.classList.toggle('active', isHidden);
+            updateSettingsMenuUI();
             if (isHidden) {
                 reconcileAllOrders();
                 renderOrderHistoryList();
@@ -1980,16 +2091,22 @@
 
         function toggleProfitMode(el) {
             dailyProfitMode = !dailyProfitMode;
-            if (dailyProfitMode) el.classList.add('active-warning');
-            else el.classList.remove('active-warning');
+            if (el) {
+                if (dailyProfitMode) el.classList.add('active-warning');
+                else el.classList.remove('active-warning');
+            }
             renderDailyReportTable();
+            updateSettingsMenuUI();
         }
 
         function toggleHideZeroSell(el) {
             dailyHideZeroSell = !dailyHideZeroSell;
-            if (dailyHideZeroSell) el.classList.add('active');
-            else el.classList.remove('active');
+            if (el) {
+                if (dailyHideZeroSell) el.classList.add('active');
+                else el.classList.remove('active');
+            }
             renderDailyReportTable();
+            updateSettingsMenuUI();
         }
 
         function renderDailyReportTable() {
@@ -2818,12 +2935,102 @@
             if (tab === 'daily') {
                 initDailyReport();
             }
+            updateSettingsMenuUI();
+        }
+
+
+        function closeSettingsMenu() {
+            const menu = document.getElementById('settingsDropdown');
+            const btn = document.getElementById('btnSettingsToggle');
+            if (menu) menu.classList.remove('open');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+
+        function toggleSettingsMenu(event) {
+            if (event) event.stopPropagation();
+            const menu = document.getElementById('settingsDropdown');
+            const btn = document.getElementById('btnSettingsToggle');
+            if (!menu) return;
+            const willOpen = !menu.classList.contains('open');
+            menu.classList.toggle('open', willOpen);
+            if (btn) btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+            if (willOpen) updateSettingsMenuUI();
+        }
+
+        document.addEventListener('click', (event) => {
+            const wrapper = document.getElementById('headerSettings');
+            if (wrapper && !wrapper.contains(event.target)) closeSettingsMenu();
+        });
+
+        function updateSettingsState(id, text, stateClass) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.innerText = text;
+            el.className = 'settings-state' + (stateClass ? ' ' + stateClass : '');
+        }
+
+        function updateSettingsMenuUI() {
+            const isLight = document.body.classList.contains('light-theme');
+            const providerVisible = !document.body.classList.contains('hide-provider-badge');
+            const orderHistory = document.getElementById('orderHistorySection');
+            const orderHistoryVisible = orderHistory && orderHistory.style.display !== 'none';
+            const audit = document.getElementById('auditTrailSection');
+            const auditVisible = audit && audit.style.display === 'block';
+
+            const themeIcon = document.querySelector('#settingTheme .settings-icon');
+            if (themeIcon) themeIcon.innerText = isLight ? '☀️' : '🌙';
+            updateSettingsState('settingThemeState', isLight ? 'Terang' : 'Gelap', 'on');
+
+            updateSettingsState('settingOrderProfitState', orderProfitMode ? 'Aktif' : 'Mati', orderProfitMode ? 'warn' : '');
+            updateSettingsState('settingProviderBadgeState', providerVisible ? 'Aktif' : 'Mati', providerVisible ? 'on' : '');
+            updateSettingsState('settingOrderHistoryState', orderHistoryVisible ? 'Terbuka' : 'Tersembunyi', orderHistoryVisible ? 'on' : '');
+            updateSettingsState('settingHideZeroState', dailyHideZeroSell ? 'Aktif' : 'Mati', dailyHideZeroSell ? 'on' : '');
+            updateSettingsState('settingAuditState', auditVisible ? 'Terbuka' : 'Tersembunyi', auditVisible ? 'on' : '');
+
+            const orderGroup = document.getElementById('settingsOrderGroup');
+            const dailyGroup = document.getElementById('settingsDailyGroup');
+            const isDaily = currentTab === 'daily';
+            if (orderGroup) orderGroup.style.display = isDaily ? 'none' : 'block';
+            if (dailyGroup) dailyGroup.style.display = isDaily ? 'block' : 'none';
+        }
+
+        function toggleThemeFromMenu() {
+            toggleTheme();
+            updateSettingsMenuUI();
+        }
+
+        function toggleOrderProfitFromMenu() {
+            toggleOrderProfitMode();
+            updateSettingsMenuUI();
+        }
+
+        function toggleProviderBadgeFromMenu() {
+            toggleProviderBadge();
+            updateSettingsMenuUI();
+        }
+
+        function toggleOrderHistoryFromMenu() {
+            const chip = document.getElementById('chipToggleOrderHistory');
+            toggleOrderHistoryView(chip);
+            updateSettingsMenuUI();
+        }
+
+        function toggleHideZeroFromMenu() {
+            toggleHideZeroSell();
+            updateSettingsMenuUI();
+        }
+
+        function toggleAuditFromMenu() {
+            toggleAuditView();
+            updateSettingsMenuUI();
         }
 
         function toggleTheme() {
             const isLight = document.body.classList.toggle('light-theme');
             localStorage.setItem('kspcheck_theme', isLight ? 'light' : 'dark');
-            document.getElementById('btnThemeToggle').innerText = isLight ? '☀️' : '🌙';
+            const oldThemeBtn = document.getElementById('btnThemeToggle');
+            if (oldThemeBtn) oldThemeBtn.innerText = isLight ? '☀️' : '🌙';
+            updateSettingsMenuUI();
         }
 
         function initTheme() {
