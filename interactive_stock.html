@@ -201,6 +201,42 @@
         .audit-table th { background: var(--card-border); padding: 10px; font-size: 11px; text-transform: uppercase; color: var(--text-muted); }
         .audit-table td { padding: 10px; border-bottom: 1px solid var(--card-border); }
 
+        /* Riwayat Order Restock & Pencocokan Biaya */
+        .order-history-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; margin-bottom: 12px; transition: all 0.2s ease; }
+        .order-history-card:hover { border-color: var(--primary); }
+        .order-history-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; border-bottom: 1px solid var(--table-border); padding-bottom: 8px; }
+        .order-title-block { display: flex; flex-direction: column; gap: 2px; }
+        .order-id-tag { font-size: 13px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+        .order-date-tag { font-size: 11px; color: var(--text-muted); }
+        .order-badges-block { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .badge-status { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+        .badge-status.pending { background: rgba(245, 166, 35, 0.15); color: var(--warning); border: 1px solid rgba(245, 166, 35, 0.35); }
+        .badge-status.partial { background: rgba(79, 142, 247, 0.15); color: var(--primary); border: 1px solid rgba(79, 142, 247, 0.35); }
+        .badge-status.completed { background: rgba(46, 204, 135, 0.15); color: var(--success); border: 1px solid rgba(46, 204, 135, 0.35); }
+        .badge-status.cancelled { background: rgba(229, 83, 83, 0.15); color: var(--danger); border: 1px solid rgba(229, 83, 83, 0.35); }
+        .badge-method { background: var(--chip-bg); color: var(--text-muted); border: 1px solid var(--card-border); padding: 2px 7px; border-radius: 6px; font-size: 10px; font-weight: 600; }
+        
+        .cost-comparison-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+        @media (max-width: 600px) { .cost-comparison-grid { grid-template-columns: repeat(2, 1fr); } }
+        .cost-box { background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 8px 10px; text-align: center; }
+        .cost-val { font-size: 13px; font-weight: 800; }
+        .cost-lbl { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+        .cost-val.pos { color: var(--success); }
+        .cost-val.neg { color: var(--danger); }
+        .cost-val.warn { color: var(--warning); }
+        .cost-val.neutral { color: var(--primary); }
+
+        .reconcile-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; margin-bottom: 10px; }
+        .reconcile-table th { background: var(--table-header); color: var(--text-muted); font-weight: 700; padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 10px; text-transform: uppercase; }
+        .reconcile-table td { padding: 6px 8px; border-bottom: 1px solid var(--table-border); color: var(--text-main); }
+        .reconcile-table th.center, .reconcile-table td.center { text-align: center; }
+        .reconcile-table th.right, .reconcile-table td.right { text-align: right; }
+        .order-actions-bar { display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--table-border); }
+        .btn-order-action { padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1px solid var(--card-border); background: var(--chip-bg); color: var(--text-main); cursor: pointer; transition: all 0.15s; }
+        .btn-order-action:hover { background: var(--stepper-btn-hover); }
+        .btn-order-action.danger { color: var(--danger); border-color: rgba(229, 83, 83, 0.4); }
+        .btn-order-action.success { color: var(--success); border-color: rgba(46, 204, 135, 0.4); }
+
         /* Toast notification */
         .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1E293B; color: #fff; border: 1px solid #475569; padding: 10px 18px; border-radius: 10px; font-size: 12px; font-weight: 600; z-index: 200; box-shadow: 0 8px 20px rgba(0,0,0,0.5); display: none; }
         
@@ -292,6 +328,7 @@
                 <div class="chip" onclick="setOrderFilter('aman', this)">🟢 Aman</div>
                 <div class="chip" id="chipOrderProfitMode" onclick="toggleOrderProfitMode(this)">💰 Mode Keuntungan</div>
                 <div class="chip" id="chipProviderBadge" onclick="toggleProviderBadge(this)">🏷️ Badge Provider</div>
+                <div class="chip" id="chipToggleOrderHistory" onclick="toggleOrderHistoryView(this)">📋 Riwayat Order (<span id="badgeActiveOrderCount">0</span>)</div>
             </div>
 
             <div class="quick-select-row">
@@ -300,6 +337,27 @@
                 <button class="btn-select-action" onclick="autoFillByTargetDays(30)">🎯 ~1 Bulan</button>
                 <button class="btn-select-action" onclick="selectByFilter('low')">⚠️ Stok Menipis</button>
                 <button class="btn-select-action" onclick="selectAll(false)">❌ Reset</button>
+            </div>
+        </div>
+
+        <!-- Collapsible Restock Orders & Cost Reconciliation Section -->
+        <div id="orderHistorySection" style="display: none; margin-bottom: 18px;">
+            <div class="header-card" style="margin-bottom: 12px; border-left: 4px solid var(--primary);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <div class="header-title">📋 Riwayat Order Restock &amp; Pencocokan Biaya</div>
+                        <div class="header-subtitle">Mencatat pesanan dari Salin/WA, membandingkan estimasi biaya dengan biaya riil, dan mencocokkan fisik masuk dari riwayat kasir</div>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn-select-action" onclick="refreshRestockOrders()" title="Cek ulang kecocokan dengan riwayat terkini">🔄 Cek Ulang</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="orderHistoryList">
+                <div style="text-align: center; padding: 24px; color: var(--text-muted); background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px;">
+                    Belum ada riwayat order restock yang tersimpan. Centang produk di bawah lalu klik <b>Salin Teks</b> atau <b>Kirim WA</b> untuk mencatat order.
+                </div>
             </div>
         </div>
 
@@ -371,6 +429,7 @@
                 <div class="chip active" id="chipHideZero" onclick="toggleHideZeroSell(this)">👁️ Sembunyikan 0 Laku</div>
                 <div class="chip" id="chipDailyProviderBadge" onclick="toggleProviderBadge(this)">🏷️ Badge Provider</div>
                 <div class="chip" id="chipToggleAudit" onclick="toggleAuditView(this)">📜 Riwayat Audit</div>
+                <div class="chip" id="chipDailyOrderHistory" onclick="switchToTabOrderHistory()">📦 Pencocokan Order</div>
             </div>
 
             <!-- Single Day Date Selector (Khusus Mode 1 Hari) -->
@@ -496,6 +555,40 @@
             initTheme();
             initTts();
             initOrderProfitMode();
+            initRestockOrders();
+
+            // ── Prioritas Tertinggi: PIN dari URL ──
+            // Mendukung dua format:
+            //   ?pin=1234           → query parameter
+            //   #pin=1234           → hash fragment (tidak dikirim ke server)
+            // Setelah dibaca, PIN dihapus dari URL agar tidak muncul di history browser.
+            const urlPin = (function extractUrlPin() {
+                // Coba dari query string ?pin=...
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    const qPin = params.get('pin');
+                    if (qPin) {
+                        params.delete('pin');
+                        const newSearch = params.toString();
+                        const cleanUrl = window.location.pathname + (newSearch ? '?' + newSearch : '') + window.location.hash;
+                        history.replaceState(null, '', cleanUrl);
+                        return qPin.trim();
+                    }
+                } catch(e) {}
+                // Coba dari hash fragment #pin=... atau #1234
+                try {
+                    const hash = window.location.hash;
+                    if (hash) {
+                        const hashParams = new URLSearchParams(hash.slice(1));
+                        const hPin = hashParams.get('pin') || (hash.startsWith('#') && !hash.includes('=') ? hash.slice(1) : '');
+                        if (hPin) {
+                            history.replaceState(null, '', window.location.pathname + window.location.search);
+                            return hPin.trim();
+                        }
+                    }
+                } catch(e) {}
+                return '';
+            })();
 
             if (!REQUIRE_PIN) {
                 // PIN dinonaktifkan: pastikan modal PIN tertutup
@@ -509,7 +602,13 @@
                     return;
                 }
 
-                // Prioritas 2: Gunakan DEFAULT_PIN atau PIN yang tersimpan di browser
+                // Prioritas 2: PIN dari URL (jika ada)
+                if (urlPin) {
+                    unlockWithPin(urlPin, false);
+                    return;
+                }
+
+                // Prioritas 3: DEFAULT_PIN atau PIN tersimpan di browser
                 const pinToUse = DEFAULT_PIN || localStorage.getItem('kspcheck_viewer_pin');
                 if (pinToUse) {
                     unlockWithPin(pinToUse, false);
@@ -518,11 +617,12 @@
                     unlockWithPin('', false);
                 }
             } else {
-                // PIN aktif: Cek apakah ada PIN tersimpan di localStorage
-                const savedPin = localStorage.getItem('kspcheck_viewer_pin');
-                if (savedPin) {
-                    document.getElementById('pinInput').value = savedPin;
-                    unlockWithPin(savedPin, true);
+                // PIN aktif: Prioritas URL PIN → localStorage → tampilkan modal
+                const pinToTry = urlPin || localStorage.getItem('kspcheck_viewer_pin') || '';
+                if (pinToTry) {
+                    if (document.getElementById('pinInput'))
+                        document.getElementById('pinInput').value = pinToTry;
+                    unlockWithPin(pinToTry, true);
                 } else {
                     document.getElementById('pinModal').style.display = 'flex';
                 }
@@ -642,15 +742,21 @@
             showToast('🔄 Memperbarui data dari cloud...');
 
             try {
-                // Fetch vouchers & daily_reports in parallel
-                const [vouchersRes, reportsRes] = await Promise.all([
+                // Fetch vouchers, daily_reports, and restock_orders in parallel
+                const [vouchersRes, reportsRes, ordersRes] = await Promise.all([
                     supabaseClient
                         .from('vouchers')
                         .select('*')
                         .order('sort_order', { ascending: true }),
                     supabaseClient
                         .from('daily_reports')
+                        .select('*'),
+                    supabaseClient
+                        .from('restock_orders')
                         .select('*')
+                        .order('created_at', { ascending: false })
+                        .then(r => r)
+                        .catch(e => ({ data: null, error: e }))
                 ]);
 
                 if (vouchersRes.error) throw vouchersRes.error;
@@ -677,11 +783,26 @@
                     });
                 }
 
+                // Merge Supabase restock orders with local storage
+                if (ordersRes && ordersRes.data && Array.isArray(ordersRes.data)) {
+                    const localMap = new Map();
+                    allRestockOrders.forEach(o => localMap.set(o.id, o));
+                    ordersRes.data.forEach(so => {
+                        localMap.set(so.id, so);
+                    });
+                    allRestockOrders = Array.from(localMap.values());
+                    allRestockOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    saveRestockOrdersToStorage();
+                }
+
                 populateDeviceDropdown();
                 renderProductList();
                 initDailyReport();
                 renderAuditTable();
                 updateStatsSummary();
+                reconcileAllOrders();
+                renderOrderHistoryList();
+                updateActiveOrderBadge();
                 showToast('✅ Data berhasil diperbarui!');
 
             } catch (err) {
@@ -1124,6 +1245,7 @@
                 return;
             }
             copyToClipboard(text, '✅ Teks order restock berhasil disalin!');
+            recordRestockOrder('copy');
         }
 
         function sendToWa() {
@@ -1134,6 +1256,505 @@
             }
             const url = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
             window.open(url, '_blank');
+            recordRestockOrder('whatsapp');
+        }
+
+        // ==================== 7B. RIWAYAT ORDER RESTOCK & PENCOCOKAN BIAYA ====================
+        let allRestockOrders = [];
+
+        function initRestockOrders() {
+            try {
+                const saved = localStorage.getItem('kspcheck_restock_orders');
+                if (saved) {
+                    allRestockOrders = JSON.parse(saved);
+                    if (!Array.isArray(allRestockOrders)) allRestockOrders = [];
+                }
+            } catch (e) {
+                allRestockOrders = [];
+            }
+            reconcileAllOrders();
+            renderOrderHistoryList();
+            updateActiveOrderBadge();
+        }
+
+        function saveRestockOrdersToStorage() {
+            try {
+                localStorage.setItem('kspcheck_restock_orders', JSON.stringify(allRestockOrders));
+            } catch (e) {
+                console.error('Failed to save restock orders to localStorage', e);
+            }
+            updateActiveOrderBadge();
+        }
+
+        function recordRestockOrder(actionType) {
+            const selectedCards = document.querySelectorAll('.product-card.selected');
+            if (selectedCards.length === 0) return;
+
+            const now = new Date();
+            const idSuffix = String(Date.now()).slice(-4);
+            const ymd = now.toISOString().slice(0, 10).replace(/-/g, '');
+            const orderId = `ORD-${ymd}-${idSuffix}`;
+
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            let selectedDeviceName = 'Semua Perangkat';
+            const devSelect = document.getElementById('navDeviceFilter');
+            if (devSelect && devSelect.selectedIndex >= 0) {
+                selectedDeviceName = devSelect.options[devSelect.selectedIndex].text.replace(/^[^\w]+/, '').trim();
+            }
+
+            const items = [];
+            let totalPcs = 0;
+            let totalCost = 0;
+            let totalMargin = 0;
+
+            selectedCards.forEach(c => {
+                const qty = parseInt(c.getAttribute('data-qty') || '0');
+                if (qty > 0) {
+                    const cost = parseInt(c.getAttribute('data-cost') || '0');
+                    const price = parseInt(c.getAttribute('data-price') || '0');
+                    const stock = parseInt(c.getAttribute('data-stock') || '0');
+                    const name = c.getAttribute('data-name') || '';
+                    const prov = c.getAttribute('data-provider') || 'Lainnya';
+                    const pId = parseInt(c.getAttribute('data-id') || '0');
+
+                    items.push({
+                        product_id: pId,
+                        product_name: name,
+                        provider_name: prov,
+                        order_qty: qty,
+                        cost_price: cost,
+                        sell_price: price,
+                        stock_at_order: stock,
+                        received_qty: 0,
+                        actual_unit_cost: cost,
+                        item_status: 'pending'
+                    });
+
+                    totalPcs += qty;
+                    totalCost += (qty * cost);
+                    totalMargin += (qty * (price - cost));
+                }
+            });
+
+            if (items.length === 0) return;
+
+            const newOrder = {
+                id: orderId,
+                device_id: selectedDevice,
+                device_name: selectedDeviceName,
+                action_type: actionType, // 'copy' | 'whatsapp'
+                total_items: items.length,
+                total_pcs: totalPcs,
+                total_received_pcs: 0,
+                est_cost: totalCost,
+                actual_cost: 0,
+                manual_actual_cost: null,
+                est_margin: totalMargin,
+                items: items,
+                status: 'pending',
+                notes: '',
+                created_at: now.toISOString(),
+                updated_at: now.toISOString()
+            };
+
+            allRestockOrders.unshift(newOrder);
+            saveRestockOrdersToStorage();
+
+            // Sync to Supabase if connected
+            if (supabaseClient) {
+                supabaseClient.from('restock_orders').upsert([newOrder]).then(res => {
+                    if (res.error) console.warn('Supabase restock_orders upsert:', res.error);
+                }).catch(err => console.warn('Supabase restock_orders err:', err));
+            }
+
+            reconcileAllOrders();
+            renderOrderHistoryList();
+
+            // Buka seksi riwayat order agar user langsung melihat kartu pencocokan
+            const sec = document.getElementById('orderHistorySection');
+            if (sec) {
+                sec.style.display = 'block';
+                const chip = document.getElementById('chipToggleOrderHistory');
+                if (chip) chip.classList.add('active');
+            }
+
+            showToast(`✅ Order ${orderId} (${totalPcs} pcs) dicatat ke riwayat pencocokan!`);
+        }
+
+        function parseDateSafe(str) {
+            if (!str) return 0;
+            if (str instanceof Date) return str.getTime();
+            let s = String(str).trim();
+            if (s.includes(' ') && !s.includes('T')) {
+                s = s.replace(' ', 'T') + '+07:00';
+            }
+            const t = Date.parse(s);
+            return isNaN(t) ? 0 : t;
+        }
+
+        function reconcileAllOrders() {
+            if (!allRestockOrders || allRestockOrders.length === 0) return;
+
+            allRestockOrders.forEach(order => {
+                if (order.status === 'cancelled') return;
+
+                const orderTime = parseDateSafe(order.created_at);
+                let totalReceivedPcs = 0;
+                let calculatedActualCost = 0;
+                let allItemsCompleted = true;
+                let anyItemReceived = false;
+
+                (order.items || []).forEach(item => {
+                    const prodNameLower = (item.product_name || '').toLowerCase().trim();
+                    let receivedQty = 0;
+                    let latestUnitCost = item.cost_price || 0;
+
+                    // Cari voucher yang cocok di allVouchers
+                    const vMatches = allVouchers.filter(v => {
+                        const vName = (v.product_name || '').toLowerCase().trim();
+                        if (vName !== prodNameLower) return false;
+                        if (order.device_id && order.device_id !== 'all' && v.device_id !== order.device_id) return false;
+                        return true;
+                    });
+
+                    vMatches.forEach(v => {
+                        const history = v.change_history || [];
+                        if (Array.isArray(history)) {
+                            history.forEach(entry => {
+                                const entryTime = parseDateSafe(entry.timestamp);
+                                const diff = parseInt(entry.stock_diff || 0);
+                                // Penambahan stok harus terjadi setelah order dibuat (toleransi 2 menit)
+                                if (diff > 0 && entryTime >= (orderTime - 120000)) {
+                                    receivedQty += diff;
+                                    const entryNewCost = parseInt(entry.new_cost_price || 0);
+                                    if (entryNewCost > 0) {
+                                        latestUnitCost = entryNewCost;
+                                    }
+                                }
+                            });
+                        }
+
+                        // Cek jika harga modal saat ini di katalog berbeda
+                        const vCost = parseInt(v.cost_price || 0);
+                        if (vCost > 0 && latestUnitCost === item.cost_price) {
+                            latestUnitCost = vCost;
+                        }
+                    });
+
+                    item.received_qty = receivedQty;
+                    item.actual_unit_cost = latestUnitCost;
+                    item.item_actual_cost = receivedQty * latestUnitCost;
+
+                    totalReceivedPcs += receivedQty;
+                    calculatedActualCost += (Math.min(receivedQty, item.order_qty) * latestUnitCost);
+
+                    if (receivedQty >= item.order_qty) {
+                        item.item_status = 'completed';
+                        anyItemReceived = true;
+                    } else if (receivedQty > 0) {
+                        item.item_status = 'partial';
+                        allItemsCompleted = false;
+                        anyItemReceived = true;
+                    } else {
+                        item.item_status = 'pending';
+                        allItemsCompleted = false;
+                    }
+                });
+
+                order.total_received_pcs = totalReceivedPcs;
+
+                // Perhitungan biaya sesungguhnya:
+                // Prioritas 1: Jika user memasukkan manual_actual_cost (dari faktur / nota fisik distributor)
+                // Prioritas 2: Biaya sesungguhnya dihitung otomatis dari Qty fisik masuk * modal riil
+                if (order.manual_actual_cost && order.manual_actual_cost > 0) {
+                    order.actual_cost = order.manual_actual_cost;
+                } else {
+                    order.actual_cost = calculatedActualCost;
+                }
+
+                order.cost_diff = order.actual_cost - (order.est_cost || 0);
+
+                if (order.status !== 'completed' && order.status !== 'cancelled') {
+                    if (allItemsCompleted && (order.items || []).length > 0) {
+                        order.status = 'completed';
+                    } else if (anyItemReceived) {
+                        order.status = 'partial';
+                    } else {
+                        order.status = 'pending';
+                    }
+                }
+            });
+        }
+
+        function renderOrderHistoryList() {
+            const container = document.getElementById('orderHistoryList');
+            if (!container) return;
+
+            if (allRestockOrders.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 24px; color: var(--text-muted); background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px;">
+                        Belum ada riwayat order restock yang tersimpan. Centang produk di bawah lalu klik <b>Salin Teks</b> atau <b>Kirim WA</b> untuk mencatat order.
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            allRestockOrders.forEach((order, index) => {
+                const orderTimeStr = new Date(order.created_at).toLocaleDateString('id-ID', {
+                    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+
+                let statusBadge = '<span class="badge-status pending">⏳ Menunggu Masuk</span>';
+                if (order.status === 'completed') statusBadge = '<span class="badge-status completed">✅ Selesai / Cocok</span>';
+                else if (order.status === 'partial') statusBadge = '<span class="badge-status partial">🔄 Sebagian Masuk</span>';
+                else if (order.status === 'cancelled') statusBadge = '<span class="badge-status cancelled">❌ Dibatalkan</span>';
+
+                const methodBadge = order.action_type === 'whatsapp' ? '💬 WhatsApp' : '📋 Salin Teks';
+
+                // Perbandingan Biaya
+                const estCost = order.est_cost || 0;
+                const actualCost = order.actual_cost || 0;
+                const diff = actualCost - estCost;
+                const isManualCost = (order.manual_actual_cost && order.manual_actual_cost > 0);
+
+                let diffClass = 'neutral';
+                let diffText = 'Rp 0';
+                if (order.status === 'completed' || isManualCost) {
+                    if (diff < 0) {
+                        diffClass = 'pos';
+                        diffText = `-Rp ${Math.abs(diff).toLocaleString('id-ID')} (Hemat)`;
+                    } else if (diff > 0) {
+                        diffClass = 'neg';
+                        diffText = `+Rp ${diff.toLocaleString('id-ID')} (Lebih)`;
+                    } else {
+                        diffClass = 'pos';
+                        diffText = `Sesuai Estimasi`;
+                    }
+                } else {
+                    if (order.total_received_pcs === 0) {
+                        diffClass = 'warn';
+                        diffText = `Menunggu barang`;
+                    } else {
+                        const sisaKurang = estCost - actualCost;
+                        diffClass = 'warn';
+                        diffText = `Sisa Rp ${sisaKurang.toLocaleString('id-ID')}`;
+                    }
+                }
+
+                const receivedPcs = order.total_received_pcs || 0;
+                const totalPcs = order.total_pcs || 0;
+                const percentPcs = totalPcs > 0 ? Math.round((receivedPcs / totalPcs) * 100) : 0;
+                const pcsClass = percentPcs >= 100 ? 'pos' : (percentPcs > 0 ? 'neutral' : 'warn');
+
+                html += `
+                <div class="order-history-card">
+                    <div class="order-history-header">
+                        <div class="order-title-block">
+                            <div class="order-id-tag">📦 ${escapeHtml(order.id)}</div>
+                            <div class="order-date-tag">📅 ${orderTimeStr} • 📱 ${escapeHtml(order.device_name || 'Semua Perangkat')}</div>
+                        </div>
+                        <div class="order-badges-block">
+                            <span class="badge-method">${methodBadge}</span>
+                            ${statusBadge}
+                        </div>
+                    </div>
+
+                    <!-- Cost Comparison Grid -->
+                    <div class="cost-comparison-grid">
+                        <div class="cost-box">
+                            <div class="cost-val" style="color:var(--text-main);">Rp ${estCost.toLocaleString('id-ID')}</div>
+                            <div class="cost-lbl">Estimasi Biaya (${totalPcs} pcs)</div>
+                        </div>
+                        <div class="cost-box">
+                            <div class="cost-val ${diffClass}">Rp ${actualCost.toLocaleString('id-ID')}</div>
+                            <div class="cost-lbl">${isManualCost ? 'Biaya Nota (Manual)' : 'Biaya Riil Masuk'}</div>
+                        </div>
+                        <div class="cost-box">
+                            <div class="cost-val ${diffClass}">${diffText}</div>
+                            <div class="cost-lbl">Perbandingan Biaya</div>
+                        </div>
+                        <div class="cost-box">
+                            <div class="cost-val ${pcsClass}">${receivedPcs} / ${totalPcs} pcs (${percentPcs}%)</div>
+                            <div class="cost-lbl">Fisik Masuk di Riwayat</div>
+                        </div>
+                    </div>
+
+                    <!-- Reconcile Items Table -->
+                    <div style="overflow-x: auto;">
+                        <table class="reconcile-table">
+                            <thead>
+                                <tr>
+                                    <th>Voucher</th>
+                                    <th class="center">Order</th>
+                                    <th class="center">Masuk</th>
+                                    <th class="center">Status</th>
+                                    <th class="right">Est. Modal</th>
+                                    <th class="right">Modal Riil</th>
+                                    <th class="right">Subtotal Riil</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+                (order.items || []).forEach(it => {
+                    const itOrderQty = it.order_qty || 0;
+                    const itRecvQty = it.received_qty || 0;
+                    const itEstCost = it.cost_price || 0;
+                    const itActCost = it.actual_unit_cost || itEstCost;
+                    const itSubtotalAct = itRecvQty * itActCost;
+
+                    let itStatusTag = '<span style="color:var(--warning); font-weight:700;">⏳ Belum (0)</span>';
+                    if (itRecvQty >= itOrderQty) {
+                        itStatusTag = '<span style="color:var(--success); font-weight:700;">✅ Cocok (' + itRecvQty + ')</span>';
+                    } else if (itRecvQty > 0) {
+                        const sisa = itOrderQty - itRecvQty;
+                        itStatusTag = '<span style="color:var(--primary); font-weight:700;">🔄 Kurang ' + sisa + '</span>';
+                    }
+
+                    html += `
+                        <tr>
+                            <td>
+                                <b>${escapeHtml(it.product_name)}</b>
+                                <div style="font-size:10px; color:var(--text-muted);">${escapeHtml(it.provider_name || '')}</div>
+                            </td>
+                            <td class="center"><b>${itOrderQty}</b> pcs</td>
+                            <td class="center"><b style="color:${itRecvQty >= itOrderQty ? 'var(--success)' : (itRecvQty > 0 ? 'var(--primary)' : 'var(--text-muted)')};">${itRecvQty}</b> pcs</td>
+                            <td class="center">${itStatusTag}</td>
+                            <td class="right" style="color:var(--text-muted);">Rp ${itEstCost.toLocaleString('id-ID')}</td>
+                            <td class="right" style="color:${itActCost > itEstCost ? 'var(--danger)' : (itActCost < itEstCost ? 'var(--success)' : 'var(--text-main)')};">Rp ${itActCost.toLocaleString('id-ID')}</td>
+                            <td class="right"><b>Rp ${itSubtotalAct.toLocaleString('id-ID')}</b></td>
+                        </tr>`;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Actions Bar -->
+                    <div class="order-actions-bar">
+                        <button class="btn-order-action" onclick="inputManualOrderCost('${order.id}')" title="Input total tagihan nota fisik dari distributor">✏️ Input Biaya Nota</button>
+                        ${order.status !== 'completed' ? `<button class="btn-order-action success" onclick="markOrderCompleted('${order.id}')" title="Tandai pesanan ini sudah selesai">✅ Tandai Selesai</button>` : ''}
+                        <button class="btn-order-action" onclick="refreshRestockOrders()" title="Cek ulang log penambahan stok">🔄 Cek Ulang</button>
+                        <button class="btn-order-action danger" onclick="deleteRestockOrder('${order.id}')" title="Hapus order ini dari riwayat">🗑️ Hapus</button>
+                    </div>
+                </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function updateActiveOrderBadge() {
+            const badge = document.getElementById('badgeActiveOrderCount');
+            if (!badge) return;
+            const activeCount = allRestockOrders.filter(o => o.status === 'pending' || o.status === 'partial').length;
+            badge.innerText = activeCount;
+            const chip = document.getElementById('chipToggleOrderHistory');
+            if (chip) {
+                if (activeCount > 0) chip.classList.add('active-warning');
+                else chip.classList.remove('active-warning');
+            }
+        }
+
+        function toggleOrderHistoryView(btn) {
+            const sec = document.getElementById('orderHistorySection');
+            if (!sec) return;
+            const isHidden = (sec.style.display === 'none' || !sec.style.display);
+            sec.style.display = isHidden ? 'block' : 'none';
+            if (btn) btn.classList.toggle('active', isHidden);
+            if (isHidden) {
+                reconcileAllOrders();
+                renderOrderHistoryList();
+                sec.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function switchToTabOrderHistory() {
+            switchTab('order');
+            const sec = document.getElementById('orderHistorySection');
+            if (sec) {
+                sec.style.display = 'block';
+                const chip = document.getElementById('chipToggleOrderHistory');
+                if (chip) chip.classList.add('active');
+                reconcileAllOrders();
+                renderOrderHistoryList();
+                sec.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function refreshRestockOrders() {
+            showToast('🔄 Mencocokkan dengan riwayat audit stok...');
+            reconcileAllOrders();
+            renderOrderHistoryList();
+            updateActiveOrderBadge();
+            showToast('✅ Pencocokan riwayat selesai!');
+        }
+
+        function inputManualOrderCost(orderId) {
+            const order = allRestockOrders.find(o => o.id === orderId);
+            if (!order) return;
+
+            const curVal = order.manual_actual_cost || order.actual_cost || order.est_cost || 0;
+            const input = prompt(`Masukkan total biaya riil / nota tagihan distributor untuk ${order.id} (Rp):`, String(curVal));
+            if (input === null) return;
+
+            const val = parseLong(input);
+            if (val > 0) {
+                order.manual_actual_cost = val;
+                order.actual_cost = val;
+                order.cost_diff = val - (order.est_cost || 0);
+            } else {
+                order.manual_actual_cost = null;
+            }
+
+            saveRestockOrdersToStorage();
+            if (supabaseClient) {
+                supabaseClient.from('restock_orders').update({
+                    manual_actual_cost: order.manual_actual_cost,
+                    actual_cost: order.actual_cost,
+                    updated_at: new Date().toISOString()
+                }).eq('id', order.id).then();
+            }
+
+            reconcileAllOrders();
+            renderOrderHistoryList();
+            showToast(`✅ Biaya riil nota di-update: Rp ${Number(order.actual_cost).toLocaleString('id-ID')}`);
+        }
+
+        function markOrderCompleted(orderId) {
+            const order = allRestockOrders.find(o => o.id === orderId);
+            if (!order) return;
+
+            if (confirm(`Tandai pesanan ${order.id} sebagai Selesai / Cocok?`)) {
+                order.status = 'completed';
+                saveRestockOrdersToStorage();
+                if (supabaseClient) {
+                    supabaseClient.from('restock_orders').update({
+                        status: 'completed',
+                        updated_at: new Date().toISOString()
+                    }).eq('id', order.id).then();
+                }
+                reconcileAllOrders();
+                renderOrderHistoryList();
+                updateActiveOrderBadge();
+                showToast(`✅ Order ${order.id} ditandai selesai!`);
+            }
+        }
+
+        function deleteRestockOrder(orderId) {
+            const idx = allRestockOrders.findIndex(o => o.id === orderId);
+            if (idx === -1) return;
+
+            if (confirm(`Yakin ingin menghapus riwayat order ${orderId}?`)) {
+                allRestockOrders.splice(idx, 1);
+                saveRestockOrdersToStorage();
+                if (supabaseClient) {
+                    supabaseClient.from('restock_orders').delete().eq('id', orderId).then();
+                }
+                reconcileAllOrders();
+                renderOrderHistoryList();
+                updateActiveOrderBadge();
+                showToast(`🗑️ Order ${orderId} telah dihapus.`);
+            }
         }
 
         // ==================== 8. TAB 2: LAPORAN STOK HARIAN (KSP CHECK ENGINE) ====================
