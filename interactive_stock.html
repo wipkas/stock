@@ -426,13 +426,18 @@
         .product-name { font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         .prov-pill { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: rgba(79, 142, 247, 0.15); color: var(--primary); }
         body.hide-provider-badge .prov-pill { display: none; }
-        .product-meta { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .stock-zero { color: var(--danger); font-weight: bold; }
-        .stock-low { color: var(--warning); font-weight: bold; }
-        .stock-normal { color: var(--success); font-weight: bold; }
+        .product-meta { font-size: 14px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .stock-zero, .stock-kritis, .stock-critical { color: var(--danger); font-weight: bold; }
+        .stock-low, .stock-restok, .stock-warning { color: var(--warning); font-weight: bold; }
+        .stock-normal, .stock-aman, .stock-safe { color: var(--success); font-weight: bold; }
+        .stock-dead, .stock-pasif { color: var(--text-muted); font-weight: bold; }
+        .badge-reorder-critical { display: inline-flex; align-items: center; background: rgba(229, 83, 83, 0.18); color: var(--danger); border: 1px solid rgba(229, 83, 83, 0.45); padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+        .badge-reorder-warning { display: inline-flex; align-items: center; background: rgba(245, 166, 35, 0.18); color: var(--warning); border: 1px solid rgba(245, 166, 35, 0.45); padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+        .badge-reorder-safe { display: inline-flex; align-items: center; background: rgba(46, 204, 135, 0.15); color: var(--success); border: 1px solid rgba(46, 204, 135, 0.35); padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+        .badge-reorder-dead { display: inline-flex; align-items: center; background: rgba(148, 163, 184, 0.15); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.3); padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 600; white-space: nowrap; }
         .badge-reorder-simple { display: inline-flex; align-items: center; background: rgba(229, 83, 83, 0.15); color: var(--danger); border: 1px solid rgba(229, 83, 83, 0.35); padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; }
         .badge-projection { display: inline-flex; align-items: center; background: rgba(79, 142, 247, 0.15); color: var(--primary); border: 1px solid rgba(79, 142, 247, 0.35); padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; }
-        
+
         /* Mode Keuntungan Tab 1 (Order Restock) */
         .order-profit-info { display: inline; }
         body:not(.show-order-profit) .order-profit-info { display: none !important; }
@@ -622,6 +627,9 @@
                             <button class="settings-item" id="settingOrderSortStock" onclick="toggleOrderSortStockFromMenu()">
                                 <span class="settings-icon">📶</span><span class="settings-label">Urut Stok Terkecil</span><span class="settings-state" id="settingOrderSortStockState">Aktif</span>
                             </button>
+                            <button class="settings-item" id="settingOrderBadge" onclick="cycleOrderBadgeModeFromMenu()">
+                                <span class="settings-icon">🏷️</span><span class="settings-label">Mode Badge Restok</span><span class="settings-state" id="settingOrderBadgeState">Dinamis</span>
+                            </button>
                             <button class="settings-item" id="settingOrderHistory" onclick="toggleOrderHistoryFromMenu()">
                                 <span class="settings-icon">📋</span><span class="settings-label">Riwayat Order</span><span class="settings-state" id="settingOrderHistoryState">Tersembunyi</span>
                             </button>
@@ -678,15 +686,15 @@
             <div class="stats-summary">
                 <div class="stat-box">
                     <div class="stat-num danger" id="statHabis">0</div>
-                    <div class="stat-label">Habis</div>
+                    <div class="stat-label">🔴 Kritis</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-num warning" id="statMenipis">0</div>
-                    <div class="stat-label">Stok Menipis</div>
+                    <div class="stat-label">🟡 Perlu Restok</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-num success" id="statAman">0</div>
-                    <div class="stat-label">Stok Aman</div>
+                    <div class="stat-label">🟢 Stok Aman</div>
                 </div>
             </div>
         </div>
@@ -710,12 +718,13 @@
                 </div>
 
                 <button type="button" class="btn-select-action active" id="btnToggleOrderSort" onclick="toggleOrderSortStock()" title="Urutkan stok terkecil ke terbesar per provider (Aktif)"><span id="orderSortStockIcon">📶</span> <span id="orderSortStockText">Stok Terkecil</span></button>
+                <button type="button" class="btn-select-action active" id="btnToggleOrderBadge" onclick="cycleOrderBadgeMode()" title="Ganti mode badge restok (Dinamis / Sederhana / Tanpa Badge)"><span id="orderBadgeIcon">🏷️</span> <span id="orderBadgeText">Badge Dinamis</span></button>
 
-                <button class="btn-select-action" onclick="autoFillByTargetDays(7)">🎯 ~7 Hari</button>
-                <button class="btn-select-action" onclick="autoFillByTargetDays(14)">🎯 ~14 Hari</button>
-                <button class="btn-select-action" onclick="autoFillByTargetDays(30)">🎯 ~1 Bulan</button>
-                <button class="btn-select-action" onclick="selectByFilter('low')">⚠️ Stok Menipis</button>
-                <button class="btn-select-action" onclick="selectAll(false)">❌ Reset</button>
+                <button type="button" class="btn-select-action" id="btnCycle3" onclick="setOrderRestockCycle(3)" title="Hitung kebutuhan belanja siklus 3 hari">⚡ 3 Hari</button>
+                <button type="button" class="btn-select-action active" id="btnCycle7" onclick="setOrderRestockCycle(7)" title="Hitung kebutuhan belanja siklus 7 hari (Mingguan)">📅 7 Hari</button>
+                <button type="button" class="btn-select-action" id="btnCycle14" onclick="setOrderRestockCycle(14)" title="Hitung kebutuhan belanja siklus 14 hari">🗓️ 14 Hari</button>
+                <button type="button" class="btn-select-action" onclick="autoFillSuggestedOrders()" title="Isi otomatis stepper dengan saran restok">💡 Isi Saran</button>
+                <button type="button" class="btn-select-action" onclick="selectAll(false)">❌ Reset</button>
             </div>
         </div>
 
@@ -754,15 +763,18 @@
             </div>
         </div>
 
-        <!-- Controls for History: Date Navigation -->
-        <div class="history-date-bar">
-            <button type="button" class="btn-date-nav" onclick="navigateHistoryDate(-1)" title="Hari Sebelumnya" aria-label="Hari Sebelumnya">‹</button>
-            <label for="historyDateInput" class="history-date-label" onclick="try{document.getElementById('historyDateInput').showPicker()}catch(e){}" title="Klik untuk pilih tanggal">
-                <span class="history-date-icon">📅</span>
-                <span id="historyDateDisplay">Sen, 22 Sep 2026</span>
-            </label>
-            <input type="date" id="historyDateInput" onchange="onHistoryDateInputChange(this)" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
-            <button type="button" class="btn-date-nav" onclick="navigateHistoryDate(1)" title="Hari Berikutnya" aria-label="Hari Berikutnya">›</button>
+        <!-- Controls for History: Date Navigation & Device Filter -->
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+            <div class="history-date-bar" style="margin-bottom: 0;">
+                <button type="button" class="btn-date-nav" onclick="navigateHistoryDate(-1)" title="Hari Sebelumnya" aria-label="Hari Sebelumnya">‹</button>
+                <label for="historyDateInput" class="history-date-label" onclick="try{document.getElementById('historyDateInput').showPicker()}catch(e){}" title="Klik untuk pilih tanggal">
+                    <span class="history-date-icon">📅</span>
+                    <span id="historyDateDisplay">Sen, 22 Sep 2026</span>
+                </label>
+                <input type="date" id="historyDateInput" onchange="onHistoryDateInputChange(this)" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
+                <button type="button" class="btn-date-nav" onclick="navigateHistoryDate(1)" title="Hari Berikutnya" aria-label="Hari Berikutnya">›</button>
+            </div>
+            <div id="historyDeviceFilterPills" style="display: none; gap: 6px; justify-content: center; align-items: center; flex-wrap: wrap;"></div>
         </div>
 
         <div id="orderHistoryList">
@@ -963,6 +975,13 @@
         let orderProfitMode = false;
         // State Tab 1: Urutkan Stok Terkecil ke Terbesar per Provider (Default: true / aktif)
         let orderSortByStockAsc = (localStorage.getItem('kspcheck_order_sort_stock') !== 'false');
+        // State Tab 1: Siklus Restok Belanja (3, 7, atau 14 hari, default: 7 hari)
+        let orderRestockCycleDays = parseInt(localStorage.getItem('kspcheck_order_cycle_days') || '7', 10);
+        if (![3, 7, 14].includes(orderRestockCycleDays)) orderRestockCycleDays = 7;
+
+        // State Tab 1: Mode Badge Restok ('dynamic' | 'simple' | 'none', default: 'dynamic')
+        let orderBadgeMode = localStorage.getItem('kspcheck_order_badge_mode') || 'dynamic';
+        if (!['dynamic', 'simple', 'none'].includes(orderBadgeMode)) orderBadgeMode = 'dynamic';
 
         // State Tab 2: Laporan Stok Harian
         let dailyShift = 0; // 0: Semua, 1: Pagi, 2: Malam, 4: Rincian P|M
@@ -977,6 +996,8 @@
             initTts();
             initOrderProfitMode();
             initOrderSortStock();
+            initOrderBadgeMode();
+            initOrderCycleDays();
             initRestockOrders();
 
             // ── Prioritas Tertinggi: PIN dari URL ──
@@ -1116,6 +1137,314 @@
             if (menuState) {
                 menuState.innerText = orderSortByStockAsc ? 'Aktif' : 'Standar';
             }
+        }
+
+        // Tab 1: Mode Badge Dinamis Restok Logic ('dynamic' | 'simple' | 'none')
+        function initOrderBadgeMode() {
+            updateOrderBadgeUI();
+        }
+
+        function cycleOrderBadgeMode() {
+            if (orderBadgeMode === 'dynamic') {
+                orderBadgeMode = 'simple';
+            } else if (orderBadgeMode === 'simple') {
+                orderBadgeMode = 'none';
+            } else {
+                orderBadgeMode = 'dynamic';
+            }
+
+            try {
+                localStorage.setItem('kspcheck_order_badge_mode', orderBadgeMode);
+            } catch (e) {}
+
+            updateOrderBadgeUI();
+            updateSettingsMenuUI();
+
+            // Perbarui badge pada seluruh kartu produk yang sudah dirender di DOM secara instan
+            document.querySelectorAll('.product-card').forEach(card => {
+                const qty = parseInt(card.getAttribute('data-qty') || '0', 10);
+                updateCardBadge(card, qty);
+            });
+
+            const toastMsg = (orderBadgeMode === 'dynamic')
+                ? '🏷️ Mode Badge: Dinamis (Kritis, Restok, Aman, Pasif)'
+                : (orderBadgeMode === 'simple'
+                    ? '🔴 Mode Badge: Sederhana (Merah "Perlu Restok")'
+                    : '🚫 Mode Badge: Tanpa Badge');
+            showToast(toastMsg);
+        }
+
+        function cycleOrderBadgeModeFromMenu() {
+            cycleOrderBadgeMode();
+            closeSettingsMenu();
+        }
+
+        function updateOrderBadgeUI() {
+            const btn = document.getElementById('btnToggleOrderBadge');
+            const iconEl = document.getElementById('orderBadgeIcon');
+            const textEl = document.getElementById('orderBadgeText');
+            const menuState = document.getElementById('settingOrderBadgeState');
+
+            let label = 'Dinamis';
+            let icon = '🏷️';
+            let title = 'Mode Badge Dinamis (Kritis, Restok, Aman, Pasif)';
+            let isActive = true;
+
+            if (orderBadgeMode === 'simple') {
+                label = 'Perlu Restok';
+                icon = '🔴';
+                title = 'Mode Badge Sederhana (Hanya "Perlu Restok" untuk Kritis & Restok)';
+                isActive = true;
+            } else if (orderBadgeMode === 'none') {
+                label = 'Tanpa Badge';
+                icon = '🚫';
+                title = 'Mode Tanpa Badge (Badge disembunyikan)';
+                isActive = false;
+            }
+
+            if (btn) {
+                btn.classList.toggle('active', isActive);
+                if (iconEl) iconEl.innerText = icon;
+                if (textEl) textEl.innerText = label;
+                btn.title = title + ' - Klik untuk ganti mode.';
+            }
+
+            if (menuState) {
+                menuState.innerText = (orderBadgeMode === 'dynamic') ? 'Dinamis' : ((orderBadgeMode === 'simple') ? 'Sederhana' : 'Mati');
+                menuState.className = 'settings-state' + (orderBadgeMode !== 'none' ? ' on' : '');
+            }
+        }
+
+        // Tab 1: Siklus Restok Belanja Logic (3, 7, 14 Hari)
+        function initOrderCycleDays() {
+            updateOrderCycleDaysUI();
+        }
+
+        function setOrderRestockCycle(days) {
+            if (![3, 7, 14].includes(days)) days = 7;
+            orderRestockCycleDays = days;
+            try {
+                localStorage.setItem('kspcheck_order_cycle_days', String(days));
+            } catch (e) {}
+            updateOrderCycleDaysUI();
+            renderProductList();
+            updateStatsSummary();
+            showToast(`🎯 Siklus restok diatur ke ~${days} hari`);
+        }
+
+        function updateOrderCycleDaysUI() {
+            [3, 7, 14].forEach(d => {
+                const btn = document.getElementById('btnCycle' + d);
+                if (btn) btn.classList.toggle('active', orderRestockCycleDays === d);
+            });
+        }
+
+        // Helper Ekstraksi Masa Aktif Voucher dari Nama Produk (1H s/d 30H)
+        function extractValidityDays(name) {
+            if (!name) return 7;
+            const n = name.toLowerCase();
+            const match = n.match(/(\d+)\s*(?:gb|mb)?\s*(\d+)\s*h(?:ari|r)?\b/) || n.match(/(\d+)\s*h(?:ari|r)?\b/);
+            if (match) {
+                const days = parseInt(match[match.length - 1], 10);
+                if (!isNaN(days) && days > 0) return days;
+            }
+            if (n.includes('bln') || n.includes('bulan') || n.includes('30h') || n.includes('28h') || n.includes('unli')) return 30;
+            if (n.includes('kartu') || n.includes('perdana')) return 30;
+            return 7;
+        }
+
+        /**
+         * Adaptive Reorder Engine dengan Stockout-Awareness, Deteksi Dead Stock,
+         * dan Penyesuaian Masa Aktif Voucher (Monthly Cap untuk paket bulanan).
+         * Menggunakan 3 Tingkat Fallback:
+         * Tier 1: Riwayat 30d/7d dari Supabase daily_reports
+         * Tier 2: Riwayat 3 hari (D1, D2, D3)
+         * Tier 3: Heuristik lokal (min_limit & masa aktif) jika data histori belum ada
+         */
+        function computeProductReorderMetrics(prod, cycleDays) {
+            cycleDays = cycleDays || orderRestockCycleDays || 7;
+            const stock = parseInt(prod.stock || 0, 10);
+            const limit = parseInt(prod.min_limit || 5, 10);
+            const prodName = prod.product_name || '';
+            const prodNameLower = prodName.toLowerCase().trim();
+            const prodId = prod.product_id || prod.id;
+            const validityDays = extractValidityDays(prodName);
+
+            // 1. Cari data laporan harian pendukung dari allDailyReports
+            let rItem = null;
+            const targetDevId = prod.device_id;
+
+            // Prioritas 1: Cari pada laporan dari perangkat yang SAMA persis (prod.device_id)
+            if (targetDevId && allDailyReports && allDailyReports.has(targetDevId)) {
+                const rep = allDailyReports.get(targetDevId);
+                if (rep && Array.isArray(rep.items)) {
+                    rItem = rep.items.find(ri => 
+                        ri && ri.type === 'product' && (
+                            (prodId && ri.productId == prodId && ri.productName && ri.productName.toLowerCase().includes(prodNameLower)) ||
+                            (ri.productName && ri.productName.toLowerCase().trim() === prodNameLower) ||
+                            (prodId && ri.productId == prodId)
+                        )
+                    );
+                }
+            }
+
+            // Prioritas 2: Jika belum ketemu, cari di data laporan aktif/tergabung (window.DAILY_REPORT_DATA)
+            if (!rItem && window.DAILY_REPORT_DATA && Array.isArray(window.DAILY_REPORT_DATA.items)) {
+                rItem = window.DAILY_REPORT_DATA.items.find(ri => 
+                    ri && ri.type === 'product' && ri.productName && (
+                        ri.productName.toLowerCase().trim() === prodNameLower ||
+                        (prodId && ri.productId == prodId && ri.productName.toLowerCase().includes(prodNameLower))
+                    )
+                );
+            }
+
+            // Prioritas 3: Cari lintas perangkat, tapi HANYA jika NAMA PRODUK cocok (jangan hanya cocokkan ID angka, karena beda HP ID angkanya bisa merujuk ke produk berbeda!)
+            if (!rItem && allDailyReports && allDailyReports.size > 0) {
+                for (const [devId, rep] of allDailyReports.entries()) {
+                    if (!rep || !Array.isArray(rep.items)) continue;
+                    const match = rep.items.find(ri => 
+                        ri && ri.type === 'product' && ri.productName && (
+                            ri.productName.toLowerCase().trim() === prodNameLower ||
+                            (prodId && ri.productId == prodId && ri.productName.toLowerCase().includes(prodNameLower))
+                        )
+                    );
+                    if (match) {
+                        rItem = match;
+                        break;
+                    }
+                }
+            }
+
+            let demandDaily = 0.0;
+            let dataTier = 3;
+            let totalSales30d = 0;
+            let hasExplicitSalesHistory = false;
+
+            if (rItem) {
+                const s30 = parseInt(rItem.sold30d || 0, 10);
+                const s7 = parseInt(rItem.sold7d || 0, 10);
+                const dDaily = parseFloat(rItem.demandDaily || 0);
+
+                const d1 = parseInt(rItem.soldD1Total || 0, 10);
+                const d2 = parseInt(rItem.soldD2Total || 0, 10);
+                const d3 = parseInt(rItem.soldD3Total || 0, 10);
+
+                if (dDaily > 0 || s30 > 0 || s7 > 0) {
+                    // TIER 1: Data 30d / 7d KSPCheck Reorder Engine
+                    dataTier = 1;
+                    hasExplicitSalesHistory = true;
+                    totalSales30d = s30;
+
+                    if (stock === 0 && s7 === 0 && s30 > 0) {
+                        // Stockout-aware: barang habis seminggu ini, gunakan laju penjualan lampau
+                        demandDaily = Math.round(((s30 / 23.0) * 0.5 + (s30 / 30.0) * 0.5) * 100) / 100;
+                    } else if (dDaily > 0) {
+                        demandDaily = Math.round(dDaily * 100) / 100;
+                    } else {
+                        demandDaily = Math.round((s7 / 7.0) * 100) / 100;
+                    }
+                } else if (d1 > 0 || d2 > 0 || d3 > 0) {
+                    // TIER 2: Data 3 hari penjualan (D1, D2, D3)
+                    dataTier = 2;
+                    hasExplicitSalesHistory = true;
+                    totalSales30d = (d1 + d2 + d3);
+                    const rawAds = (0.50 * d3) + (0.30 * d2) + (0.20 * d1);
+                    demandDaily = Math.round(rawAds * 100) / 100;
+                } else if (rItem.isNew) {
+                    dataTier = 3;
+                } else {
+                    dataTier = 1;
+                    hasExplicitSalesHistory = true;
+                    demandDaily = 0.0;
+                    totalSales30d = 0;
+                }
+            }
+
+            // Deteksi Dead Stock / Barang Pasif (0 transaksi dalam sebulan)
+            const isDeadStock = hasExplicitSalesHistory && (totalSales30d === 0) && (demandDaily <= 0.03);
+
+            // Lead time & Safety buffer
+            const leadTime = 1.0;
+            let safetyDays = 1.0;
+            if (cycleDays >= 14) safetyDays = 2.0;
+            else if (cycleDays >= 7) safetyDays = 1.5;
+
+            // Faktor Masa Aktif: Voucher Bulanan (>=28H) konsumsinya lumpy (1x sebulan)
+            const isMonthly = (validityDays >= 28);
+            if (isMonthly) {
+                safetyDays = 1.0;
+            }
+
+            const protectionDays = cycleDays + leadTime + safetyDays;
+            const reorderThresholdDays = leadTime + safetyDays;
+
+            let targetStock = 0;
+            let suggestedOrder = 0;
+            let coverageDays = 999.0;
+            let status = 'AMAN';
+            let needsRestock = false;
+
+            if (isDeadStock) {
+                status = 'PASIF';
+                targetStock = 0;
+                suggestedOrder = 0;
+                coverageDays = (stock > 0) ? 999.0 : 0.0;
+                needsRestock = false;
+            } else if (dataTier === 3) {
+                // Tier 3: Heuristik limit lokal & masa aktif
+                targetStock = isMonthly ? Math.min(limit, 3) : Math.max(limit, (cycleDays <= 3 ? 5 : 10));
+                const reorderPoint = Math.ceil(targetStock * 0.4);
+                suggestedOrder = Math.max(0, targetStock - stock);
+
+                if (stock === 0 || stock <= reorderPoint) {
+                    status = 'KRITIS';
+                    needsRestock = true;
+                } else if (stock <= targetStock) {
+                    status = 'RESTOK';
+                    needsRestock = true;
+                } else {
+                    status = 'AMAN';
+                    needsRestock = false;
+                }
+                coverageDays = (stock === 0) ? 0.0 : Math.round((stock / Math.max(0.5, targetStock / cycleDays)) * 10) / 10;
+                demandDaily = Math.round((targetStock / protectionDays) * 10) / 10;
+            } else {
+                // Tier 1 & 2: Demand riil
+                targetStock = Math.ceil(demandDaily * protectionDays);
+
+                // Monthly Cap untuk voucher bulanan (mencegah overstock paket mahal)
+                if (isMonthly) {
+                    const monthlyCap = Math.max(2, Math.ceil(demandDaily * 14));
+                    targetStock = Math.min(targetStock, monthlyCap);
+                }
+
+                const reorderPoint = Math.ceil(demandDaily * reorderThresholdDays);
+                suggestedOrder = Math.max(0, targetStock - stock);
+                coverageDays = (demandDaily > 0) ? Math.round((stock / demandDaily) * 10) / 10 : 999.0;
+
+                if (stock <= reorderPoint || (stock === 0 && demandDaily > 0.03)) {
+                    status = 'KRITIS';
+                    needsRestock = true;
+                } else if (stock <= targetStock) {
+                    status = 'RESTOK';
+                    needsRestock = true;
+                } else {
+                    status = 'AMAN';
+                    needsRestock = false;
+                }
+            }
+
+            return {
+                demand: demandDaily,
+                dataTier: dataTier,
+                validityDays: validityDays,
+                isMonthly: isMonthly,
+                targetStock: targetStock,
+                suggestedOrder: suggestedOrder,
+                coverageDays: coverageDays,
+                status: status,
+                needsRestock: needsRestock
+            };
         }
 
         function handlePinSubmit(e) {
@@ -1269,7 +1598,18 @@
                     });
                     allRestockOrders = Array.from(localMap.values());
                     allRestockOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    enrichOrdersWithDeviceDetails();
                     saveRestockOrdersToStorage();
+                }
+
+                // Sinkronkan order lokal ke Supabase agar tersimpan di cloud (jika sebelumnya belum terkirim)
+                if (supabaseClient && allRestockOrders.length > 0) {
+                    try {
+                        const payload = allRestockOrders.map(cleanOrderForSupabase);
+                        supabaseClient.from('restock_orders').upsert(payload).then(res => {
+                            if (res.error) console.warn('Sync restock_orders to cloud:', res.error);
+                        }).catch(e => console.warn('Sync restock_orders err:', e));
+                    } catch (e) {}
                 }
 
                 populateDeviceDropdown();
@@ -1442,6 +1782,8 @@
             renderAuditTable();
             updateStatsSummary();
             updateSettingsMenuUI();
+            reconcileAllOrders();
+            renderOrderHistoryList();
         }
 
         // 4. Render Dynamic Product List (Tab 1: Order Restock)
@@ -1464,7 +1806,9 @@
                 const qty = parseInt(card.getAttribute('data-qty') || '0', 10);
                 const name = card.getAttribute('data-name');
                 const prov = card.getAttribute('data-provider');
+                const pId = card.getAttribute('data-product-id') || '';
                 if (qty > 0 && name && prov) {
+                    if (pId) existingQtyMap.set(prov + '||' + name + '||' + pId, qty);
                     existingQtyMap.set(prov + '||' + name, qty);
                 }
             });
@@ -1518,25 +1862,30 @@
                     const price = parseInt(prod.sell_price || 0);
                     const margin = price - cost;
 
-                    const isOut = (stock === 0);
-                    const isLow = (stock <= limit);
-                    const needsRestock = isOut || isLow;
+                    const metrics = computeProductReorderMetrics(prod, orderRestockCycleDays);
+                    const needsRestock = metrics.needsRestock;
 
-                    const savedQty = existingQtyMap.get(provName + '||' + prod.product_name) || 0;
+                    const prodRealId = String(prod.product_id || prod.id || '');
+                    const savedQty = (prodRealId && existingQtyMap.has(provName + '||' + prod.product_name + '||' + prodRealId))
+                        ? existingQtyMap.get(provName + '||' + prod.product_name + '||' + prodRealId)
+                        : (existingQtyMap.get(provName + '||' + prod.product_name) || 0);
                     const isSelected = savedQty > 0;
                     const cardSelectedClass = isSelected ? ' selected' : '';
 
-                    let sisaHtml = isOut
-                        ? `Sisa: <span class="stock-zero">0 pcs</span>`
-                        : (isLow ? `Sisa: <span class="stock-low">${stock} pcs</span>` : `Sisa: <span class="stock-normal">${stock} pcs</span>`);
-
-                    let badgeHtml = '';
-                    if (savedQty > 0) {
-                        const days = Math.max(1, Math.round((stock + savedQty) / 1.5));
-                        badgeHtml = `<span class="badge-projection">⏳ Cukup ~${days} hari</span>`;
-                    } else if (needsRestock) {
-                        badgeHtml = `<span class="badge-reorder-simple">Perlu Restock</span>`;
+                    let stockClass = 'stock-aman';
+                    if (metrics.status === 'KRITIS' || (stock === 0 && metrics.status !== 'PASIF')) {
+                        stockClass = 'stock-kritis';
+                    } else if (metrics.status === 'RESTOK') {
+                        stockClass = 'stock-restok';
+                    } else if (metrics.status === 'PASIF') {
+                        stockClass = 'stock-pasif';
+                    } else {
+                        stockClass = 'stock-aman';
                     }
+
+                    let sisaHtml = `Sisa: <span class="${stockClass}">${stock} pcs</span>`;
+
+                    let badgeHtml = getReorderBadgeHtml(metrics.status, metrics.coverageDays, metrics.suggestedOrder, savedQty, stock, metrics.demand);
 
                     let marginBadgeClass = (margin > 0) ? 'profit-pos' : ((margin < 0) ? 'profit-neg' : 'profit-zero');
                     let marginSign = (margin > 0) ? '+' : '';
@@ -1545,14 +1894,22 @@
                     html += `
                     <div class="product-card${cardSelectedClass}" 
                          data-id="${idCounter}"
+                         data-product-id="${prod.product_id || prod.id || 0}"
+                         data-device-id="${escapeHtml(prod.device_id || '')}"
                          data-provider="${escapeHtml(provName)}"
                          data-name="${escapeHtml(prod.product_name)}"
+                         data-supabase-index="${prod._supabaseIndex !== undefined ? prod._supabaseIndex : 0}"
+                         data-orig-index="${prod._providerOrigIndex !== undefined ? prod._providerOrigIndex : 0}"
                          data-stock="${stock}"
                          data-limit="${limit}"
                          data-cost="${cost}"
                          data-price="${price}"
                          data-margin="${margin}"
-                         data-demand="1.0"
+                         data-demand="${metrics.demand}"
+                         data-target-stock="${metrics.targetStock}"
+                         data-suggested-order="${metrics.suggestedOrder}"
+                         data-coverage-days="${metrics.coverageDays}"
+                         data-status="${metrics.status}"
                          data-needs-restock="${needsRestock}"
                          data-qty="${savedQty}"
                          onclick="toggleSelectCard(this)">
@@ -1602,9 +1959,10 @@
             if (!isSelected) {
                 card.classList.add('selected');
                 if (currentQty <= 0) {
-                    const stock = parseInt(card.getAttribute('data-stock') || '0');
-                    const limit = parseInt(card.getAttribute('data-limit') || '5');
-                    let suggested = (limit > stock) ? (limit - stock) : 1;
+                    const sug = parseInt(card.getAttribute('data-suggested-order') || '0', 10);
+                    const stock = parseInt(card.getAttribute('data-stock') || '0', 10);
+                    const limit = parseInt(card.getAttribute('data-limit') || '5', 10);
+                    let suggested = (sug > 0) ? sug : ((limit > stock) ? (limit - stock) : 1);
                     if (suggested <= 0) suggested = 1;
                     if (input) input.value = suggested;
                     card.setAttribute('data-qty', String(suggested));
@@ -1652,18 +2010,52 @@
             updateSelectedCount();
         }
 
+        function getReorderBadgeHtml(status, covDays, sugOrder, savedQty, stock, demand) {
+            if (savedQty > 0) {
+                if (orderBadgeMode === 'none') return '';
+                const days = Math.max(1, Math.round((stock + savedQty) / Math.max(0.1, demand)));
+                return `<span class="badge-projection">⏳ Cukup ~${days} hari</span>`;
+            }
+
+            if (orderBadgeMode === 'none') {
+                return '';
+            }
+
+            if (orderBadgeMode === 'simple') {
+                if (status === 'KRITIS' || status === 'RESTOK') {
+                    return `<span class="badge-reorder-simple">Perlu Restok</span>`;
+                }
+                return '';
+            }
+
+            // Mode 'dynamic' (Lengkap)
+            if (status === 'KRITIS') {
+                const covText = (covDays < 100) ? `~${covDays} hr` : 'Habis';
+                const orderPart = (sugOrder > 0) ? ` +${sugOrder} pcs` : '';
+                return `<span class="badge-reorder-critical">🚨 Kritis (${covText})${orderPart}</span>`;
+            } else if (status === 'RESTOK') {
+                const covText = (covDays < 100) ? `~${covDays} hr` : '';
+                const orderPart = (sugOrder > 0) ? ` +${sugOrder} pcs` : '';
+                return `<span class="badge-reorder-warning">⚠️ Restok (${covText})${orderPart}</span>`;
+            } else if (status === 'PASIF') {
+                return `<span class="badge-reorder-dead">⚪ Pasif</span>`;
+            } else {
+                const covText = (covDays < 100) ? `~${covDays} hr` : 'Aman';
+                return `<span class="badge-reorder-safe">✅ Aman (${covText})</span>`;
+            }
+        }
+
         function updateCardBadge(card, qty) {
             const container = card.querySelector('.reorder-tag-container');
             if (!container) return;
 
-            if (qty > 0) {
-                const stock = parseInt(card.getAttribute('data-stock') || '0');
-                const days = Math.max(1, Math.round((stock + qty) / 1.5));
-                container.innerHTML = `<span class="badge-projection">⏳ Cukup ~${days} hari</span>`;
-            } else {
-                const needs = (card.getAttribute('data-needs-restock') === 'true');
-                container.innerHTML = needs ? `<span class="badge-reorder-simple">Perlu Restock</span>` : '';
-            }
+            const status = card.getAttribute('data-status') || '';
+            const covDays = parseFloat(card.getAttribute('data-coverage-days') || '999');
+            const sugOrder = parseInt(card.getAttribute('data-suggested-order') || '0', 10);
+            const stock = parseInt(card.getAttribute('data-stock') || '0', 10);
+            const demand = parseFloat(card.getAttribute('data-demand') || '1.0');
+
+            container.innerHTML = getReorderBadgeHtml(status, covDays, sugOrder, qty, stock, demand);
         }
 
         function updateSelectedCount() {
@@ -1702,41 +2094,41 @@
                 ? allVouchers
                 : allVouchers.filter(v => v.device_id === selectedDevice);
 
-            let habis = 0, menipis = 0, aman = 0;
+            let kritis = 0, restok = 0, aman = 0;
             filtered.forEach(v => {
-                const stock = parseInt(v.stock || 0);
-                const limit = parseInt(v.min_limit || 5);
-                if (stock === 0) habis++;
-                else if (stock <= limit) menipis++;
+                const metrics = computeProductReorderMetrics(v, orderRestockCycleDays);
+                if (metrics.status === 'KRITIS') kritis++;
+                else if (metrics.status === 'RESTOK') restok++;
                 else aman++;
             });
 
-            document.getElementById('statHabis').innerText = habis;
-            document.getElementById('statMenipis').innerText = menipis;
-            document.getElementById('statAman').innerText = aman;
+            const elHabis = document.getElementById('statHabis');
+            const elMenipis = document.getElementById('statMenipis');
+            const elAman = document.getElementById('statAman');
+
+            if (elHabis) elHabis.innerText = kritis;
+            if (elMenipis) elMenipis.innerText = restok;
+            if (elAman) elAman.innerText = aman;
         }
 
         // 6. Quick Select & Order Filters
-        function autoFillByTargetDays(days) {
+        function autoFillSuggestedOrders() {
             const cards = document.querySelectorAll('.product-card');
             let filled = 0;
             let totalPcs = 0;
 
             cards.forEach(card => {
-                const stock = parseInt(card.getAttribute('data-stock') || '0');
-                const limit = parseInt(card.getAttribute('data-limit') || '5');
+                const needs = (card.getAttribute('data-needs-restock') === 'true');
+                const sug = parseInt(card.getAttribute('data-suggested-order') || '0', 10);
                 const input = card.querySelector('.qty-input');
 
-                let target = Math.max(limit, Math.ceil(limit * (days / 7)));
-                let needed = Math.max(0, target - stock);
-
-                if (needed > 0) {
+                if (needs && sug > 0) {
                     card.classList.add('selected');
-                    if (input) input.value = needed;
-                    card.setAttribute('data-qty', String(needed));
-                    updateCardBadge(card, needed);
+                    if (input) input.value = sug;
+                    card.setAttribute('data-qty', String(sug));
+                    updateCardBadge(card, sug);
                     filled++;
-                    totalPcs += needed;
+                    totalPcs += sug;
                 } else {
                     card.classList.remove('selected');
                     if (input) input.value = 0;
@@ -1746,7 +2138,16 @@
             });
 
             updateSelectedCount();
-            showToast(`🎯 Auto-fill ~${days} Hari: ${filled} produk (+${totalPcs} pcs)`);
+            if (filled > 0) {
+                showToast(`💡 Terisi saran restok ~${orderRestockCycleDays} hari: ${filled} produk (+${totalPcs} pcs)`);
+            } else {
+                showToast(`ℹ️ Semua produk berstatus aman untuk siklus ~${orderRestockCycleDays} hari`);
+            }
+        }
+
+        function autoFillByTargetDays(days) {
+            setOrderRestockCycle(days);
+            autoFillSuggestedOrders();
         }
 
         function selectByFilter(type) {
@@ -1852,14 +2253,14 @@
                     const name = (card.getAttribute('data-name') || '').toLowerCase();
                     const prov = (card.getAttribute('data-provider') || '').toLowerCase();
                     const stock = parseInt(card.getAttribute('data-stock') || '0');
-                    const limit = parseInt(card.getAttribute('data-limit') || '5');
                     const needs = (card.getAttribute('data-needs-restock') === 'true');
+                    const status = card.getAttribute('data-status') || '';
 
                     let matchSearch = name.includes(search) || prov.includes(search);
                     let matchFilter = true;
-                    if (filterType === 'low') matchFilter = (stock <= limit);
-                    else if (filterType === 'habis') matchFilter = (stock === 0);
-                    else if (filterType === 'aman') matchFilter = (stock > limit);
+                    if (filterType === 'low') matchFilter = (stock <= limit || status === 'KRITIS' || status === 'RESTOK');
+                    else if (filterType === 'habis') matchFilter = (stock === 0 || status === 'KRITIS');
+                    else if (filterType === 'aman') matchFilter = (status === 'AMAN' || (!needs && status !== 'PASIF'));
                     else if (filterType === 'reorder') matchFilter = needs;
 
                     if (matchSearch && matchFilter) {
@@ -1886,8 +2287,15 @@
 
         // 7. WhatsApp Text Formatting (Tab 1: Order Restock)
         function generateWaText() {
-            const selectedCards = document.querySelectorAll('.product-card.selected');
-            if (selectedCards.length === 0) return '';
+            const rawCards = document.querySelectorAll('.product-card.selected');
+            if (rawCards.length === 0) return '';
+
+            // Selalu urutkan item sesuai urutan standar Supabase (saat btnToggleOrderSort OFF)
+            const selectedCards = Array.from(rawCards).sort((a, b) => {
+                const sA = parseInt(a.getAttribute('data-supabase-index') || '0', 10);
+                const sB = parseInt(b.getAttribute('data-supabase-index') || '0', 10);
+                return sA - sB;
+            });
 
             const now = new Date();
             const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -1950,6 +2358,101 @@
         // ==================== 7B. RIWAYAT ORDER RESTOCK & PENCOCOKAN BIAYA ====================
         let allRestockOrders = [];
 
+        function getDeviceName(devId) {
+            if (!devId || devId === 'all') return 'Semua Perangkat';
+            const match = allVouchers.find(v => v.device_id === devId);
+            if (match && match.device_name) return match.device_name;
+            const select = document.getElementById('navDeviceFilter');
+            if (select) {
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value === devId) {
+                        return select.options[i].text.replace(/^[^\w\d]+/, '').trim();
+                    }
+                }
+            }
+            return devId;
+        }
+
+        function cleanOrderForSupabase(o) {
+            return {
+                id: o.id,
+                device_id: o.device_id || 'all',
+                device_name: o.device_name || 'Semua Perangkat',
+                action_type: o.action_type || 'whatsapp',
+                total_items: parseInt(o.total_items || (o.items ? o.items.length : 0), 10),
+                total_pcs: parseInt(o.total_pcs || 0, 10),
+                est_cost: parseInt(o.est_cost || 0, 10),
+                actual_cost: parseInt(o.actual_cost || 0, 10),
+                est_margin: parseInt(o.est_margin || 0, 10),
+                items: o.items || [],
+                status: o.status || 'pending',
+                notes: o.notes || '',
+                created_at: o.created_at || new Date().toISOString(),
+                updated_at: o.updated_at || new Date().toISOString()
+            };
+        }
+
+        function enrichOrdersWithDeviceDetails() {
+            if (!Array.isArray(allRestockOrders)) return;
+            allRestockOrders.forEach(order => {
+                (order.items || []).forEach(it => {
+                    const cleanName = cleanProdName(it.product_name);
+                    const pId = parseInt(it.product_id || 0, 10);
+                    const targetDev = it.device_id || order.device_id;
+
+                    let matchV = null;
+                    if (pId >= 100) {
+                        matchV = allVouchers.find(v => {
+                            const vId = parseInt(v.product_id || v.id || 0, 10);
+                            return vId === pId;
+                        });
+                    }
+
+                    if (!matchV) {
+                        // Cari voucher yang cocok dengan perangkat, nama bersih, dan harga modal (agar varian nama kembar tidak tertukar)
+                        matchV = allVouchers.find(v => {
+                            if (targetDev && targetDev !== 'all' && v.device_id && v.device_id !== targetDev) return false;
+                            if (cleanProdName(v.product_name) !== cleanName) return false;
+                            if (it.cost_price && v.cost_price) {
+                                return Math.abs(parseInt(v.cost_price, 10) - it.cost_price) <= 100;
+                            }
+                            return true;
+                        });
+
+                        // Fallback jika tidak cocok perangkat
+                        if (!matchV) {
+                            matchV = allVouchers.find(v => {
+                                if (cleanProdName(v.product_name) !== cleanName) return false;
+                                if (it.cost_price && v.cost_price) {
+                                    return Math.abs(parseInt(v.cost_price, 10) - it.cost_price) <= 100;
+                                }
+                                return true;
+                            });
+                        }
+
+                        // Auto-heal: pasang product_id asli dari database voucher
+                        if (matchV) {
+                            const realId = parseInt(matchV.product_id || matchV.id || 0, 10);
+                            if (realId > 0) it.product_id = realId;
+                        }
+                    }
+
+                    if (matchV && matchV.device_id && (!it.device_id || it.device_id === 'all')) {
+                        it.device_id = matchV.device_id;
+                    }
+                });
+
+                if (!order.device_id || order.device_id === 'all' || order.device_name === 'Semua Perangkat') {
+                    const devIds = new Set((order.items || []).map(it => it.device_id).filter(d => d && d !== 'all'));
+                    if (devIds.size === 1) {
+                        const singleId = Array.from(devIds)[0];
+                        order.device_id = singleId;
+                        order.device_name = getDeviceName(singleId);
+                    }
+                }
+            });
+        }
+
         function initRestockOrders() {
             try {
                 const saved = localStorage.getItem('kspcheck_restock_orders');
@@ -1960,6 +2463,7 @@
             } catch (e) {
                 allRestockOrders = [];
             }
+            enrichOrdersWithDeviceDetails();
             reconcileAllOrders();
             renderOrderHistoryList();
             updateActiveOrderBadge();
@@ -1975,8 +2479,15 @@
         }
 
         function recordRestockOrder(actionType) {
-            const selectedCards = document.querySelectorAll('.product-card.selected');
-            if (selectedCards.length === 0) return;
+            const rawCards = document.querySelectorAll('.product-card.selected');
+            if (rawCards.length === 0) return;
+
+            // Selalu simpan item order sesuai urutan standar Supabase
+            const selectedCards = Array.from(rawCards).sort((a, b) => {
+                const sA = parseInt(a.getAttribute('data-supabase-index') || '0', 10);
+                const sB = parseInt(b.getAttribute('data-supabase-index') || '0', 10);
+                return sA - sB;
+            });
 
             const now = new Date();
             const idSuffix = String(Date.now()).slice(-4);
@@ -1996,19 +2507,21 @@
             let totalMargin = 0;
 
             selectedCards.forEach(c => {
-                const qty = parseInt(c.getAttribute('data-qty') || '0');
+                const qty = parseInt(c.getAttribute('data-qty') || '0', 10);
                 if (qty > 0) {
-                    const cost = parseInt(c.getAttribute('data-cost') || '0');
-                    const price = parseInt(c.getAttribute('data-price') || '0');
-                    const stock = parseInt(c.getAttribute('data-stock') || '0');
+                    const cost = parseInt(c.getAttribute('data-cost') || '0', 10);
+                    const price = parseInt(c.getAttribute('data-price') || '0', 10);
+                    const stock = parseInt(c.getAttribute('data-stock') || '0', 10);
                     const name = c.getAttribute('data-name') || '';
                     const prov = c.getAttribute('data-provider') || 'Lainnya';
-                    const pId = parseInt(c.getAttribute('data-id') || '0');
+                    const pId = parseInt(c.getAttribute('data-product-id') || c.getAttribute('data-id') || '0', 10);
+                    const itemDevId = c.getAttribute('data-device-id') || selectedDevice;
 
                     items.push({
                         product_id: pId,
                         product_name: name,
                         provider_name: prov,
+                        device_id: itemDevId,
                         order_qty: qty,
                         cost_price: cost,
                         sell_price: price,
@@ -2026,10 +2539,21 @@
 
             if (items.length === 0) return;
 
+            // Tentukan nama perangkat order secara pintar jika dipilih Semua Perangkat
+            let orderDevId = selectedDevice;
+            let orderDevName = selectedDeviceName;
+            if (selectedDevice === 'all' && items.length > 0) {
+                const itemDevIds = new Set(items.map(it => it.device_id).filter(d => d && d !== 'all'));
+                if (itemDevIds.size === 1) {
+                    orderDevId = Array.from(itemDevIds)[0];
+                    orderDevName = getDeviceName(orderDevId);
+                }
+            }
+
             const newOrder = {
                 id: orderId,
-                device_id: selectedDevice,
-                device_name: selectedDeviceName,
+                device_id: orderDevId,
+                device_name: orderDevName,
                 action_type: actionType, // 'copy' | 'whatsapp'
                 total_items: items.length,
                 total_pcs: totalPcs,
@@ -2048,9 +2572,10 @@
             allRestockOrders.unshift(newOrder);
             saveRestockOrdersToStorage();
 
-            // Sync to Supabase if connected
+            // Sync to Supabase if connected (gunakan payload yang bersih sesuai kolom DB)
             if (supabaseClient) {
-                supabaseClient.from('restock_orders').upsert([newOrder]).then(res => {
+                const payload = cleanOrderForSupabase(newOrder);
+                supabaseClient.from('restock_orders').upsert([payload]).then(res => {
                     if (res.error) console.warn('Supabase restock_orders upsert:', res.error);
                 }).catch(err => console.warn('Supabase restock_orders err:', err));
             }
@@ -2058,7 +2583,7 @@
             historySelectedDateStr = getLocalDateString(new Date());
             reconcileAllOrders();
             renderOrderHistoryList();
-            showToast(`✅ Order ${orderId} (${totalPcs} pcs) dicatat ke tab 📊 history!`);
+            showToast(`✅ Order ${orderId} (${totalPcs} pcs) untuk ${orderDevName} dicatat ke tab 📊 history!`);
         }
 
         function parseDateSafe(str) {
@@ -2077,6 +2602,18 @@
             return isNaN(t) ? 0 : t;
         }
 
+        // Helper normalisasi nama produk untuk pencocokan akurat antara order dan laporan harian
+        function cleanProdName(n) {
+            if (!n) return '';
+            return n.toLowerCase()
+                .replace(/\([^)]*\)/g, ' ')
+                .replace(/\[[^\]]*\]/g, ' ')
+                .replace(/(\d+)\s*(gb|mb|kb|h|hari|hr|bln|bulan)\b/g, '$1$2')
+                .replace(/[^a-z0-9\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
         function reconcileAllOrders() {
             if (!allRestockOrders || allRestockOrders.length === 0) return;
 
@@ -2084,87 +2621,141 @@
                 if (order.status === 'cancelled') return;
 
                 const orderTime = parseDateSafe(order.created_at);
+                const orderDateObj = new Date(orderTime || Date.now());
+                const orderDateStr = getLocalDateString(orderDateObj);
+
                 let totalReceivedPcs = 0;
                 let calculatedActualCost = 0;
                 let allItemsCompleted = true;
                 let anyItemReceived = false;
 
                 (order.items || []).forEach(item => {
-                    const prodNameLower = (item.product_name || '').toLowerCase().trim();
+                    const cleanItemName = cleanProdName(item.product_name);
+                    const itemId = parseInt(item.product_id || 0, 10);
                     let receivedQty = 0;
                     let latestUnitCost = item.cost_price || 0;
 
-                    // Cari voucher yang cocok di allVouchers (berdasarkan product_id atau nama produk)
+                    const targetDev = item.device_id || order.device_id;
+
+                    // 1. SUMBER UTAMA: DATA MUTASI VOUCHER MASUK DI LAPORAN HARIAN (allDailyReports)
+                    // Mengambil data fisik masuk riil (restocked + added) yang dicatat kasir di HP.
+                    let incomingFromReport = 0;
+                    if (allDailyReports && allDailyReports.size > 0) {
+                        allDailyReports.forEach((rep, devId) => {
+                            if (targetDev && targetDev !== 'all' && devId !== targetDev) return;
+                            if (!rep || !Array.isArray(rep.items)) return;
+
+                            // Cari item yang cocok di laporan harian
+                            const rItem = rep.items.find(ri => {
+                                if (!ri || ri.type !== 'product') return false;
+                                const rPId = parseInt(ri.productId || ri.product_id || 0, 10);
+                                if (itemId >= 100 && rPId >= 100) {
+                                    return rPId === itemId; // WAJIB sama persis jika ID ada
+                                }
+                                const cleanRi = cleanProdName(ri.productName);
+                                if (cleanRi !== cleanItemName) return false;
+                                if (item.cost_price && ri.cost) {
+                                    const parsedCost = parseInt(String(ri.cost).replace(/[^\d]/g, ''), 10) || 0;
+                                    if (parsedCost > 0) return Math.abs(parsedCost - item.cost_price) <= 100;
+                                }
+                                return true;
+                            });
+
+                            if (rItem) {
+                                // Hitung tanggal D1, D2, D3 dari tanggal snapshot laporan (rep.dateStr)
+                                const repDateStr = rep.dateStr || getLocalDateString(new Date());
+                                const p = repDateStr.split('-');
+                                let d3Str = repDateStr;
+                                let d2Str = '';
+                                let d1Str = '';
+                                if (p.length === 3) {
+                                    const bd3 = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+                                    const bd2 = new Date(bd3); bd2.setDate(bd2.getDate() - 1);
+                                    const bd1 = new Date(bd3); bd1.setDate(bd1.getDate() - 2);
+                                    d2Str = getLocalDateString(bd2);
+                                    d1Str = getLocalDateString(bd1);
+                                }
+
+                                // Hitung akumulasi voucher masuk yang terjadi sejak tanggal order dibuat
+                                let addedSum = 0;
+                                if (d1Str && orderDateStr <= d1Str) {
+                                    addedSum += (parseInt(rItem.restockedD1 || 0, 10) + parseInt(rItem.addedD1 || 0, 10));
+                                }
+                                if (d2Str && orderDateStr <= d2Str) {
+                                    addedSum += (parseInt(rItem.restockedD2 || 0, 10) + parseInt(rItem.addedD2 || 0, 10));
+                                }
+                                if (d3Str && orderDateStr <= d3Str) {
+                                    addedSum += (parseInt(rItem.restockedD3 || 0, 10) + parseInt(rItem.addedD3 || 0, 10));
+                                }
+
+                                if (addedSum > 0) {
+                                    incomingFromReport += addedSum;
+                                }
+
+                                if (rItem.cost) {
+                                    const parsedCost = parseInt(String(rItem.cost).replace(/[^\d]/g, ''), 10) || 0;
+                                    if (parsedCost > 0 && Math.abs(parsedCost - item.cost_price) <= 1000) {
+                                        latestUnitCost = parsedCost;
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    // 2. SUMBER PENDUKUNG: AUDIT TRAIL CHANGE_HISTORY DI Supabase (allVouchers)
+                    let incomingFromAudit = 0;
                     const vMatches = allVouchers.filter(v => {
-                        if (order.device_id && order.device_id !== 'all' && v.device_id && v.device_id !== order.device_id) return false;
-                        if (item.product_id && v.product_id && item.product_id === v.product_id) return true;
-                        const vName = (v.product_name || '').toLowerCase().trim();
-                        return (vName === prodNameLower);
+                        if (targetDev && targetDev !== 'all' && v.device_id && v.device_id !== targetDev) return false;
+                        const vId = parseInt(v.product_id || v.id || 0, 10);
+                        if (itemId >= 100 && vId >= 100) {
+                            return vId === itemId; // WAJIB sama persis jika ID ada
+                        }
+                        const cleanVName = cleanProdName(v.product_name);
+                        if (cleanVName !== cleanItemName) return false;
+                        if (item.cost_price && v.cost_price) {
+                            return Math.abs(parseInt(v.cost_price, 10) - item.cost_price) <= 100;
+                        }
+                        return true;
                     });
 
-                    // 1. Cek audit trail riwayat perubahan (change_history)
                     vMatches.forEach(v => {
                         const history = v.change_history || [];
                         if (Array.isArray(history)) {
                             history.forEach(entry => {
                                 const entryTime = parseDateSafe(entry.timestamp);
-                                const diff = parseInt(entry.stock_diff || 0);
-                                // Penambahan stok harus terjadi setelah order dibuat (toleransi 2 menit)
-                                if (diff > 0 && entryTime >= (orderTime - 120000)) {
-                                    receivedQty += diff;
-                                    const entryNewCost = parseInt(entry.new_cost_price || 0);
-                                    if (entryNewCost > 0) {
+                                const diff = parseInt(entry.stock_diff || 0, 10);
+                                // Penambahan stok yang terjadi saat atau setelah order dibuat (toleransi 10 menit)
+                                if (diff > 0 && entryTime >= (orderTime - 600000)) {
+                                    incomingFromAudit += diff;
+                                    const entryNewCost = parseInt(entry.new_cost_price || 0, 10);
+                                    if (entryNewCost > 0 && Math.abs(entryNewCost - item.cost_price) <= 1000) {
                                         latestUnitCost = entryNewCost;
                                     }
                                 }
                             });
                         }
 
-                        // Cek jika harga modal saat ini di katalog berbeda
-                        const vCost = parseInt(v.cost_price || 0);
-                        if (vCost > 0 && latestUnitCost === item.cost_price) {
+                        const vCost = parseInt(v.cost_price || 0, 10);
+                        if (vCost > 0 && latestUnitCost === item.cost_price && Math.abs(vCost - item.cost_price) <= 1000) {
                             latestUnitCost = vCost;
                         }
                     });
 
-                    // 2. Fallback jika change_history kosong (misal trigger SQL belum aktif di Supabase):
-                    // Cek selisih stok saat ini vs stok saat order dibuat (item.stock_at_order)
-                    if (receivedQty === 0) {
-                        vMatches.forEach(v => {
-                            const curStock = parseInt(v.stock || 0);
-                            const stockAtOrder = (item.stock_at_order !== undefined && item.stock_at_order !== null)
-                                ? parseInt(item.stock_at_order) : -1;
-                            if (stockAtOrder >= 0 && curStock > stockAtOrder) {
-                                receivedQty += (curStock - stockAtOrder);
-                            }
-                            const vCost = parseInt(v.cost_price || 0);
-                            if (vCost > 0) {
-                                latestUnitCost = vCost;
-                            }
-                        });
+                    // 3. SUMBER CADANGAN: SELISIH STOK SAAT INI VS SAAT ORDER DIBUAT
+                    // Hanya digunakan jika ada TEPAT 1 produk yang cocok dan bukan kumpulan produk varian
+                    let incomingFromStockDiff = 0;
+                    if (vMatches.length === 1) {
+                        const v = vMatches[0];
+                        const curStock = parseInt(v.stock || 0, 10);
+                        const stockAtOrder = (item.stock_at_order !== undefined && item.stock_at_order !== null)
+                            ? parseInt(item.stock_at_order, 10) : -1;
+                        if (stockAtOrder >= 0 && curStock > stockAtOrder) {
+                            incomingFromStockDiff = (curStock - stockAtOrder);
+                        }
                     }
 
-                    // 3. Fallback snapshot laporan harian (allDailyReports)
-                    if (receivedQty === 0 && allDailyReports && allDailyReports.size > 0) {
-                        allDailyReports.forEach((rep, devId) => {
-                            if (order.device_id && order.device_id !== 'all' && devId !== order.device_id) return;
-                            if (!rep || !Array.isArray(rep.items)) return;
-                            const rItem = rep.items.find(ri =>
-                                (item.product_id && ri.productId === item.product_id) ||
-                                (ri.productName && ri.productName.toLowerCase().trim() === prodNameLower)
-                            );
-                            if (rItem) {
-                                const added = (rItem.restockedD3 || 0) + (rItem.addedD3 || 0);
-                                if (added > 0) {
-                                    receivedQty = Math.max(receivedQty, added);
-                                    if (rItem.cost) {
-                                        const parsedCost = parseInt(String(rItem.cost).replace(/[^\d]/g, '')) || 0;
-                                        if (parsedCost > 0) latestUnitCost = parsedCost;
-                                    }
-                                }
-                            }
-                        });
-                    }
+                    // Pilih jumlah masuk yang paling valid (utamakan laporan mutasi riil kasir)
+                    receivedQty = Math.max(incomingFromReport, incomingFromAudit, incomingFromStockDiff);
 
                     item.received_qty = receivedQty;
                     item.actual_unit_cost = latestUnitCost;
@@ -2199,7 +2790,7 @@
 
                 order.cost_diff = order.actual_cost - (order.est_cost || 0);
 
-                if (order.status !== 'completed' && order.status !== 'cancelled') {
+                if (order.status !== 'cancelled') {
                     if (allItemsCompleted && (order.items || []).length > 0) {
                         order.status = 'completed';
                     } else if (anyItemReceived) {
@@ -2272,24 +2863,134 @@
             }
         }
 
+        function setHistoryDateDirect(dateStr) {
+            historySelectedDateStr = dateStr;
+            renderOrderHistoryList();
+        }
+
+        function renderHistoryDeviceFilterPills() {
+            const container = document.getElementById('historyDeviceFilterPills');
+            if (!container) return;
+
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const devices = new Map();
+            allVouchers.forEach(v => {
+                if (v.device_id && v.device_id !== 'all' && v.device_id !== 'undefined' && !devices.has(v.device_id)) {
+                    devices.set(v.device_id, v.device_name || v.device_id);
+                }
+            });
+            allRestockOrders.forEach(o => {
+                if (o.device_id && o.device_id !== 'all' && o.device_id !== 'undefined' && !devices.has(o.device_id)) {
+                    devices.set(o.device_id, o.device_name || getDeviceName(o.device_id));
+                }
+            });
+
+            // Sembunyikan chip filter jika jumlah perangkat hanya satu (atau tidak ada)
+            if (devices.size <= 1) {
+                container.innerHTML = '';
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'flex';
+
+            let html = `
+                <button type="button" class="btn-select-action ${selectedDevice === 'all' ? 'active' : ''}" 
+                        onclick="setHistoryDeviceFilter('all')" 
+                        style="font-size: 11px; padding: 3px 8px; border-radius: 12px; ${selectedDevice === 'all' ? 'background:var(--primary); color:#fff;' : ''}">
+                    🌐 Semua Perangkat
+                </button>
+            `;
+
+            devices.forEach((name, id) => {
+                const isActive = (selectedDevice === id);
+                html += `
+                    <button type="button" class="btn-select-action ${isActive ? 'active' : ''}" 
+                            onclick="setHistoryDeviceFilter('${escapeHtml(id)}')" 
+                            style="font-size: 11px; padding: 3px 8px; border-radius: 12px; ${isActive ? 'background:var(--primary); color:#fff;' : ''}">
+                        📱 ${escapeHtml(name)}
+                    </button>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function setHistoryDeviceFilter(devId) {
+            const select = document.getElementById('navDeviceFilter');
+            if (select) {
+                select.value = devId;
+                onDeviceChange();
+            }
+        }
+
         function renderOrderHistoryList() {
             const container = document.getElementById('orderHistoryList');
             if (!container) return;
 
             updateHistoryDateControls();
+            renderHistoryDeviceFilterPills();
 
-            // Filter riwayat order hanya untuk tanggal yang dipilih (default: today)
-            const filteredOrders = allRestockOrders.filter(order => isOrderOnDate(order, historySelectedDateStr));
+            enrichOrdersWithDeviceDetails();
+
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+
+            // 1. Filter riwayat order berdasarkan perangkat yang dipilih
+            let deviceFiltered = allRestockOrders;
+            if (selectedDevice !== 'all') {
+                deviceFiltered = allRestockOrders.filter(order => {
+                    if (order.device_id === selectedDevice) return true;
+                    if (order.items && order.items.some(it => it.device_id === selectedDevice)) return true;
+                    return false;
+                });
+            }
+
+            // 2. Filter berdasarkan tanggal yang dipilih
+            const filteredOrders = deviceFiltered.filter(order => isOrderOnDate(order, historySelectedDateStr));
 
             if (filteredOrders.length === 0) {
                 const isToday = (historySelectedDateStr === getLocalDateString(new Date()));
                 const dateLabel = formatHistoryDateDisplay(historySelectedDateStr);
+                const devName = (selectedDevice === 'all') ? '' : ` untuk ${escapeHtml(getDeviceName(selectedDevice))}`;
+
+                // Cek apakah ada order di tanggal lain untuk perangkat ini
+                const otherDateMap = new Map();
+                deviceFiltered.forEach(o => {
+                    const t = parseDateSafe(o.created_at);
+                    if (t) {
+                        const dStr = getLocalDateString(new Date(t));
+                        otherDateMap.set(dStr, (otherDateMap.get(dStr) || 0) + 1);
+                    }
+                });
+
+                let otherDatesHtml = '';
+                if (otherDateMap.size > 0) {
+                    otherDatesHtml += `
+                        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--card-border);">
+                            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">📌 Ditemukan order tersimpan pada tanggal lain:</div>
+                            <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+                    `;
+                    otherDateMap.forEach((count, dStr) => {
+                        otherDatesHtml += `
+                            <button type="button" class="btn-select-action" onclick="setHistoryDateDirect('${dStr}')" style="font-size: 11px; padding: 4px 10px;">
+                                📅 ${escapeHtml(formatHistoryDateDisplay(dStr))} (${count} order)
+                            </button>
+                        `;
+                    });
+                    otherDatesHtml += `
+                            </div>
+                        </div>
+                    `;
+                }
+
                 container.innerHTML = `
                     <div style="text-align: center; padding: 36px 20px; color: var(--text-muted); background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px;">
                         <div style="font-size: 28px; margin-bottom: 8px;">📭</div>
-                        <div style="font-weight: 700; font-size: 14px; color: var(--text-main); margin-bottom: 4px;">Tidak ada riwayat order untuk ${escapeHtml(dateLabel)}</div>
-                        
-                        ${!isToday ? `<button type="button" class="btn-select-action" onclick="setHistoryDateToday()" style="background: rgba(79, 142, 247, 0.15); color: var(--primary); font-weight: 700; margin: 0 auto;">🎯 Kembali ke Hari Ini</button>` : ''}
+                        <div style="font-weight: 700; font-size: 14px; color: var(--text-main); margin-bottom: 4px;">
+                            ${`Tidak ada riwayat order${devName} untuk ${escapeHtml(dateLabel)}`}
+                        </div>
+                        ${!isToday ? `<button type="button" class="btn-select-action" onclick="setHistoryDateToday()" style="background: rgba(79, 142, 247, 0.15); color: var(--primary); font-weight: 700; margin: 6px auto;">🎯 Kembali ke Hari Ini</button>` : ''}
+                        ${otherDatesHtml}
                     </div>`;
                 return;
             }
@@ -2347,7 +3048,7 @@
                     <div class="order-history-header">
                         <div class="order-title-block">
                             <div class="order-id-tag">📦 ${escapeHtml(order.id)}</div>
-                            <div class="order-date-tag">📅 ${orderTimeStr} • 📱 ${escapeHtml(order.device_name || 'Semua Perangkat')}</div>
+                            <div class="order-date-tag">📅 ${orderTimeStr} • 📱 ${escapeHtml(order.device_name || getDeviceName(order.device_id))}</div>
                         </div>
                         <div class="order-badges-block">
                             <span class="badge-method">${methodBadge}</span>
@@ -2397,6 +3098,7 @@
                     const itEstCost = it.cost_price || 0;
                     const itActCost = it.actual_unit_cost || itEstCost;
                     const itSubtotalAct = itRecvQty * itActCost;
+                    const itDevName = it.device_id ? getDeviceName(it.device_id) : '';
 
                     let itStatusTag = '<span style="color:var(--warning); font-weight:700;">⏳ Belum (0)</span>';
                     if (itRecvQty >= itOrderQty) {
@@ -2410,7 +3112,10 @@
                         <tr>
                             <td>
                                 <b>${escapeHtml(it.product_name)}</b>
-                                <div style="font-size:10px; color:var(--text-muted);">${escapeHtml(it.provider_name || '')}</div>
+                                <div style="font-size:10px; color:var(--text-muted); display:flex; gap:6px; align-items:center; margin-top:2px;">
+                                    <span>${escapeHtml(it.provider_name || '')}</span>
+                                    ${itDevName ? `<span style="background:rgba(79,142,247,0.15); color:var(--primary); padding:1px 6px; border-radius:4px; font-weight:600;">📱 ${escapeHtml(itDevName)}</span>` : ''}
+                                </div>
                             </td>
                             <td class="center"><b>${itOrderQty}</b> pcs</td>
                             <td class="center"><b style="color:${itRecvQty >= itOrderQty ? 'var(--success)' : (itRecvQty > 0 ? 'var(--primary)' : 'var(--text-muted)')};">${itRecvQty}</b> pcs</td>
@@ -2485,7 +3190,8 @@
                 // Sinkronkan order lokal ke Supabase jika ada yang belum tersinkron
                 if (allRestockOrders.length > 0) {
                     try {
-                        const { error } = await supabaseClient.from('restock_orders').upsert(allRestockOrders);
+                        const payload = allRestockOrders.map(cleanOrderForSupabase);
+                        const { error } = await supabaseClient.from('restock_orders').upsert(payload);
                         if (error) console.warn('Supabase restock_orders upsert:', error);
                     } catch (eSync) {
                         console.warn('Supabase restock_orders sync error:', eSync);
@@ -2530,8 +3236,8 @@
             saveRestockOrdersToStorage();
             if (supabaseClient) {
                 supabaseClient.from('restock_orders').update({
-                    manual_actual_cost: order.manual_actual_cost,
                     actual_cost: order.actual_cost,
+                    notes: order.manual_actual_cost ? `Manual cost: Rp ${order.manual_actual_cost}` : (order.notes || ''),
                     updated_at: new Date().toISOString()
                 }).eq('id', order.id).then();
             }
@@ -2749,6 +3455,7 @@
                                 p.targetStock = (p.targetStock || 0) + (it.targetStock || 0);
                             }
                         } else {
+                            // New product not in base — add it safely
                             base.items.push(it);
                             productMap.set(it.productName, it);
                         }
@@ -3848,6 +4555,7 @@
 
             updateSettingsState('settingOrderProfitState', orderProfitMode ? 'Aktif' : 'Mati', orderProfitMode ? 'warn' : '');
             updateSettingsState('settingOrderSortStockState', orderSortByStockAsc ? 'Aktif' : 'Standar', orderSortByStockAsc ? 'on' : '');
+            updateSettingsState('settingOrderBadgeState', (orderBadgeMode === 'dynamic') ? 'Dinamis' : ((orderBadgeMode === 'simple') ? 'Sederhana' : 'Mati'), orderBadgeMode !== 'none' ? 'on' : '');
             updateSettingsState('settingProviderBadgeState', providerVisible ? 'Aktif' : 'Mati', providerVisible ? 'on' : '');
             updateSettingsState('settingOrderHistoryState', orderHistoryVisible ? 'Terbuka' : 'Tersembunyi', orderHistoryVisible ? 'on' : '');
             updateSettingsState('settingHideZeroState', dailyHideZeroSell ? 'Aktif' : 'Mati', dailyHideZeroSell ? 'on' : '');
