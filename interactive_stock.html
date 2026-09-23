@@ -1244,7 +1244,18 @@
                 if (reportsRes.data && Array.isArray(reportsRes.data)) {
                     reportsRes.data.forEach(r => {
                         if (r.device_id && r.report_data) {
-                            allDailyReports.set(r.device_id, r.report_data);
+                            let rData = r.report_data;
+                            if (typeof rData === 'string') {
+                                try {
+                                    rData = JSON.parse(rData);
+                                } catch (e) {
+                                    console.warn('Failed parsing daily report data for device', r.device_id, e);
+                                    rData = null;
+                                }
+                            }
+                            if (rData && typeof rData === 'object') {
+                                allDailyReports.set(r.device_id, rData);
+                            }
                         }
                     });
                 }
@@ -2582,8 +2593,8 @@
                 }
             }
 
-            // Fallback: If no daily report snapshot in Supabase yet, synthesize from allVouchers!
-            if (!reportData) {
+            // Fallback: If no daily report snapshot in Supabase yet (or invalid/empty), synthesize from allVouchers!
+            if (!reportData || !Array.isArray(reportData.items) || reportData.items.length === 0) {
                 reportData = buildFallbackDailyReportData();
             }
 
@@ -2671,22 +2682,46 @@
 
         function mergeDailyReports(reports) {
             if (!reports || reports.length === 0) return buildFallbackDailyReportData();
-            if (reports.length === 1) return reports[0];
 
-            // Use first report as base for dates and filters
-            const base = JSON.parse(JSON.stringify(reports[0]));
+            // Filter valid reports that contain items array
+            const validReports = reports.filter(r => r && Array.isArray(r.items) && r.items.length > 0);
+            if (validReports.length === 0) {
+                const anyRep = reports.find(r => r && (r.dateStr || r.displayDate));
+                const fallback = buildFallbackDailyReportData();
+                if (anyRep) {
+                    if (anyRep.dateStr) fallback.dateStr = anyRep.dateStr;
+                    if (anyRep.displayDate) fallback.displayDate = anyRep.displayDate;
+                    if (anyRep.d1Date) fallback.d1Date = anyRep.d1Date;
+                    if (anyRep.d2Date) fallback.d2Date = anyRep.d2Date;
+                    if (anyRep.d3Date) fallback.d3Date = anyRep.d3Date;
+                }
+                return fallback;
+            }
+
+            if (validReports.length === 1) {
+                const single = JSON.parse(JSON.stringify(validReports[0]));
+                if (!Array.isArray(single.items)) single.items = [];
+                return single;
+            }
+
+            // Use first valid report as base for dates and filters
+            const base = JSON.parse(JSON.stringify(validReports[0]));
+            // Defensive: ensure base.items is always an array before we push to it
+            if (!Array.isArray(base.items)) base.items = [];
+
             const productMap = new Map();
 
-            (base.items || []).forEach(it => {
-                if (it.type === 'product' && it.productName) {
+            base.items.forEach(it => {
+                if (it && it.type === 'product' && it.productName) {
                     productMap.set(it.productName, it);
                 }
             });
 
-            for (let i = 1; i < reports.length; i++) {
-                const rep = reports[i];
-                (rep.items || []).forEach(it => {
-                    if (it.type === 'product' && it.productName) {
+            for (let i = 1; i < validReports.length; i++) {
+                const rep = validReports[i];
+                if (!rep || !Array.isArray(rep.items)) continue;
+                rep.items.forEach(it => {
+                    if (it && it.type === 'product' && it.productName) {
                         if (productMap.has(it.productName)) {
                             const p = productMap.get(it.productName);
                             p.currentStock = (p.currentStock || 0) + (it.currentStock || 0);
@@ -2704,6 +2739,15 @@
                             p.soldD3Pagi = (p.soldD3Pagi || 0) + (it.soldD3Pagi || 0);
                             p.soldD3Malam = (p.soldD3Malam || 0) + (it.soldD3Malam || 0);
                             p.addedD3 = (p.addedD3 || 0) + (it.addedD3 || 0);
+
+                            // Merge reorder metrics (weighted average by stock)
+                            if (it.demandDaily !== undefined) {
+                                p.demandDaily = (p.demandDaily || 0) + (it.demandDaily || 0);
+                                p.sold7d = (p.sold7d || 0) + (it.sold7d || 0);
+                                p.sold30d = (p.sold30d || 0) + (it.sold30d || 0);
+                                p.suggestedOrder = (p.suggestedOrder || 0) + (it.suggestedOrder || 0);
+                                p.targetStock = (p.targetStock || 0) + (it.targetStock || 0);
+                            }
                         } else {
                             base.items.push(it);
                             productMap.set(it.productName, it);
