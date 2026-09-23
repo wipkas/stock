@@ -426,7 +426,7 @@
         .product-name { font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         .prov-pill { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: rgba(79, 142, 247, 0.15); color: var(--primary); }
         body.hide-provider-badge .prov-pill { display: none; }
-        .product-meta { font-size: 14px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .product-meta { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .stock-zero, .stock-kritis, .stock-critical { color: var(--danger); font-weight: bold; }
         .stock-low, .stock-restok, .stock-warning { color: var(--warning); font-weight: bold; }
         .stock-normal, .stock-aman, .stock-safe { color: var(--success); font-weight: bold; }
@@ -1253,6 +1253,45 @@
             return 7;
         }
 
+        // Helper: Hitung jumlah kategori unik untuk suatu provider
+        function getProviderCategoryCount(provName, items) {
+            if (!provName) return 0;
+            const normProv = provName.trim().toLowerCase();
+            const cats = new Set();
+            if (Array.isArray(items)) {
+                items.forEach(v => {
+                    if ((v.provider_name || 'Lainnya').trim().toLowerCase() === normProv) {
+                        const c = (v.category_name || v.category || '').trim();
+                        if (c) cats.add(c.toLowerCase());
+                    }
+                });
+            }
+            if (allVouchers && Array.isArray(allVouchers)) {
+                allVouchers.forEach(v => {
+                    if ((v.provider_name || 'Lainnya').trim().toLowerCase() === normProv) {
+                        const c = (v.category_name || v.category || '').trim();
+                        if (c) cats.add(c.toLowerCase());
+                    }
+                });
+            }
+            return cats.size;
+        }
+
+        // Helper: Format nama produk dengan kategori jika provider memiliki > 2 kategori
+        function getProductDisplayName(rawName, catName, provName, items) {
+            rawName = (rawName || '').trim();
+            catName = (catName || '').trim();
+            if (!rawName) return '';
+            const catCount = getProviderCategoryCount(provName, items);
+            if (catCount > 2 && catName) {
+                // Jangan tambahkan jika nama produk sudah mengandung nama kategori
+                if (!rawName.toLowerCase().includes(catName.toLowerCase())) {
+                    return `${rawName}(${catName})`;
+                }
+            }
+            return rawName;
+        }
+
         /**
          * Adaptive Reorder Engine dengan Stockout-Awareness, Deteksi Dead Stock,
          * dan Penyesuaian Masa Aktif Voucher (Monthly Cap untuk paket bulanan).
@@ -1805,11 +1844,16 @@
             container.querySelectorAll('.product-card').forEach(card => {
                 const qty = parseInt(card.getAttribute('data-qty') || '0', 10);
                 const name = card.getAttribute('data-name');
+                const rawName = card.getAttribute('data-raw-name') || name;
                 const prov = card.getAttribute('data-provider');
                 const pId = card.getAttribute('data-product-id') || '';
                 if (qty > 0 && name && prov) {
-                    if (pId) existingQtyMap.set(prov + '||' + name + '||' + pId, qty);
+                    if (pId) {
+                        existingQtyMap.set(prov + '||' + name + '||' + pId, qty);
+                        existingQtyMap.set(prov + '||' + rawName + '||' + pId, qty);
+                    }
                     existingQtyMap.set(prov + '||' + name, qty);
+                    existingQtyMap.set(prov + '||' + rawName, qty);
                 }
             });
 
@@ -1856,6 +1900,10 @@
                 }
 
                 items.forEach(prod => {
+                    const rawProdName = (prod.product_name || '').trim();
+                    const catName = (prod.category_name || prod.category || '').trim();
+                    const displayName = getProductDisplayName(rawProdName, catName, provName, items);
+
                     const stock = parseInt(prod.stock || 0);
                     const limit = parseInt(prod.min_limit || 5);
                     const cost = parseInt(prod.cost_price || 0);
@@ -1866,9 +1914,9 @@
                     const needsRestock = metrics.needsRestock;
 
                     const prodRealId = String(prod.product_id || prod.id || '');
-                    const savedQty = (prodRealId && existingQtyMap.has(provName + '||' + prod.product_name + '||' + prodRealId))
-                        ? existingQtyMap.get(provName + '||' + prod.product_name + '||' + prodRealId)
-                        : (existingQtyMap.get(provName + '||' + prod.product_name) || 0);
+                    const savedQty = (prodRealId && (existingQtyMap.has(provName + '||' + displayName + '||' + prodRealId) || existingQtyMap.has(provName + '||' + rawProdName + '||' + prodRealId)))
+                        ? (existingQtyMap.get(provName + '||' + displayName + '||' + prodRealId) || existingQtyMap.get(provName + '||' + rawProdName + '||' + prodRealId))
+                        : (existingQtyMap.get(provName + '||' + displayName) || existingQtyMap.get(provName + '||' + rawProdName) || 0);
                     const isSelected = savedQty > 0;
                     const cardSelectedClass = isSelected ? ' selected' : '';
 
@@ -1897,7 +1945,9 @@
                          data-product-id="${prod.product_id || prod.id || 0}"
                          data-device-id="${escapeHtml(prod.device_id || '')}"
                          data-provider="${escapeHtml(provName)}"
-                         data-name="${escapeHtml(prod.product_name)}"
+                         data-name="${escapeHtml(displayName)}"
+                         data-raw-name="${escapeHtml(rawProdName)}"
+                         data-category="${escapeHtml(catName)}"
                          data-supabase-index="${prod._supabaseIndex !== undefined ? prod._supabaseIndex : 0}"
                          data-orig-index="${prod._providerOrigIndex !== undefined ? prod._providerOrigIndex : 0}"
                          data-stock="${stock}"
@@ -1919,7 +1969,7 @@
                         <div class="product-info">
                             <div class="product-name">
                                 <span class="prov-pill">${escapeHtml(shortenProvider(provName))}</span>
-                                ${escapeHtml(prod.product_name)}
+                                ${escapeHtml(displayName)}
                             </div>
                             <div class="product-meta">
                                 ${sisaHtml}
@@ -2251,12 +2301,14 @@
                 let visibleCount = 0;
                 sec.querySelectorAll('.product-card').forEach(card => {
                     const name = (card.getAttribute('data-name') || '').toLowerCase();
+                    const rawName = (card.getAttribute('data-raw-name') || '').toLowerCase();
                     const prov = (card.getAttribute('data-provider') || '').toLowerCase();
+                    const cat = (card.getAttribute('data-category') || '').toLowerCase();
                     const stock = parseInt(card.getAttribute('data-stock') || '0');
                     const needs = (card.getAttribute('data-needs-restock') === 'true');
                     const status = card.getAttribute('data-status') || '';
 
-                    let matchSearch = name.includes(search) || prov.includes(search);
+                    let matchSearch = name.includes(search) || rawName.includes(search) || prov.includes(search) || cat.includes(search);
                     let matchFilter = true;
                     if (filterType === 'low') matchFilter = (stock <= limit || status === 'KRITIS' || status === 'RESTOK');
                     else if (filterType === 'habis') matchFilter = (stock === 0 || status === 'KRITIS');
@@ -2437,6 +2489,10 @@
                         }
                     }
 
+                    if (matchV && matchV.category_name && !it.category_name) {
+                        it.category_name = matchV.category_name;
+                    }
+
                     if (matchV && matchV.device_id && (!it.device_id || it.device_id === 'all')) {
                         it.device_id = matchV.device_id;
                     }
@@ -2513,6 +2569,7 @@
                     const price = parseInt(c.getAttribute('data-price') || '0', 10);
                     const stock = parseInt(c.getAttribute('data-stock') || '0', 10);
                     const name = c.getAttribute('data-name') || '';
+                    const cat = c.getAttribute('data-category') || '';
                     const prov = c.getAttribute('data-provider') || 'Lainnya';
                     const pId = parseInt(c.getAttribute('data-product-id') || c.getAttribute('data-id') || '0', 10);
                     const itemDevId = c.getAttribute('data-device-id') || selectedDevice;
@@ -2520,6 +2577,7 @@
                     items.push({
                         product_id: pId,
                         product_name: name,
+                        category_name: cat,
                         provider_name: prov,
                         device_id: itemDevId,
                         order_qty: qty,
@@ -3108,10 +3166,12 @@
                         itStatusTag = '<span style="color:var(--primary); font-weight:700;">🔄 Kurang ' + sisa + '</span>';
                     }
 
+                    const itDisplayName = getProductDisplayName(it.product_name, it.category_name, it.provider_name);
+
                     html += `
                         <tr>
                             <td>
-                                <b>${escapeHtml(it.product_name)}</b>
+                                <b>${escapeHtml(itDisplayName)}</b>
                                 <div style="font-size:10px; color:var(--text-muted); display:flex; gap:6px; align-items:center; margin-top:2px;">
                                     <span>${escapeHtml(it.provider_name || '')}</span>
                                     ${itDevName ? `<span style="background:rgba(79,142,247,0.15); color:var(--primary); padding:1px 6px; border-radius:4px; font-weight:600;">📱 ${escapeHtml(itDevName)}</span>` : ''}
