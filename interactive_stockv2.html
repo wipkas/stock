@@ -1183,12 +1183,41 @@
 
             // 1. Cari data laporan harian pendukung dari allDailyReports
             let rItem = null;
-            if (allDailyReports && allDailyReports.size > 0) {
+            const targetDevId = prod.device_id;
+
+            // Prioritas 1: Cari pada laporan dari perangkat yang SAMA persis (prod.device_id)
+            if (targetDevId && allDailyReports && allDailyReports.has(targetDevId)) {
+                const rep = allDailyReports.get(targetDevId);
+                if (rep && Array.isArray(rep.items)) {
+                    rItem = rep.items.find(ri => 
+                        ri && ri.type === 'product' && (
+                            (prodId && ri.productId == prodId && ri.productName && ri.productName.toLowerCase().includes(prodNameLower)) ||
+                            (ri.productName && ri.productName.toLowerCase().trim() === prodNameLower) ||
+                            (prodId && ri.productId == prodId)
+                        )
+                    );
+                }
+            }
+
+            // Prioritas 2: Jika belum ketemu, cari di data laporan aktif/tergabung (window.DAILY_REPORT_DATA)
+            if (!rItem && window.DAILY_REPORT_DATA && Array.isArray(window.DAILY_REPORT_DATA.items)) {
+                rItem = window.DAILY_REPORT_DATA.items.find(ri => 
+                    ri && ri.type === 'product' && ri.productName && (
+                        ri.productName.toLowerCase().trim() === prodNameLower ||
+                        (prodId && ri.productId == prodId && ri.productName.toLowerCase().includes(prodNameLower))
+                    )
+                );
+            }
+
+            // Prioritas 3: Cari lintas perangkat, tapi HANYA jika NAMA PRODUK cocok (jangan hanya cocokkan ID angka, karena beda HP ID angkanya bisa merujuk ke produk berbeda!)
+            if (!rItem && allDailyReports && allDailyReports.size > 0) {
                 for (const [devId, rep] of allDailyReports.entries()) {
                     if (!rep || !Array.isArray(rep.items)) continue;
                     const match = rep.items.find(ri => 
-                        (prodId && ri.productId === prodId) ||
-                        (ri.productName && ri.productName.toLowerCase().trim() === prodNameLower)
+                        ri && ri.type === 'product' && ri.productName && (
+                            ri.productName.toLowerCase().trim() === prodNameLower ||
+                            (prodId && ri.productId == prodId && ri.productName.toLowerCase().includes(prodNameLower))
+                        )
                     );
                     if (match) {
                         rItem = match;
