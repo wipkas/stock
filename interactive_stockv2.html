@@ -626,6 +626,9 @@
                             <button class="settings-item" id="settingOrderSortStock" onclick="toggleOrderSortStockFromMenu()">
                                 <span class="settings-icon">📶</span><span class="settings-label">Urut Stok Terkecil</span><span class="settings-state" id="settingOrderSortStockState">Aktif</span>
                             </button>
+                            <button class="settings-item" id="settingOrderBadge" onclick="cycleOrderBadgeModeFromMenu()">
+                                <span class="settings-icon">🏷️</span><span class="settings-label">Mode Badge Restok</span><span class="settings-state" id="settingOrderBadgeState">Dinamis</span>
+                            </button>
                             <button class="settings-item" id="settingOrderHistory" onclick="toggleOrderHistoryFromMenu()">
                                 <span class="settings-icon">📋</span><span class="settings-label">Riwayat Order</span><span class="settings-state" id="settingOrderHistoryState">Tersembunyi</span>
                             </button>
@@ -714,6 +717,7 @@
                 </div>
 
                 <button type="button" class="btn-select-action active" id="btnToggleOrderSort" onclick="toggleOrderSortStock()" title="Urutkan stok terkecil ke terbesar per provider (Aktif)"><span id="orderSortStockIcon">📶</span> <span id="orderSortStockText">Stok Terkecil</span></button>
+                <button type="button" class="btn-select-action active" id="btnToggleOrderBadge" onclick="cycleOrderBadgeMode()" title="Ganti mode badge restok (Dinamis / Sederhana / Tanpa Badge)"><span id="orderBadgeIcon">🏷️</span> <span id="orderBadgeText">Badge Dinamis</span></button>
 
                 <button type="button" class="btn-select-action" id="btnCycle3" onclick="setOrderRestockCycle(3)" title="Hitung kebutuhan belanja siklus 3 hari">⚡ 3 Hari</button>
                 <button type="button" class="btn-select-action active" id="btnCycle7" onclick="setOrderRestockCycle(7)" title="Hitung kebutuhan belanja siklus 7 hari (Mingguan)">📅 7 Hari</button>
@@ -768,9 +772,8 @@
                 </label>
                 <input type="date" id="historyDateInput" onchange="onHistoryDateInputChange(this)" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
                 <button type="button" class="btn-date-nav" onclick="navigateHistoryDate(1)" title="Hari Berikutnya" aria-label="Hari Berikutnya">›</button>
-                <button type="button" id="btnToggleAllDates" class="btn-select-action" onclick="toggleHistoryAllDates()" style="font-size: 11px; padding: 4px 10px; margin-left: 6px;">🌐 Semua Tanggal</button>
             </div>
-            <div id="historyDeviceFilterPills" style="display: flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: wrap;"></div>
+            <div id="historyDeviceFilterPills" style="display: none; gap: 6px; justify-content: center; align-items: center; flex-wrap: wrap;"></div>
         </div>
 
         <div id="orderHistoryList">
@@ -975,6 +978,10 @@
         let orderRestockCycleDays = parseInt(localStorage.getItem('kspcheck_order_cycle_days') || '7', 10);
         if (![3, 7, 14].includes(orderRestockCycleDays)) orderRestockCycleDays = 7;
 
+        // State Tab 1: Mode Badge Restok ('dynamic' | 'simple' | 'none', default: 'dynamic')
+        let orderBadgeMode = localStorage.getItem('kspcheck_order_badge_mode') || 'dynamic';
+        if (!['dynamic', 'simple', 'none'].includes(orderBadgeMode)) orderBadgeMode = 'dynamic';
+
         // State Tab 2: Laporan Stok Harian
         let dailyShift = 0; // 0: Semua, 1: Pagi, 2: Malam, 4: Rincian P|M
         let dailyDaysMode = 1; // 1, 2, atau 3
@@ -988,6 +995,7 @@
             initTts();
             initOrderProfitMode();
             initOrderSortStock();
+            initOrderBadgeMode();
             initOrderCycleDays();
             initRestockOrders();
 
@@ -1127,6 +1135,82 @@
 
             if (menuState) {
                 menuState.innerText = orderSortByStockAsc ? 'Aktif' : 'Standar';
+            }
+        }
+
+        // Tab 1: Mode Badge Dinamis Restok Logic ('dynamic' | 'simple' | 'none')
+        function initOrderBadgeMode() {
+            updateOrderBadgeUI();
+        }
+
+        function cycleOrderBadgeMode() {
+            if (orderBadgeMode === 'dynamic') {
+                orderBadgeMode = 'simple';
+            } else if (orderBadgeMode === 'simple') {
+                orderBadgeMode = 'none';
+            } else {
+                orderBadgeMode = 'dynamic';
+            }
+
+            try {
+                localStorage.setItem('kspcheck_order_badge_mode', orderBadgeMode);
+            } catch (e) {}
+
+            updateOrderBadgeUI();
+            updateSettingsMenuUI();
+
+            // Perbarui badge pada seluruh kartu produk yang sudah dirender di DOM secara instan
+            document.querySelectorAll('.product-card').forEach(card => {
+                const qty = parseInt(card.getAttribute('data-qty') || '0', 10);
+                updateCardBadge(card, qty);
+            });
+
+            const toastMsg = (orderBadgeMode === 'dynamic')
+                ? '🏷️ Mode Badge: Dinamis (Kritis, Restok, Aman, Pasif)'
+                : (orderBadgeMode === 'simple'
+                    ? '🔴 Mode Badge: Sederhana (Merah "Perlu Restok")'
+                    : '🚫 Mode Badge: Tanpa Badge');
+            showToast(toastMsg);
+        }
+
+        function cycleOrderBadgeModeFromMenu() {
+            cycleOrderBadgeMode();
+            closeSettingsMenu();
+        }
+
+        function updateOrderBadgeUI() {
+            const btn = document.getElementById('btnToggleOrderBadge');
+            const iconEl = document.getElementById('orderBadgeIcon');
+            const textEl = document.getElementById('orderBadgeText');
+            const menuState = document.getElementById('settingOrderBadgeState');
+
+            let label = 'Dinamis';
+            let icon = '🏷️';
+            let title = 'Mode Badge Dinamis (Kritis, Restok, Aman, Pasif)';
+            let isActive = true;
+
+            if (orderBadgeMode === 'simple') {
+                label = 'Perlu Restok';
+                icon = '🔴';
+                title = 'Mode Badge Sederhana (Hanya "Perlu Restok" untuk Kritis & Restok)';
+                isActive = true;
+            } else if (orderBadgeMode === 'none') {
+                label = 'Tanpa Badge';
+                icon = '🚫';
+                title = 'Mode Tanpa Badge (Badge disembunyikan)';
+                isActive = false;
+            }
+
+            if (btn) {
+                btn.classList.toggle('active', isActive);
+                if (iconEl) iconEl.innerText = icon;
+                if (textEl) textEl.innerText = label;
+                btn.title = title + ' - Klik untuk ganti mode.';
+            }
+
+            if (menuState) {
+                menuState.innerText = (orderBadgeMode === 'dynamic') ? 'Dinamis' : ((orderBadgeMode === 'simple') ? 'Sederhana' : 'Mati');
+                menuState.className = 'settings-state' + (orderBadgeMode !== 'none' ? ' on' : '');
             }
         }
 
@@ -1721,7 +1805,9 @@
                 const qty = parseInt(card.getAttribute('data-qty') || '0', 10);
                 const name = card.getAttribute('data-name');
                 const prov = card.getAttribute('data-provider');
+                const pId = card.getAttribute('data-product-id') || '';
                 if (qty > 0 && name && prov) {
+                    if (pId) existingQtyMap.set(prov + '||' + name + '||' + pId, qty);
                     existingQtyMap.set(prov + '||' + name, qty);
                 }
             });
@@ -1780,7 +1866,10 @@
                     const isLow = (stock <= limit);
                     const needsRestock = metrics.needsRestock;
 
-                    const savedQty = existingQtyMap.get(provName + '||' + prod.product_name) || 0;
+                    const prodRealId = String(prod.product_id || prod.id || '');
+                    const savedQty = (prodRealId && existingQtyMap.has(provName + '||' + prod.product_name + '||' + prodRealId))
+                        ? existingQtyMap.get(provName + '||' + prod.product_name + '||' + prodRealId)
+                        : (existingQtyMap.get(provName + '||' + prod.product_name) || 0);
                     const isSelected = savedQty > 0;
                     const cardSelectedClass = isSelected ? ' selected' : '';
 
@@ -1788,26 +1877,7 @@
                         ? `Sisa: <span class="stock-zero">0 pcs</span>`
                         : (isLow ? `Sisa: <span class="stock-low">${stock} pcs</span>` : `Sisa: <span class="stock-normal">${stock} pcs</span>`);
 
-                    let badgeHtml = '';
-                    if (savedQty > 0) {
-                        const days = Math.max(1, Math.round((stock + savedQty) / Math.max(0.1, metrics.demand)));
-                        badgeHtml = `<span class="badge-projection">⏳ Cukup ~${days} hari</span>`;
-                    } else {
-                        if (metrics.status === 'KRITIS') {
-                            const covText = (metrics.coverageDays < 100) ? `~${metrics.coverageDays} hr` : 'Habis';
-                            const orderPart = (metrics.suggestedOrder > 0) ? ` +${metrics.suggestedOrder} pcs` : '';
-                            badgeHtml = `<span class="badge-reorder-critical">🚨 Kritis (${covText})${orderPart}</span>`;
-                        } else if (metrics.status === 'RESTOK') {
-                            const covText = (metrics.coverageDays < 100) ? `~${metrics.coverageDays} hr` : '';
-                            const orderPart = (metrics.suggestedOrder > 0) ? ` +${metrics.suggestedOrder} pcs` : '';
-                            badgeHtml = `<span class="badge-reorder-warning">⚠️ Restok (${covText})${orderPart}</span>`;
-                        } else if (metrics.status === 'PASIF') {
-                            badgeHtml = `<span class="badge-reorder-dead">⚪ Pasif</span>`;
-                        } else {
-                            const covText = (metrics.coverageDays < 100) ? `~${metrics.coverageDays} hr` : 'Aman';
-                            badgeHtml = `<span class="badge-reorder-safe">✅ Aman (${covText})</span>`;
-                        }
-                    }
+                    let badgeHtml = getReorderBadgeHtml(metrics.status, metrics.coverageDays, metrics.suggestedOrder, savedQty, stock, metrics.demand);
 
                     let marginBadgeClass = (margin > 0) ? 'profit-pos' : ((margin < 0) ? 'profit-neg' : 'profit-zero');
                     let marginSign = (margin > 0) ? '+' : '';
@@ -1820,6 +1890,8 @@
                          data-device-id="${escapeHtml(prod.device_id || '')}"
                          data-provider="${escapeHtml(provName)}"
                          data-name="${escapeHtml(prod.product_name)}"
+                         data-supabase-index="${prod._supabaseIndex !== undefined ? prod._supabaseIndex : 0}"
+                         data-orig-index="${prod._providerOrigIndex !== undefined ? prod._providerOrigIndex : 0}"
                          data-stock="${stock}"
                          data-limit="${limit}"
                          data-cost="${cost}"
@@ -1930,35 +2002,52 @@
             updateSelectedCount();
         }
 
+        function getReorderBadgeHtml(status, covDays, sugOrder, savedQty, stock, demand) {
+            if (savedQty > 0) {
+                if (orderBadgeMode === 'none') return '';
+                const days = Math.max(1, Math.round((stock + savedQty) / Math.max(0.1, demand)));
+                return `<span class="badge-projection">⏳ Cukup ~${days} hari</span>`;
+            }
+
+            if (orderBadgeMode === 'none') {
+                return '';
+            }
+
+            if (orderBadgeMode === 'simple') {
+                if (status === 'KRITIS' || status === 'RESTOK') {
+                    return `<span class="badge-reorder-simple">Perlu Restok</span>`;
+                }
+                return '';
+            }
+
+            // Mode 'dynamic' (Lengkap)
+            if (status === 'KRITIS') {
+                const covText = (covDays < 100) ? `~${covDays} hr` : 'Habis';
+                const orderPart = (sugOrder > 0) ? ` +${sugOrder} pcs` : '';
+                return `<span class="badge-reorder-critical">🚨 Kritis (${covText})${orderPart}</span>`;
+            } else if (status === 'RESTOK') {
+                const covText = (covDays < 100) ? `~${covDays} hr` : '';
+                const orderPart = (sugOrder > 0) ? ` +${sugOrder} pcs` : '';
+                return `<span class="badge-reorder-warning">⚠️ Restok (${covText})${orderPart}</span>`;
+            } else if (status === 'PASIF') {
+                return `<span class="badge-reorder-dead">⚪ Pasif</span>`;
+            } else {
+                const covText = (covDays < 100) ? `~${covDays} hr` : 'Aman';
+                return `<span class="badge-reorder-safe">✅ Aman (${covText})</span>`;
+            }
+        }
+
         function updateCardBadge(card, qty) {
             const container = card.querySelector('.reorder-tag-container');
             if (!container) return;
 
-            if (qty > 0) {
-                const stock = parseInt(card.getAttribute('data-stock') || '0', 10);
-                const demand = parseFloat(card.getAttribute('data-demand') || '1.0');
-                const days = Math.max(1, Math.round((stock + qty) / Math.max(0.1, demand)));
-                container.innerHTML = `<span class="badge-projection">⏳ Cukup ~${days} hari</span>`;
-            } else {
-                const status = card.getAttribute('data-status') || '';
-                const covDays = parseFloat(card.getAttribute('data-coverage-days') || '999');
-                const sugOrder = parseInt(card.getAttribute('data-suggested-order') || '0', 10);
+            const status = card.getAttribute('data-status') || '';
+            const covDays = parseFloat(card.getAttribute('data-coverage-days') || '999');
+            const sugOrder = parseInt(card.getAttribute('data-suggested-order') || '0', 10);
+            const stock = parseInt(card.getAttribute('data-stock') || '0', 10);
+            const demand = parseFloat(card.getAttribute('data-demand') || '1.0');
 
-                if (status === 'KRITIS') {
-                    const covText = (covDays < 100) ? `~${covDays} hr` : 'Habis';
-                    const orderPart = (sugOrder > 0) ? ` +${sugOrder} pcs` : '';
-                    container.innerHTML = `<span class="badge-reorder-critical">🚨 Kritis (${covText})${orderPart}</span>`;
-                } else if (status === 'RESTOK') {
-                    const covText = (covDays < 100) ? `~${covDays} hr` : '';
-                    const orderPart = (sugOrder > 0) ? ` +${sugOrder} pcs` : '';
-                    container.innerHTML = `<span class="badge-reorder-warning">⚠️ Restok (${covText})${orderPart}</span>`;
-                } else if (status === 'PASIF') {
-                    container.innerHTML = `<span class="badge-reorder-dead">⚪ Pasif</span>`;
-                } else {
-                    const covText = (covDays < 100) ? `~${covDays} hr` : 'Aman';
-                    container.innerHTML = `<span class="badge-reorder-safe">✅ Aman (${covText})</span>`;
-                }
-            }
+            container.innerHTML = getReorderBadgeHtml(status, covDays, sugOrder, qty, stock, demand);
         }
 
         function updateSelectedCount() {
@@ -2190,8 +2279,15 @@
 
         // 7. WhatsApp Text Formatting (Tab 1: Order Restock)
         function generateWaText() {
-            const selectedCards = document.querySelectorAll('.product-card.selected');
-            if (selectedCards.length === 0) return '';
+            const rawCards = document.querySelectorAll('.product-card.selected');
+            if (rawCards.length === 0) return '';
+
+            // Selalu urutkan item sesuai urutan standar Supabase (saat btnToggleOrderSort OFF)
+            const selectedCards = Array.from(rawCards).sort((a, b) => {
+                const sA = parseInt(a.getAttribute('data-supabase-index') || '0', 10);
+                const sB = parseInt(b.getAttribute('data-supabase-index') || '0', 10);
+                return sA - sB;
+            });
 
             const now = new Date();
             const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -2292,15 +2388,49 @@
             if (!Array.isArray(allRestockOrders)) return;
             allRestockOrders.forEach(order => {
                 (order.items || []).forEach(it => {
-                    if (!it.device_id || it.device_id === 'all') {
-                        const cleanName = cleanProdName(it.product_name);
-                        const matchV = allVouchers.find(v => 
-                            (it.product_id && v.product_id && parseInt(v.product_id, 10) === parseInt(it.product_id, 10)) ||
-                            (cleanProdName(v.product_name) === cleanName)
-                        );
-                        if (matchV && matchV.device_id) {
-                            it.device_id = matchV.device_id;
+                    const cleanName = cleanProdName(it.product_name);
+                    const pId = parseInt(it.product_id || 0, 10);
+                    const targetDev = it.device_id || order.device_id;
+
+                    let matchV = null;
+                    if (pId >= 100) {
+                        matchV = allVouchers.find(v => {
+                            const vId = parseInt(v.product_id || v.id || 0, 10);
+                            return vId === pId;
+                        });
+                    }
+
+                    if (!matchV) {
+                        // Cari voucher yang cocok dengan perangkat, nama bersih, dan harga modal (agar varian nama kembar tidak tertukar)
+                        matchV = allVouchers.find(v => {
+                            if (targetDev && targetDev !== 'all' && v.device_id && v.device_id !== targetDev) return false;
+                            if (cleanProdName(v.product_name) !== cleanName) return false;
+                            if (it.cost_price && v.cost_price) {
+                                return Math.abs(parseInt(v.cost_price, 10) - it.cost_price) <= 100;
+                            }
+                            return true;
+                        });
+
+                        // Fallback jika tidak cocok perangkat
+                        if (!matchV) {
+                            matchV = allVouchers.find(v => {
+                                if (cleanProdName(v.product_name) !== cleanName) return false;
+                                if (it.cost_price && v.cost_price) {
+                                    return Math.abs(parseInt(v.cost_price, 10) - it.cost_price) <= 100;
+                                }
+                                return true;
+                            });
                         }
+
+                        // Auto-heal: pasang product_id asli dari database voucher
+                        if (matchV) {
+                            const realId = parseInt(matchV.product_id || matchV.id || 0, 10);
+                            if (realId > 0) it.product_id = realId;
+                        }
+                    }
+
+                    if (matchV && matchV.device_id && (!it.device_id || it.device_id === 'all')) {
+                        it.device_id = matchV.device_id;
                     }
                 });
 
@@ -2341,8 +2471,15 @@
         }
 
         function recordRestockOrder(actionType) {
-            const selectedCards = document.querySelectorAll('.product-card.selected');
-            if (selectedCards.length === 0) return;
+            const rawCards = document.querySelectorAll('.product-card.selected');
+            if (rawCards.length === 0) return;
+
+            // Selalu simpan item order sesuai urutan standar Supabase
+            const selectedCards = Array.from(rawCards).sort((a, b) => {
+                const sA = parseInt(a.getAttribute('data-supabase-index') || '0', 10);
+                const sB = parseInt(b.getAttribute('data-supabase-index') || '0', 10);
+                return sA - sB;
+            });
 
             const now = new Date();
             const idSuffix = String(Date.now()).slice(-4);
@@ -2503,9 +2640,17 @@
                             // Cari item yang cocok di laporan harian
                             const rItem = rep.items.find(ri => {
                                 if (!ri || ri.type !== 'product') return false;
-                                if (itemId > 0 && ri.productId && parseInt(ri.productId, 10) === itemId) return true;
+                                const rPId = parseInt(ri.productId || ri.product_id || 0, 10);
+                                if (itemId >= 100 && rPId >= 100) {
+                                    return rPId === itemId; // WAJIB sama persis jika ID ada
+                                }
                                 const cleanRi = cleanProdName(ri.productName);
-                                return (cleanRi === cleanItemName || cleanRi.includes(cleanItemName) || cleanItemName.includes(cleanRi));
+                                if (cleanRi !== cleanItemName) return false;
+                                if (item.cost_price && ri.cost) {
+                                    const parsedCost = parseInt(String(ri.cost).replace(/[^\d]/g, ''), 10) || 0;
+                                    if (parsedCost > 0) return Math.abs(parsedCost - item.cost_price) <= 100;
+                                }
+                                return true;
                             });
 
                             if (rItem) {
@@ -2541,7 +2686,9 @@
 
                                 if (rItem.cost) {
                                     const parsedCost = parseInt(String(rItem.cost).replace(/[^\d]/g, ''), 10) || 0;
-                                    if (parsedCost > 0) latestUnitCost = parsedCost;
+                                    if (parsedCost > 0 && Math.abs(parsedCost - item.cost_price) <= 1000) {
+                                        latestUnitCost = parsedCost;
+                                    }
                                 }
                             }
                         });
@@ -2551,9 +2698,16 @@
                     let incomingFromAudit = 0;
                     const vMatches = allVouchers.filter(v => {
                         if (targetDev && targetDev !== 'all' && v.device_id && v.device_id !== targetDev) return false;
-                        if (itemId > 0 && v.product_id && parseInt(v.product_id, 10) === itemId) return true;
+                        const vId = parseInt(v.product_id || v.id || 0, 10);
+                        if (itemId >= 100 && vId >= 100) {
+                            return vId === itemId; // WAJIB sama persis jika ID ada
+                        }
                         const cleanVName = cleanProdName(v.product_name);
-                        return (cleanVName === cleanItemName || cleanVName.includes(cleanItemName) || cleanItemName.includes(cleanVName));
+                        if (cleanVName !== cleanItemName) return false;
+                        if (item.cost_price && v.cost_price) {
+                            return Math.abs(parseInt(v.cost_price, 10) - item.cost_price) <= 100;
+                        }
+                        return true;
                     });
 
                     vMatches.forEach(v => {
@@ -2566,7 +2720,7 @@
                                 if (diff > 0 && entryTime >= (orderTime - 600000)) {
                                     incomingFromAudit += diff;
                                     const entryNewCost = parseInt(entry.new_cost_price || 0, 10);
-                                    if (entryNewCost > 0) {
+                                    if (entryNewCost > 0 && Math.abs(entryNewCost - item.cost_price) <= 1000) {
                                         latestUnitCost = entryNewCost;
                                     }
                                 }
@@ -2574,21 +2728,23 @@
                         }
 
                         const vCost = parseInt(v.cost_price || 0, 10);
-                        if (vCost > 0 && latestUnitCost === item.cost_price) {
+                        if (vCost > 0 && latestUnitCost === item.cost_price && Math.abs(vCost - item.cost_price) <= 1000) {
                             latestUnitCost = vCost;
                         }
                     });
 
                     // 3. SUMBER CADANGAN: SELISIH STOK SAAT INI VS SAAT ORDER DIBUAT
+                    // Hanya digunakan jika ada TEPAT 1 produk yang cocok dan bukan kumpulan produk varian
                     let incomingFromStockDiff = 0;
-                    vMatches.forEach(v => {
+                    if (vMatches.length === 1) {
+                        const v = vMatches[0];
                         const curStock = parseInt(v.stock || 0, 10);
                         const stockAtOrder = (item.stock_at_order !== undefined && item.stock_at_order !== null)
                             ? parseInt(item.stock_at_order, 10) : -1;
                         if (stockAtOrder >= 0 && curStock > stockAtOrder) {
-                            incomingFromStockDiff += (curStock - stockAtOrder);
+                            incomingFromStockDiff = (curStock - stockAtOrder);
                         }
-                    });
+                    }
 
                     // Pilih jumlah masuk yang paling valid (utamakan laporan mutasi riil kasir)
                     receivedQty = Math.max(incomingFromReport, incomingFromAudit, incomingFromStockDiff);
@@ -2626,7 +2782,7 @@
 
                 order.cost_diff = order.actual_cost - (order.est_cost || 0);
 
-                if (order.status !== 'completed' && order.status !== 'cancelled') {
+                if (order.status !== 'cancelled') {
                     if (allItemsCompleted && (order.items || []).length > 0) {
                         order.status = 'completed';
                     } else if (anyItemReceived) {
@@ -2699,16 +2855,8 @@
             }
         }
 
-        let historyShowAllDates = false;
-
-        function toggleHistoryAllDates() {
-            historyShowAllDates = !historyShowAllDates;
-            renderOrderHistoryList();
-        }
-
         function setHistoryDateDirect(dateStr) {
             historySelectedDateStr = dateStr;
-            historyShowAllDates = false;
             renderOrderHistoryList();
         }
 
@@ -2719,18 +2867,24 @@
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             const devices = new Map();
             allVouchers.forEach(v => {
-                if (v.device_id && !devices.has(v.device_id)) {
+                if (v.device_id && v.device_id !== 'all' && v.device_id !== 'undefined' && !devices.has(v.device_id)) {
                     devices.set(v.device_id, v.device_name || v.device_id);
                 }
             });
-            allDailyReports.forEach((val, devId) => {
-                if (!devices.has(devId)) devices.set(devId, devId);
+            allRestockOrders.forEach(o => {
+                if (o.device_id && o.device_id !== 'all' && o.device_id !== 'undefined' && !devices.has(o.device_id)) {
+                    devices.set(o.device_id, o.device_name || getDeviceName(o.device_id));
+                }
             });
 
+            // Sembunyikan chip filter jika jumlah perangkat hanya satu (atau tidak ada)
             if (devices.size <= 1) {
                 container.innerHTML = '';
+                container.style.display = 'none';
                 return;
             }
+
+            container.style.display = 'flex';
 
             let html = `
                 <button type="button" class="btn-select-action ${selectedDevice === 'all' ? 'active' : ''}" 
@@ -2769,12 +2923,6 @@
             updateHistoryDateControls();
             renderHistoryDeviceFilterPills();
 
-            const btnAllDates = document.getElementById('btnToggleAllDates');
-            if (btnAllDates) {
-                btnAllDates.classList.toggle('active', historyShowAllDates);
-                btnAllDates.innerText = historyShowAllDates ? '📅 Filter Tanggal' : '🌐 Semua Tanggal';
-            }
-
             enrichOrdersWithDeviceDetails();
 
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
@@ -2789,10 +2937,8 @@
                 });
             }
 
-            // 2. Filter berdasarkan tanggal jika tidak dalam mode 'Semua Tanggal'
-            const filteredOrders = historyShowAllDates
-                ? deviceFiltered
-                : deviceFiltered.filter(order => isOrderOnDate(order, historySelectedDateStr));
+            // 2. Filter berdasarkan tanggal yang dipilih
+            const filteredOrders = deviceFiltered.filter(order => isOrderOnDate(order, historySelectedDateStr));
 
             if (filteredOrders.length === 0) {
                 const isToday = (historySelectedDateStr === getLocalDateString(new Date()));
@@ -2810,7 +2956,7 @@
                 });
 
                 let otherDatesHtml = '';
-                if (otherDateMap.size > 0 && !historyShowAllDates) {
+                if (otherDateMap.size > 0) {
                     otherDatesHtml += `
                         <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--card-border);">
                             <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">📌 Ditemukan order tersimpan pada tanggal lain:</div>
@@ -2825,11 +2971,6 @@
                     });
                     otherDatesHtml += `
                             </div>
-                            <div style="margin-top: 10px;">
-                                <button type="button" class="btn-select-action" onclick="toggleHistoryAllDates()" style="background: rgba(79, 142, 247, 0.15); color: var(--primary); font-weight: 700; margin: 0 auto;">
-                                    🌐 Tampilkan Semua Tanggal (${deviceFiltered.length} order)
-                                </button>
-                            </div>
                         </div>
                     `;
                 }
@@ -2838,9 +2979,9 @@
                     <div style="text-align: center; padding: 36px 20px; color: var(--text-muted); background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px;">
                         <div style="font-size: 28px; margin-bottom: 8px;">📭</div>
                         <div style="font-weight: 700; font-size: 14px; color: var(--text-main); margin-bottom: 4px;">
-                            ${historyShowAllDates ? `Tidak ada riwayat order${devName}` : `Tidak ada riwayat order${devName} untuk ${escapeHtml(dateLabel)}`}
+                            ${`Tidak ada riwayat order${devName} untuk ${escapeHtml(dateLabel)}`}
                         </div>
-                        ${!isToday && !historyShowAllDates ? `<button type="button" class="btn-select-action" onclick="setHistoryDateToday()" style="background: rgba(79, 142, 247, 0.15); color: var(--primary); font-weight: 700; margin: 6px auto;">🎯 Kembali ke Hari Ini</button>` : ''}
+                        ${!isToday ? `<button type="button" class="btn-select-action" onclick="setHistoryDateToday()" style="background: rgba(79, 142, 247, 0.15); color: var(--primary); font-weight: 700; margin: 6px auto;">🎯 Kembali ke Hari Ini</button>` : ''}
                         ${otherDatesHtml}
                     </div>`;
                 return;
@@ -4406,6 +4547,7 @@
 
             updateSettingsState('settingOrderProfitState', orderProfitMode ? 'Aktif' : 'Mati', orderProfitMode ? 'warn' : '');
             updateSettingsState('settingOrderSortStockState', orderSortByStockAsc ? 'Aktif' : 'Standar', orderSortByStockAsc ? 'on' : '');
+            updateSettingsState('settingOrderBadgeState', (orderBadgeMode === 'dynamic') ? 'Dinamis' : ((orderBadgeMode === 'simple') ? 'Sederhana' : 'Mati'), orderBadgeMode !== 'none' ? 'on' : '');
             updateSettingsState('settingProviderBadgeState', providerVisible ? 'Aktif' : 'Mati', providerVisible ? 'on' : '');
             updateSettingsState('settingOrderHistoryState', orderHistoryVisible ? 'Terbuka' : 'Tersembunyi', orderHistoryVisible ? 'on' : '');
             updateSettingsState('settingHideZeroState', dailyHideZeroSell ? 'Aktif' : 'Mati', dailyHideZeroSell ? 'on' : '');
