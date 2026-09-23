@@ -1799,6 +1799,8 @@
                     html += `
                     <div class="product-card${cardSelectedClass}" 
                          data-id="${idCounter}"
+                         data-product-id="${prod.product_id || prod.id || 0}"
+                         data-device-id="${escapeHtml(prod.device_id || '')}"
                          data-provider="${escapeHtml(provName)}"
                          data-name="${escapeHtml(prod.product_name)}"
                          data-stock="${stock}"
@@ -2286,14 +2288,14 @@
                     const cost = parseInt(c.getAttribute('data-cost') || '0');
                     const price = parseInt(c.getAttribute('data-price') || '0');
                     const stock = parseInt(c.getAttribute('data-stock') || '0');
-                    const name = c.getAttribute('data-name') || '';
-                    const prov = c.getAttribute('data-provider') || 'Lainnya';
-                    const pId = parseInt(c.getAttribute('data-id') || '0');
+                    const pId = parseInt(c.getAttribute('data-product-id') || c.getAttribute('data-id') || '0', 10);
+                    const itemDevId = c.getAttribute('data-device-id') || selectedDevice;
 
                     items.push({
                         product_id: pId,
                         product_name: name,
                         provider_name: prov,
+                        device_id: itemDevId,
                         order_qty: qty,
                         cost_price: cost,
                         sell_price: price,
@@ -2362,6 +2364,18 @@
             return isNaN(t) ? 0 : t;
         }
 
+        // Helper normalisasi nama produk untuk pencocokan akurat antara order dan laporan harian
+        function cleanProdName(n) {
+            if (!n) return '';
+            return n.toLowerCase()
+                .replace(/\([^)]*\)/g, ' ')
+                .replace(/\[[^\]]*\]/g, ' ')
+                .replace(/(\d+)\s*(gb|mb|kb|h|hari|hr|bln|bulan)\b/g, '$1$2')
+                .replace(/[^a-z0-9\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
         function reconcileAllOrders() {
             if (!allRestockOrders || allRestockOrders.length === 0) return;
 
@@ -2369,35 +2383,94 @@
                 if (order.status === 'cancelled') return;
 
                 const orderTime = parseDateSafe(order.created_at);
+                const orderDateObj = new Date(orderTime || Date.now());
+                const orderDateStr = getLocalDateString(orderDateObj);
+
                 let totalReceivedPcs = 0;
                 let calculatedActualCost = 0;
                 let allItemsCompleted = true;
                 let anyItemReceived = false;
 
                 (order.items || []).forEach(item => {
-                    const prodNameLower = (item.product_name || '').toLowerCase().trim();
+                    const cleanItemName = cleanProdName(item.product_name);
+                    const itemId = parseInt(item.product_id || 0, 10);
                     let receivedQty = 0;
                     let latestUnitCost = item.cost_price || 0;
 
-                    // Cari voucher yang cocok di allVouchers (berdasarkan product_id atau nama produk)
+                    // 1. SUMBER UTAMA: DATA MUTASI VOUCHER MASUK DI LAPORAN HARIAN (allDailyReports)
+                    // Mengambil data fisik masuk riil (restocked + added) yang dicatat kasir di HP.
+                    let incomingFromReport = 0;
+                    if (allDailyReports && allDailyReports.size > 0) {
+                        allDailyReports.forEach((rep, devId) => {
+                            if (order.device_id && order.device_id !== 'all' && devId !== order.device_id) return;
+                            if (!rep || !Array.isArray(rep.items)) return;
+
+                            // Cari item yang cocok di laporan harian
+                            const rItem = rep.items.find(ri => {
+                                if (!ri || ri.type !== 'product') return false;
+                                if (itemId > 0 && ri.productId && parseInt(ri.productId, 10) === itemId) return true;
+                                const cleanRi = cleanProdName(ri.productName);
+                                return (cleanRi === cleanItemName || cleanRi.includes(cleanItemName) || cleanItemName.includes(cleanRi));
+                            });
+
+                            if (rItem) {
+                                // Hitung tanggal D1, D2, D3 dari tanggal snapshot laporan (rep.dateStr)
+                                const repDateStr = rep.dateStr || getLocalDateString(new Date());
+                                const p = repDateStr.split('-');
+                                let d3Str = repDateStr;
+                                let d2Str = '';
+                                let d1Str = '';
+                                if (p.length === 3) {
+                                    const bd3 = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+                                    const bd2 = new Date(bd3); bd2.setDate(bd2.getDate() - 1);
+                                    const bd1 = new Date(bd3); bd1.setDate(bd1.getDate() - 2);
+                                    d2Str = getLocalDateString(bd2);
+                                    d1Str = getLocalDateString(bd1);
+                                }
+
+                                // Hitung akumulasi voucher masuk yang terjadi sejak tanggal order dibuat
+                                let addedSum = 0;
+                                if (d1Str && orderDateStr <= d1Str) {
+                                    addedSum += (parseInt(rItem.restockedD1 || 0, 10) + parseInt(rItem.addedD1 || 0, 10));
+                                }
+                                if (d2Str && orderDateStr <= d2Str) {
+                                    addedSum += (parseInt(rItem.restockedD2 || 0, 10) + parseInt(rItem.addedD2 || 0, 10));
+                                }
+                                if (d3Str && orderDateStr <= d3Str) {
+                                    addedSum += (parseInt(rItem.restockedD3 || 0, 10) + parseInt(rItem.addedD3 || 0, 10));
+                                }
+
+                                if (addedSum > 0) {
+                                    incomingFromReport += addedSum;
+                                }
+
+                                if (rItem.cost) {
+                                    const parsedCost = parseInt(String(rItem.cost).replace(/[^\d]/g, ''), 10) || 0;
+                                    if (parsedCost > 0) latestUnitCost = parsedCost;
+                                }
+                            }
+                        });
+                    }
+
+                    // 2. SUMBER PENDUKUNG: AUDIT TRAIL CHANGE_HISTORY DI Supabase (allVouchers)
+                    let incomingFromAudit = 0;
                     const vMatches = allVouchers.filter(v => {
                         if (order.device_id && order.device_id !== 'all' && v.device_id && v.device_id !== order.device_id) return false;
-                        if (item.product_id && v.product_id && item.product_id === v.product_id) return true;
-                        const vName = (v.product_name || '').toLowerCase().trim();
-                        return (vName === prodNameLower);
+                        if (itemId > 0 && v.product_id && parseInt(v.product_id, 10) === itemId) return true;
+                        const cleanVName = cleanProdName(v.product_name);
+                        return (cleanVName === cleanItemName || cleanVName.includes(cleanItemName) || cleanItemName.includes(cleanVName));
                     });
 
-                    // 1. Cek audit trail riwayat perubahan (change_history)
                     vMatches.forEach(v => {
                         const history = v.change_history || [];
                         if (Array.isArray(history)) {
                             history.forEach(entry => {
                                 const entryTime = parseDateSafe(entry.timestamp);
-                                const diff = parseInt(entry.stock_diff || 0);
-                                // Penambahan stok harus terjadi setelah order dibuat (toleransi 2 menit)
-                                if (diff > 0 && entryTime >= (orderTime - 120000)) {
-                                    receivedQty += diff;
-                                    const entryNewCost = parseInt(entry.new_cost_price || 0);
+                                const diff = parseInt(entry.stock_diff || 0, 10);
+                                // Penambahan stok yang terjadi saat atau setelah order dibuat (toleransi 10 menit)
+                                if (diff > 0 && entryTime >= (orderTime - 600000)) {
+                                    incomingFromAudit += diff;
+                                    const entryNewCost = parseInt(entry.new_cost_price || 0, 10);
                                     if (entryNewCost > 0) {
                                         latestUnitCost = entryNewCost;
                                     }
@@ -2405,51 +2478,25 @@
                             });
                         }
 
-                        // Cek jika harga modal saat ini di katalog berbeda
-                        const vCost = parseInt(v.cost_price || 0);
+                        const vCost = parseInt(v.cost_price || 0, 10);
                         if (vCost > 0 && latestUnitCost === item.cost_price) {
                             latestUnitCost = vCost;
                         }
                     });
 
-                    // 2. Fallback jika change_history kosong (misal trigger SQL belum aktif di Supabase):
-                    // Cek selisih stok saat ini vs stok saat order dibuat (item.stock_at_order)
-                    if (receivedQty === 0) {
-                        vMatches.forEach(v => {
-                            const curStock = parseInt(v.stock || 0);
-                            const stockAtOrder = (item.stock_at_order !== undefined && item.stock_at_order !== null)
-                                ? parseInt(item.stock_at_order) : -1;
-                            if (stockAtOrder >= 0 && curStock > stockAtOrder) {
-                                receivedQty += (curStock - stockAtOrder);
-                            }
-                            const vCost = parseInt(v.cost_price || 0);
-                            if (vCost > 0) {
-                                latestUnitCost = vCost;
-                            }
-                        });
-                    }
+                    // 3. SUMBER CADANGAN: SELISIH STOK SAAT INI VS SAAT ORDER DIBUAT
+                    let incomingFromStockDiff = 0;
+                    vMatches.forEach(v => {
+                        const curStock = parseInt(v.stock || 0, 10);
+                        const stockAtOrder = (item.stock_at_order !== undefined && item.stock_at_order !== null)
+                            ? parseInt(item.stock_at_order, 10) : -1;
+                        if (stockAtOrder >= 0 && curStock > stockAtOrder) {
+                            incomingFromStockDiff += (curStock - stockAtOrder);
+                        }
+                    });
 
-                    // 3. Fallback snapshot laporan harian (allDailyReports)
-                    if (receivedQty === 0 && allDailyReports && allDailyReports.size > 0) {
-                        allDailyReports.forEach((rep, devId) => {
-                            if (order.device_id && order.device_id !== 'all' && devId !== order.device_id) return;
-                            if (!rep || !Array.isArray(rep.items)) return;
-                            const rItem = rep.items.find(ri =>
-                                (item.product_id && ri.productId === item.product_id) ||
-                                (ri.productName && ri.productName.toLowerCase().trim() === prodNameLower)
-                            );
-                            if (rItem) {
-                                const added = (rItem.restockedD3 || 0) + (rItem.addedD3 || 0);
-                                if (added > 0) {
-                                    receivedQty = Math.max(receivedQty, added);
-                                    if (rItem.cost) {
-                                        const parsedCost = parseInt(String(rItem.cost).replace(/[^\d]/g, '')) || 0;
-                                        if (parsedCost > 0) latestUnitCost = parsedCost;
-                                    }
-                                }
-                            }
-                        });
-                    }
+                    // Pilih jumlah masuk yang paling valid (utamakan laporan mutasi riil kasir)
+                    receivedQty = Math.max(incomingFromReport, incomingFromAudit, incomingFromStockDiff);
 
                     item.received_qty = receivedQty;
                     item.actual_unit_cost = latestUnitCost;
