@@ -758,15 +758,19 @@
             </div>
         </div>
 
-        <!-- Controls for History: Date Navigation -->
-        <div class="history-date-bar">
-            <button type="button" class="btn-date-nav" onclick="navigateHistoryDate(-1)" title="Hari Sebelumnya" aria-label="Hari Sebelumnya">‹</button>
-            <label for="historyDateInput" class="history-date-label" onclick="try{document.getElementById('historyDateInput').showPicker()}catch(e){}" title="Klik untuk pilih tanggal">
-                <span class="history-date-icon">📅</span>
-                <span id="historyDateDisplay">Sen, 22 Sep 2026</span>
-            </label>
-            <input type="date" id="historyDateInput" onchange="onHistoryDateInputChange(this)" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
-            <button type="button" class="btn-date-nav" onclick="navigateHistoryDate(1)" title="Hari Berikutnya" aria-label="Hari Berikutnya">›</button>
+        <!-- Controls for History: Date Navigation & Device Filter -->
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+            <div class="history-date-bar" style="margin-bottom: 0;">
+                <button type="button" class="btn-date-nav" onclick="navigateHistoryDate(-1)" title="Hari Sebelumnya" aria-label="Hari Sebelumnya">‹</button>
+                <label for="historyDateInput" class="history-date-label" onclick="try{document.getElementById('historyDateInput').showPicker()}catch(e){}" title="Klik untuk pilih tanggal">
+                    <span class="history-date-icon">📅</span>
+                    <span id="historyDateDisplay">Sen, 22 Sep 2026</span>
+                </label>
+                <input type="date" id="historyDateInput" onchange="onHistoryDateInputChange(this)" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
+                <button type="button" class="btn-date-nav" onclick="navigateHistoryDate(1)" title="Hari Berikutnya" aria-label="Hari Berikutnya">›</button>
+                <button type="button" id="btnToggleAllDates" class="btn-select-action" onclick="toggleHistoryAllDates()" style="font-size: 11px; padding: 4px 10px; margin-left: 6px;">🌐 Semua Tanggal</button>
+            </div>
+            <div id="historyDeviceFilterPills" style="display: flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: wrap;"></div>
         </div>
 
         <div id="orderHistoryList">
@@ -1509,7 +1513,18 @@
                     });
                     allRestockOrders = Array.from(localMap.values());
                     allRestockOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    enrichOrdersWithDeviceDetails();
                     saveRestockOrdersToStorage();
+                }
+
+                // Sinkronkan order lokal ke Supabase agar tersimpan di cloud (jika sebelumnya belum terkirim)
+                if (supabaseClient && allRestockOrders.length > 0) {
+                    try {
+                        const payload = allRestockOrders.map(cleanOrderForSupabase);
+                        supabaseClient.from('restock_orders').upsert(payload).then(res => {
+                            if (res.error) console.warn('Sync restock_orders to cloud:', res.error);
+                        }).catch(e => console.warn('Sync restock_orders err:', e));
+                    } catch (e) {}
                 }
 
                 populateDeviceDropdown();
@@ -1682,6 +1697,8 @@
             renderAuditTable();
             updateStatsSummary();
             updateSettingsMenuUI();
+            reconcileAllOrders();
+            renderOrderHistoryList();
         }
 
         // 4. Render Dynamic Product List (Tab 1: Order Restock)
@@ -2237,6 +2254,67 @@
         // ==================== 7B. RIWAYAT ORDER RESTOCK & PENCOCOKAN BIAYA ====================
         let allRestockOrders = [];
 
+        function getDeviceName(devId) {
+            if (!devId || devId === 'all') return 'Semua Perangkat';
+            const match = allVouchers.find(v => v.device_id === devId);
+            if (match && match.device_name) return match.device_name;
+            const select = document.getElementById('navDeviceFilter');
+            if (select) {
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value === devId) {
+                        return select.options[i].text.replace(/^[^\w\d]+/, '').trim();
+                    }
+                }
+            }
+            return devId;
+        }
+
+        function cleanOrderForSupabase(o) {
+            return {
+                id: o.id,
+                device_id: o.device_id || 'all',
+                device_name: o.device_name || 'Semua Perangkat',
+                action_type: o.action_type || 'whatsapp',
+                total_items: parseInt(o.total_items || (o.items ? o.items.length : 0), 10),
+                total_pcs: parseInt(o.total_pcs || 0, 10),
+                est_cost: parseInt(o.est_cost || 0, 10),
+                actual_cost: parseInt(o.actual_cost || 0, 10),
+                est_margin: parseInt(o.est_margin || 0, 10),
+                items: o.items || [],
+                status: o.status || 'pending',
+                notes: o.notes || '',
+                created_at: o.created_at || new Date().toISOString(),
+                updated_at: o.updated_at || new Date().toISOString()
+            };
+        }
+
+        function enrichOrdersWithDeviceDetails() {
+            if (!Array.isArray(allRestockOrders)) return;
+            allRestockOrders.forEach(order => {
+                (order.items || []).forEach(it => {
+                    if (!it.device_id || it.device_id === 'all') {
+                        const cleanName = cleanProdName(it.product_name);
+                        const matchV = allVouchers.find(v => 
+                            (it.product_id && v.product_id && parseInt(v.product_id, 10) === parseInt(it.product_id, 10)) ||
+                            (cleanProdName(v.product_name) === cleanName)
+                        );
+                        if (matchV && matchV.device_id) {
+                            it.device_id = matchV.device_id;
+                        }
+                    }
+                });
+
+                if (!order.device_id || order.device_id === 'all' || order.device_name === 'Semua Perangkat') {
+                    const devIds = new Set((order.items || []).map(it => it.device_id).filter(d => d && d !== 'all'));
+                    if (devIds.size === 1) {
+                        const singleId = Array.from(devIds)[0];
+                        order.device_id = singleId;
+                        order.device_name = getDeviceName(singleId);
+                    }
+                }
+            });
+        }
+
         function initRestockOrders() {
             try {
                 const saved = localStorage.getItem('kspcheck_restock_orders');
@@ -2247,6 +2325,7 @@
             } catch (e) {
                 allRestockOrders = [];
             }
+            enrichOrdersWithDeviceDetails();
             reconcileAllOrders();
             renderOrderHistoryList();
             updateActiveOrderBadge();
@@ -2283,11 +2362,13 @@
             let totalMargin = 0;
 
             selectedCards.forEach(c => {
-                const qty = parseInt(c.getAttribute('data-qty') || '0');
+                const qty = parseInt(c.getAttribute('data-qty') || '0', 10);
                 if (qty > 0) {
-                    const cost = parseInt(c.getAttribute('data-cost') || '0');
-                    const price = parseInt(c.getAttribute('data-price') || '0');
-                    const stock = parseInt(c.getAttribute('data-stock') || '0');
+                    const cost = parseInt(c.getAttribute('data-cost') || '0', 10);
+                    const price = parseInt(c.getAttribute('data-price') || '0', 10);
+                    const stock = parseInt(c.getAttribute('data-stock') || '0', 10);
+                    const name = c.getAttribute('data-name') || '';
+                    const prov = c.getAttribute('data-provider') || 'Lainnya';
                     const pId = parseInt(c.getAttribute('data-product-id') || c.getAttribute('data-id') || '0', 10);
                     const itemDevId = c.getAttribute('data-device-id') || selectedDevice;
 
@@ -2313,10 +2394,21 @@
 
             if (items.length === 0) return;
 
+            // Tentukan nama perangkat order secara pintar jika dipilih Semua Perangkat
+            let orderDevId = selectedDevice;
+            let orderDevName = selectedDeviceName;
+            if (selectedDevice === 'all' && items.length > 0) {
+                const itemDevIds = new Set(items.map(it => it.device_id).filter(d => d && d !== 'all'));
+                if (itemDevIds.size === 1) {
+                    orderDevId = Array.from(itemDevIds)[0];
+                    orderDevName = getDeviceName(orderDevId);
+                }
+            }
+
             const newOrder = {
                 id: orderId,
-                device_id: selectedDevice,
-                device_name: selectedDeviceName,
+                device_id: orderDevId,
+                device_name: orderDevName,
                 action_type: actionType, // 'copy' | 'whatsapp'
                 total_items: items.length,
                 total_pcs: totalPcs,
@@ -2335,9 +2427,10 @@
             allRestockOrders.unshift(newOrder);
             saveRestockOrdersToStorage();
 
-            // Sync to Supabase if connected
+            // Sync to Supabase if connected (gunakan payload yang bersih sesuai kolom DB)
             if (supabaseClient) {
-                supabaseClient.from('restock_orders').upsert([newOrder]).then(res => {
+                const payload = cleanOrderForSupabase(newOrder);
+                supabaseClient.from('restock_orders').upsert([payload]).then(res => {
                     if (res.error) console.warn('Supabase restock_orders upsert:', res.error);
                 }).catch(err => console.warn('Supabase restock_orders err:', err));
             }
@@ -2345,7 +2438,7 @@
             historySelectedDateStr = getLocalDateString(new Date());
             reconcileAllOrders();
             renderOrderHistoryList();
-            showToast(`✅ Order ${orderId} (${totalPcs} pcs) dicatat ke tab 📊 history!`);
+            showToast(`✅ Order ${orderId} (${totalPcs} pcs) untuk ${orderDevName} dicatat ke tab 📊 history!`);
         }
 
         function parseDateSafe(str) {
@@ -2397,12 +2490,14 @@
                     let receivedQty = 0;
                     let latestUnitCost = item.cost_price || 0;
 
+                    const targetDev = item.device_id || order.device_id;
+
                     // 1. SUMBER UTAMA: DATA MUTASI VOUCHER MASUK DI LAPORAN HARIAN (allDailyReports)
                     // Mengambil data fisik masuk riil (restocked + added) yang dicatat kasir di HP.
                     let incomingFromReport = 0;
                     if (allDailyReports && allDailyReports.size > 0) {
                         allDailyReports.forEach((rep, devId) => {
-                            if (order.device_id && order.device_id !== 'all' && devId !== order.device_id) return;
+                            if (targetDev && targetDev !== 'all' && devId !== targetDev) return;
                             if (!rep || !Array.isArray(rep.items)) return;
 
                             // Cari item yang cocok di laporan harian
@@ -2455,7 +2550,7 @@
                     // 2. SUMBER PENDUKUNG: AUDIT TRAIL CHANGE_HISTORY DI Supabase (allVouchers)
                     let incomingFromAudit = 0;
                     const vMatches = allVouchers.filter(v => {
-                        if (order.device_id && order.device_id !== 'all' && v.device_id && v.device_id !== order.device_id) return false;
+                        if (targetDev && targetDev !== 'all' && v.device_id && v.device_id !== targetDev) return false;
                         if (itemId > 0 && v.product_id && parseInt(v.product_id, 10) === itemId) return true;
                         const cleanVName = cleanProdName(v.product_name);
                         return (cleanVName === cleanItemName || cleanVName.includes(cleanItemName) || cleanItemName.includes(cleanVName));
@@ -2604,24 +2699,149 @@
             }
         }
 
+        let historyShowAllDates = false;
+
+        function toggleHistoryAllDates() {
+            historyShowAllDates = !historyShowAllDates;
+            renderOrderHistoryList();
+        }
+
+        function setHistoryDateDirect(dateStr) {
+            historySelectedDateStr = dateStr;
+            historyShowAllDates = false;
+            renderOrderHistoryList();
+        }
+
+        function renderHistoryDeviceFilterPills() {
+            const container = document.getElementById('historyDeviceFilterPills');
+            if (!container) return;
+
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const devices = new Map();
+            allVouchers.forEach(v => {
+                if (v.device_id && !devices.has(v.device_id)) {
+                    devices.set(v.device_id, v.device_name || v.device_id);
+                }
+            });
+            allDailyReports.forEach((val, devId) => {
+                if (!devices.has(devId)) devices.set(devId, devId);
+            });
+
+            if (devices.size <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = `
+                <button type="button" class="btn-select-action ${selectedDevice === 'all' ? 'active' : ''}" 
+                        onclick="setHistoryDeviceFilter('all')" 
+                        style="font-size: 11px; padding: 3px 8px; border-radius: 12px; ${selectedDevice === 'all' ? 'background:var(--primary); color:#fff;' : ''}">
+                    🌐 Semua Perangkat
+                </button>
+            `;
+
+            devices.forEach((name, id) => {
+                const isActive = (selectedDevice === id);
+                html += `
+                    <button type="button" class="btn-select-action ${isActive ? 'active' : ''}" 
+                            onclick="setHistoryDeviceFilter('${escapeHtml(id)}')" 
+                            style="font-size: 11px; padding: 3px 8px; border-radius: 12px; ${isActive ? 'background:var(--primary); color:#fff;' : ''}">
+                        📱 ${escapeHtml(name)}
+                    </button>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function setHistoryDeviceFilter(devId) {
+            const select = document.getElementById('navDeviceFilter');
+            if (select) {
+                select.value = devId;
+                onDeviceChange();
+            }
+        }
+
         function renderOrderHistoryList() {
             const container = document.getElementById('orderHistoryList');
             if (!container) return;
 
             updateHistoryDateControls();
+            renderHistoryDeviceFilterPills();
 
-            // Filter riwayat order hanya untuk tanggal yang dipilih (default: today)
-            const filteredOrders = allRestockOrders.filter(order => isOrderOnDate(order, historySelectedDateStr));
+            const btnAllDates = document.getElementById('btnToggleAllDates');
+            if (btnAllDates) {
+                btnAllDates.classList.toggle('active', historyShowAllDates);
+                btnAllDates.innerText = historyShowAllDates ? '📅 Filter Tanggal' : '🌐 Semua Tanggal';
+            }
+
+            enrichOrdersWithDeviceDetails();
+
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+
+            // 1. Filter riwayat order berdasarkan perangkat yang dipilih
+            let deviceFiltered = allRestockOrders;
+            if (selectedDevice !== 'all') {
+                deviceFiltered = allRestockOrders.filter(order => {
+                    if (order.device_id === selectedDevice) return true;
+                    if (order.items && order.items.some(it => it.device_id === selectedDevice)) return true;
+                    return false;
+                });
+            }
+
+            // 2. Filter berdasarkan tanggal jika tidak dalam mode 'Semua Tanggal'
+            const filteredOrders = historyShowAllDates
+                ? deviceFiltered
+                : deviceFiltered.filter(order => isOrderOnDate(order, historySelectedDateStr));
 
             if (filteredOrders.length === 0) {
                 const isToday = (historySelectedDateStr === getLocalDateString(new Date()));
                 const dateLabel = formatHistoryDateDisplay(historySelectedDateStr);
+                const devName = (selectedDevice === 'all') ? '' : ` untuk ${escapeHtml(getDeviceName(selectedDevice))}`;
+
+                // Cek apakah ada order di tanggal lain untuk perangkat ini
+                const otherDateMap = new Map();
+                deviceFiltered.forEach(o => {
+                    const t = parseDateSafe(o.created_at);
+                    if (t) {
+                        const dStr = getLocalDateString(new Date(t));
+                        otherDateMap.set(dStr, (otherDateMap.get(dStr) || 0) + 1);
+                    }
+                });
+
+                let otherDatesHtml = '';
+                if (otherDateMap.size > 0 && !historyShowAllDates) {
+                    otherDatesHtml += `
+                        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--card-border);">
+                            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">📌 Ditemukan order tersimpan pada tanggal lain:</div>
+                            <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+                    `;
+                    otherDateMap.forEach((count, dStr) => {
+                        otherDatesHtml += `
+                            <button type="button" class="btn-select-action" onclick="setHistoryDateDirect('${dStr}')" style="font-size: 11px; padding: 4px 10px;">
+                                📅 ${escapeHtml(formatHistoryDateDisplay(dStr))} (${count} order)
+                            </button>
+                        `;
+                    });
+                    otherDatesHtml += `
+                            </div>
+                            <div style="margin-top: 10px;">
+                                <button type="button" class="btn-select-action" onclick="toggleHistoryAllDates()" style="background: rgba(79, 142, 247, 0.15); color: var(--primary); font-weight: 700; margin: 0 auto;">
+                                    🌐 Tampilkan Semua Tanggal (${deviceFiltered.length} order)
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 container.innerHTML = `
                     <div style="text-align: center; padding: 36px 20px; color: var(--text-muted); background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px;">
                         <div style="font-size: 28px; margin-bottom: 8px;">📭</div>
-                        <div style="font-weight: 700; font-size: 14px; color: var(--text-main); margin-bottom: 4px;">Tidak ada riwayat order untuk ${escapeHtml(dateLabel)}</div>
-                        
-                        ${!isToday ? `<button type="button" class="btn-select-action" onclick="setHistoryDateToday()" style="background: rgba(79, 142, 247, 0.15); color: var(--primary); font-weight: 700; margin: 0 auto;">🎯 Kembali ke Hari Ini</button>` : ''}
+                        <div style="font-weight: 700; font-size: 14px; color: var(--text-main); margin-bottom: 4px;">
+                            ${historyShowAllDates ? `Tidak ada riwayat order${devName}` : `Tidak ada riwayat order${devName} untuk ${escapeHtml(dateLabel)}`}
+                        </div>
+                        ${!isToday && !historyShowAllDates ? `<button type="button" class="btn-select-action" onclick="setHistoryDateToday()" style="background: rgba(79, 142, 247, 0.15); color: var(--primary); font-weight: 700; margin: 6px auto;">🎯 Kembali ke Hari Ini</button>` : ''}
+                        ${otherDatesHtml}
                     </div>`;
                 return;
             }
@@ -2679,7 +2899,7 @@
                     <div class="order-history-header">
                         <div class="order-title-block">
                             <div class="order-id-tag">📦 ${escapeHtml(order.id)}</div>
-                            <div class="order-date-tag">📅 ${orderTimeStr} • 📱 ${escapeHtml(order.device_name || 'Semua Perangkat')}</div>
+                            <div class="order-date-tag">📅 ${orderTimeStr} • 📱 ${escapeHtml(order.device_name || getDeviceName(order.device_id))}</div>
                         </div>
                         <div class="order-badges-block">
                             <span class="badge-method">${methodBadge}</span>
@@ -2729,6 +2949,7 @@
                     const itEstCost = it.cost_price || 0;
                     const itActCost = it.actual_unit_cost || itEstCost;
                     const itSubtotalAct = itRecvQty * itActCost;
+                    const itDevName = it.device_id ? getDeviceName(it.device_id) : '';
 
                     let itStatusTag = '<span style="color:var(--warning); font-weight:700;">⏳ Belum (0)</span>';
                     if (itRecvQty >= itOrderQty) {
@@ -2742,7 +2963,10 @@
                         <tr>
                             <td>
                                 <b>${escapeHtml(it.product_name)}</b>
-                                <div style="font-size:10px; color:var(--text-muted);">${escapeHtml(it.provider_name || '')}</div>
+                                <div style="font-size:10px; color:var(--text-muted); display:flex; gap:6px; align-items:center; margin-top:2px;">
+                                    <span>${escapeHtml(it.provider_name || '')}</span>
+                                    ${itDevName ? `<span style="background:rgba(79,142,247,0.15); color:var(--primary); padding:1px 6px; border-radius:4px; font-weight:600;">📱 ${escapeHtml(itDevName)}</span>` : ''}
+                                </div>
                             </td>
                             <td class="center"><b>${itOrderQty}</b> pcs</td>
                             <td class="center"><b style="color:${itRecvQty >= itOrderQty ? 'var(--success)' : (itRecvQty > 0 ? 'var(--primary)' : 'var(--text-muted)')};">${itRecvQty}</b> pcs</td>
@@ -2817,7 +3041,8 @@
                 // Sinkronkan order lokal ke Supabase jika ada yang belum tersinkron
                 if (allRestockOrders.length > 0) {
                     try {
-                        const { error } = await supabaseClient.from('restock_orders').upsert(allRestockOrders);
+                        const payload = allRestockOrders.map(cleanOrderForSupabase);
+                        const { error } = await supabaseClient.from('restock_orders').upsert(payload);
                         if (error) console.warn('Supabase restock_orders upsert:', error);
                     } catch (eSync) {
                         console.warn('Supabase restock_orders sync error:', eSync);
@@ -2862,8 +3087,8 @@
             saveRestockOrdersToStorage();
             if (supabaseClient) {
                 supabaseClient.from('restock_orders').update({
-                    manual_actual_cost: order.manual_actual_cost,
                     actual_cost: order.actual_cost,
+                    notes: order.manual_actual_cost ? `Manual cost: Rp ${order.manual_actual_cost}` : (order.notes || ''),
                     updated_at: new Date().toISOString()
                 }).eq('id', order.id).then();
             }
