@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KSP Check - Interactive Stock & Order</title>
+    <!-- Web App Manifest & PWA Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0F1117">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="KSP Check">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
     <!-- Supabase JS Client & CryptoJS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
@@ -426,6 +437,8 @@
         .product-name { font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         .prov-pill { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: rgba(79, 142, 247, 0.15); color: var(--primary); }
         body.hide-provider-badge .prov-pill { display: none; }
+        .cat-pill { font-size: 9.5px; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: rgba(148, 163, 184, 0.15); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.28); display: inline-flex; align-items: center; white-space: nowrap; line-height: 1.25; letter-spacing: 0.2px; vertical-align: middle; }
+        body.light-theme .cat-pill { background: rgba(113, 128, 150, 0.12); border-color: rgba(113, 128, 150, 0.25); color: var(--text-muted); }
         .product-meta { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .stock-zero, .stock-kritis, .stock-critical { color: var(--danger); font-weight: bold; }
         .stock-low, .stock-restok, .stock-warning { color: var(--warning); font-weight: bold; }
@@ -489,7 +502,9 @@
         .restock-val { color: var(--success); font-size: 10px; font-weight: 600; margin-left: 2px; }
         .profit-pos { color: var(--success); font-weight: 600; }
         .profit-neg { color: var(--danger); font-weight: 600; }
-        .demand-pill { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: rgba(245, 166, 35, 0.15); color: var(--warning); margin-left: 4px; border: 1px solid rgba(245, 166, 35, 0.3); }
+        .demand-pill { font-size: 9.5px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: rgba(245, 166, 35, 0.15); color: var(--warning); border: 1px solid rgba(245, 166, 35, 0.3); display: inline-flex; align-items: center; white-space: nowrap; vertical-align: middle; }
+        body.light-theme .demand-pill { background: rgba(217, 119, 6, 0.12); color: #b45309; border-color: rgba(217, 119, 6, 0.28); }
+        body:not(.show-order-demand) .demand-pill { display: none !important; }
         .table-footer-grand { background: var(--table-footer-bg); border-top: 2px solid var(--primary); font-weight: 700; font-size: 12px; }
         .table-footer-grand td { padding: 12px 8px; color: var(--text-main); }
 
@@ -630,6 +645,9 @@
                             <button class="settings-item" id="settingOrderBadge" onclick="cycleOrderBadgeModeFromMenu()">
                                 <span class="settings-icon">🏷️</span><span class="settings-label">Mode Badge Restok</span><span class="settings-state" id="settingOrderBadgeState">Dinamis</span>
                             </button>
+                            <button class="settings-item" id="settingOrderDemand" onclick="toggleOrderDemandFromMenu()">
+                                <span class="settings-icon">⚡</span><span class="settings-label">Badge Demand Penjualan</span><span class="settings-state" id="settingOrderDemandState">Aktif</span>
+                            </button>
                             <button class="settings-item" id="settingOrderHistory" onclick="toggleOrderHistoryFromMenu()">
                                 <span class="settings-icon">📋</span><span class="settings-label">Riwayat Order</span><span class="settings-state" id="settingOrderHistoryState">Tersembunyi</span>
                             </button>
@@ -645,6 +663,9 @@
                         </div>
                         <div class="settings-group">
                             <div class="settings-title">Navigasi</div>
+                            <button class="settings-item" onclick="showShortcutGuideModal(); closeSettingsMenu()">
+                                <span class="settings-icon">📲</span><span class="settings-label">Pintasan Layar Utama</span><span class="settings-state">Tips →</span>
+                            </button>
                             <button class="settings-item" onclick="showDeviceModal(); closeSettingsMenu()">
                                 <span class="settings-icon">📱</span><span class="settings-label">Pilih Perangkat</span><span class="settings-state" id="settingDeviceState">Semua</span>
                             </button>
@@ -719,6 +740,7 @@
 
                 <button type="button" class="btn-select-action active" id="btnToggleOrderSort" onclick="toggleOrderSortStock()" title="Urutkan stok terkecil ke terbesar per provider (Aktif)"><span id="orderSortStockIcon">📶</span> <span id="orderSortStockText">Stok Terkecil</span></button>
                 <button type="button" class="btn-select-action active" id="btnToggleOrderBadge" onclick="cycleOrderBadgeMode()" title="Ganti mode badge restok (Dinamis / Sederhana / Tanpa Badge)"><span id="orderBadgeIcon">🏷️</span> <span id="orderBadgeText">Badge Dinamis</span></button>
+                <button type="button" class="btn-select-action active" id="btnToggleOrderDemand" onclick="toggleOrderDemandPill()" title="Tampilkan/sembunyikan badge demand laju penjualan harian"><span id="orderDemandIcon">⚡</span> <span id="orderDemandText">Demand</span></button>
 
                 <button type="button" class="btn-select-action" id="btnCycle3" onclick="setOrderRestockCycle(3)" title="Hitung kebutuhan belanja siklus 3 hari">⚡ 3 Hari</button>
                 <button type="button" class="btn-select-action active" id="btnCycle7" onclick="setOrderRestockCycle(7)" title="Hitung kebutuhan belanja siklus 7 hari (Mingguan)">📅 7 Hari</button>
@@ -945,6 +967,61 @@
         </div>
     </div>
 
+    <!-- Shortcut Guide Modal (Panduan Pintasan Layar Utama per Tab) -->
+    <div id="shortcutGuideModal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closeShortcutGuideModal()">
+        <div class="device-modal-card" style="max-width: 460px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                <div>
+                    <h2 style="font-size: 16px; font-weight: 800; color: var(--text-main); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                        <span>📲</span> Pintasan Layar Utama (Home Screen)
+                    </h2>
+                    <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Setiap tab bisa memiliki ikon pintasan mandiri di Layar Utama HP Anda.</p>
+                </div>
+                <button type="button" onclick="closeShortcutGuideModal()" title="Tutup" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1;">✕</button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 14px; margin-bottom: 12px; font-size: 12.5px; line-height: 1.5; color: var(--text-main);">
+                <div style="background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px;">
+                    <div style="font-weight: 700; color: var(--primary); margin-bottom: 4px;">🚀 Cara 1: Simpan Langsung dari Tab Aktif (Chrome)</div>
+                    <ol style="margin: 0; padding-left: 18px; color: var(--text-muted); font-size: 11.5px; display: flex; flex-direction: column; gap: 3px;">
+                        <li>Buka tab yang diinginkan (<b>Order</b>, <b>History</b>, atau <b>Laporan</b>).</li>
+                        <li>Tekan titik tiga (<b>⋮</b>) di pojok kanan atas browser Chrome.</li>
+                        <li>Pilih <b>"Tambahkan ke Layar Utama"</b> (<i>Add to Home screen</i>).</li>
+                        <li>Nama tab otomatis disesuaikan! Klik <b>Tambah</b>.</li>
+                    </ol>
+                </div>
+
+                <div style="background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px;">
+                    <div style="font-weight: 700; color: var(--success); margin-bottom: 4px;">⚡ Cara 2: Tekan Lama Ikon Aplikasi (App Shortcuts)</div>
+                    <p style="margin: 0; color: var(--text-muted); font-size: 11.5px;">
+                        Jika sudah menginstal web app KSP Check, tekan &amp; tahan (<b>long-press</b>) ikonnya di Layar Utama HP. Menu pintasan tiap tab akan muncul dan bisa <b>ditarik (drag)</b> langsung ke layar!
+                    </p>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+                    <div style="font-size: 11.5px; font-weight: 700; color: var(--text-muted);">🔗 Salin Tautan Langsung per Tab:</div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button type="button" onclick="copyTabUrl('order')" style="flex: 1; min-width: 100px; padding: 8px 6px; background: var(--stepper-btn-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 11px; font-weight: 600; cursor: pointer; text-align: center;">
+                            🌅 Salin Tab Order
+                        </button>
+                        <button type="button" onclick="copyTabUrl('history')" style="flex: 1; min-width: 100px; padding: 8px 6px; background: var(--stepper-btn-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 11px; font-weight: 600; cursor: pointer; text-align: center;">
+                            📊 Salin Tab History
+                        </button>
+                        <button type="button" onclick="copyTabUrl('daily')" style="flex: 1; min-width: 100px; padding: 8px 6px; background: var(--stepper-btn-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 11px; font-weight: 600; cursor: pointer; text-align: center;">
+                            🌙 Salin Tab Laporan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 6px;">
+                <button type="button" onclick="closeShortcutGuideModal()" style="padding: 7px 18px; background: var(--primary); border: none; border-radius: 8px; font-size: 12px; font-weight: 700; color: #FFFFFF; cursor: pointer;">
+                    Mengerti
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- APP LOGIC -->
     <script>
         // ============================================================================
@@ -983,6 +1060,9 @@
         let orderBadgeMode = localStorage.getItem('kspcheck_order_badge_mode') || 'dynamic';
         if (!['dynamic', 'simple', 'none'].includes(orderBadgeMode)) orderBadgeMode = 'dynamic';
 
+        // State Tab 1: Tampilkan/Sembunyikan Badge Demand Laju Penjualan Harian (Default: true / aktif)
+        let orderShowDemand = (localStorage.getItem('kspcheck_order_show_demand') !== 'false');
+
         // State Tab 2: Laporan Stok Harian
         let dailyShift = 0; // 0: Semua, 1: Pagi, 2: Malam, 4: Rincian P|M
         let dailyDaysMode = 1; // 1, 2, atau 3
@@ -997,8 +1077,10 @@
             initOrderProfitMode();
             initOrderSortStock();
             initOrderBadgeMode();
+            initOrderDemandPill();
             initOrderCycleDays();
             initRestockOrders();
+            initTabNavigation();
 
             // ── Prioritas Tertinggi: PIN dari URL ──
             // Mendukung dua format:
@@ -1215,6 +1297,40 @@
             }
         }
 
+        // Tab 1: Toggle Badge Demand Penjualan Logic
+        function initOrderDemandPill() {
+            applyOrderDemandUI();
+        }
+
+        function toggleOrderDemandPill() {
+            orderShowDemand = !orderShowDemand;
+            try {
+                localStorage.setItem('kspcheck_order_show_demand', String(orderShowDemand));
+            } catch (e) {}
+            applyOrderDemandUI();
+            updateSettingsMenuUI();
+            showToast(orderShowDemand ? '⚡ Badge Demand aktif' : '⚡ Badge Demand disembunyikan');
+        }
+
+        function toggleOrderDemandFromMenu() {
+            toggleOrderDemandPill();
+            closeSettingsMenu();
+        }
+
+        function applyOrderDemandUI() {
+            document.body.classList.toggle('show-order-demand', orderShowDemand);
+            const btn = document.getElementById('btnToggleOrderDemand');
+            const textEl = document.getElementById('orderDemandText');
+            if (btn) {
+                btn.classList.toggle('active', orderShowDemand);
+                if (textEl) textEl.innerText = orderShowDemand ? 'Demand' : 'Demand Mati';
+                btn.title = orderShowDemand
+                    ? 'Badge demand laju penjualan harian aktif. Klik untuk sembunyikan.'
+                    : 'Badge demand tersembunyi. Klik untuk tampilkan.';
+            }
+            updateSettingsState('settingOrderDemandState', orderShowDemand ? 'Aktif' : 'Mati', orderShowDemand ? 'on' : '');
+        }
+
         // Tab 1: Siklus Restok Belanja Logic (3, 7, 14 Hari)
         function initOrderCycleDays() {
             updateOrderCycleDaysUI();
@@ -1277,19 +1393,39 @@
             return cats.size;
         }
 
-        // Helper: Format nama produk dengan kategori jika provider memiliki > 2 kategori
-        function getProductDisplayName(rawName, catName, provName, items) {
+        // Helper: Bersihkan nama kategori dari dalam nama produk jika ada (misal: "axis 3g 3h(zona 1)" -> "axis 3g 3h")
+        function stripCategoryFromName(name, cat) {
+            if (!name || !cat) return name || '';
+            const escapedCat = cat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`\\s*[\\(\\[]\\s*${escapedCat}\\s*[\\)\\]]`, 'gi');
+            const cleaned = name.replace(regex, '').trim();
+            return cleaned || name;
+        }
+
+        // Helper: Dapatkan judul bersih dan badge kategori kecil jika provider memiliki > 2 kategori
+        function getProductTitleAndCategoryBadge(rawName, catName, provName, items) {
             rawName = (rawName || '').trim();
             catName = (catName || '').trim();
-            if (!rawName) return '';
+            if (!rawName) return { cleanTitle: '', badgeHtml: '', fullName: '' };
             const catCount = getProviderCategoryCount(provName, items);
             if (catCount > 2 && catName) {
-                // Jangan tambahkan jika nama produk sudah mengandung nama kategori
-                if (!rawName.toLowerCase().includes(catName.toLowerCase())) {
-                    return `${rawName}(${catName})`;
-                }
+                const cleanName = stripCategoryFromName(rawName, catName);
+                return {
+                    cleanTitle: cleanName,
+                    badgeHtml: `<span class="cat-pill">${escapeHtml(catName)}</span>`,
+                    fullName: `${cleanName}(${catName})`
+                };
             }
-            return rawName;
+            return {
+                cleanTitle: rawName,
+                badgeHtml: '',
+                fullName: rawName
+            };
+        }
+
+        // Helper: Format nama produk dengan kategori jika provider memiliki > 2 kategori (untuk teks / WhatsApp export)
+        function getProductDisplayName(rawName, catName, provName, items) {
+            return getProductTitleAndCategoryBadge(rawName, catName, provName, items).fullName;
         }
 
         /**
@@ -1607,11 +1743,11 @@
                     return (a.product_name || '').localeCompare(b.product_name || '');
                 });
 
-                // Store daily reports per device
+                // Store daily reports per device (validasi agar hanya menyimpan data laporan riil)
                 allDailyReports.clear();
                 if (reportsRes.data && Array.isArray(reportsRes.data)) {
                     reportsRes.data.forEach(r => {
-                        if (r.device_id && r.report_data) {
+                        if (r.device_id && r.device_id !== 'test_dev' && !r.device_id.startsWith('test_') && r.report_data) {
                             let rData = r.report_data;
                             if (typeof rData === 'string') {
                                 try {
@@ -1621,7 +1757,7 @@
                                     rData = null;
                                 }
                             }
-                            if (rData && typeof rData === 'object') {
+                            if (rData && typeof rData === 'object' && Array.isArray(rData.items) && rData.items.length > 0) {
                                 allDailyReports.set(r.device_id, rData);
                             }
                         }
@@ -1674,15 +1810,17 @@
             const devices = new Map();
 
             allVouchers.forEach(v => {
-                if (v.device_id && !devices.has(v.device_id)) {
+                if (v.device_id && v.device_id !== 'test_dev' && !v.device_id.startsWith('test_') && !devices.has(v.device_id)) {
                     devices.set(v.device_id, v.device_name || v.device_id);
                 }
             });
 
-            // Also check daily reports devices
+            // Also check daily reports devices (hanya perangkat riil dengan laporan produk valid)
             allDailyReports.forEach((val, devId) => {
-                if (!devices.has(devId)) {
-                    devices.set(devId, devId);
+                if (devId && devId !== 'test_dev' && !devId.startsWith('test_') && !devices.has(devId)) {
+                    if (val && Array.isArray(val.items) && val.items.length > 0) {
+                        devices.set(devId, val.deviceName || devId);
+                    }
                 }
             });
 
@@ -1694,7 +1832,22 @@
                 select.appendChild(opt);
             });
 
-            if (devices.has(currentVal)) select.value = currentVal;
+            // Cek jika ada parameter device atau dev di URL
+            const urlDev = (function() {
+                try {
+                    const p = new URLSearchParams(window.location.search);
+                    return p.get('dev') || p.get('device') || '';
+                } catch(e) { return ''; }
+            })();
+
+            if (urlDev && devices.has(urlDev)) {
+                select.value = urlDev;
+                hasPromptedInitialDevice = true; // Jangan tampilkan dialog popup jika sudah ditentukan lewat URL
+            } else if (devices.has(currentVal)) {
+                select.value = currentVal;
+            } else {
+                select.value = 'all';
+            }
             updateOrderHeaderTitle();
 
             // Munculkan dialog pilihan perangkat di awal load halaman jika perangkat ada > 1
@@ -1713,12 +1866,16 @@
             if (!devices) {
                 devices = new Map();
                 allVouchers.forEach(v => {
-                    if (v.device_id && !devices.has(v.device_id)) {
+                    if (v.device_id && v.device_id !== 'test_dev' && !v.device_id.startsWith('test_') && !devices.has(v.device_id)) {
                         devices.set(v.device_id, v.device_name || v.device_id);
                     }
                 });
                 allDailyReports.forEach((val, devId) => {
-                    if (!devices.has(devId)) devices.set(devId, devId);
+                    if (devId && devId !== 'test_dev' && !devId.startsWith('test_') && !devices.has(devId)) {
+                        if (val && Array.isArray(val.items) && val.items.length > 0) {
+                            devices.set(devId, val.deviceName || devId);
+                        }
+                    }
                 });
             }
 
@@ -1902,7 +2059,8 @@
                 items.forEach(prod => {
                     const rawProdName = (prod.product_name || '').trim();
                     const catName = (prod.category_name || prod.category || '').trim();
-                    const displayName = getProductDisplayName(rawProdName, catName, provName, items);
+                    const prodInfo = getProductTitleAndCategoryBadge(rawProdName, catName, provName, items);
+                    const displayName = prodInfo.fullName;
 
                     const stock = parseInt(prod.stock || 0);
                     const limit = parseInt(prod.min_limit || 5);
@@ -1939,6 +2097,11 @@
                     let marginSign = (margin > 0) ? '+' : '';
                     let marginText = `${marginSign}Rp ${margin.toLocaleString('id-ID')}`;
 
+                    const demandVal = metrics.demand || 0;
+                    let demandPillHtml = (demandVal > 0)
+                        ? `<span class="demand-pill" title="Demand 30h berbobot: ${demandVal}/hr">⚡ ${demandVal}/hr</span>`
+                        : '';
+
                     html += `
                     <div class="product-card${cardSelectedClass}" 
                          data-id="${idCounter}"
@@ -1969,7 +2132,9 @@
                         <div class="product-info">
                             <div class="product-name">
                                 <span class="prov-pill">${escapeHtml(shortenProvider(provName))}</span>
-                                ${escapeHtml(displayName)}
+                                <span>${escapeHtml(prodInfo.cleanTitle)}</span>
+                                ${prodInfo.badgeHtml}
+                                ${demandPillHtml}
                             </div>
                             <div class="product-meta">
                                 ${sisaHtml}
@@ -2933,12 +3098,12 @@
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             const devices = new Map();
             allVouchers.forEach(v => {
-                if (v.device_id && v.device_id !== 'all' && v.device_id !== 'undefined' && !devices.has(v.device_id)) {
+                if (v.device_id && v.device_id !== 'all' && v.device_id !== 'test_dev' && !v.device_id.startsWith('test_') && v.device_id !== 'undefined' && !devices.has(v.device_id)) {
                     devices.set(v.device_id, v.device_name || v.device_id);
                 }
             });
             allRestockOrders.forEach(o => {
-                if (o.device_id && o.device_id !== 'all' && o.device_id !== 'undefined' && !devices.has(o.device_id)) {
+                if (o.device_id && o.device_id !== 'all' && o.device_id !== 'test_dev' && !o.device_id.startsWith('test_') && o.device_id !== 'undefined' && !devices.has(o.device_id)) {
                     devices.set(o.device_id, o.device_name || getDeviceName(o.device_id));
                 }
             });
@@ -3166,12 +3331,15 @@
                         itStatusTag = '<span style="color:var(--primary); font-weight:700;">🔄 Kurang ' + sisa + '</span>';
                     }
 
-                    const itDisplayName = getProductDisplayName(it.product_name, it.category_name, it.provider_name);
+                    const itInfo = getProductTitleAndCategoryBadge(it.product_name, it.category_name, it.provider_name);
 
                     html += `
                         <tr>
                             <td>
-                                <b>${escapeHtml(itDisplayName)}</b>
+                                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                    <b>${escapeHtml(itInfo.cleanTitle)}</b>
+                                    ${itInfo.badgeHtml}
+                                </div>
                                 <div style="font-size:10px; color:var(--text-muted); display:flex; gap:6px; align-items:center; margin-top:2px;">
                                     <span>${escapeHtml(it.provider_name || '')}</span>
                                     ${itDevName ? `<span style="background:rgba(79,142,247,0.15); color:var(--primary); padding:1px 6px; border-radius:4px; font-weight:600;">📱 ${escapeHtml(itDevName)}</span>` : ''}
@@ -3344,6 +3512,78 @@
             }
         }
 
+        function sanitizeDailyReportItems(items) {
+            if (!Array.isArray(items) || items.length === 0) return items;
+
+            // 1. Lengkapi providerName & categoryName dari allVouchers jika hilang
+            items.forEach(it => {
+                if (it && it.type === 'product' && it.productId) {
+                    const v = allVouchers.find(x => x.product_id === it.productId);
+                    if (v && v.provider_name) {
+                        if (!it.providerName || it.providerName === 'Lainnya') {
+                            it.providerName = v.provider_name;
+                        }
+                        if (!it.categoryName || it.categoryName === 'Umum') {
+                            if (v.category_name) it.categoryName = v.category_name;
+                        }
+                    }
+                }
+            });
+
+            // 2. Cek apakah ada produk yang berada di bawah header provider yang tidak cocok dengan it.providerName
+            let currentProv = '';
+            let hasMisplaced = false;
+            for (const it of items) {
+                if (it.type === 'header') {
+                    currentProv = it.providerName || '';
+                } else if (it.type === 'product' && it.providerName && currentProv) {
+                    if (it.providerName.trim().toUpperCase() !== currentProv.trim().toUpperCase()) {
+                        hasMisplaced = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!hasMisplaced) return items;
+
+            // 3. Susun ulang urutan item agar setiap produk masuk ke bawah header provider-nya yang benar
+            const provOrder = [];
+            const provMap = new Map(); // providerName -> array of items
+
+            let curP = 'Lainnya';
+            items.forEach(it => {
+                if (it.type === 'header') {
+                    curP = it.providerName || 'Lainnya';
+                    if (!provMap.has(curP)) {
+                        provOrder.push(curP);
+                        provMap.set(curP, []);
+                    }
+                } else if (it.type === 'category') {
+                    if (!provMap.has(curP)) {
+                        provOrder.push(curP);
+                        provMap.set(curP, []);
+                    }
+                    provMap.get(curP).push(it);
+                } else if (it.type === 'product') {
+                    const p = it.providerName || curP;
+                    if (!provMap.has(p)) {
+                        provOrder.push(p);
+                        provMap.set(p, []);
+                    }
+                    provMap.get(p).push(it);
+                }
+            });
+
+            const newItems = [];
+            provOrder.forEach(pName => {
+                newItems.push({ type: 'header', providerName: pName });
+                const list = provMap.get(pName) || [];
+                list.forEach(it => newItems.push(it));
+            });
+
+            return newItems;
+        }
+
         // ==================== 8. TAB 2: LAPORAN STOK HARIAN (KSP CHECK ENGINE) ====================
         function initDailyReport() {
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
@@ -3362,6 +3602,8 @@
             // Fallback: If no daily report snapshot in Supabase yet (or invalid/empty), synthesize from allVouchers!
             if (!reportData || !Array.isArray(reportData.items) || reportData.items.length === 0) {
                 reportData = buildFallbackDailyReportData();
+            } else {
+                reportData.items = sanitizeDailyReportItems(reportData.items);
             }
 
             window.DAILY_REPORT_DATA = reportData;
@@ -3913,10 +4155,9 @@
                     let newBadge = item.isNew ? '<span class="tag-baru">Baru</span>' : '';
                     let delBadge = item.isDeleted ? ' <span style="color:var(--danger); font-size:10px; font-weight:bold;">[Dihapus]</span>' : '';
                     let provPillHtml = (item.providerName || currentProvName) ? ('<span class="prov-pill">' + escapeHtml(item.providerName || currentProvName) + '</span> ') : '';
-                    let demandPillHtml = (item.demandDaily > 0) ? ('<span class="demand-pill" title="Demand 30h berbobot: ' + item.demandDaily + '/hr">⚡ ' + item.demandDaily + '/hr</span>') : '';
 
                     html += '<tr>';
-                    html += '<td class="' + nameClass + '">' + provPillHtml + '<b>' + escapeHtml(item.productName) + '</b>' + newBadge + delBadge + ' ' + demandPillHtml + '</td>';
+                    html += '<td class="' + nameClass + '">' + provPillHtml + '<b>' + escapeHtml(item.productName) + '</b>' + newBadge + delBadge + '</td>';
 
                     if (dailyProfitMode) {
                         html += '<td class="right ' + nameClass + '">' + formatK(price) + '</td>';
@@ -4530,7 +4771,77 @@
         }
 
         // ==================== 11. TABS & THEMES & UTILITIES ====================
-        function switchTab(tab) {
+        function getTabTitle(tab) {
+            switch (tab) {
+                case 'history': return '📊 Riwayat Order - KSP Check';
+                case 'daily': return '🌙 Laporan Harian - KSP Check';
+                case 'order':
+                default:
+                    return '🌅 Order Restok - KSP Check';
+            }
+        }
+
+        function getInitialTabFromUrl() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const t = params.get('tab');
+                if (t) {
+                    const cleanT = t.toLowerCase().trim();
+                    if (cleanT === 'daily' || cleanT === 'laporan' || cleanT === 'report') return 'daily';
+                    if (cleanT === 'history' || cleanT === 'riwayat' || cleanT === 'hist') return 'history';
+                    if (cleanT === 'order') return 'order';
+                }
+            } catch (e) {}
+
+            try {
+                const hash = window.location.hash;
+                if (hash) {
+                    const cleanHash = hash.replace(/^#/, '').toLowerCase().trim();
+                    if (cleanHash === 'daily' || cleanHash === 'laporan' || cleanHash === 'report') return 'daily';
+                    if (cleanHash === 'history' || cleanHash === 'riwayat' || cleanHash === 'hist') return 'history';
+                    if (cleanHash === 'order') return 'order';
+                    if (cleanHash.includes('tab=')) {
+                        const val = cleanHash.split('tab=')[1].split('&')[0];
+                        if (val === 'daily' || val === 'laporan' || val === 'report') return 'daily';
+                        if (val === 'history' || val === 'riwayat' || val === 'hist') return 'history';
+                        if (val === 'order') return 'order';
+                    }
+                }
+            } catch (e) {}
+
+            return 'order';
+        }
+
+        function updateUrlForTab(tab) {
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', tab);
+                window.history.replaceState({ tab: tab }, '', url.toString());
+            } catch (e) {
+                try {
+                    window.location.hash = 'tab=' + tab;
+                } catch (e2) {}
+            }
+            document.title = getTabTitle(tab);
+        }
+
+        function initTabNavigation() {
+            const initialTab = getInitialTabFromUrl();
+            if (initialTab && initialTab !== 'order') {
+                switchTab(initialTab, false);
+            } else {
+                updateUrlForTab('order');
+            }
+
+            window.addEventListener('popstate', () => {
+                const tab = getInitialTabFromUrl();
+                if (tab && tab !== currentTab) {
+                    switchTab(tab, false);
+                }
+            });
+        }
+
+        function switchTab(tab, updateUrl = true) {
             currentTab = tab;
 
             const tabMap = {
@@ -4563,11 +4874,42 @@
                 initDailyReport();
             }
 
+            if (updateUrl) {
+                updateUrlForTab(tab);
+            } else {
+                document.title = getTabTitle(tab);
+            }
+
             updateSettingsMenuUI();
 
             const activeBtn = document.getElementById(tabMap[tab]);
             if (activeBtn) {
                 activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
+
+        // ==================== SHORTCUT & PWA GUIDE MODAL ====================
+        function showShortcutGuideModal() {
+            const m = document.getElementById('shortcutGuideModal');
+            if (m) m.style.display = 'flex';
+        }
+
+        function closeShortcutGuideModal() {
+            const m = document.getElementById('shortcutGuideModal');
+            if (m) m.style.display = 'none';
+        }
+
+        function copyTabUrl(tab) {
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', tab);
+                navigator.clipboard.writeText(url.toString()).then(() => {
+                    showToast('📋 Link tab ' + tab + ' disalin!');
+                }).catch(() => {
+                    prompt('Salin link ini:', url.toString());
+                });
+            } catch (e) {
+                showToast('Gagal menyalin link');
             }
         }
 
@@ -4616,6 +4958,7 @@
             updateSettingsState('settingOrderProfitState', orderProfitMode ? 'Aktif' : 'Mati', orderProfitMode ? 'warn' : '');
             updateSettingsState('settingOrderSortStockState', orderSortByStockAsc ? 'Aktif' : 'Standar', orderSortByStockAsc ? 'on' : '');
             updateSettingsState('settingOrderBadgeState', (orderBadgeMode === 'dynamic') ? 'Dinamis' : ((orderBadgeMode === 'simple') ? 'Sederhana' : 'Mati'), orderBadgeMode !== 'none' ? 'on' : '');
+            updateSettingsState('settingOrderDemandState', orderShowDemand ? 'Aktif' : 'Mati', orderShowDemand ? 'on' : '');
             updateSettingsState('settingProviderBadgeState', providerVisible ? 'Aktif' : 'Mati', providerVisible ? 'on' : '');
             updateSettingsState('settingOrderHistoryState', orderHistoryVisible ? 'Terbuka' : 'Tersembunyi', orderHistoryVisible ? 'on' : '');
             updateSettingsState('settingHideZeroState', dailyHideZeroSell ? 'Aktif' : 'Mati', dailyHideZeroSell ? 'on' : '');

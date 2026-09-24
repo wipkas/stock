@@ -1,0 +1,52 @@
+{
+  "name": "KSP Check - Voucher & Stok",
+  "short_name": "KSP Check",
+  "description": "Interactive Stock, Restock Order & Laporan Harian KSP Check",
+  "start_url": "interactive_stock.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0F1117",
+  "theme_color": "#0F1117",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "🌅 Order Restok",
+      "short_name": "Order",
+      "description": "Buka tab Order Restok",
+      "url": "interactive_stock.html?tab=order",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "📊 Riwayat Order",
+      "short_name": "Riwayat",
+      "description": "Buka tab Riwayat & Rekonsiliasi Order",
+      "url": "interactive_stock.html?tab=history",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "🌙 Laporan Harian",
+      "short_name": "Laporan",
+      "description": "Buka tab Laporan Stok Harian",
+      "url": "interactive_stock.html?tab=daily",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
