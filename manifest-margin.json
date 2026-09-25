@@ -1,0 +1,48 @@
+{
+  "id": "kspcheck-margin-app",
+  "name": "Margin Voucher - KSP Check",
+  "short_name": "Margin",
+  "description": "Tab Margin Voucher & Simulasi Harga KSP Check",
+  "start_url": "interactive_stock.html?tab=margin",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0F1117",
+  "theme_color": "#0F1117",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon-margin.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-order-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "🌅 Order Restok",
+      "short_name": "Order",
+      "description": "Buka tab Order Restok",
+      "url": "interactive_stock.html?tab=order",
+      "icons": [{ "src": "icon-order-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "📊 Riwayat Order",
+      "short_name": "Riwayat",
+      "description": "Buka tab Riwayat Order",
+      "url": "interactive_stock.html?tab=history",
+      "icons": [{ "src": "icon-history-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "🌙 Laporan Harian",
+      "short_name": "Laporan",
+      "description": "Buka tab Laporan Harian",
+      "url": "interactive_stock.html?tab=daily",
+      "icons": [{ "src": "icon-daily-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

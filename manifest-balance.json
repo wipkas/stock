@@ -1,0 +1,55 @@
+{
+  "id": "kspcheck-balance-app",
+  "name": "Saldo Realtime - KSP Check",
+  "short_name": "Saldo",
+  "description": "Pantau Saldo Realtime Aplikasi KSP Check",
+  "start_url": "interactive_stock.html?tab=balance",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0F1117",
+  "theme_color": "#0F1117",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon-balance.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-order-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "🌅 Order Restok",
+      "short_name": "Order",
+      "description": "Buka tab Order Restok",
+      "url": "interactive_stock.html?tab=order",
+      "icons": [{ "src": "icon-order-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "📊 History Restok",
+      "short_name": "History",
+      "description": "Buka tab History Order",
+      "url": "interactive_stock.html?tab=history",
+      "icons": [{ "src": "icon-order-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "🌙 Laporan Harian",
+      "short_name": "Laporan",
+      "description": "Buka tab Laporan Stok",
+      "url": "interactive_stock.html?tab=daily",
+      "icons": [{ "src": "icon-order-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "💹 Margin Voucher",
+      "short_name": "Margin",
+      "description": "Buka tab Margin Voucher",
+      "url": "interactive_stock.html?tab=margin",
+      "icons": [{ "src": "icon-margin.svg", "sizes": "any" }]
+    }
+  ]
+}
