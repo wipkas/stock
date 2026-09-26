@@ -35,6 +35,11 @@
                     pTitle = '💳 Saldo Realtime - KSP Check';
                     iconSvg = 'icon-balance.svg';
                     iconPng = 'icon-order-192.png';
+                } else if (cleanT === 'produk' || cleanT === 'barang') {
+                    mFile = 'manifest-order.json';
+                    pTitle = '🛍️ Stok Produk - KSP Check';
+                    iconSvg = 'icon-order.svg';
+                    iconPng = 'icon-order-192.png';
                 }
                 document.title = pTitle;
                 document.write('<link id="appManifest" rel="manifest" href="' + mFile + '">');
@@ -1453,6 +1458,466 @@
             background: #DC2626;
         }
 
+        /* ==================== TAB: PRODUK & AKSESORIS STYLES (GALLERY VIEW) ==================== */
+        .produk-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 14px;
+            margin-top: 14px;
+        }
+        @media (max-width: 600px) {
+            .produk-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+            }
+        }
+        .produk-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            position: relative;
+            overflow: hidden;
+        }
+        .produk-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Gallery Media Box */
+        .produk-gallery-media {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background: var(--input-bg);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-bottom: 1px solid var(--card-border);
+        }
+        .produk-gallery-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: block;
+        }
+        .produk-card:hover .produk-gallery-img {
+            transform: scale(1.06);
+        }
+        .produk-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(79, 142, 247, 0.08) 100%);
+            color: var(--text-muted);
+            user-select: none;
+        }
+        .produk-placeholder-icon {
+            font-size: 38px;
+            opacity: 0.85;
+            transition: transform 0.25s ease;
+        }
+        .produk-card:hover .produk-placeholder-icon {
+            transform: scale(1.1);
+        }
+        .produk-placeholder-text {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            opacity: 0.6;
+        }
+
+        /* Overlays on Media */
+        .produk-brand-overlay {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            font-size: 9.5px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            color: #FFFFFF;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            z-index: 2;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+        }
+        .produk-stock-overlay {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 9.5px;
+            font-weight: 800;
+            padding: 3px 7px;
+            border-radius: 6px;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 2;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .produk-zoom-overlay {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            color: #FFFFFF;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            z-index: 2;
+        }
+        .produk-card:hover .produk-zoom-overlay {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        /* Card Content Area */
+        .produk-card-body {
+            padding: 10px 11px 11px 11px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+            justify-content: space-between;
+        }
+        .produk-brand-badge {
+            font-size: 9.5px;
+            font-weight: 800;
+            padding: 1.5px 6px;
+            border-radius: 5px;
+            background: rgba(79, 142, 247, 0.12);
+            color: var(--primary);
+            border: 1px solid rgba(79, 142, 247, 0.28);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .produk-cat-badge {
+            font-size: 9.5px;
+            font-weight: 600;
+            padding: 1.5px 6px;
+            border-radius: 5px;
+            background: var(--chip-bg);
+            color: var(--text-muted);
+        }
+        .produk-sku-badge {
+            font-size: 9.5px;
+            font-weight: 700;
+            color: var(--text-muted);
+            font-family: monospace;
+            background: var(--input-bg);
+            padding: 1.5px 5px;
+            border-radius: 4px;
+            border: 1px solid var(--card-border);
+        }
+        .produk-name {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1.35;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 33px;
+            margin: 0;
+        }
+        @media (max-width: 600px) {
+            .produk-card-body { padding: 8px 9px 9px 9px; }
+            .produk-name { font-size: 11.5px; min-height: 31px; }
+        }
+        .status-safe {
+            background: rgba(46, 204, 135, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(46, 204, 135, 0.3);
+        }
+        .status-warn {
+            background: rgba(245, 166, 35, 0.15);
+            color: var(--warning);
+            border: 1px solid rgba(245, 166, 35, 0.35);
+        }
+        .status-danger {
+            background: rgba(229, 83, 83, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(229, 83, 83, 0.35);
+        }
+        .produk-pricing {
+            font-size: 10.5px;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            border-top: 1px dashed var(--card-border);
+            padding-top: 6px;
+            margin-top: 2px;
+        }
+        .produk-price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .produk-price-row.highlight {
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .produk-price-row.main-price {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 2px;
+        }
+        .produk-audit-footer {
+            font-size: 9px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-top: 1px solid var(--card-border);
+            padding-top: 5px;
+        }
+
+        /* Lightbox Image Modal Styles */
+        .product-image-modal-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px;
+            max-width: 520px;
+            width: 92%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .product-modal-img-wrap {
+            width: 100%;
+            max-height: 60vh;
+            min-height: 180px;
+            background: #000000;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--card-border);
+        }
+        .product-modal-full-img {
+            max-width: 100%;
+            max-height: 60vh;
+            object-fit: contain;
+            display: block;
+        }
+        .produk-search-box {
+            display: flex;
+            align-items: center;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 0 10px;
+            height: 36px;
+            flex: 1;
+            min-width: 200px;
+            max-width: 360px;
+            transition: border-color .15s;
+        }
+        .produk-search-box:focus-within {
+            border-color: var(--primary);
+        }
+        .produk-search-box input {
+            border: none;
+            background: transparent;
+            outline: none;
+            color: var(--text-main);
+            font-size: 12px;
+            width: 100%;
+        }
+        .produk-search-clear {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 11px;
+            padding: 2px 4px;
+            display: none;
+        }
+        .produk-search-box.has-val .produk-search-clear {
+            display: block;
+        }
+
+        /* Variant Card Styles (Grouped Products) */
+        .produk-variant-badge-overlay {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            font-size: 9.5px;
+            font-weight: 800;
+            padding: 2.5px 7px;
+            border-radius: 6px;
+            background: rgba(139, 92, 246, 0.88);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            color: #FFFFFF;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+        .produk-variant-count-badge {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1.5px 5px;
+            border-radius: 4px;
+            background: rgba(139, 92, 246, 0.15);
+            color: #8B5CF6;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        .produk-variant-chips-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin: 4px 0 2px 0;
+            max-height: 64px;
+            overflow-y: auto;
+            padding-right: 2px;
+        }
+        .pvc-chip {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 5px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s ease;
+            user-select: none;
+            white-space: nowrap;
+            line-height: 1.25;
+        }
+        .pvc-chip:hover {
+            border-color: var(--primary);
+            background: rgba(79, 142, 247, 0.12);
+        }
+        .pvc-chip.active {
+            background: var(--primary);
+            color: #FFFFFF;
+            border-color: var(--primary);
+            box-shadow: 0 2px 6px rgba(79, 142, 247, 0.35);
+        }
+        .pvc-stock {
+            font-size: 8.5px;
+            font-weight: 800;
+            padding: 0.5px 3.5px;
+            border-radius: 3px;
+            background: rgba(0, 0, 0, 0.15);
+            color: inherit;
+        }
+        .pvc-chip.active .pvc-stock {
+            background: rgba(255, 255, 255, 0.28);
+            color: #FFFFFF;
+        }
+        .pvc-stock.empty {
+            color: #EF4444;
+        }
+        .pvc-chip.active .pvc-stock.empty {
+            background: #EF4444;
+            color: #FFFFFF;
+        }
+
+        /* Modal Variant Section & Table */
+        .modal-variant-section {
+            margin-top: 12px;
+            border-top: 1px solid var(--card-border);
+            padding-top: 10px;
+            width: 100%;
+        }
+        .modal-variant-title {
+            font-size: 10.5px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .modal-variant-table-wrap {
+            max-height: 160px;
+            overflow-y: auto;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            margin-top: 6px;
+        }
+        .modal-variant-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            text-align: left;
+        }
+        .modal-variant-table th {
+            font-size: 9.5px;
+            font-weight: 700;
+            color: var(--text-muted);
+            padding: 5px 8px;
+            border-bottom: 1px solid var(--card-border);
+            background: var(--chip-bg);
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .modal-variant-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--card-border);
+            color: var(--text-main);
+            vertical-align: middle;
+        }
+        .modal-variant-table tr {
+            cursor: pointer;
+            transition: background 0.12s ease;
+        }
+        .modal-variant-table tr:hover td {
+            background: var(--card-selected-bg);
+        }
+        .modal-variant-table tr.active-row td {
+            background: rgba(79, 142, 247, 0.12);
+            font-weight: 700;
+        }
+
         /* Print styles */
         @media print {
             body { background: #FFFFFF; color: #000000; padding-bottom: 0; }
@@ -1539,6 +2004,9 @@
                             <button class="settings-item" onclick="switchTab('margin'); closeSettingsMenu()">
                                 <span class="settings-icon">💹</span><span class="settings-label">Cek Margin Voucher</span><span class="settings-state">Buka Tab →</span>
                             </button>
+                            <button class="settings-item" onclick="switchTab('produk'); closeSettingsMenu()">
+                                <span class="settings-icon">🛍️</span><span class="settings-label">Stok Produk &amp; Aksesoris</span><span class="settings-state">Buka Tab →</span>
+                            </button>
                             <button class="settings-item" onclick="switchTab('balance'); closeSettingsMenu()">
                                 <span class="settings-icon">💳</span><span class="settings-label">Pantau Saldo Realtime</span><span class="settings-state">Buka Tab →</span>
                             </button>
@@ -1564,6 +2032,9 @@
             </button>
             <button class="tab" id="tabBtnMargin" onclick="switchTab('margin')">
                 💹 Margin
+            </button>
+            <button class="tab" id="tabBtnProduk" onclick="switchTab('produk')" title="Pantau stok barang retail dan aksesoris terupdate">
+                🛍️ Produk <span class="tab-live-pulse" title="Realtime Live"></span>
             </button>
             <button class="tab" id="tabBtnBalance" onclick="switchTab('balance')" title="Pantau saldo realtime aplikasi e-wallet / bank">
                 💳 Saldo <span class="tab-live-pulse" title="Realtime Live"></span>
@@ -2039,6 +2510,110 @@
         </div>
     </div>
 
+    <!-- ==================== TAB 6: PRODUK & AKSESORIS ==================== -->
+    <div id="tabContentProduk" class="container" style="display: none;">
+        <!-- Header Card -->
+        <div class="header-card" style="margin-bottom: 14px; border-left: 4px solid #8B5CF6;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <div class="header-title" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span>🛍️ Stok Barang &amp; Aksesoris</span>
+                        <span class="balance-live-badge" id="produkLiveBadge" title="Status Koneksi Realtime Supabase" style="color: #8B5CF6; background: rgba(139, 92, 246, 0.12); border-color: rgba(139, 92, 246, 0.25);">
+                            <span class="balance-live-dot" style="background: #8B5CF6; box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);"></span>
+                            <span id="produkLiveStatusText">Realtime Active</span>
+                        </span>
+                    </div>
+                    <div class="header-subtitle" id="produkSubtitle">Monitoring stok fisik barang retail terkini, nilai aset modal, dan estimasi laba.</div>
+                </div>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                    <button type="button" class="btn-select-action" onclick="copyProdukSummary()" title="Salin ringkasan stok barang untuk laporan WhatsApp">📋 Salin Rekap</button>
+                    <button type="button" class="btn-select-action" onclick="fetchBarangFromSupabase(true)" title="Ambil ulang data barang dari Supabase">🔄 Refresh</button>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="stats-summary" id="produkStatsSummary" style="margin-top: 14px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
+                <div class="stat-box">
+                    <div class="stat-num primary" id="statProdukTotalSku">0 SKU</div>
+                    <div class="stat-label">📦 Total Item (SKU)</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num success" id="statProdukTotalStock">0 pcs</div>
+                    <div class="stat-label">📊 Stok Fisik Total</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num warning" id="statProdukTotalCost">Rp 0</div>
+                    <div class="stat-label">🏦 Total Nilai Modal</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num primary" id="statProdukTotalSales">Rp 0</div>
+                    <div class="stat-label">🏷️ Potensi Nilai Jual</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num success" id="statProdukTotalProfit">Rp 0</div>
+                    <div class="stat-label">💎 Potensi Laba Bersih</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num danger" id="statProdukLowStock">0 Item</div>
+                    <div class="stat-label">⚠️ Stok Menipis/Habis</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Card -->
+        <div class="controls-card" style="margin-bottom: 14px;">
+            <!-- Stock Status Filter Chips -->
+            <div class="filter-row" style="margin-bottom: 8px;">
+                <div class="chip active" id="chipProdukAll" onclick="setProdukFilter('all', this)">Semua</div>
+                <div class="chip" onclick="setProdukFilter('low', this)">⚡ Perlu Restok</div>
+                <div class="chip" onclick="setProdukFilter('habis', this)">🔴 Habis (0)</div>
+                <div class="chip" onclick="setProdukFilter('menipis', this)">🟡 Menipis</div>
+                <div class="chip" onclick="setProdukFilter('aman', this)">🟢 Stok Aman</div>
+            </div>
+
+            <!-- Brand Filter Chips (Populated dynamically) -->
+            <div class="filter-row" id="produkBrandChipsRow" style="margin-bottom: 10px;">
+                <div class="chip active" onclick="setProdukBrand('all', this)">Semua Brand</div>
+            </div>
+
+            <!-- Search & Sort Row -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+                <div class="produk-search-box" id="produkSearchBox">
+                    <span style="font-size: 13px; color: var(--text-muted); margin-right: 6px;">🔍</span>
+                    <input type="text" id="produkSearchInput" placeholder="Cari nama barang atau kode SKU..." oninput="onProdukSearchInput()" onkeydown="if(event.key==='Escape') clearProdukSearch()">
+                    <button type="button" class="produk-search-clear" id="btnProdukSearchClear" onclick="clearProdukSearch()" title="Hapus pencarian">✕</button>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                    <button type="button" class="btn-select-action" id="btnToggleProdukViewMode" onclick="toggleProdukViewMode()" title="Ganti mode tampilan: Gabung Varian vs Satuan">
+                        <span id="produkViewModeIcon">🗂️</span> <span id="produkViewModeText">Mode Varian</span>
+                    </button>
+                    <button type="button" class="btn-select-action" id="btnToggleProdukSort" onclick="toggleProdukSort()" title="Ubah urutan daftar barang">
+                        <span id="produkSortIcon">📶</span> <span id="produkSortText">Stok Terkecil</span>
+                    </button>
+                    <span id="produkItemCountBadge" style="font-size: 11px; color: var(--text-muted); font-weight: 700; padding: 0 4px;">0 barang</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Gallery Grid -->
+        <div class="produk-grid" id="produkGridContainer">
+            <!-- Dynamically populated via renderProdukTab() -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="balance-empty-state" id="produkEmptyState" style="display: none;">
+            <div style="font-size: 36px; margin-bottom: 8px;">🛍️</div>
+            <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;" id="produkEmptyTitle">Belum Ada Data Barang di Cloud</div>
+            <p style="color: var(--text-muted); font-size: 12px; max-width: 440px; margin: 0 auto 12px auto;" id="produkEmptyMsg">
+                Buka menu <b>Kelola Barang</b> di HP kasir dan klik tombol <b>☁️ Sync</b> untuk mengunggah katalog &amp; stok barang fisik ke Supabase.
+            </p>
+            <div id="produkSqlGuideBanner" style="display: none; background: rgba(245, 166, 35, 0.1); border: 1px dashed rgba(245, 166, 35, 0.4); border-radius: 10px; padding: 12px; max-width: 480px; margin: 0 auto; text-align: left; font-size: 11.5px; color: var(--text-main);">
+                <div style="font-weight: 700; color: var(--warning); margin-bottom: 4px;">⚠️ Tabel `barang` belum dibuat di Supabase</div>
+                <div>Jalankan script <code>docs/supabase_barang_sync.sql</code> di Supabase Dashboard ➔ SQL Editor ➔ Run.</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div id="toast" class="toast"></div>
 
@@ -2087,6 +2662,62 @@
                 <button type="button" onclick="closeDeviceModal()" style="padding: 7px 14px; background: transparent; border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer;">
                     Tutup
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Image Lightbox Modal -->
+    <div id="productImageModal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closeProductImageModal()">
+        <div class="product-image-modal-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span class="produk-brand-badge" id="modalImgBrand">Brand</span>
+                    <span class="produk-cat-badge" id="modalImgCat">Kategori</span>
+                    <span class="produk-sku-badge" id="modalImgSku">SKU</span>
+                </div>
+                <button type="button" onclick="closeProductImageModal()" title="Tutup" style="background: none; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; padding: 0 4px; line-height: 1;">✕</button>
+            </div>
+            <div class="product-modal-img-wrap" id="modalImgWrap">
+                <img id="modalImgTag" src="" alt="Foto Produk" class="product-modal-full-img">
+                <div id="modalImgNoPhoto" style="display: none; padding: 40px 20px; text-align: center; color: var(--text-muted);">
+                    <div style="font-size: 48px; margin-bottom: 8px;">🛍️</div>
+                    <div style="font-weight: 700; font-size: 14px; color: var(--text-main);">Belum Ada Foto Produk</div>
+                    <div style="font-size: 11.5px; margin-top: 4px;">Tambahkan foto di HP kasir melalui menu Kelola Barang.</div>
+                </div>
+            </div>
+            <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 180px;">
+                    <h3 id="modalImgTitle" style="font-size: 15px; font-weight: 800; color: var(--text-main); margin: 0 0 4px 0;">Nama Produk</h3>
+                    <div id="modalImgStock" style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Stok: 0 pcs</div>
+                </div>
+                <button type="button" onclick="closeProductImageModal()" style="padding: 7px 16px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">Tutup</button>
+            </div>
+
+            <!-- Variant Selector & Table in Modal (if grouped) -->
+            <div id="modalVariantSection" class="modal-variant-section" style="display: none;">
+                <div class="modal-variant-title">
+                    <span>PILIHAN VARIAN (<span id="modalVariantCountText">0</span>)</span>
+                    <span style="font-size: 10px; color: var(--primary); font-weight: 700;">Klik varian untuk lihat foto &amp; harga</span>
+                </div>
+                <div id="modalVariantChips" class="produk-variant-chips-wrap" style="max-height: 80px; margin-bottom: 8px;">
+                    <!-- Variant chips rendered dynamically -->
+                </div>
+                <div class="modal-variant-table-wrap">
+                    <table class="modal-variant-table">
+                        <thead>
+                            <tr>
+                                <th>Varian</th>
+                                <th>SKU</th>
+                                <th style="text-align: right;">Stok</th>
+                                <th style="text-align: right;">Jual</th>
+                                <th style="text-align: right;">Margin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalVariantTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -2246,9 +2877,18 @@
         let supabaseClient = null;
         let allVouchers = [];
         let allDailyReports = new Map(); // device_id -> report_data
+        let allBarang = []; // Produk retail / aksesoris
         let currentOrderFilterType = 'all';
         let currentTab = 'order';
         let hasPromptedInitialDevice = false;
+
+        // State Tab: Produk Retail & Aksesoris
+        let currentProdukFilterType = 'all'; // 'all', 'low', 'habis', 'menipis', 'aman'
+        let selectedProdukBrand = 'all';
+        let currentProdukSearchQuery = '';
+        let produkSortMode = 'stock_asc'; // 'stock_asc', 'name_asc', 'profit_desc'
+        let produkRealtimeChannel = null;
+        let produkViewMode = localStorage.getItem('kspcheck_produk_view_mode') || 'variant'; // 'variant' (default) | 'single'
 
         // State Tab 1: Mode Keuntungan (Modal, Jual, Margin)
         let orderProfitMode = false;
@@ -2285,6 +2925,7 @@
             initTabNavigation();
             if (typeof initMarginSearchEvents === 'function') initMarginSearchEvents();
             if (typeof initBalanceEvents === 'function') initBalanceEvents();
+            if (typeof initProdukEvents === 'function') initProdukEvents();
 
             // ── Prioritas Tertinggi: PIN dari URL ──
             // Mendukung dua format:
@@ -3001,6 +3642,8 @@
                 updateActiveOrderBadge();
                 if (typeof buildMarginFromVouchers === 'function') buildMarginFromVouchers();
                 if (typeof fetchBalancesFromSupabase === 'function') fetchBalancesFromSupabase();
+                // Lazy loading: Hanya muat barang jika pengguna sedang membuka Tab Produk
+                if (currentTab === 'produk' && typeof fetchBarangFromSupabase === 'function') fetchBarangFromSupabase();
                 showToast('✅ Data berhasil diperbarui!');
 
             } catch (err) {
@@ -3020,6 +3663,15 @@
                     devices.set(v.device_id, v.device_name || v.device_id);
                 }
             });
+
+            // Also check barang devices
+            if (Array.isArray(allBarang)) {
+                allBarang.forEach(b => {
+                    if (b.device_id && b.device_id !== 'test_dev' && !b.device_id.startsWith('test_') && !devices.has(b.device_id)) {
+                        devices.set(b.device_id, b.device_name || b.device_id);
+                    }
+                });
+            }
 
             // Also check daily reports devices (hanya perangkat riil dengan laporan produk valid)
             allDailyReports.forEach((val, devId) => {
@@ -3188,6 +3840,7 @@
             renderOrderHistoryList();
             if (typeof buildMarginFromVouchers === 'function') buildMarginFromVouchers();
             if (typeof renderBalanceTab === 'function') renderBalanceTab();
+            if (typeof renderProdukTab === 'function') renderProdukTab();
         }
 
         // 4. Render Dynamic Product List (Tab 1: Order Restock)
@@ -5985,6 +6638,7 @@
                 case 'daily': return '🌙 Laporan Harian - KSP Check';
                 case 'margin': return '💹 Margin Voucher - KSP Check';
                 case 'balance': return '💳 Saldo Realtime - KSP Check';
+                case 'produk': return '🛍️ Stok Produk - KSP Check';
                 case 'order':
                 default:
                     return '🌅 Order Restok - KSP Check';
@@ -6001,6 +6655,7 @@
                     if (cleanT === 'history' || cleanT === 'riwayat' || cleanT === 'hist') return 'history';
                     if (cleanT === 'margin' || cleanT === 'marginvoucher' || cleanT === 'untung') return 'margin';
                     if (cleanT === 'balance' || cleanT === 'saldo' || cleanT === 'ewallet') return 'balance';
+                    if (cleanT === 'produk' || cleanT === 'barang') return 'produk';
                     if (cleanT === 'order') return 'order';
                 }
             } catch (e) {}
@@ -6013,6 +6668,7 @@
                     if (cleanHash === 'history' || cleanHash === 'riwayat' || cleanHash === 'hist') return 'history';
                     if (cleanHash === 'margin' || cleanHash === 'marginvoucher' || cleanHash === 'untung') return 'margin';
                     if (cleanHash === 'balance' || cleanHash === 'saldo' || cleanHash === 'ewallet') return 'balance';
+                    if (cleanHash === 'produk' || cleanHash === 'barang') return 'produk';
                     if (cleanHash === 'order') return 'order';
                     if (cleanHash.includes('tab=')) {
                         const val = cleanHash.split('tab=')[1].split('&')[0];
@@ -6020,6 +6676,7 @@
                         if (val === 'history' || val === 'riwayat' || val === 'hist') return 'history';
                         if (val === 'margin' || val === 'marginvoucher' || val === 'untung') return 'margin';
                         if (val === 'balance' || val === 'saldo' || val === 'ewallet') return 'balance';
+                        if (val === 'produk' || val === 'barang') return 'produk';
                         if (val === 'order') return 'order';
                     }
                 }
@@ -6028,7 +6685,7 @@
             // Fallback: Jika dibuka dari pintasan PWA tanpa parameter (?tab=...), gunakan tab yang terakhir aktif
             try {
                 const lastTab = localStorage.getItem('kspcheck_last_active_tab');
-                if (lastTab && ['order', 'history', 'daily', 'margin', 'balance'].includes(lastTab)) {
+                if (lastTab && ['order', 'history', 'daily', 'margin', 'balance', 'produk'].includes(lastTab)) {
                     return lastTab;
                 }
             } catch (e) {}
@@ -6060,7 +6717,8 @@
                     'history': { manifest: 'manifest-history.json', svg: 'icon-history.svg', png: 'icon-history-192.png' },
                     'daily': { manifest: 'manifest-daily.json', svg: 'icon-daily.svg', png: 'icon-daily-192.png' },
                     'margin': { manifest: 'manifest-margin.json', svg: 'icon-margin.svg', png: 'icon-order-192.png' },
-                    'balance': { manifest: 'manifest-balance.json', svg: 'icon-balance.svg', png: 'icon-order-192.png' }
+                    'balance': { manifest: 'manifest-balance.json', svg: 'icon-balance.svg', png: 'icon-order-192.png' },
+                    'produk': { manifest: 'manifest-order.json', svg: 'icon-order.svg', png: 'icon-order-192.png' }
                 };
 
                 const assets = tabAssets[tab] || tabAssets['order'];
@@ -6098,7 +6756,8 @@
                 'history': 'tabBtnHistory',
                 'daily': 'tabBtnDaily',
                 'margin': 'tabBtnMargin',
-                'balance': 'tabBtnBalance'
+                'balance': 'tabBtnBalance',
+                'produk': 'tabBtnProduk'
             };
 
             Object.entries(tabMap).forEach(([key, btnId]) => {
@@ -6111,6 +6770,7 @@
             const dailyPane = document.getElementById('tabContentDaily');
             const marginPane = document.getElementById('tabContentMargin');
             const balancePane = document.getElementById('tabContentBalance');
+            const produkPane = document.getElementById('tabContentProduk');
             const bottomBar = document.getElementById('bottomBarOrder');
 
             if (orderPane) orderPane.style.display = (tab === 'order') ? 'block' : 'none';
@@ -6118,6 +6778,7 @@
             if (dailyPane) dailyPane.style.display = (tab === 'daily') ? 'block' : 'none';
             if (marginPane) marginPane.style.display = (tab === 'margin') ? 'block' : 'none';
             if (balancePane) balancePane.style.display = (tab === 'balance') ? 'block' : 'none';
+            if (produkPane) produkPane.style.display = (tab === 'produk') ? 'block' : 'none';
             if (bottomBar) bottomBar.style.display = (tab === 'order') ? 'flex' : 'none';
 
             if (tab === 'order') {
@@ -6131,6 +6792,8 @@
                 initMarginTab();
             } else if (tab === 'balance') {
                 initBalanceTab();
+            } else if (tab === 'produk') {
+                initProdukTab();
             }
 
             if (updateUrl) {
@@ -7639,6 +8302,1135 @@
                 console.error('Upsert store_cash exception:', err);
                 showToast('❌ Error: ' + err.message);
             }
+        }
+
+        // ============================================================================
+        // 🛍️ TAB 6: PRODUK RETAIL & AKSESORIS (SINKRONISASI SUPABASE `barang`)
+        // ============================================================================
+
+        function initProdukEvents() {
+            const input = document.getElementById('produkSearchInput');
+            if (input) {
+                input.addEventListener('input', () => {
+                    const box = document.getElementById('produkSearchBox');
+                    if (box) box.classList.toggle('has-val', !!input.value.trim());
+                });
+            }
+            updateProdukViewModeUI();
+        }
+
+        function toggleProdukViewMode() {
+            produkViewMode = (produkViewMode === 'variant') ? 'single' : 'variant';
+            try {
+                localStorage.setItem('kspcheck_produk_view_mode', produkViewMode);
+            } catch(e) {}
+            updateProdukViewModeUI();
+            renderProdukTab();
+            showToast(produkViewMode === 'variant' ? '🗂️ Beralih ke Mode Varian (Dikelompokkan)' : '📑 Beralih ke Mode Satuan (Per SKU)');
+        }
+
+        function updateProdukViewModeUI() {
+            const icon = document.getElementById('produkViewModeIcon');
+            const text = document.getElementById('produkViewModeText');
+            const btn = document.getElementById('btnToggleProdukViewMode');
+            if (icon) icon.textContent = (produkViewMode === 'variant') ? '🗂️' : '📑';
+            if (text) text.textContent = (produkViewMode === 'variant') ? 'Mode Varian' : 'Mode Satuan';
+            if (btn) {
+                btn.classList.toggle('active', produkViewMode === 'variant');
+                btn.title = (produkViewMode === 'variant') ? 'Mode Varian aktif (Klik untuk beralih ke Mode Satuan)' : 'Mode Satuan aktif (Klik untuk gabungkan varian)';
+            }
+        }
+
+        window.produkGroupCache = new Map();
+        window.produkItemCache = new Map();
+
+        function getProductCategoryIcon(catName) {
+            const c = (catName || '').toLowerCase();
+            if (c.includes('kabel') || c.includes('cable') || c.includes('data')) return '🔌';
+            if (c.includes('charger') || c.includes('adaptor') || c.includes('batok')) return '⚡';
+            if (c.includes('headset') || c.includes('earphone') || c.includes('tws') || c.includes('audio')) return '🎧';
+            if (c.includes('powerbank') || c.includes('pb') || c.includes('baterai')) return '🔋';
+            if (c.includes('case') || c.includes('casing') || c.includes('softcase')) return '📱';
+            if (c.includes('holder') || c.includes('stand') || c.includes('tripod')) return '🤳';
+            if (c.includes('tempered') || c.includes('tg') || c.includes('screen') || c.includes('antigores')) return '🛡️';
+            if (c.includes('speaker') || c.includes('sound')) return '🔊';
+            if (c.includes('memori') || c.includes('memory') || c.includes('flashdisk') || c.includes('sd')) return '💾';
+            return '🛍️';
+        }
+
+        function extractProductVariantInfo(item) {
+            const rawName = (item.product_name || '').trim();
+            let text = rawName;
+            const tokens = [];
+
+            // 1. Bracket/Parentheses contents: (Hitam), [Putih], (64GB)
+            text = text.replace(/[\(\[]([^\)\]]+)[\)\]]/g, (match, p1) => {
+                tokens.push(p1.trim());
+                return '';
+            });
+
+            // 2. Storage / Capacity: 16GB, 32 GB, 64GB, 128GB, 256GB, 512GB, 1TB
+            text = text.replace(/\b(\d+(?:\.\d+)?\s*(?:gb|tb|mb))\b/gi, (match) => {
+                tokens.push(match.toUpperCase().replace(/\s+/g, ''));
+                return '';
+            });
+
+            // 3. Length: 1M, 2M, 100CM, 200CM, 30CM
+            text = text.replace(/\b(\d+(?:\.\d+)?\s*(?:meter|m|cm))\b/gi, (match) => {
+                tokens.push(match.toUpperCase().replace(/\s+/g, ''));
+                return '';
+            });
+
+            // 4. Power / Wattage / Battery: 18W, 20W, 25W, 30W, 45W, 65W, 100W, 10000mAh
+            text = text.replace(/\b(\d+(?:\.\d+)?\s*(?:watt|w|mah))\b/gi, (match) => {
+                tokens.push(match.toUpperCase().replace(/\s+/g, ''));
+                return '';
+            });
+
+            // 5. Connectors / Plugs: Type-C, Micro USB, Lightning, OTG
+            text = text.replace(/\b(type[- ]?c|micro(?:[- ]?usb)?|lightning|otg)\b/gi, (match) => {
+                tokens.push(match.toUpperCase().replace(/\s+/g, '-'));
+                return '';
+            });
+
+            // 6. Common Colors
+            text = text.replace(/\b(hitam|putih|merah|biru|hijau|kuning|abu[- ]?abu|silver|emas|gold|rosegold|black|white|red|blue|green|gray|grey|pink|purple|ungu)\b/gi, (match) => {
+                tokens.push(match.charAt(0).toUpperCase() + match.slice(1).toLowerCase());
+                return '';
+            });
+
+            let baseModel = text.replace(/\s{2,}/g, ' ').replace(/^[-_/\s,]+|[-_/\s,]+$/g, '').trim();
+            if (!baseModel || baseModel.length < 3) {
+                baseModel = rawName;
+            }
+
+            let variantLabel = tokens.length > 0 ? tokens.join(' ') : (item.product_code || 'Standar');
+
+            const brand = (item.brand_name || 'Umum').trim();
+            const cat = (item.category_name || 'Umum').trim();
+            const groupKey = brand.toLowerCase() + '__' + cat.toLowerCase() + '__' + baseModel.toLowerCase();
+
+            return {
+                baseModel: baseModel,
+                variantLabel: variantLabel,
+                tokens: tokens,
+                groupKey: groupKey,
+                brand: brand,
+                cat: cat
+            };
+        }
+
+        function selectCardVariant(event, groupId, selectedItemId) {
+            if (event) event.stopPropagation();
+            const group = window.produkGroupCache ? window.produkGroupCache.get(groupId) : null;
+            if (!group) return;
+
+            group.activeItemId = selectedItemId;
+            const variant = group.variants.find(v => v.itemId === selectedItemId) || group.variants[0];
+            const item = variant.item;
+
+            const card = document.getElementById('pcard_' + groupId);
+            if (!card) return;
+
+            // 1. Update chips active state
+            const chips = card.querySelectorAll('.pvc-chip');
+            chips.forEach(c => {
+                const cItemId = c.getAttribute('data-item-id');
+                c.classList.toggle('active', cItemId === selectedItemId);
+            });
+
+            // 2. Update SKU badge
+            const skuEl = card.querySelector('.card-sku-val');
+            if (skuEl) skuEl.textContent = item.product_code || '-';
+
+            // 3. Update stock overlay
+            const stockEl = card.querySelector('.produk-stock-overlay');
+            const vStock = Number(item.stock) || 0;
+            const vMin = Number(item.min_limit) || 3;
+            let sClass = 'status-safe', sLabel = 'AMAN', sDot = '#10B981';
+            if (vStock === 0) { sClass = 'status-danger'; sLabel = 'HABIS'; sDot = '#EF4444'; }
+            else if (vStock <= vMin) { sClass = 'status-warn'; sLabel = 'MENIPIS'; sDot = '#F59E0B'; }
+            if (stockEl) {
+                stockEl.className = `produk-stock-overlay ${sClass}`;
+                stockEl.innerHTML = `<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${sDot};"></span> <span>${vStock} pcs (${sLabel})</span>`;
+            }
+
+            // 4. Update image if variant has photo
+            const imgEl = card.querySelector('.produk-gallery-img');
+            const mediaEl = card.querySelector('.produk-gallery-media');
+            if (item.image_base64 && item.image_base64.startsWith('data:image')) {
+                if (imgEl) {
+                    imgEl.src = item.image_base64;
+                } else if (mediaEl) {
+                    const placeholder = mediaEl.querySelector('.produk-placeholder');
+                    if (placeholder) placeholder.style.display = 'none';
+                    let newImg = document.createElement('img');
+                    newImg.src = item.image_base64;
+                    newImg.className = 'produk-gallery-img';
+                    newImg.alt = item.product_name;
+                    mediaEl.insertBefore(newImg, mediaEl.firstChild);
+                }
+            }
+
+            // 5. Update pricing
+            const cost = Number(item.cost_price) || 0;
+            const sell = Number(item.sell_price) || 0;
+            const margin = sell - cost;
+            const pct = cost > 0 ? Math.round((margin / cost) * 100) : 0;
+
+            const mainPriceEl = card.querySelector('.card-main-price-val');
+            if (mainPriceEl) mainPriceEl.textContent = formatRupiah(sell);
+
+            const costEl = card.querySelector('.card-cost-val');
+            if (costEl) costEl.textContent = `Modal: ${formatRupiah(cost)}`;
+
+            const marginEl = card.querySelector('.card-margin-val');
+            if (marginEl) {
+                marginEl.style.color = margin >= 0 ? 'var(--success)' : 'var(--danger)';
+                marginEl.textContent = `${margin >= 0 ? '+' : ''}${formatRupiah(margin)} (${pct}%)`;
+            }
+        }
+
+        function openVariantGroupModal(groupId, selectedItemId) {
+            const group = window.produkGroupCache ? window.produkGroupCache.get(groupId) : null;
+            if (!group) {
+                if (selectedItemId) openProductImageModalById(selectedItemId);
+                return;
+            }
+
+            const modal = document.getElementById('productImageModal');
+            if (!modal) return;
+
+            modal.setAttribute('data-group-id', groupId);
+            switchModalVariant(groupId, selectedItemId || group.activeItemId || group.variants[0].itemId);
+            modal.style.display = 'flex';
+        }
+
+        function switchModalVariant(groupId, selectedItemId) {
+            const group = window.produkGroupCache ? window.produkGroupCache.get(groupId) : null;
+            if (!group) return;
+
+            group.activeItemId = selectedItemId;
+            const variant = group.variants.find(v => v.itemId === selectedItemId) || group.variants[0];
+            const item = variant.item;
+
+            const title = document.getElementById('modalImgTitle');
+            const brandEl = document.getElementById('modalImgBrand');
+            const catEl = document.getElementById('modalImgCat');
+            const skuEl = document.getElementById('modalImgSku');
+            const stockEl = document.getElementById('modalImgStock');
+            const imgTag = document.getElementById('modalImgTag');
+            const noPhoto = document.getElementById('modalImgNoPhoto');
+
+            const brand = group.brand || 'Umum';
+            const cat = group.cat || 'Umum';
+            const sku = item.product_code || '-';
+            const stock = Number(item.stock) || 0;
+            const sell = Number(item.sell_price) || 0;
+            const cost = Number(item.cost_price) || 0;
+            const margin = sell - cost;
+            const pct = cost > 0 ? Math.round((margin / cost) * 100) : 0;
+
+            if (title) title.textContent = `${group.baseModel} - ${variant.variantLabel}`;
+            if (brandEl) brandEl.textContent = brand;
+            if (catEl) catEl.textContent = cat;
+            if (skuEl) skuEl.textContent = sku !== '-' ? `SKU: ${sku}` : '-';
+            if (stockEl) stockEl.textContent = `Stok: ${stock} pcs • Jual: ${formatRupiah(sell)} (Modal: ${formatRupiah(cost)}, Margin: +${formatRupiah(margin)} / ${pct}%)`;
+
+            let imgSrc = item.image_base64;
+            if (!imgSrc || !imgSrc.startsWith('data:image')) {
+                const photoVariant = group.variants.find(v => v.item.image_base64 && v.item.image_base64.startsWith('data:image'));
+                if (photoVariant) imgSrc = photoVariant.item.image_base64;
+            }
+
+            if (imgSrc && typeof imgSrc === 'string' && imgSrc.startsWith('data:image')) {
+                if (imgTag) {
+                    imgTag.src = imgSrc;
+                    imgTag.style.display = 'block';
+                }
+                if (noPhoto) noPhoto.style.display = 'none';
+            } else {
+                if (imgTag) {
+                    imgTag.src = '';
+                    imgTag.style.display = 'none';
+                }
+                if (noPhoto) noPhoto.style.display = 'block';
+            }
+
+            // Modal Variant Section
+            const variantSec = document.getElementById('modalVariantSection');
+            const variantCount = document.getElementById('modalVariantCountText');
+            const chipsWrap = document.getElementById('modalVariantChips');
+            const tbody = document.getElementById('modalVariantTableBody');
+
+            if (group.variants.length > 1) {
+                if (variantSec) variantSec.style.display = 'block';
+                if (variantCount) variantCount.textContent = group.variants.length;
+
+                // Render modal chips
+                if (chipsWrap) {
+                    chipsWrap.innerHTML = group.variants.map(v => {
+                        const isAct = v.itemId === selectedItemId;
+                        const vStock = Number(v.item.stock) || 0;
+                        return `
+                            <div class="pvc-chip ${isAct ? 'active' : ''}" onclick="switchModalVariant('${groupId}', '${v.itemId}')">
+                                <span>${escapeHtml(v.variantLabel)}</span>
+                                <span class="pvc-stock ${vStock === 0 ? 'empty' : ''}">${vStock}</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                // Render modal table
+                if (tbody) {
+                    tbody.innerHTML = group.variants.map(v => {
+                        const isAct = v.itemId === selectedItemId;
+                        const vStock = Number(v.item.stock) || 0;
+                        const vMin = Number(v.item.min_limit) || 3;
+                        const vSell = Number(v.item.sell_price) || 0;
+                        const vCost = Number(v.item.cost_price) || 0;
+                        const vMargin = vSell - vCost;
+
+                        let sClass = 'stock-aman';
+                        if (vStock === 0) sClass = 'stock-kritis';
+                        else if (vStock <= vMin) sClass = 'stock-restok';
+
+                        return `
+                            <tr class="${isAct ? 'active-row' : ''}" onclick="switchModalVariant('${groupId}', '${v.itemId}')">
+                                <td>
+                                    <b>${escapeHtml(v.variantLabel)}</b>
+                                    <div style="font-size: 10px; color: var(--text-muted);">${escapeHtml(v.item.product_name)}</div>
+                                </td>
+                                <td><span class="produk-sku-badge">${escapeHtml(v.item.product_code || '-')}</span></td>
+                                <td style="text-align: right;"><span class="${sClass}">${vStock} pcs</span></td>
+                                <td style="text-align: right; font-weight: 700; color: var(--primary);">${formatRupiah(vSell)}</td>
+                                <td style="text-align: right; color: ${vMargin >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight: 600;">
+                                    ${vMargin >= 0 ? '+' : ''}${formatRupiah(vMargin)}
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            } else {
+                if (variantSec) variantSec.style.display = 'none';
+            }
+        }
+
+        function openProductImageModalById(itemId) {
+            // Cek jika itemId ada dalam salah satu grup varian
+            if (window.produkGroupCache && window.produkGroupCache.size > 0) {
+                for (const [gId, grp] of window.produkGroupCache.entries()) {
+                    if (grp.variants && grp.variants.some(v => v.itemId === itemId)) {
+                        openVariantGroupModal(gId, itemId);
+                        return;
+                    }
+                }
+            }
+
+            const item = window.produkItemCache ? window.produkItemCache.get(itemId) : null;
+            if (!item) return;
+
+            const modal = document.getElementById('productImageModal');
+            const title = document.getElementById('modalImgTitle');
+            const brandEl = document.getElementById('modalImgBrand');
+            const catEl = document.getElementById('modalImgCat');
+            const skuEl = document.getElementById('modalImgSku');
+            const stockEl = document.getElementById('modalImgStock');
+            const imgTag = document.getElementById('modalImgTag');
+            const noPhoto = document.getElementById('modalImgNoPhoto');
+            const variantSec = document.getElementById('modalVariantSection');
+
+            const name = item.product_name || 'Detail Produk';
+            const brand = item.brand_name || 'Umum';
+            const cat = item.category_name || 'Umum';
+            const sku = item.product_code || '-';
+            const stock = Number(item.stock) || 0;
+            const imgSrc = item.image_base64;
+
+            if (title) title.textContent = name;
+            if (brandEl) brandEl.textContent = brand;
+            if (catEl) catEl.textContent = cat;
+            if (skuEl) skuEl.textContent = sku !== '-' ? `SKU: ${sku}` : '-';
+            if (stockEl) stockEl.textContent = `Stok Fisik: ${stock} pcs • Jual: ${formatRupiah(item.sell_price || 0)}`;
+
+            if (variantSec) variantSec.style.display = 'none';
+
+            if (imgSrc && typeof imgSrc === 'string' && imgSrc.startsWith('data:image')) {
+                if (imgTag) {
+                    imgTag.src = imgSrc;
+                    imgTag.style.display = 'block';
+                }
+                if (noPhoto) noPhoto.style.display = 'none';
+            } else {
+                if (imgTag) {
+                    imgTag.src = '';
+                    imgTag.style.display = 'none';
+                }
+                if (noPhoto) noPhoto.style.display = 'block';
+            }
+
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeProductImageModal() {
+            const modal = document.getElementById('productImageModal');
+            const variantSec = document.getElementById('modalVariantSection');
+            if (modal) modal.style.display = 'none';
+            if (variantSec) variantSec.style.display = 'none';
+        }
+
+        function initProdukTab() {
+            subscribeProdukRealtime();
+            // Lazy loading: Hanya memuat data galeri produk saat pengguna pertama kali membuka Tab Produk
+            if (!allBarang || allBarang.length === 0) {
+                const grid = document.getElementById('produkGridContainer');
+                if (grid) {
+                    grid.innerHTML = `
+                        <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                            <div class="balance-live-dot" style="width: 14px; height: 14px; display: inline-block; background: #8B5CF6; margin-bottom: 12px; box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);"></div>
+                            <div style="font-weight: 700; font-size: 14px; color: var(--text-main);">Memuat Galeri Produk...</div>
+                            <div style="font-size: 12px; margin-top: 4px;">Mengunduh katalog, stok, dan foto barang dari cloud</div>
+                        </div>
+                    `;
+                }
+                fetchBarangFromSupabase();
+            } else {
+                renderProdukTab();
+            }
+        }
+
+        async function fetchBarangFromSupabase(forceNotify = false) {
+            if (!supabaseClient) {
+                const empty = document.getElementById('produkEmptyState');
+                if (empty) empty.style.display = 'block';
+                return;
+            }
+
+            try {
+                const sub = document.getElementById('produkSubtitle');
+                if (sub && currentTab === 'produk') {
+                    sub.textContent = 'Mengambil data stok barang retail dari cloud...';
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('barang')
+                    .select('*')
+                    .order('brand_name', { ascending: true })
+                    .order('product_name', { ascending: true });
+
+                if (error) {
+                    console.warn('Supabase fetch barang error:', error);
+                    // Deteksi jika tabel belum dibuat di database Supabase
+                    const sqlBanner = document.getElementById('produkSqlGuideBanner');
+                    if (sqlBanner && (error.code === '42P01' || (error.message && error.message.toLowerCase().includes('barang')))) {
+                        sqlBanner.style.display = 'block';
+                        const empty = document.getElementById('produkEmptyState');
+                        if (empty) empty.style.display = 'block';
+                    }
+                    if (forceNotify) showToast('⚠️ Gagal memuat barang: ' + error.message);
+                    return;
+                }
+
+                allBarang = data || [];
+
+                const sqlBanner = document.getElementById('produkSqlGuideBanner');
+                if (sqlBanner) sqlBanner.style.display = 'none';
+
+                updateProdukBrandChips();
+                renderProdukTab();
+
+                if (sub) {
+                    const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    sub.textContent = `Sinkron terakhir: ${timeStr} • ${allBarang.length} produk fisik`;
+                }
+
+                if (forceNotify) {
+                    showToast(`✅ ${allBarang.length} data barang berhasil dimuat!`);
+                }
+            } catch (err) {
+                console.warn('Gagal memuat barang:', err);
+                if (forceNotify) showToast('❌ Error: ' + err.message);
+            }
+        }
+
+        function subscribeProdukRealtime() {
+            if (!supabaseClient || produkRealtimeChannel) return;
+
+            try {
+                produkRealtimeChannel = supabaseClient.channel('realtime_barang')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'barang' }, payload => {
+                        handleProdukRealtimeChange(payload);
+                    })
+                    .subscribe((status) => {
+                        updateProdukLiveBadge(status === 'SUBSCRIBED');
+                    });
+            } catch (e) {
+                console.warn('Produk realtime subscription error:', e);
+            }
+        }
+
+        function updateProdukLiveBadge(isLive) {
+            const badge = document.getElementById('produkLiveBadge');
+            const statusTxt = document.getElementById('produkLiveStatusText');
+            if (badge && statusTxt) {
+                if (isLive) {
+                    badge.style.display = 'inline-flex';
+                    statusTxt.textContent = 'Realtime Active';
+                } else {
+                    statusTxt.textContent = 'Reconnecting...';
+                }
+            }
+        }
+
+        function handleProdukRealtimeChange(payload) {
+            const { eventType, new: newRow, old: oldRow } = payload;
+
+            if (eventType === 'DELETE') {
+                allBarang = allBarang.filter(item => item.id !== oldRow.id && item.product_code !== oldRow.product_code);
+                updateProdukBrandChips();
+                renderProdukTab();
+                showToast('🗑️ 1 barang dihapus dari katalog');
+                return;
+            }
+
+            if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                const idx = allBarang.findIndex(item =>
+                    (item.id && item.id === newRow.id) ||
+                    (item.product_code && item.product_code === newRow.product_code) ||
+                    (item.device_id === newRow.device_id && item.product_id === newRow.product_id)
+                );
+
+                if (idx >= 0) {
+                    allBarang[idx] = newRow;
+                } else {
+                    allBarang.push(newRow);
+                }
+
+                updateProdukBrandChips();
+                renderProdukTab(newRow.id || (newRow.device_id + '_' + newRow.product_id));
+
+                const sub = document.getElementById('produkSubtitle');
+                if (sub) {
+                    const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    sub.textContent = `Update instan: ${timeStr} • ${allBarang.length} produk fisik`;
+                }
+
+                const pName = newRow.product_name || 'Barang';
+                showToast(`⚡ Stok ${escapeHtml(pName)} diperbarui: ${newRow.stock || 0} pcs`);
+            }
+        }
+
+        function updateProdukBrandChips() {
+            const container = document.getElementById('produkBrandChipsRow');
+            if (!container) return;
+
+            const brands = new Set();
+            (allBarang || []).forEach(b => {
+                const br = (b.brand_name || 'Umum').trim();
+                if (br) brands.add(br);
+            });
+
+            const sortedBrands = Array.from(brands).sort((a, b) => a.localeCompare(b));
+
+            let html = `<div class="chip ${selectedProdukBrand === 'all' ? 'active' : ''}" onclick="setProdukBrand('all', this)">Semua Brand (${allBarang.length})</div>`;
+            sortedBrands.forEach(br => {
+                const count = allBarang.filter(b => (b.brand_name || 'Umum').trim() === br).length;
+                const isActive = (selectedProdukBrand === br);
+                html += `<div class="chip ${isActive ? 'active' : ''}" onclick="setProdukBrand('${escapeHtml(br)}', this)">${escapeHtml(br)} (${count})</div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function setProdukFilter(type, elem) {
+            currentProdukFilterType = type;
+            if (elem && elem.parentElement) {
+                elem.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                elem.classList.add('active');
+            }
+            renderProdukTab();
+        }
+
+        function setProdukBrand(brand, elem) {
+            selectedProdukBrand = brand;
+            if (elem && elem.parentElement) {
+                elem.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                elem.classList.add('active');
+            }
+            renderProdukTab();
+        }
+
+        function onProdukSearchInput() {
+            const input = document.getElementById('produkSearchInput');
+            const box = document.getElementById('produkSearchBox');
+            currentProdukSearchQuery = (input ? input.value : '').toLowerCase().trim();
+            if (box) box.classList.toggle('has-val', !!currentProdukSearchQuery);
+            renderProdukTab();
+        }
+
+        function clearProdukSearch() {
+            const input = document.getElementById('produkSearchInput');
+            const box = document.getElementById('produkSearchBox');
+            if (input) input.value = '';
+            if (box) box.classList.remove('has-val');
+            currentProdukSearchQuery = '';
+            renderProdukTab();
+        }
+
+        function toggleProdukSort() {
+            const sortModes = [
+                { key: 'stock_asc', label: 'Stok Terkecil', icon: '📶' },
+                { key: 'stock_desc', label: 'Stok Terbanyak', icon: '📉' },
+                { key: 'name_asc', label: 'Nama A-Z', icon: '🔤' },
+                { key: 'profit_desc', label: 'Laba Tertinggi', icon: '💎' }
+            ];
+
+            const curIdx = sortModes.findIndex(m => m.key === produkSortMode);
+            const nextMode = sortModes[(curIdx + 1) % sortModes.length];
+            produkSortMode = nextMode.key;
+
+            const iconEl = document.getElementById('produkSortIcon');
+            const textEl = document.getElementById('produkSortText');
+            if (iconEl) iconEl.textContent = nextMode.icon;
+            if (textEl) textEl.textContent = nextMode.label;
+
+            renderProdukTab();
+        }
+
+        function renderProdukTab(highlightId = null) {
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const grid = document.getElementById('produkGridContainer');
+            const emptyState = document.getElementById('produkEmptyState');
+            const badge = document.getElementById('produkItemCountBadge');
+
+            if (!allBarang || allBarang.length === 0) {
+                if (grid) grid.innerHTML = '';
+                if (emptyState) emptyState.style.display = 'block';
+                if (badge) badge.textContent = '0 barang';
+                updateProdukStats([]);
+                return;
+            }
+
+            if (emptyState) emptyState.style.display = 'none';
+
+            // Filter berdasarkan perangkat kasir jika dipilih
+            const baseList = (selectedDevice === 'all')
+                ? allBarang
+                : allBarang.filter(b => b.device_id === selectedDevice);
+
+            // Hitung statistik keseluruhan untuk baseList
+            updateProdukStats(baseList);
+
+            // Terapkan filter Brand, Status Stok, dan Kata Kunci Pencarian
+            let filtered = baseList.filter(item => {
+                // 1. Filter Brand
+                if (selectedProdukBrand !== 'all') {
+                    if ((item.brand_name || 'Umum').trim() !== selectedProdukBrand) return false;
+                }
+
+                // 2. Filter Status Stok
+                const stock = Number(item.stock) || 0;
+                const minLimit = Number(item.min_limit) || 3;
+                if (currentProdukFilterType === 'low' && stock > minLimit) return false;
+                if (currentProdukFilterType === 'habis' && stock > 0) return false;
+                if (currentProdukFilterType === 'menipis' && (stock === 0 || stock > minLimit)) return false;
+                if (currentProdukFilterType === 'aman' && stock <= minLimit) return false;
+
+                // 3. Pencarian Teks
+                if (currentProdukSearchQuery) {
+                    const q = currentProdukSearchQuery;
+                    const name = (item.product_name || '').toLowerCase();
+                    const code = (item.product_code || '').toLowerCase();
+                    const brand = (item.brand_name || '').toLowerCase();
+                    const cat = (item.category_name || '').toLowerCase();
+                    if (!name.includes(q) && !code.includes(q) && !brand.includes(q) && !cat.includes(q)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                if (badge) badge.textContent = '0 barang';
+                if (grid) {
+                    grid.innerHTML = `
+                        <div style="grid-column: 1/-1; text-align: center; padding: 48px 20px; color: var(--text-muted);">
+                            <div style="font-size: 36px; margin-bottom: 8px;">🔍</div>
+                            <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Tidak Ada Barang Yang Cocok</div>
+                            <div style="font-size: 12px;">Coba ubah filter status, pilihan brand, atau hapus kata kunci pencarian.</div>
+                        </div>
+                    `;
+                }
+                return;
+            }
+
+            window.produkItemCache = new Map();
+            filtered.forEach(it => {
+                const id = String(it.id || (it.device_id + '_' + it.product_id));
+                window.produkItemCache.set(id, it);
+            });
+
+            // ==========================================
+            // MODE A: GROUPED VARIANT VIEW (DEFAULT)
+            // ==========================================
+            if (produkViewMode === 'variant') {
+                const groupsMap = new Map();
+                let grpIdCounter = 1;
+
+                filtered.forEach(item => {
+                    const itemId = String(item.id || (item.device_id + '_' + item.product_id));
+                    const info = extractProductVariantInfo(item);
+                    const k = info.groupKey;
+
+                    if (!groupsMap.has(k)) {
+                        groupsMap.set(k, {
+                            groupId: 'g_' + grpIdCounter++,
+                            groupKey: k,
+                            baseModel: info.baseModel,
+                            brand: info.brand,
+                            cat: info.cat,
+                            device_id: item.device_id,
+                            device_name: item.device_name,
+                            variants: [],
+                            totalStock: 0,
+                            minSell: Infinity,
+                            maxSell: -Infinity,
+                            minCost: Infinity,
+                            maxCost: -Infinity,
+                            totalAssetJual: 0,
+                            totalAssetModal: 0,
+                            activeItemId: itemId,
+                            hasImage: false,
+                            representativeItem: item,
+                            last_updated: item.updated_at || ''
+                        });
+                    }
+
+                    const g = groupsMap.get(k);
+                    const stock = Number(item.stock) || 0;
+                    const sell = Number(item.sell_price) || 0;
+                    const cost = Number(item.cost_price) || 0;
+
+                    g.variants.push({
+                        item: item,
+                        variantLabel: info.variantLabel,
+                        itemId: itemId
+                    });
+
+                    g.totalStock += stock;
+                    if (sell < g.minSell) g.minSell = sell;
+                    if (sell > g.maxSell) g.maxSell = sell;
+                    if (cost < g.minCost) g.minCost = cost;
+                    if (cost > g.maxCost) g.maxCost = cost;
+                    g.totalAssetJual += (stock * sell);
+                    g.totalAssetModal += (stock * cost);
+
+                    if (item.image_base64 && item.image_base64.startsWith('data:image')) {
+                        g.hasImage = true;
+                        g.representativeItem = item;
+                        g.activeItemId = itemId;
+                    }
+                });
+
+                const groupList = Array.from(groupsMap.values());
+
+                // Urutkan grup
+                groupList.sort((a, b) => {
+                    const stockA = a.totalStock;
+                    const stockB = b.totalStock;
+                    const profitA = a.totalAssetJual - a.totalAssetModal;
+                    const profitB = b.totalAssetJual - b.totalAssetModal;
+
+                    if (produkSortMode === 'stock_asc') {
+                        if (stockA !== stockB) return stockA - stockB;
+                        return a.baseModel.localeCompare(b.baseModel);
+                    } else if (produkSortMode === 'stock_desc') {
+                        if (stockA !== stockB) return stockB - stockA;
+                        return a.baseModel.localeCompare(b.baseModel);
+                    } else if (produkSortMode === 'name_asc') {
+                        return a.baseModel.localeCompare(b.baseModel);
+                    } else if (produkSortMode === 'profit_desc') {
+                        if (profitA !== profitB) return profitB - profitA;
+                        return a.baseModel.localeCompare(b.baseModel);
+                    }
+                    return 0;
+                });
+
+                window.produkGroupCache = new Map();
+                groupList.forEach(g => window.produkGroupCache.set(g.groupId, g));
+
+                if (badge) {
+                    if (groupList.length === filtered.length) {
+                        badge.textContent = `${groupList.length} barang`;
+                    } else {
+                        badge.textContent = `${groupList.length} produk (${filtered.length} varian SKU)`;
+                    }
+                }
+
+                let cardsHtml = '';
+                groupList.forEach(grp => {
+                    const activeVariant = grp.variants.find(v => v.itemId === grp.activeItemId) || grp.variants[0];
+                    const activeItem = activeVariant.item;
+
+                    const stock = grp.totalStock;
+                    const minLimit = (grp.variants.length > 1) ? (grp.variants.length * 2) : (Number(activeItem.min_limit) || 3);
+
+                    let statusClass = 'status-safe';
+                    let statusLabel = 'AMAN';
+                    let statusDotColor = '#10B981';
+                    if (stock === 0) {
+                        statusClass = 'status-danger';
+                        statusLabel = 'HABIS';
+                        statusDotColor = '#EF4444';
+                    } else if (stock <= minLimit) {
+                        statusClass = 'status-warn';
+                        statusLabel = 'MENIPIS';
+                        statusDotColor = '#F59E0B';
+                    }
+
+                    const brand = escapeHtml(grp.brand || 'Umum');
+                    const cat = escapeHtml(grp.cat || 'Umum');
+                    const baseName = escapeHtml(grp.baseModel || 'Produk');
+                    const devLabel = escapeHtml(grp.device_name || grp.device_id || 'Kasir');
+
+                    // Photo: use activeItem if has photo, or representativeItem
+                    let photoSrc = (activeItem.image_base64 && activeItem.image_base64.startsWith('data:image'))
+                        ? activeItem.image_base64
+                        : (grp.representativeItem.image_base64 && grp.representativeItem.image_base64.startsWith('data:image') ? grp.representativeItem.image_base64 : '');
+                    const hasImg = !!photoSrc;
+                    const catIcon = getProductCategoryIcon(grp.cat);
+
+                    const isHighlight = highlightId && grp.variants.some(v => v.itemId === highlightId);
+
+                    const cost = Number(activeItem.cost_price) || 0;
+                    const sell = Number(activeItem.sell_price) || 0;
+                    const margin = sell - cost;
+                    const pct = cost > 0 ? Math.round((margin / cost) * 100) : 0;
+
+                    const hasPriceRange = (grp.variants.length > 1 && grp.minSell !== grp.maxSell);
+                    const priceRangeStr = hasPriceRange ? `${formatRupiah(grp.minSell)} – ${formatRupiah(grp.maxSell)}` : formatRupiah(grp.minSell);
+
+                    cardsHtml += `
+                        <div class="produk-card ${isHighlight ? 'pulse-highlight' : ''}" id="pcard_${grp.groupId}" data-group-id="${grp.groupId}">
+                            <!-- Media Header (Gallery Image / Placeholder) -->
+                            <div class="produk-gallery-media" onclick="openVariantGroupModal('${grp.groupId}', '${activeVariant.itemId}')" title="Klik untuk lihat rincian & galeri">
+                                ${hasImg ? `
+                                    <img src="${photoSrc}" loading="lazy" class="produk-gallery-img" alt="${baseName}">
+                                    <div class="produk-zoom-overlay">🔍</div>
+                                ` : `
+                                    <div class="produk-placeholder">
+                                        <span class="produk-placeholder-icon">${catIcon}</span>
+                                        <span class="produk-placeholder-text">KSP Retail</span>
+                                    </div>
+                                `}
+                                <div class="produk-brand-overlay">${brand}</div>
+                                ${grp.variants.length > 1 ? `
+                                    <div class="produk-variant-badge-overlay">🗂️ ${grp.variants.length} Varian</div>
+                                ` : ''}
+                                <div class="produk-stock-overlay ${statusClass}">
+                                    <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: ${statusDotColor};"></span>
+                                    <span>${stock} pcs (${statusLabel})</span>
+                                </div>
+                            </div>
+
+                            <!-- Card Body -->
+                            <div class="produk-card-body">
+                                <div style="display: flex; gap: 4px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                                    <div style="display: flex; align-items: center; gap: 4px;">
+                                        <span class="produk-cat-badge">${cat}</span>
+                                        ${grp.variants.length > 1 ? `<span class="produk-variant-count-badge">${grp.variants.length} SKU</span>` : ''}
+                                    </div>
+                                    <span class="produk-sku-badge card-sku-val">${escapeHtml(activeItem.product_code || '-')}</span>
+                                </div>
+
+                                <div class="produk-name" title="${baseName}" onclick="openVariantGroupModal('${grp.groupId}', '${activeVariant.itemId}')" style="cursor: pointer;">
+                                    ${baseName}
+                                </div>
+
+                                <!-- Variant Chips Selector on Card -->
+                                ${grp.variants.length > 1 ? `
+                                    <div class="produk-variant-chips-wrap">
+                                        ${grp.variants.map(v => {
+                                            const isAct = (v.itemId === activeVariant.itemId);
+                                            const vStock = Number(v.item.stock) || 0;
+                                            return `
+                                                <div class="pvc-chip ${isAct ? 'active' : ''}" 
+                                                     data-item-id="${escapeHtml(v.itemId)}"
+                                                     onclick="selectCardVariant(event, '${grp.groupId}', '${escapeHtml(v.itemId)}')" 
+                                                     title="${escapeHtml(v.item.product_name)}: ${vStock} pcs • ${formatRupiah(v.item.sell_price)}">
+                                                    <span>${escapeHtml(v.variantLabel)}</span>
+                                                    <span class="pvc-stock ${vStock === 0 ? 'empty' : ''}">${vStock}</span>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                ` : ''}
+
+                                <!-- Pricing -->
+                                <div class="produk-pricing">
+                                    <div class="produk-price-row main-price">
+                                        <span style="font-size: 11px; font-weight: 600; color: var(--text-muted);">Jual:</span>
+                                        <span class="card-main-price-val">${grp.variants.length > 1 ? priceRangeStr : formatRupiah(sell)}</span>
+                                    </div>
+                                    <div class="produk-price-row">
+                                        <span class="card-cost-val">Modal: ${formatRupiah(cost)}</span>
+                                        <span class="card-margin-val" style="font-weight: 700; color: ${margin >= 0 ? 'var(--success)' : 'var(--danger)'};">
+                                            ${margin >= 0 ? '+' : ''}${formatRupiah(margin)} (${pct}%)
+                                        </span>
+                                    </div>
+                                    <div class="produk-price-row" style="border-top: 1px dashed var(--card-border); padding-top: 3px; margin-top: 2px;">
+                                        <span>Total Aset Jual:</span>
+                                        <span style="font-weight: 700; color: var(--primary);">${formatRupiah(grp.totalAssetJual)}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Footer -->
+                                <div class="produk-audit-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span>📱 ${devLabel}</span>
+                                    <span style="color: var(--primary); font-weight: 700; cursor: pointer;" onclick="openVariantGroupModal('${grp.groupId}', '${activeVariant.itemId}')">
+                                        ${grp.variants.length > 1 ? 'Lihat Varian ➔' : 'Rincian ➔'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                if (grid) grid.innerHTML = cardsHtml;
+                return;
+            }
+
+            // ==========================================
+            // MODE B: SINGLE SKU VIEW (MODE SATUAN)
+            // ==========================================
+            filtered.sort((a, b) => {
+                const stockA = Number(a.stock) || 0;
+                const stockB = Number(b.stock) || 0;
+                const costA = Number(a.cost_price) || 0;
+                const costB = Number(b.cost_price) || 0;
+                const sellA = Number(a.sell_price) || 0;
+                const sellB = Number(b.sell_price) || 0;
+                const profitA = sellA - costA;
+                const profitB = sellB - costB;
+
+                if (produkSortMode === 'stock_asc') {
+                    if (stockA !== stockB) return stockA - stockB;
+                    return (a.product_name || '').localeCompare(b.product_name || '');
+                } else if (produkSortMode === 'stock_desc') {
+                    if (stockA !== stockB) return stockB - stockA;
+                    return (a.product_name || '').localeCompare(b.product_name || '');
+                } else if (produkSortMode === 'name_asc') {
+                    return (a.product_name || '').localeCompare(b.product_name || '');
+                } else if (produkSortMode === 'profit_desc') {
+                    if (profitA !== profitB) return profitB - profitA;
+                    return (a.product_name || '').localeCompare(b.product_name || '');
+                }
+                return 0;
+            });
+
+            if (badge) badge.textContent = `${filtered.length} barang`;
+
+            let cardsHtml = '';
+            filtered.forEach(item => {
+                const stock = Number(item.stock) || 0;
+                const minLimit = Number(item.min_limit) || 3;
+                const cost = Number(item.cost_price) || 0;
+                const sell = Number(item.sell_price) || 0;
+                const margin = sell - cost;
+                const pct = cost > 0 ? Math.round((margin / cost) * 100) : 0;
+                const totalAssetJual = stock * sell;
+
+                let statusClass = 'status-safe';
+                let statusLabel = 'AMAN';
+                let statusDotColor = '#10B981';
+                if (stock === 0) {
+                    statusClass = 'status-danger';
+                    statusLabel = 'HABIS';
+                    statusDotColor = '#EF4444';
+                } else if (stock <= minLimit) {
+                    statusClass = 'status-warn';
+                    statusLabel = 'MENIPIS';
+                    statusDotColor = '#F59E0B';
+                }
+
+                const brand = escapeHtml(item.brand_name || 'Umum');
+                const cat = escapeHtml(item.category_name || 'Umum');
+                const code = escapeHtml(item.product_code || '-');
+                const name = escapeHtml(item.product_name || 'Produk');
+                const devLabel = escapeHtml(item.device_name || item.device_id || 'Kasir');
+                const itemId = String(item.id || (item.device_id + '_' + item.product_id));
+                const isHighlight = (highlightId && highlightId === itemId);
+
+                const hasImg = item.image_base64 && typeof item.image_base64 === 'string' && item.image_base64.startsWith('data:image');
+                const catIcon = getProductCategoryIcon(item.category_name);
+
+                let updatedStr = '';
+                if (item.updated_at) {
+                    try {
+                        const d = new Date(item.updated_at);
+                        updatedStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + ' ' +
+                                     d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    } catch(e) {}
+                }
+
+                cardsHtml += `
+                    <div class="produk-card ${isHighlight ? 'pulse-highlight' : ''}" data-item-id="${escapeHtml(itemId)}">
+                        <!-- Media Header (Gallery Image / Placeholder) -->
+                        <div class="produk-gallery-media" onclick="openProductImageModalById('${escapeHtml(itemId)}')" title="Klik untuk lihat foto lebih besar">
+                            ${hasImg ? `
+                                <img src="${item.image_base64}" loading="lazy" class="produk-gallery-img" alt="${name}">
+                                <div class="produk-zoom-overlay">🔍</div>
+                            ` : `
+                                <div class="produk-placeholder">
+                                    <span class="produk-placeholder-icon">${catIcon}</span>
+                                    <span class="produk-placeholder-text">KSP Retail</span>
+                                </div>
+                            `}
+                            <div class="produk-brand-overlay">${brand}</div>
+                            <div class="produk-stock-overlay ${statusClass}">
+                                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: ${statusDotColor};"></span>
+                                <span>${stock} pcs (${statusLabel})</span>
+                            </div>
+                        </div>
+
+                        <!-- Card Body (Details, Prices, Valuation) -->
+                        <div class="produk-card-body">
+                            <div style="display: flex; gap: 4px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                                <span class="produk-cat-badge">${cat}</span>
+                                <span class="produk-sku-badge">${code}</span>
+                            </div>
+                            <div class="produk-name" title="${name}">${name}</div>
+                            
+                            <div class="produk-pricing">
+                                <div class="produk-price-row main-price">
+                                    <span style="font-size: 11px; font-weight: 600; color: var(--text-muted);">Jual:</span>
+                                    <span>${formatRupiah(sell)}</span>
+                                </div>
+                                <div class="produk-price-row">
+                                    <span>Modal: ${formatRupiah(cost)}</span>
+                                    <span style="font-weight: 700; color: ${margin >= 0 ? 'var(--success)' : 'var(--danger)'};">
+                                        ${margin >= 0 ? '+' : ''}${formatRupiah(margin)} (${pct}%)
+                                    </span>
+                                </div>
+                                <div class="produk-price-row" style="border-top: 1px dashed var(--card-border); padding-top: 3px; margin-top: 2px;">
+                                    <span>Total Aset Jual:</span>
+                                    <span style="font-weight: 700; color: var(--primary);">${formatRupiah(totalAssetJual)}</span>
+                                </div>
+                            </div>
+
+                            <div class="produk-audit-footer" title="${item.last_change ? escapeHtml(item.last_change) : ''}">
+                                <span>📱 ${devLabel}</span>
+                                ${updatedStr ? ` • <span>🕒 ${updatedStr}</span>` : ''}
+                                ${item.last_change ? ` • <span>${escapeHtml(item.last_change)}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (grid) grid.innerHTML = cardsHtml;
+        }
+
+        function updateProdukStats(items) {
+            let totalSku = (items || []).length;
+            let totalStock = 0;
+            let totalCost = 0;
+            let totalSales = 0;
+            let lowStockCount = 0;
+
+            (items || []).forEach(b => {
+                const s = Number(b.stock) || 0;
+                const c = Number(b.cost_price) || 0;
+                const p = Number(b.sell_price) || 0;
+                const min = Number(b.min_limit) || 3;
+
+                totalStock += s;
+                totalCost += (s * c);
+                totalSales += (s * p);
+                if (s <= min) lowStockCount++;
+            });
+
+            const totalProfit = totalSales - totalCost;
+
+            const elSku = document.getElementById('statProdukTotalSku');
+            const elStock = document.getElementById('statProdukTotalStock');
+            const elCost = document.getElementById('statProdukTotalCost');
+            const elSales = document.getElementById('statProdukTotalSales');
+            const elProfit = document.getElementById('statProdukTotalProfit');
+            const elLow = document.getElementById('statProdukLowStock');
+
+            if (elSku) elSku.textContent = `${totalSku} SKU`;
+            if (elStock) elStock.textContent = `${totalStock.toLocaleString('id-ID')} pcs`;
+            if (elCost) elCost.textContent = formatRupiah(totalCost);
+            if (elSales) elSales.textContent = formatRupiah(totalSales);
+            if (elProfit) elProfit.textContent = formatRupiah(totalProfit);
+            if (elLow) elLow.textContent = `${lowStockCount} Item`;
+        }
+
+        function copyProdukSummary() {
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const baseList = (selectedDevice === 'all')
+                ? (allBarang || [])
+                : (allBarang || []).filter(b => b.device_id === selectedDevice);
+
+            if (baseList.length === 0) {
+                showToast('⚠️ Belum ada data produk untuk disalin');
+                return;
+            }
+
+            let totalStock = 0;
+            let totalCost = 0;
+            let totalSales = 0;
+            const lowStockItems = [];
+
+            baseList.forEach(b => {
+                const s = Number(b.stock) || 0;
+                const c = Number(b.cost_price) || 0;
+                const p = Number(b.sell_price) || 0;
+                const min = Number(b.min_limit) || 3;
+
+                totalStock += s;
+                totalCost += (s * c);
+                totalSales += (s * p);
+                if (s <= min) {
+                    lowStockItems.push({
+                        name: b.product_name,
+                        brand: b.brand_name || 'Umum',
+                        stock: s,
+                        min: min
+                    });
+                }
+            });
+
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+            let sb = '';
+            sb += `🛍️ *REKAP STOK BARANG & AKSESORIS*\n`;
+            sb += `📅 ${dateStr} • ⏰ ${timeStr} WIB\n`;
+            if (selectedDevice !== 'all') {
+                const devName = document.getElementById('navDeviceFilter')?.selectedOptions?.[0]?.textContent || selectedDevice;
+                sb += `📱 Perangkat: ${devName.replace('📱 ', '')}\n`;
+            }
+            sb += `------------------------------------\n`;
+            sb += `📦 Total Item: *${baseList.length} SKU*\n`;
+            sb += `📊 Total Stok Fisik: *${totalStock.toLocaleString('id-ID')} pcs*\n`;
+            sb += `🏦 Nilai Aset Modal: *${formatRupiah(totalCost)}*\n`;
+            sb += `🏷️ Potensi Nilai Jual: *${formatRupiah(totalSales)}*\n`;
+            sb += `💎 Estimasi Laba: *${formatRupiah(totalSales - totalCost)}*\n`;
+            sb += `⚠️ Perlu Restok / Habis: *${lowStockItems.length} item*\n`;
+
+            if (lowStockItems.length > 0) {
+                sb += `\n🚨 *ITEM PERLU RESTOK SEGERA:*\n`;
+                lowStockItems.forEach((it, idx) => {
+                    const tag = it.stock === 0 ? '🔴 HABIS' : '🟡 MENIPIS';
+                    sb += `${idx + 1}. [${it.brand}] ${it.name}\n   └ Sisa: *${it.stock} pcs* (${tag}, min: ${it.min})\n`;
+                });
+            }
+
+            copyToClipboard(sb, '📋 Rekap stok barang berhasil disalin untuk WhatsApp!');
         }
     </script>
 </body>
