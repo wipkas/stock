@@ -1211,37 +1211,57 @@
         }
         .balance-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 14px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
             margin-bottom: 20px;
         }
-        @media (max-width: 540px) {
+        @media (max-width: 600px) {
             .balance-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
             }
         }
         .balance-item-card {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: 14px;
-            padding: 16px 18px;
+            padding: 15px 12px 16px 12px;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            text-align: center;
             justify-content: space-between;
-            min-height: 105px;
+            min-height: 140px;
             transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.2s;
             position: relative;
             overflow: hidden;
             cursor: pointer;
             user-select: none;
+            gap: 8px;
+        }
+        /* Garis tipis berwarna sesuai app di pinggir bawah card */
+        .balance-item-card::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3.5px;
+            background: var(--app-amount-color, var(--primary));
+            border-radius: 0 0 14px 14px;
+            transition: height 0.15s ease, box-shadow 0.2s ease;
         }
         .balance-item-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-            border-color: var(--primary);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+            border-color: var(--app-amount-color, var(--primary));
+        }
+        .balance-item-card:hover::after {
+            height: 4.5px;
+            box-shadow: 0 0 10px var(--app-amount-color, var(--primary));
         }
         .balance-item-card:active {
-            transform: translateY(-1px) scale(0.99);
+            transform: translateY(-1px) scale(0.98);
         }
         @keyframes balanceCardFlash {
             0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.8); border-color: #10B981; }
@@ -1251,22 +1271,17 @@
         .balance-item-card.realtime-flash {
             animation: balanceCardFlash 1.6s ease;
         }
-        .balance-card-brand-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 0;
-        }
+        /* 1. Ikon App (Paling Atas) */
         .balance-app-icon-frame {
-            width: 42px;
-            height: 42px;
-            border-radius: 11px;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
             overflow: hidden;
             flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
             background: var(--bg-color, #1E293B);
             position: relative;
         }
@@ -1274,7 +1289,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 11px;
+            border-radius: 12px;
             display: block;
         }
         .balance-app-icon-frame svg {
@@ -1282,54 +1297,177 @@
             height: 100%;
             display: block;
         }
+        /* 2. Nama App Badge (Tengah) */
+        .balance-app-badge {
+            font-size: 11.5px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: var(--app-badge-bg, var(--chip-bg));
+            color: var(--app-badge-text, var(--text-main));
+            border: 1px solid var(--app-badge-border, var(--card-border));
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.25;
+            letter-spacing: 0.2px;
+        }
+        /* 3. Saldo Nominal (Bawah, Tanpa Rp) */
         .balance-card-amount-box {
-            display: flex;
-            flex-direction: column;
-            margin-top: 12px;
-        }
-        .balance-card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-        }
-        .balance-app-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            min-width: 0;
-        }
-        .balance-app-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 9px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
+            width: 100%;
+            margin-top: 2px;
+        }
+        /* Nominal Saldo dengan warna khas tiap app */
+        .balance-amount-num {
+            font-size: 18px;
             font-weight: 800;
-            color: #FFFFFF;
-            flex-shrink: 0;
-            text-transform: uppercase;
-        }
-        .balance-app-texts {
-            min-width: 0;
-        }
-        .balance-app-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--text-main);
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+            color: var(--app-amount-color, var(--text-main));
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .balance-app-pkg {
-            font-size: 10.5px;
-            color: var(--text-muted);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        @media (max-width: 380px) {
+            .balance-amount-num {
+                font-size: 15.5px;
+            }
+            .balance-app-badge {
+                font-size: 10.5px;
+                padding: 2px 6px;
+            }
         }
+
+        /* Warna Saldo & Badge Khas Tiap App (Dark & Light Theme) */
+        .balance-item-card[data-app="com.orderkuota.app"] {
+            --app-amount-color: #FB7185;
+            --app-badge-bg: rgba(225, 29, 72, 0.14);
+            --app-badge-text: #FDA4AF;
+            --app-badge-border: rgba(225, 29, 72, 0.32);
+        }
+        body.light-theme .balance-item-card[data-app="com.orderkuota.app"] {
+            --app-amount-color: #BE123C;
+            --app-badge-bg: rgba(225, 29, 72, 0.09);
+            --app-badge-text: #9F1239;
+            --app-badge-border: rgba(225, 29, 72, 0.25);
+        }
+
+        .balance-item-card[data-app="id.dana"] {
+            --app-amount-color: #38BDF8;
+            --app-badge-bg: rgba(17, 142, 234, 0.14);
+            --app-badge-text: #7DD3FC;
+            --app-badge-border: rgba(17, 142, 234, 0.32);
+        }
+        body.light-theme .balance-item-card[data-app="id.dana"] {
+            --app-amount-color: #0284C7;
+            --app-badge-bg: rgba(17, 142, 234, 0.09);
+            --app-badge-text: #0369A1;
+            --app-badge-border: rgba(17, 142, 234, 0.25);
+        }
+
+        .balance-item-card[data-app="com.gojek.gopay"],
+        .balance-item-card[data-app="com.gojek.app"] {
+            --app-amount-color: #4ADE80;
+            --app-badge-bg: rgba(0, 170, 19, 0.14);
+            --app-badge-text: #86EFAC;
+            --app-badge-border: rgba(0, 170, 19, 0.32);
+        }
+        body.light-theme .balance-item-card[data-app="com.gojek.gopay"],
+        body.light-theme .balance-item-card[data-app="com.gojek.app"] {
+            --app-amount-color: #16A34A;
+            --app-badge-bg: rgba(0, 170, 19, 0.09);
+            --app-badge-text: #15803D;
+            --app-badge-border: rgba(0, 170, 19, 0.25);
+        }
+
+        .balance-item-card[data-app="com.shopeepay.id"],
+        .balance-item-card[data-app="com.shopee.id"] {
+            --app-amount-color: #FB923C;
+            --app-badge-bg: rgba(238, 77, 45, 0.14);
+            --app-badge-text: #FDBA74;
+            --app-badge-border: rgba(238, 77, 45, 0.32);
+        }
+        body.light-theme .balance-item-card[data-app="com.shopeepay.id"],
+        body.light-theme .balance-item-card[data-app="com.shopee.id"] {
+            --app-amount-color: #EA580C;
+            --app-badge-bg: rgba(238, 77, 45, 0.09);
+            --app-badge-text: #C2410C;
+            --app-badge-border: rgba(238, 77, 45, 0.25);
+        }
+
+        .balance-item-card[data-app="com.bca"] {
+            --app-amount-color: #818CF8;
+            --app-badge-bg: rgba(99, 102, 241, 0.14);
+            --app-badge-text: #A5B4FC;
+            --app-badge-border: rgba(99, 102, 241, 0.32);
+        }
+        body.light-theme .balance-item-card[data-app="com.bca"] {
+            --app-amount-color: #4338CA;
+            --app-badge-bg: rgba(0, 94, 173, 0.09);
+            --app-badge-text: #312E81;
+            --app-badge-border: rgba(0, 94, 173, 0.25);
+        }
+
+        .balance-item-card[data-app="com.bri"] {
+            --app-amount-color: #22D3EE;
+            --app-badge-bg: rgba(6, 182, 212, 0.14);
+            --app-badge-text: #67E8F9;
+            --app-badge-border: rgba(6, 182, 212, 0.32);
+        }
+        body.light-theme .balance-item-card[data-app="com.bri"] {
+            --app-amount-color: #0891B2;
+            --app-badge-bg: rgba(0, 82, 156, 0.09);
+            --app-badge-text: #155E75;
+            --app-badge-border: rgba(0, 82, 156, 0.25);
+        }
+
+        .balance-item-card[data-app="com.bankmandiri"] {
+            --app-amount-color: #FBBF24;
+            --app-badge-bg: rgba(245, 158, 11, 0.14);
+            --app-badge-text: #FDE68A;
+            --app-badge-border: rgba(245, 158, 11, 0.32);
+        }
+        body.light-theme .balance-item-card[data-app="com.bankmandiri"] {
+            --app-amount-color: #D97706;
+            --app-badge-bg: rgba(245, 158, 11, 0.09);
+            --app-badge-text: #92400E;
+            --app-badge-border: rgba(245, 158, 11, 0.25);
+        }
+
+        .balance-item-card[data-app="com.bni"] {
+            --app-amount-color: #FB923C;
+            --app-badge-bg: rgba(241, 90, 36, 0.14);
+            --app-badge-text: #FDBA74;
+            --app-badge-border: rgba(241, 90, 36, 0.32);
+        }
+        body.light-theme .balance-item-card[data-app="com.bni"] {
+            --app-amount-color: #C2410C;
+            --app-badge-bg: rgba(241, 90, 36, 0.09);
+            --app-badge-text: #9A3412;
+            --app-badge-border: rgba(241, 90, 36, 0.25);
+        }
+
+        .balance-item-card[data-app="com.otoreport.tekmo"],
+        .balance-item-card[data-app="com.tekmo.app"],
+        .balance-item-card[data-app="tekmo"] {
+            --app-amount-color: #C084FC;
+            --app-badge-bg: rgba(168, 85, 247, 0.14);
+            --app-badge-text: #E9D5FF;
+            --app-badge-border: rgba(168, 85, 247, 0.32);
+        }
+        body.light-theme .balance-item-card[data-app="com.otoreport.tekmo"],
+        body.light-theme .balance-item-card[data-app="com.tekmo.app"],
+        body.light-theme .balance-item-card[data-app="tekmo"] {
+            --app-amount-color: #9333EA;
+            --app-badge-bg: rgba(168, 85, 247, 0.09);
+            --app-badge-text: #6B21A8;
+            --app-badge-border: rgba(168, 85, 247, 0.25);
+        }
+
         .balance-mode-badge {
             font-size: 9.5px;
             font-weight: 700;
@@ -1350,20 +1488,6 @@
         }
         [data-theme="dark"] .balance-mode-badge.hybrid {
             color: #38BDF8;
-        }
-        .balance-amount-row {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 8px;
-            margin: 4px 0 2px 0;
-        }
-        .balance-amount-val {
-            font-size: 21px;
-            font-weight: 800;
-            font-variant-numeric: tabular-nums;
-            color: var(--text-main);
-            letter-spacing: -0.02em;
         }
         .balance-delta-pill {
             font-size: 10.5px;
@@ -8592,8 +8716,8 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             'com.shopeepay.id': 'iconapp/shopeepay.webp',
             'com.shopee.id': 'iconapp/shopeepay.webp',
             'com.orderkuota.app': 'iconapp/orderkuota.webp',
-            'com.tekmo.app': 'iconapp/tekmo.webp',
-            'tekmo': 'iconapp/tekmo.webp'
+            'com.otoreport.tekmo': 'iconapp/tekmo.webp',
+            'com.tekmo.app': 'iconapp/tekmo.webp'
         };
 
         // Fallback Authentic Vector SVG Icons (jika webp belum tersedia / gagal dimuat)
@@ -8617,6 +8741,12 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                     <rect width="48" height="48" rx="10" fill="#0A3977"/>
                     <path d="M16 32V16l6 8 6-8v16" stroke="#FFB703" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                     <circle cx="34" cy="18" r="3" fill="#38BDF8"/>
+                </svg>
+            `,
+            'com.otoreport.tekmo': `
+                <svg viewBox="0 0 48 48" width="100%" height="100%">
+                    <rect width="48" height="48" rx="10" fill="#0284C7"/>
+                    <text x="24" y="29" font-family="'Arial Black', Arial, sans-serif" font-weight="900" font-size="11" fill="#FFFFFF" text-anchor="middle">TEKMO</text>
                 </svg>
             `,
             'com.tekmo.app': `
@@ -8900,24 +9030,32 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             card.className = cls;
             const safeId = (item.id || item.package_name || 'app').replace(/[^a-zA-Z0-9_]/g, '_');
             card.id = 'balance_card_' + safeId;
+            card.setAttribute('data-app', item.package_name || item.id || '');
 
             const iconHtml = getAppIconHtml(item.package_name, item.app_name);
-            const formattedBalance = item.formatted_balance || fmtRp(item.balance_value);
+            let rawVal = '0';
+            if (item.balance_value !== undefined && item.balance_value !== null && !isNaN(item.balance_value)) {
+                rawVal = Math.round(Number(item.balance_value)).toLocaleString('id-ID');
+            } else if (item.formatted_balance) {
+                rawVal = String(item.formatted_balance).replace(/^[^\d\-,]+/, '').trim();
+            }
             const appDisplayName = item.app_name || item.package_name || 'Aplikasi';
 
             card.onclick = () => openBalanceDetailModal(item);
             card.title = `Klik untuk rincian & riwayat saldo ${appDisplayName}`;
 
             card.innerHTML = `
-                <div class="balance-card-brand-row">
-                    <div class="balance-app-icon-frame">${iconHtml}</div>
-                    <div class="balance-app-title" title="${escapeHtml(appDisplayName)}">
-                        ${escapeHtml(appDisplayName)}
-                    </div>
+                <!-- 1. Ikon App (Vertikal Paling Atas) -->
+                <div class="balance-app-icon-frame">${iconHtml}</div>
+
+                <!-- 2. Nama App Badge (Tengah) -->
+                <div class="balance-app-badge" title="${escapeHtml(appDisplayName)}">
+                    ${escapeHtml(appDisplayName)}
                 </div>
 
+                <!-- 3. Saldo Nominal (Bawah, Tanpa Rp, nominal berwarna khas tiap app) -->
                 <div class="balance-card-amount-box">
-                    <div class="balance-amount-val">${escapeHtml(formattedBalance)}</div>
+                    <span class="balance-amount-num">${escapeHtml(rawVal)}</span>
                 </div>
             `;
             return card;
