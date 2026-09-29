@@ -2466,15 +2466,8 @@
                     <div class="balance-dock-val" id="dockProdukTotalStockVal" style="color: #10B981;">0 pcs</div>
                 </div>
 
-                <div class="balance-dock-sep"></div>
-
-                <!-- Item 3: Total Nilai Modal -->
-                <div class="balance-dock-item" id="dockProdukTotalCostItem">
-                    <div class="balance-dock-label">
-                        <span>🏦 Nilai Modal</span>
-                    </div>
-                    <div class="balance-dock-val" id="dockProdukTotalCostVal" style="color: #F59E0B;">Rp 0</div>
-                </div>
+                <!-- Hidden element so existing JS referencing dockProdukTotalCostVal doesn't throw -->
+                <span id="dockProdukTotalCostVal" style="display: none;">Rp 0</span>
 
                 <!-- Tombol Rincian Hanya Ikon Tanpa Teks -->
                 <button type="button" class="btn-dock-detail" onclick="openProdukSummaryDetailModal()" title="Rincian Lengkap Stok &amp; Nilai Aset">
@@ -2861,7 +2854,7 @@
                     <button type="button" class="btn-select-action" id="btnToggleProdukSort" onclick="toggleProdukSort()" title="Ubah urutan daftar barang">
                         <span id="produkSortIcon">📶</span> <span id="produkSortText">Stok Terkecil</span>
                     </button>
-                    <span id="produkItemCountBadge" style="font-size: 11px; color: var(--text-muted); font-weight: 700; padding: 0 4px;">0 barang</span>
+                    <span id="produkItemCountBadge" style="display: none;">0 barang</span>
                 </div>
             </div>
         </div>
@@ -3010,9 +3003,37 @@
             <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 180px;">
                     <h3 id="modalImgTitle" style="font-size: 15px; font-weight: 800; color: var(--text-main); margin: 0 0 4px 0;">Nama Produk</h3>
-                    <div id="modalImgStock" style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Stok: 0 pcs</div>
+                    <div id="modalImgStock" style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: none;">Stok: 0 pcs</div>
                 </div>
                 <button type="button" onclick="closeProductImageModal()" style="padding: 7px 16px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">Tutup</button>
+            </div>
+
+            <!-- Detail Spesifikasi & Valuasi Aset Produk -->
+            <div class="modal-product-stats" id="modalProductStatsBlock" style="margin-top: 10px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px;">
+                <div>
+                    <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Kode SKU</div>
+                    <div id="modalStatsSku" style="font-size: 12px; font-weight: 700; font-family: monospace; color: var(--text-main);">-</div>
+                </div>
+                <div>
+                    <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Stok Fisik</div>
+                    <div id="modalStatsStock" style="font-size: 12px; font-weight: 700; color: #10B981;">0 pcs</div>
+                </div>
+                <div>
+                    <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Harga Jual &amp; Modal</div>
+                    <div id="modalStatsPricing" style="font-size: 11.5px; font-weight: 600; color: var(--text-main);">Rp 0</div>
+                </div>
+                <div>
+                    <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Margin Per Item</div>
+                    <div id="modalStatsMargin" style="font-size: 11.5px; font-weight: 700; color: var(--success);">Rp 0</div>
+                </div>
+                <div>
+                    <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Aset Jual</div>
+                    <div id="modalStatsAssetJual" style="font-size: 13px; font-weight: 800; color: var(--primary);">Rp 0</div>
+                </div>
+                <div>
+                    <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Aset Modal</div>
+                    <div id="modalStatsAssetCost" style="font-size: 13px; font-weight: 800; color: #F59E0B;">Rp 0</div>
+                </div>
             </div>
 
             <!-- Variant Selector & Table in Modal (if grouped) -->
@@ -3032,6 +3053,7 @@
                                 <th>SKU</th>
                                 <th style="text-align: right;">Stok</th>
                                 <th style="text-align: right;">Jual</th>
+                                <th style="text-align: right;">Total Aset</th>
                                 <th style="text-align: right;">Margin</th>
                             </tr>
                         </thead>
@@ -9550,12 +9572,12 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             const stockEl = card.querySelector('.produk-stock-overlay');
             const vStock = Number(item.stock) || 0;
             const vMin = Number(item.min_limit) || 3;
-            let sClass = 'status-safe', sLabel = 'AMAN', sDot = '#10B981';
-            if (vStock === 0) { sClass = 'status-danger'; sLabel = 'HABIS'; sDot = '#EF4444'; }
-            else if (vStock <= vMin) { sClass = 'status-warn'; sLabel = 'MENIPIS'; sDot = '#F59E0B'; }
+            let sClass = 'status-safe', sDot = '#10B981';
+            if (vStock === 0) { sClass = 'status-danger'; sDot = '#EF4444'; }
+            else if (vStock <= vMin) { sClass = 'status-warn'; sDot = '#F59E0B'; }
             if (stockEl) {
                 stockEl.className = `produk-stock-overlay ${sClass}`;
-                stockEl.innerHTML = `<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${sDot};"></span> <span>${vStock} pcs (${sLabel})</span>`;
+                stockEl.innerHTML = `<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${sDot};"></span> <span>${vStock} pcs</span>`;
             }
 
             // 4. Update image if variant has photo
@@ -9588,9 +9610,14 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             if (costEl) costEl.textContent = `Modal: ${formatRupiah(cost)}`;
 
             const marginEl = card.querySelector('.card-margin-val');
+            const badgeEl = card.querySelector('.card-margin-badge');
             if (marginEl) {
-                marginEl.style.color = margin >= 0 ? 'var(--success)' : 'var(--danger)';
                 marginEl.textContent = `${margin >= 0 ? '+' : ''}${formatRupiah(margin)} (${pct}%)`;
+            }
+            if (badgeEl) {
+                badgeEl.style.color = margin >= 0 ? 'var(--success)' : 'var(--danger)';
+                badgeEl.style.background = margin >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)';
+                badgeEl.style.borderColor = margin >= 0 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)';
             }
         }
 
@@ -9638,7 +9665,27 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             if (brandEl) brandEl.textContent = brand;
             if (catEl) catEl.textContent = cat;
             if (skuEl) skuEl.textContent = sku !== '-' ? `SKU: ${sku}` : '-';
-            if (stockEl) stockEl.textContent = `Stok: ${stock} pcs • Jual: ${formatRupiah(sell)} (Modal: ${formatRupiah(cost)}, Margin: +${formatRupiah(margin)} / ${pct}%)`;
+            if (stockEl) stockEl.textContent = `Stok: ${stock} pcs • Jual: ${formatRupiah(sell)}`;
+
+            // Populate Specs & Valuation Stats Block
+            const totalAssetJual = stock * sell;
+            const totalAssetModal = stock * cost;
+            const mSku = document.getElementById('modalStatsSku');
+            const mStock = document.getElementById('modalStatsStock');
+            const mPricing = document.getElementById('modalStatsPricing');
+            const mMargin = document.getElementById('modalStatsMargin');
+            const mAssetJual = document.getElementById('modalStatsAssetJual');
+            const mAssetCost = document.getElementById('modalStatsAssetCost');
+
+            if (mSku) mSku.textContent = sku;
+            if (mStock) mStock.textContent = `${stock} pcs`;
+            if (mPricing) mPricing.textContent = `Jual: ${formatRupiah(sell)} | Modal: ${formatRupiah(cost)}`;
+            if (mMargin) {
+                mMargin.style.color = margin >= 0 ? 'var(--success)' : 'var(--danger)';
+                mMargin.textContent = `${margin >= 0 ? '+' : ''}${formatRupiah(margin)} (${pct}%)`;
+            }
+            if (mAssetJual) mAssetJual.textContent = formatRupiah(totalAssetJual);
+            if (mAssetCost) mAssetCost.textContent = formatRupiah(totalAssetModal);
 
             let imgSrc = item.image_base64;
             if (!imgSrc || !imgSrc.startsWith('data:image')) {
@@ -9707,6 +9754,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                                 <td><span class="produk-sku-badge">${escapeHtml(v.item.product_code || '-')}</span></td>
                                 <td style="text-align: right;"><span class="${sClass}">${vStock} pcs</span></td>
                                 <td style="text-align: right; font-weight: 700; color: var(--primary);">${formatRupiah(vSell)}</td>
+                                <td style="text-align: right; font-weight: 700; color: var(--text-main);">${formatRupiah(vStock * vSell)}</td>
                                 <td style="text-align: right; color: ${vMargin >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight: 600;">
                                     ${vMargin >= 0 ? '+' : ''}${formatRupiah(vMargin)}
                                 </td>
@@ -9748,13 +9796,37 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             const cat = item.category_name || 'Umum';
             const sku = item.product_code || '-';
             const stock = Number(item.stock) || 0;
+            const sell = Number(item.sell_price) || 0;
+            const cost = Number(item.cost_price) || 0;
+            const margin = sell - cost;
+            const pct = cost > 0 ? Math.round((margin / cost) * 100) : 0;
+            const totalAssetJual = stock * sell;
+            const totalAssetModal = stock * cost;
             const imgSrc = item.image_base64;
 
             if (title) title.textContent = name;
             if (brandEl) brandEl.textContent = brand;
             if (catEl) catEl.textContent = cat;
             if (skuEl) skuEl.textContent = sku !== '-' ? `SKU: ${sku}` : '-';
-            if (stockEl) stockEl.textContent = `Stok Fisik: ${stock} pcs • Jual: ${formatRupiah(item.sell_price || 0)}`;
+            if (stockEl) stockEl.textContent = `Stok Fisik: ${stock} pcs • Jual: ${formatRupiah(sell)}`;
+
+            // Populate Specs & Valuation Stats Block
+            const mSku = document.getElementById('modalStatsSku');
+            const mStock = document.getElementById('modalStatsStock');
+            const mPricing = document.getElementById('modalStatsPricing');
+            const mMargin = document.getElementById('modalStatsMargin');
+            const mAssetJual = document.getElementById('modalStatsAssetJual');
+            const mAssetCost = document.getElementById('modalStatsAssetCost');
+
+            if (mSku) mSku.textContent = sku;
+            if (mStock) mStock.textContent = `${stock} pcs`;
+            if (mPricing) mPricing.textContent = `Jual: ${formatRupiah(sell)} | Modal: ${formatRupiah(cost)}`;
+            if (mMargin) {
+                mMargin.style.color = margin >= 0 ? 'var(--success)' : 'var(--danger)';
+                mMargin.textContent = `${margin >= 0 ? '+' : ''}${formatRupiah(margin)} (${pct}%)`;
+            }
+            if (mAssetJual) mAssetJual.textContent = formatRupiah(totalAssetJual);
+            if (mAssetCost) mAssetCost.textContent = formatRupiah(totalAssetModal);
 
             if (variantSec) variantSec.style.display = 'none';
 
@@ -10319,9 +10391,9 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                     const priceRangeStr = hasPriceRange ? `${formatRupiah(grp.minSell)} – ${formatRupiah(grp.maxSell)}` : formatRupiah(grp.minSell);
 
                     cardsHtml += `
-                        <div class="produk-card ${isHighlight ? 'pulse-highlight' : ''}" id="pcard_${grp.groupId}" data-group-id="${grp.groupId}">
+                        <div class="produk-card ${isHighlight ? 'pulse-highlight' : ''}" id="pcard_${grp.groupId}" data-group-id="${grp.groupId}" onclick="openVariantGroupModal('${grp.groupId}', '${activeVariant.itemId}')" style="cursor: pointer;">
                             <!-- Media Header (Gallery Image / Placeholder) -->
-                            <div class="produk-gallery-media" onclick="openVariantGroupModal('${grp.groupId}', '${activeVariant.itemId}')" title="Klik untuk lihat rincian & galeri">
+                            <div class="produk-gallery-media" title="Klik untuk lihat rincian & galeri">
                                 ${hasImg ? `
                                     <img src="${photoSrc}" loading="lazy" class="produk-gallery-img" alt="${baseName}">
                                     <div class="produk-zoom-overlay">🔍</div>
@@ -10337,7 +10409,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                                 ` : ''}
                                 <div class="produk-stock-overlay ${statusClass}">
                                     <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: ${statusDotColor};"></span>
-                                    <span>${stock} pcs (${statusLabel})</span>
+                                    <span>${stock} pcs</span>
                                 </div>
                             </div>
 
@@ -10346,12 +10418,11 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                                 <div style="display: flex; gap: 4px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
                                     <div style="display: flex; align-items: center; gap: 4px;">
                                         <span class="produk-cat-badge">${cat}</span>
-                                        ${grp.variants.length > 1 ? `<span class="produk-variant-count-badge">${grp.variants.length} SKU</span>` : ''}
+                                        ${grp.variants.length > 1 ? `<span class="produk-variant-count-badge">${grp.variants.length} Varian</span>` : ''}
                                     </div>
-                                    <span class="produk-sku-badge card-sku-val">${escapeHtml(activeItem.product_code || '-')}</span>
                                 </div>
 
-                                <div class="produk-name" title="${baseName}" onclick="openVariantGroupModal('${grp.groupId}', '${activeVariant.itemId}')" style="cursor: pointer;">
+                                <div class="produk-name" title="${baseName}">
                                     ${baseName}
                                 </div>
 
@@ -10380,22 +10451,19 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                                         <span style="font-size: 11px; font-weight: 600; color: var(--text-muted);">Jual:</span>
                                         <span class="card-main-price-val">${grp.variants.length > 1 ? priceRangeStr : formatRupiah(sell)}</span>
                                     </div>
-                                    <div class="produk-price-row">
-                                        <span class="card-cost-val">Modal: ${formatRupiah(cost)}</span>
-                                        <span class="card-margin-val" style="font-weight: 700; color: ${margin >= 0 ? 'var(--success)' : 'var(--danger)'};">
-                                            ${margin >= 0 ? '+' : ''}${formatRupiah(margin)} (${pct}%)
+                                    <div class="produk-price-row" style="justify-content: flex-start; gap: 6px; flex-wrap: wrap; margin-top: 1px;">
+                                        <span class="card-cost-val" style="font-size: 11px; color: var(--text-muted);">Modal: ${formatRupiah(cost)}</span>
+                                        <span class="card-margin-badge" style="font-size: 10px; font-weight: 700; color: ${margin >= 0 ? 'var(--success)' : 'var(--danger)'}; background: ${margin >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; padding: 1px 5px; border-radius: 4px; border: 1px solid ${margin >= 0 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}; display: inline-flex; align-items: center; gap: 3px;">
+                                            <span>Margin:</span>
+                                            <span class="card-margin-val">${margin >= 0 ? '+' : ''}${formatRupiah(margin)} (${pct}%)</span>
                                         </span>
-                                    </div>
-                                    <div class="produk-price-row" style="border-top: 1px dashed var(--card-border); padding-top: 3px; margin-top: 2px;">
-                                        <span>Total Aset Jual:</span>
-                                        <span style="font-weight: 700; color: var(--primary);">${formatRupiah(grp.totalAssetJual)}</span>
                                     </div>
                                 </div>
 
                                 <!-- Footer -->
                                 <div class="produk-audit-footer" style="display: flex; justify-content: space-between; align-items: center;">
                                     <span>📱 ${devLabel}</span>
-                                    <span style="color: var(--primary); font-weight: 700; cursor: pointer;" onclick="openVariantGroupModal('${grp.groupId}', '${activeVariant.itemId}')">
+                                    <span style="color: var(--primary); font-weight: 700;">
                                         ${grp.variants.length > 1 ? 'Lihat Varian ➔' : 'Rincian ➔'}
                                     </span>
                                 </div>
@@ -10482,9 +10550,9 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                 }
 
                 cardsHtml += `
-                    <div class="produk-card ${isHighlight ? 'pulse-highlight' : ''}" data-item-id="${escapeHtml(itemId)}">
+                    <div class="produk-card ${isHighlight ? 'pulse-highlight' : ''}" data-item-id="${escapeHtml(itemId)}" onclick="openProductImageModalById('${escapeHtml(itemId)}')" style="cursor: pointer;">
                         <!-- Media Header (Gallery Image / Placeholder) -->
-                        <div class="produk-gallery-media" onclick="openProductImageModalById('${escapeHtml(itemId)}')" title="Klik untuk lihat foto lebih besar">
+                        <div class="produk-gallery-media" title="Klik untuk lihat foto & rincian">
                             ${hasImg ? `
                                 <img src="${item.image_base64}" loading="lazy" class="produk-gallery-img" alt="${name}">
                                 <div class="produk-zoom-overlay">🔍</div>
@@ -10497,15 +10565,14 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                             <div class="produk-brand-overlay">${brand}</div>
                             <div class="produk-stock-overlay ${statusClass}">
                                 <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: ${statusDotColor};"></span>
-                                <span>${stock} pcs (${statusLabel})</span>
+                                <span>${stock} pcs</span>
                             </div>
                         </div>
 
                         <!-- Card Body (Details, Prices, Valuation) -->
                         <div class="produk-card-body">
-                            <div style="display: flex; gap: 4px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                            <div style="display: flex; gap: 4px; align-items: center;">
                                 <span class="produk-cat-badge">${cat}</span>
-                                <span class="produk-sku-badge">${code}</span>
                             </div>
                             <div class="produk-name" title="${name}">${name}</div>
                             
@@ -10514,22 +10581,18 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                                     <span style="font-size: 11px; font-weight: 600; color: var(--text-muted);">Jual:</span>
                                     <span>${formatRupiah(sell)}</span>
                                 </div>
-                                <div class="produk-price-row">
-                                    <span>Modal: ${formatRupiah(cost)}</span>
-                                    <span style="font-weight: 700; color: ${margin >= 0 ? 'var(--success)' : 'var(--danger)'};">
-                                        ${margin >= 0 ? '+' : ''}${formatRupiah(margin)} (${pct}%)
+                                <div class="produk-price-row" style="justify-content: flex-start; gap: 6px; flex-wrap: wrap; margin-top: 1px;">
+                                    <span style="font-size: 11px; color: var(--text-muted);">Modal: ${formatRupiah(cost)}</span>
+                                    <span class="card-margin-badge" style="font-size: 10px; font-weight: 700; color: ${margin >= 0 ? 'var(--success)' : 'var(--danger)'}; background: ${margin >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; padding: 1px 5px; border-radius: 4px; border: 1px solid ${margin >= 0 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}; display: inline-flex; align-items: center; gap: 3px;">
+                                        <span>Margin:</span>
+                                        <span>${margin >= 0 ? '+' : ''}${formatRupiah(margin)} (${pct}%)</span>
                                     </span>
-                                </div>
-                                <div class="produk-price-row" style="border-top: 1px dashed var(--card-border); padding-top: 3px; margin-top: 2px;">
-                                    <span>Total Aset Jual:</span>
-                                    <span style="font-weight: 700; color: var(--primary);">${formatRupiah(totalAssetJual)}</span>
                                 </div>
                             </div>
 
-                            <div class="produk-audit-footer" title="${item.last_change ? escapeHtml(item.last_change) : ''}">
+                            <div class="produk-audit-footer" style="display: flex; justify-content: space-between; align-items: center;" title="${item.last_change ? escapeHtml(item.last_change) : ''}">
                                 <span>📱 ${devLabel}</span>
-                                ${updatedStr ? ` • <span>🕒 ${updatedStr}</span>` : ''}
-                                ${item.last_change ? ` • <span>${escapeHtml(item.last_change)}</span>` : ''}
+                                <span style="color: var(--primary); font-weight: 700;">Rincian ➔</span>
                             </div>
                         </div>
                     </div>
