@@ -29,17 +29,17 @@
                     mFile = 'manifest-margin.json';
                     pTitle = '💹 Margin Voucher - KSP Check';
                     iconSvg = 'icon-margin.svg';
-                    iconPng = 'icon-order-192.png';
+                    iconPng = 'icon-margin-192.png';
                 } else if (cleanT === 'balance' || cleanT === 'saldo' || cleanT === 'ewallet') {
                     mFile = 'manifest-balance.json';
                     pTitle = '💳 Saldo Realtime - KSP Check';
                     iconSvg = 'icon-balance.svg';
-                    iconPng = 'icon-order-192.png';
+                    iconPng = 'icon-balance-192.png';
                 } else if (cleanT === 'produk' || cleanT === 'barang') {
-                    mFile = 'manifest-order.json';
+                    mFile = 'manifest-produk.json';
                     pTitle = '🛍️ Stok Produk - KSP Check';
-                    iconSvg = 'icon-order.svg';
-                    iconPng = 'icon-order-192.png';
+                    iconSvg = 'icon-produk.svg';
+                    iconPng = 'icon-produk-192.png';
                 }
                 document.title = pTitle;
                 document.write('<link id="appManifest" rel="manifest" href="' + mFile + '">');
@@ -149,7 +149,7 @@
         .container { max-width: 900px; margin: 0 auto; padding: 14px; }
 
         /* Top Nav Bar */
-        .top-nav-bar { position: sticky; top: 0; z-index: 100; background: var(--nav-bg); backdrop-filter: blur(12px); border-bottom: 1px solid var(--card-border); padding: 8px 14px 0 14px; margin-bottom: 14px; }
+        .top-nav-bar { position: sticky; top: 0; z-index: 100; background: var(--nav-bg); backdrop-filter: blur(12px); border-bottom: 1px solid var(--card-border); padding: 8px 14px 0 14px; margin-bottom: 14px; width: 100%; max-width: 100vw; box-sizing: border-box; }
         .nav-container { max-width: 900px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: nowrap; padding-bottom: 6px; }
         .btn-nav-action { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--card-border); background: var(--nav-wrapper); color: var(--text-main); font-size: 15px; display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; flex-shrink: 0; }
         .device-select { background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main); font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 8px; outline: none; max-width: 180px; }
@@ -1214,6 +1214,11 @@
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 14px;
             margin-bottom: 20px;
+        }
+        @media (max-width: 540px) {
+            .balance-grid {
+                grid-template-columns: 1fr;
+            }
         }
         .balance-item-card {
             background: var(--card-bg);
@@ -2280,8 +2285,11 @@
                         </div>
                         <div class="settings-group">
                             <div class="settings-title">Navigasi</div>
+                            <button class="settings-item" onclick="triggerInstallApp(); closeSettingsMenu()">
+                                <span class="settings-icon">📲</span><span class="settings-label">Pasang ke Layar Utama</span><span class="settings-state" id="settingInstallState">Instal →</span>
+                            </button>
                             <button class="settings-item" onclick="showShortcutGuideModal(); closeSettingsMenu()">
-                                <span class="settings-icon">📲</span><span class="settings-label">Pintasan Layar Utama</span><span class="settings-state">Tips →</span>
+                                <span class="settings-icon">💡</span><span class="settings-label">Pintasan Layar Utama</span><span class="settings-state">Tips →</span>
                             </button>
                             <button class="settings-item" onclick="showDeviceModal(); closeSettingsMenu()">
                                 <span class="settings-icon">📱</span><span class="settings-label">Pilih Perangkat</span><span class="settings-state" id="settingDeviceState">Semua</span>
@@ -3080,26 +3088,37 @@
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 14px; margin-bottom: 12px; font-size: 12.5px; line-height: 1.5; color: var(--text-main);">
+                <!-- Direct PWA Install Button (If supported/prompt available) -->
+                <button type="button" id="btnDirectInstall" onclick="triggerInstallApp()" style="width: 100%; padding: 11px 16px; background: linear-gradient(135deg, var(--primary) 0%, #0284C7 100%); border: none; border-radius: 10px; color: #FFFFFF; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 14px rgba(79, 142, 247, 0.4);">
+                    <span>📲</span> <span id="btnDirectInstallText">Pasang Tab Ini ke Layar Utama</span>
+                </button>
+
                 <div style="background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px;">
-                    <div style="font-weight: 700; color: var(--primary); margin-bottom: 4px;">🚀 Cara 1: Simpan Langsung dari Tab Aktif (Chrome)</div>
-                    <ol style="margin: 0; padding-left: 18px; color: var(--text-muted); font-size: 11.5px; display: flex; flex-direction: column; gap: 3px;">
-                        <li>Buka tab yang diinginkan (<b>Order</b>, <b>History</b>, <b>Laporan</b>, <b>Margin</b>, atau <b>Saldo</b>).</li>
-                        <li>Tekan titik tiga (<b>⋮</b>) di pojok kanan atas browser Chrome.</li>
-                        <li>Pilih <b>"Tambahkan ke Layar Utama"</b> (<i>Add to Home screen</i>).</li>
-                        <li>Nama tab otomatis disesuaikan! Klik <b>Tambah</b>.</li>
+                    <div style="font-weight: 700; color: var(--primary); margin-bottom: 4px;">🚀 Cara 1: Simpan Langsung dari Tab Aktif (Chrome / Safari)</div>
+                    <ol style="margin: 0; padding-left: 18px; color: var(--text-muted); font-size: 11.5px; display: flex; flex-direction: column; gap: 4px;">
+                        <li>Buka tab yang diinginkan (<b>Saldo</b>, <b>Produk</b>, <b>Order</b>, <b>History</b>, <b>Laporan</b>, atau <b>Margin</b>).</li>
+                        <li><b>Di Chrome Android:</b> Tekan titik tiga (<b>⋮</b>) di pojok kanan atas ➔ pilih <b>"Tambahkan ke Layar Utama"</b> (<i>Add to Home screen</i>).</li>
+                        <li><b>Di Safari iOS:</b> Tekan tombol <b>Share</b> (kotak dengan panah ke atas) ➔ pilih <b>"Tambah ke Layar Utama"</b>.</li>
+                        <li>Ikon dan nama tab otomatis tersimpan secara mandiri!</li>
                     </ol>
                 </div>
 
                 <div style="background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px;">
                     <div style="font-weight: 700; color: var(--success); margin-bottom: 4px;">⚡ Cara 2: Tekan Lama Ikon Aplikasi (App Shortcuts)</div>
                     <p style="margin: 0; color: var(--text-muted); font-size: 11.5px;">
-                        Jika sudah menginstal web app KSP Check, tekan &amp; tahan (<b>long-press</b>) ikonnya di Layar Utama HP. Menu pintasan tiap tab akan muncul dan bisa <b>ditarik (drag)</b> langsung ke layar!
+                        Jika sudah menginstal web app KSP Check, tekan &amp; tahan (<b>long-press</b>) ikonnya di Layar Utama HP. Menu pintasan tiap tab (Saldo, Produk, Order, dll) akan muncul dan bisa <b>ditarik (drag)</b> langsung ke layar!
                     </p>
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
                     <div style="font-size: 11.5px; font-weight: 700; color: var(--text-muted);">🔗 Salin Tautan Langsung per Tab:</div>
                     <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button type="button" onclick="copyTabUrl('balance')" style="flex: 1; min-width: 100px; padding: 8px 6px; background: var(--stepper-btn-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 11px; font-weight: 600; cursor: pointer; text-align: center;">
+                            💳 Salin Tab Saldo
+                        </button>
+                        <button type="button" onclick="copyTabUrl('produk')" style="flex: 1; min-width: 100px; padding: 8px 6px; background: var(--stepper-btn-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 11px; font-weight: 600; cursor: pointer; text-align: center;">
+                            🛍️ Salin Tab Produk
+                        </button>
                         <button type="button" onclick="copyTabUrl('order')" style="flex: 1; min-width: 100px; padding: 8px 6px; background: var(--stepper-btn-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 11px; font-weight: 600; cursor: pointer; text-align: center;">
                             🌅 Salin Tab Order
                         </button>
@@ -3111,9 +3130,6 @@
                         </button>
                         <button type="button" onclick="copyTabUrl('margin')" style="flex: 1; min-width: 100px; padding: 8px 6px; background: var(--stepper-btn-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 11px; font-weight: 600; cursor: pointer; text-align: center;">
                             💹 Salin Tab Margin
-                        </button>
-                        <button type="button" onclick="copyTabUrl('balance')" style="flex: 1; min-width: 100px; padding: 8px 6px; background: var(--stepper-btn-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 11px; font-weight: 600; cursor: pointer; text-align: center;">
-                            💳 Salin Tab Saldo
                         </button>
                     </div>
                 </div>
@@ -7608,7 +7624,6 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
 
             // Perbarui link manifest dan ikon secara dinamis sesuai tab aktif
             try {
-                const mLink = document.getElementById('appManifest');
                 const favSvg = document.getElementById('appFavicon');
                 const favPng = document.getElementById('appFaviconPng');
                 const touchIcon = document.getElementById('appTouchIcon');
@@ -7617,13 +7632,25 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                     'order': { manifest: 'manifest-order.json', svg: 'icon-order.svg', png: 'icon-order-192.png' },
                     'history': { manifest: 'manifest-history.json', svg: 'icon-history.svg', png: 'icon-history-192.png' },
                     'daily': { manifest: 'manifest-daily.json', svg: 'icon-daily.svg', png: 'icon-daily-192.png' },
-                    'margin': { manifest: 'manifest-margin.json', svg: 'icon-margin.svg', png: 'icon-order-192.png' },
-                    'balance': { manifest: 'manifest-balance.json', svg: 'icon-balance.svg', png: 'icon-order-192.png' },
-                    'produk': { manifest: 'manifest-order.json', svg: 'icon-order.svg', png: 'icon-order-192.png' }
+                    'margin': { manifest: 'manifest-margin.json', svg: 'icon-margin.svg', png: 'icon-margin-192.png' },
+                    'balance': { manifest: 'manifest-balance.json', svg: 'icon-balance.svg', png: 'icon-balance-192.png' },
+                    'produk': { manifest: 'manifest-produk.json', svg: 'icon-produk.svg', png: 'icon-produk-192.png' }
                 };
 
                 const assets = tabAssets[tab] || tabAssets['order'];
-                if (mLink) mLink.setAttribute('href', assets.manifest);
+
+                // Refresh/replace manifest link element to force browser PWA engine to re-parse tab manifest
+                const oldMLink = document.getElementById('appManifest');
+                const newMLink = document.createElement('link');
+                newMLink.id = 'appManifest';
+                newMLink.rel = 'manifest';
+                newMLink.href = assets.manifest;
+                if (oldMLink && oldMLink.parentNode) {
+                    oldMLink.parentNode.replaceChild(newMLink, oldMLink);
+                } else {
+                    document.head.appendChild(newMLink);
+                }
+
                 if (favSvg) favSvg.setAttribute('href', assets.svg);
                 if (favPng) favPng.setAttribute('href', assets.png);
                 if (touchIcon) touchIcon.setAttribute('href', assets.png);
@@ -7707,13 +7734,55 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
 
             const activeBtn = document.getElementById(tabMap[tab]);
             if (activeBtn) {
-                activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                const tabsLine = document.querySelector('.tabs-line');
+                if (tabsLine) {
+                    const btnLeft = activeBtn.offsetLeft;
+                    const btnWidth = activeBtn.offsetWidth;
+                    const containerWidth = tabsLine.offsetWidth;
+                    tabsLine.scrollTo({
+                        left: btnLeft - (containerWidth / 2) + (btnWidth / 2),
+                        behavior: 'smooth'
+                    });
+                }
+            }
+            if (window.scrollX !== 0 || document.documentElement.scrollLeft !== 0 || document.body.scrollLeft !== 0) {
+                window.scrollTo({ left: 0, top: window.scrollY });
+                document.documentElement.scrollLeft = 0;
+                document.body.scrollLeft = 0;
             }
         }
 
         // ==================== SHORTCUT & PWA GUIDE MODAL ====================
+        let deferredInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            const stateEl = document.getElementById('settingInstallState');
+            if (stateEl) stateEl.textContent = 'Siap Pasang ➔';
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredInstallPrompt = null;
+            showToast('🎉 Aplikasi Tab KSP Check berhasil dipasang ke Layar Utama!');
+            const stateEl = document.getElementById('settingInstallState');
+            if (stateEl) stateEl.textContent = 'Terpasang ✓';
+        });
+
         function showShortcutGuideModal() {
             const m = document.getElementById('shortcutGuideModal');
+            const txt = document.getElementById('btnDirectInstallText');
+            if (txt) {
+                const tabNames = {
+                    'order': 'Order Restok',
+                    'history': 'Riwayat Order',
+                    'daily': 'Laporan Harian',
+                    'margin': 'Margin Voucher',
+                    'balance': 'Saldo Realtime',
+                    'produk': 'Stok Produk'
+                };
+                const activeName = tabNames[currentTab] || 'Tab Ini';
+                txt.textContent = 'Pasang Tab ' + activeName + ' ke Layar Utama';
+            }
             if (m) m.style.display = 'flex';
         }
 
@@ -7722,12 +7791,34 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             if (m) m.style.display = 'none';
         }
 
+        function triggerInstallApp() {
+            if (deferredInstallPrompt) {
+                deferredInstallPrompt.prompt();
+                deferredInstallPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        showToast('🚀 Memasang ke Layar Utama...');
+                    }
+                    deferredInstallPrompt = null;
+                });
+            } else {
+                showShortcutGuideModal();
+            }
+        }
+
         function copyTabUrl(tab) {
             try {
                 const url = new URL(window.location.href);
                 url.searchParams.set('tab', tab);
                 navigator.clipboard.writeText(url.toString()).then(() => {
-                    showToast('📋 Link tab ' + tab + ' disalin!');
+                    const tabLabels = {
+                        'order': 'Order Restok',
+                        'history': 'Riwayat Order',
+                        'daily': 'Laporan Harian',
+                        'margin': 'Margin Voucher',
+                        'balance': 'Saldo Realtime',
+                        'produk': 'Stok Produk'
+                    };
+                    showToast('📋 Link Tab ' + (tabLabels[tab] || tab) + ' disalin!');
                 }).catch(() => {
                     prompt('Salin link ini:', url.toString());
                 });
@@ -8501,7 +8592,8 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             'com.shopeepay.id': 'iconapp/shopeepay.webp',
             'com.shopee.id': 'iconapp/shopeepay.webp',
             'com.orderkuota.app': 'iconapp/orderkuota.webp',
-            'com.otoreport.tekmo': 'iconapp/tekmo.webp'
+            'com.tekmo.app': 'iconapp/tekmo.webp',
+            'tekmo': 'iconapp/tekmo.webp'
         };
 
         // Fallback Authentic Vector SVG Icons (jika webp belum tersedia / gagal dimuat)
@@ -8527,7 +8619,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                     <circle cx="34" cy="18" r="3" fill="#38BDF8"/>
                 </svg>
             `,
-            'com.otoreport.tekmo': `
+            'com.tekmo.app': `
                 <svg viewBox="0 0 48 48" width="100%" height="100%">
                     <rect width="48" height="48" rx="10" fill="#0284C7"/>
                     <text x="24" y="29" font-family="'Arial Black', Arial, sans-serif" font-weight="900" font-size="11" fill="#FFFFFF" text-anchor="middle">TEKMO</text>
