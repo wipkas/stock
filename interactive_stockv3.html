@@ -680,6 +680,72 @@
             box-shadow: 0 0 0 1px var(--primary);
         }
 
+        /* Manage Devices Modal */
+        .device-manage-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            max-width: 520px;
+            width: 100%;
+            padding: 22px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+            color: var(--text-main);
+        }
+        .device-manage-item {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: all 0.15s ease;
+        }
+        .device-manage-item:hover {
+            border-color: rgba(79, 142, 247, 0.4);
+        }
+        .device-manage-item.is-active-dev {
+            border-color: var(--primary);
+            background: var(--card-selected-bg);
+        }
+        .device-manage-btn {
+            padding: 5px 11px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            border: 1px solid transparent;
+            transition: all 0.15s ease;
+        }
+        .device-manage-btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+        .device-manage-btn-primary:hover {
+            filter: brightness(1.1);
+        }
+        .device-manage-btn-outline {
+            background: transparent;
+            border-color: var(--card-border);
+            color: var(--text-main);
+        }
+        .device-manage-btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .device-manage-btn-danger {
+            background: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+        .device-manage-btn-danger:hover {
+            background: #ef4444;
+            color: #fff;
+        }
+
         /* ==================== TAB 4: MARGIN VOUCHER STYLES ==================== */
         :root {
             --margin-cols: 22px minmax(0, 1fr) 60px 62px 42px 115px;
@@ -1144,26 +1210,32 @@
         }
         .balance-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 14px;
             margin-bottom: 20px;
         }
         .balance-item-card {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 14px 16px;
+            border-radius: 14px;
+            padding: 16px 18px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            justify-content: space-between;
+            min-height: 105px;
             transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.2s;
             position: relative;
             overflow: hidden;
+            cursor: pointer;
+            user-select: none;
         }
         .balance-item-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
             border-color: var(--primary);
+        }
+        .balance-item-card:active {
+            transform: translateY(-1px) scale(0.99);
         }
         @keyframes balanceCardFlash {
             0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.8); border-color: #10B981; }
@@ -1172,6 +1244,42 @@
         }
         .balance-item-card.realtime-flash {
             animation: balanceCardFlash 1.6s ease;
+        }
+        .balance-card-brand-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+        .balance-app-icon-frame {
+            width: 42px;
+            height: 42px;
+            border-radius: 11px;
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            background: var(--bg-color, #1E293B);
+            position: relative;
+        }
+        .balance-app-icon-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 11px;
+            display: block;
+        }
+        .balance-app-icon-frame svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .balance-card-amount-box {
+            display: flex;
+            flex-direction: column;
+            margin-top: 12px;
         }
         .balance-card-header {
             display: flex;
@@ -1296,6 +1404,101 @@
             padding: 1px 5px;
             border-radius: 4px;
         }
+
+        /* Sticky / Fixed Bottom Dock for Tab Saldo */
+        .balance-bottom-dock {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            z-index: 900;
+            background: var(--bottom-bar-bg);
+            border-top: 1px solid var(--card-border);
+            padding: 10px 16px;
+            padding-bottom: max(10px, calc(10px + env(safe-area-inset-bottom, 0px)));
+            box-shadow: 0 -4px 20px var(--shadow-color, rgba(0, 0, 0, 0.45));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-sizing: border-box;
+        }
+        .balance-dock-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .balance-dock-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+            flex-wrap: wrap;
+        }
+        .balance-dock-item {
+            display: flex;
+            flex-direction: column;
+            white-space: nowrap;
+        }
+        .balance-dock-item.clickable {
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+        .balance-dock-item.clickable:hover {
+            transform: translateY(-1px);
+        }
+        .balance-dock-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .balance-dock-val {
+            font-size: 16.5px;
+            font-weight: 800;
+            font-family: var(--font-mono, monospace);
+            letter-spacing: -0.3px;
+            color: var(--text-main);
+        }
+        .balance-dock-sep {
+            width: 1px;
+            height: 26px;
+            background: var(--card-border);
+            opacity: 0.6;
+        }
+        .btn-dock-detail {
+            background: rgba(56, 189, 248, 0.12);
+            color: var(--primary);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        .btn-dock-detail:hover {
+            background: rgba(56, 189, 248, 0.22);
+            transform: translateY(-1px);
+        }
+
         /* JSON Inspector Card */
         .balance-json-card {
             background: var(--card-bg);
@@ -1998,6 +2201,9 @@
                             <button class="settings-item" onclick="showDeviceModal(); closeSettingsMenu()">
                                 <span class="settings-icon">📱</span><span class="settings-label">Pilih Perangkat</span><span class="settings-state" id="settingDeviceState">Semua</span>
                             </button>
+                            <button class="settings-item" onclick="showManageDevicesModal(); closeSettingsMenu()">
+                                <span class="settings-icon">⚙️</span><span class="settings-label">Kelola Perangkat</span><span class="settings-state" id="settingManageDeviceState">0 HP</span>
+                            </button>
                             <a href="index.html" class="settings-item" style="text-decoration:none">
                                 <span class="settings-icon">📋</span><span class="settings-label">Mode Tabel Ringkas</span><span class="settings-state">Buka →</span>
                             </a>
@@ -2010,6 +2216,9 @@
                             <button class="settings-item" onclick="switchTab('balance'); closeSettingsMenu()">
                                 <span class="settings-icon">💳</span><span class="settings-label">Pantau Saldo Realtime</span><span class="settings-state">Buka Tab →</span>
                             </button>
+                            <a href="balance_view.html" class="settings-item" style="text-decoration:none" target="_blank">
+                                <span class="settings-icon">🎨</span><span class="settings-label">Showcase Redesign Saldo</span><span class="settings-state">Buka ↗</span>
+                            </a>
                             <button class="settings-item" onclick="lockViewer(); closeSettingsMenu()">
                                 <span class="settings-icon">🔒</span><span class="settings-label">Kunci PIN</span><span class="settings-state" id="settingLockState">–</span>
                             </button>
@@ -2113,6 +2322,39 @@
             <div class="bottom-actions">
                 <button class="btn-action btn-copy" onclick="copyWaText()">📋 Salin Teks</button>
                 <button class="btn-action btn-wa" onclick="sendToWa()">💬 Kirim WA</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticky Bottom Dock (Tab 5: Saldo Realtime) -->
+    <div id="bottomDockBalance" class="balance-bottom-dock" style="display: none;">
+        <div class="balance-dock-inner">
+            <!-- Left: Cash Laci, Modal Toko, dan Tombol Rincian -->
+            <div class="balance-dock-left">
+                <!-- Item 1: Cash Laci -->
+                <div class="balance-dock-item" id="dockBalanceCashItem">
+                    <div class="balance-dock-label">
+                        <span>💵 Cash Laci</span>
+                        <span id="dockBalanceCashDot" style="color: #10B981; font-size: 9px;">●</span>
+                    </div>
+                    <div class="balance-dock-val" id="dockBalanceCashVal">+Rp 0</div>
+                </div>
+
+                <div class="balance-dock-sep"></div>
+
+                <!-- Item 2: Modal Toko -->
+                <div class="balance-dock-item clickable" id="dockBalanceModalItem" onclick="openWebStoreModalDialog()" title="Klik untuk atur atau tambah modal toko">
+                    <div class="balance-dock-label">
+                        <span>🏦 Modal Toko</span>
+                        <span style="font-size: 9.5px; color: #0284C7; font-weight: 700;">✎ Atur</span>
+                    </div>
+                    <div class="balance-dock-val" id="dockBalanceModalVal">Rp 0</div>
+                </div>
+
+                <!-- Tombol Rincian Hanya Ikon Tanpa Teks -->
+                <button type="button" class="btn-dock-detail" onclick="openBalanceSummaryDetailModal()" title="Rincian Lengkap Saldo &amp; Kas">
+                    📊
+                </button>
             </div>
         </div>
     </div>
@@ -2358,124 +2600,28 @@
     </div>
 
     <!-- ==================== TAB 5: SALDO REALTIME APLIKASI ==================== -->
-    <div id="tabContentBalance" class="container" style="display: none;">
-        <!-- Header Card -->
-        <div class="header-card" style="margin-bottom: 14px; border-left: 4px solid #06B6D4;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <div>
-                    <div class="header-title" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <span>💳 Saldo Realtime Aplikasi</span>
-                        <span class="balance-live-badge" id="balanceLiveBadge" title="Status Koneksi Cloud Supabase">
-                            <span class="balance-live-dot"></span>
-                            <span id="balanceLiveStatusText">Realtime Active</span>
-                        </span>
-                    </div>
-                    <div class="header-subtitle" id="balanceSubtitle">Memuat data saldo dari cloud...</div>
-                </div>
-                <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-                    <button type="button" class="btn-select-action" id="btnToggleBalanceView" onclick="toggleBalanceViewMode()" title="Ganti antara tampilan kartu visual dan inspektor JSON">📄 Lihat JSON</button>
-                    <button type="button" class="btn-select-action" onclick="copyBalanceSummary()" title="Salin ringkasan saldo untuk laporan WhatsApp">📋 Salin Rekap</button>
-                    <button type="button" class="btn-select-action" onclick="refreshBalanceData()" title="Ambil ulang data saldo dari Supabase">🔄 Refresh</button>
-                </div>
-            </div>
-
-            <!-- Stats Bar -->
-            <div class="stats-summary" id="balanceStatsSummary" style="margin-top: 14px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
-                <div class="stat-box">
-                    <div class="stat-num primary" id="statBalanceTotal">Rp 0</div>
-                    <div class="stat-label">💰 Total Saldo Terpantau</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-num success" id="statBalanceDirect">Rp 0</div>
-                    <div class="stat-label">🎯 Saldo Direct</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-num warning" id="statBalanceHybrid">Rp 0</div>
-                    <div class="stat-label">⚡ Saldo Hybrid</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-num info" id="statBalanceCount">0 Akun</div>
-                    <div class="stat-label">📱 Aplikasi Aktif</div>
-                </div>
-            </div>
+    <div id="tabContentBalance" class="container" style="display: none; padding-bottom: 85px;">
+        <!-- Hidden elements to preserve ID lookups safely without DOM null errors -->
+        <div style="display: none;">
+            <span id="statBalanceTotal"></span>
+            <span id="statBalanceDirect"></span>
+            <span id="statBalanceHybrid"></span>
+            <span id="statBalanceCount"></span>
+            <span id="webCashAmount"></span>
+            <span id="webCashStatus"></span>
+            <span id="webModalAmount"></span>
+            <span id="webModalRemaining"></span>
+            <span id="webTotalKasAmount"></span>
+            <span id="webRolloverInfo"></span>
+            <span id="webDeficitAlertBar"></span>
+            <span id="webDeficitAlertText"></span>
+            <span id="webCashSyncDeviceBadge"></span>
+            <span id="balanceSubtitle"></span>
+            <span id="balanceLiveBadge"></span>
+            <span id="balanceLiveStatusText"></span>
         </div>
 
-        <!-- Store Cash & Modal Toko Banner Card -->
-        <div class="store-cash-banner" id="storeCashBanner">
-            <div class="store-cash-banner-header">
-                <div class="store-cash-title-box">
-                    <div class="store-cash-icon-badge">💵</div>
-                    <div>
-                        <div style="font-weight: 800; font-size: 14px; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
-                            <span>Uang Kas Fisik (Laci) &amp; Modal Toko</span>
-                            <span id="webCashSyncDeviceBadge" style="font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: rgba(6,182,212,0.12); color: #0891B2;">📱 Device Sync</span>
-                        </div>
-                        <div style="font-size: 11px; color: var(--text-muted);" id="storeCashSubtitle">Pantau uang kertas/koin di laci kasir &amp; sisa modal toko secara realtime</div>
-                    </div>
-                </div>
-                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                    <button type="button" class="btn-select-action" onclick="openWebStoreModalDialog()" style="background: rgba(16,185,129,0.12); color: #059669; border-color: rgba(16,185,129,0.35); font-weight: 700;">🏦 Kelola Modal</button>
-                    <button type="button" class="btn-select-action" onclick="quickManualRolloverWeb()" style="background: rgba(245,158,11,0.12); color: #D97706; border-color: rgba(245,158,11,0.35); font-weight: 700;">📑 Tutup Buku</button>
-                </div>
-            </div>
-
-            <div class="store-cash-grid">
-                <!-- Sub-Card 1: Cash Laci (Fisik) -->
-                <div class="store-cash-subcard" id="webCardCashDrawer">
-                    <div class="store-cash-label">💵 Cash Laci Fisik (Hari Ini)</div>
-                    <div class="store-cash-val" id="webCashAmount">Rp 0</div>
-                    <div class="store-cash-status" id="webCashStatus">● Normal (Outcome + / Income -)</div>
-                </div>
-
-                <!-- Sub-Card 2: Modal Toko (Clickable) -->
-                <div class="store-cash-subcard clickable" id="webCardStoreModal" onclick="openWebStoreModalDialog()" title="Klik untuk tambah modal atau atur modal awal">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span class="store-cash-label">🏦 Modal Toko Aktif</span>
-                        <span style="font-size: 10.5px; color: #10B981; font-weight: 700;">✎ Atur</span>
-                    </div>
-                    <div class="store-cash-val" id="webModalAmount">Rp 0</div>
-                    <div class="store-cash-status" id="webModalRemaining">Sisa kas: Rp 0</div>
-                </div>
-
-                <!-- Sub-Card 3: Total Kas Riil -->
-                <div class="store-cash-subcard" id="webCardTotalKas">
-                    <div class="store-cash-label">💎 Total Kas Riil (Modal + Cash)</div>
-                    <div class="store-cash-val" id="webTotalKasAmount">Rp 0</div>
-                    <div class="store-cash-status" id="webRolloverInfo">🔄 Auto-reset ganti hari: Aktif</div>
-                </div>
-            </div>
-
-            <!-- Defisit Alert Bar (Hidden by default) -->
-            <div class="store-cash-deficit-alert" id="webDeficitAlertBar" style="display: none;">
-                <div class="store-cash-deficit-text" id="webDeficitAlertText">
-                    <span>⚠️</span>
-                    <span>Minus Cash melebihi modal laci toko! Terdeteksi defisit.</span>
-                </div>
-                <div style="display: flex; gap: 6px;">
-                    <button type="button" class="btn-deficit-fix" id="btnWebQuickFixDeficit" onclick="quickFixDeficitWeb()">+ Tambah Modal Defisit</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Controls Card (Search & Filters) -->
-        <div class="controls-card" style="margin-bottom: 14px;">
-            <div class="balance-controls-row">
-                <!-- Search Box -->
-                <div class="balance-search-box" id="balanceSearchBox">
-                    <span class="balance-search-icon">🔍</span>
-                    <input type="text" id="balanceSearchInput" placeholder="Cari aplikasi atau e-wallet..." autocomplete="off">
-                    <button type="button" class="balance-search-clear" id="balanceSearchClear" aria-label="Hapus">✕</button>
-                </div>
-
-                <!-- Filter Chips -->
-                <div class="balance-chips-row">
-                    <button type="button" class="balance-chip active" data-f="all" onclick="setBalanceFilter('all', this)">Semua</button>
-                    <button type="button" class="balance-chip" data-f="direct" onclick="setBalanceFilter('direct', this)">🎯 Direct Saja</button>
-                    <button type="button" class="balance-chip" data-f="hybrid" onclick="setBalanceFilter('hybrid', this)">⚡ Hybrid Saja</button>
-                    <button type="button" class="balance-chip" data-f="mutasi" onclick="setBalanceFilter('mutasi', this)">🔄 Ada Mutasi</button>
-                </div>
-            </div>
-        </div>
+        <!-- Cards View Grid (Pure App Cards) -->
 
         <!-- Cards View Grid -->
         <div id="balanceCardsContainer">
@@ -2658,8 +2804,59 @@
                 <!-- Populated dynamically via JavaScript -->
             </div>
 
-            <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <button type="button" onclick="closeDeviceModal(); showManageDevicesModal();" style="padding: 7px 12px; background: rgba(79, 142, 247, 0.12); border: 1px solid rgba(79, 142, 247, 0.3); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--primary); cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                    ⚙️ Kelola Perangkat
+                </button>
                 <button type="button" onclick="closeDeviceModal()" style="padding: 7px 14px; background: transparent; border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer;">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Devices Modal -->
+    <div id="manageDevicesModal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closeManageDevicesModal()">
+        <div class="device-manage-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                <div>
+                    <h2 style="font-size: 17px; font-weight: 800; color: var(--text-main); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                        <span>⚙️</span> Kelola Perangkat Kasir
+                    </h2>
+                    <p style="font-size: 12px; color: var(--text-muted); margin: 0;">
+                        Kelola data perangkat terdaftar. Hapus perangkat lama &amp; salin script SQL pembersihan database Supabase.
+                    </p>
+                </div>
+                <button type="button" onclick="closeManageDevicesModal()" title="Tutup" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1;">✕</button>
+            </div>
+
+            <!-- SQL Preview Section (Muncul otomatis saat hapus perangkat / salin SQL) -->
+            <div id="manageDeviceSqlBox" style="display: none; margin-top: 10px; margin-bottom: 12px; background: #0F172A; border: 1px solid rgba(79, 142, 247, 0.4); border-radius: 10px; padding: 10px 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 11px; font-weight: 700; color: #38BDF8; display: flex; align-items: center; gap: 4px;">
+                        <span>📋</span> Script SQL Pembersihan Supabase:
+                    </span>
+                    <button type="button" onclick="copyCurrentPreviewSql()" style="background: var(--primary); color: #fff; border: none; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                        Salin Ulang SQL
+                    </button>
+                </div>
+                <textarea id="manageDeviceSqlText" readonly style="width: 100%; height: 95px; background: #090D16; color: #A5F3FC; border: 1px solid #1E293B; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 11px; padding: 6px 8px; box-sizing: border-box; resize: vertical; outline: none;"></textarea>
+                <div style="font-size: 10.5px; color: #94A3B8; margin-top: 4px;">
+                    ℹ️ Tempelkan script di menu <strong>SQL Editor</strong> dashboard Supabase Anda untuk menghapus baris tabel secara permanen.
+                </div>
+            </div>
+
+            <!-- List Perangkat -->
+            <div id="manageDevicesList" style="display: flex; flex-direction: column; gap: 10px; max-height: 52vh; overflow-y: auto; margin-top: 10px; margin-bottom: 12px; padding-right: 2px;">
+                <!-- Populated dynamically via JavaScript -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                <div id="manageDevicesSummary" style="font-size: 11.5px; color: var(--text-muted);">
+                    <!-- e.g. 3 perangkat aktif -->
+                </div>
+                <button type="button" onclick="closeManageDevicesModal()" style="padding: 7px 16px; background: transparent; border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer;">
                     Tutup
                 </button>
             </div>
@@ -2855,6 +3052,177 @@
         </div>
     </div>
 
+    <!-- Balance App Detail Modal (Web) -->
+    <div id="webAppDetailModal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closeBalanceDetailModal()">
+        <div class="device-modal-card" style="max-width: 460px;">
+            <!-- Header: App Icon, Name, Package, Close Button -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                    <div class="balance-app-icon-frame" id="modalAppIconFrame" style="width: 46px; height: 46px; border-radius: 12px;"></div>
+                    <div style="min-width: 0;">
+                        <h2 id="modalAppName" style="font-size: 16px; font-weight: 800; color: var(--text-main); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">App Name</h2>
+                        <div style="display: inline-flex; align-items: center; gap: 6px; margin-top: 2px;">
+                            <span id="modalAppPackage" style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono, monospace);">com.example.app</span>
+                            <button type="button" onclick="copyBalanceDetailPackage()" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 11px; padding: 0 2px;" title="Salin Package Name">📋</button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" onclick="closeBalanceDetailModal()" title="Tutup" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1;">✕</button>
+            </div>
+
+            <!-- Big Highlighted Balance Card -->
+            <div style="background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(16,185,129,0.08)); border: 1px solid rgba(56,189,248,0.25); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Saldo Terkini</div>
+                    <div id="modalAppBalanceVal" style="font-size: 24px; font-weight: 800; font-family: var(--font-mono, monospace); color: var(--text-main); margin-top: 2px;">Rp 0</div>
+                </div>
+                <div id="modalAppDeltaBadge"></div>
+            </div>
+
+            <!-- Detail List: Mode, Baseline, Notifikasi Terakhir, Sumber Device -->
+            <div style="background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; font-size: 12px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;">
+                <!-- Mode Perhitungan -->
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: var(--text-muted);">Mode Perhitungan:</span>
+                    <span id="modalAppCalcMode" class="balance-mode-badge direct">🎯 DIRECT</span>
+                </div>
+                <div id="modalAppCalcDesc" style="font-size: 11px; color: var(--text-muted); line-height: 1.35; padding: 5px 8px; background: rgba(0,0,0,0.06); border-radius: 6px;">
+                    Perhitungan Saldo Langsung (Membaca saldo real-time langsung dari notifikasi).
+                </div>
+
+                <!-- Baseline Saldo (Khusus Hybrid) -->
+                <div id="modalAppBaselineRow" style="display: none; justify-content: space-between; align-items: center; border-top: 1px dashed var(--card-border); padding-top: 6px;">
+                    <span style="color: var(--text-muted);">Baseline Saldo:</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <strong id="modalAppBaselineVal" style="font-family: var(--font-mono, monospace);">Rp 0</strong>
+                        <span id="modalAppBaselineCount" style="font-size: 10.5px; color: var(--text-muted);"></span>
+                    </div>
+                </div>
+
+                <!-- Mutasi & Snippet Notifikasi -->
+                <div style="border-top: 1px dashed var(--card-border); padding-top: 6px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="color: var(--text-muted);">Notifikasi Terakhir:</span>
+                        <span id="modalAppTime" style="color: var(--text-muted); font-size: 11px;">Baru saja</span>
+                    </div>
+                    <div id="modalAppSnippet" style="font-size: 11.5px; color: var(--text-main); background: rgba(0,0,0,0.08); border-left: 3px solid var(--primary); padding: 6px 10px; border-radius: 4px; font-style: italic; line-height: 1.4; word-break: break-word;">
+                        -
+                    </div>
+                </div>
+
+                <!-- Device / Sumber -->
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--card-border); padding-top: 6px;">
+                    <span style="color: var(--text-muted);">Sumber Perangkat:</span>
+                    <span id="modalAppDevice" style="font-weight: 600; color: var(--text-main); font-size: 11.5px;">📱 HP Kasir</span>
+                </div>
+            </div>
+
+            <!-- Footer: Salin JSON & Tutup -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid var(--card-border); padding-top: 12px;">
+                <button type="button" class="btn-select-action" onclick="copyCurrentBalanceJson()" style="font-size: 11.5px;">
+                    📄 Salin JSON
+                </button>
+                <button type="button" class="btn-select-action" onclick="closeBalanceDetailModal()" style="background: var(--primary); color: #FFF; font-weight: 700; border: none; padding: 6px 16px;">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Balance Summary & Kas Detail Modal (Web) -->
+    <div id="balanceSummaryDetailModal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closeBalanceSummaryDetailModal()">
+        <div class="device-modal-card" style="max-width: 500px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">📊</span>
+                    <div>
+                        <h2 style="font-size: 16px; font-weight: 800; color: var(--text-main); margin: 0;">Rincian Lengkap Saldo &amp; Kas</h2>
+                        <p style="font-size: 11.5px; color: var(--text-muted); margin: 0;">Rekap total saldo digital, uang kas fisik, dan mode perhitungan</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeBalanceSummaryDetailModal()" title="Tutup" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1;">✕</button>
+            </div>
+
+            <!-- Card 1: Total Kas Riil Toko (Modal + Cash) -->
+            <div style="background: linear-gradient(135deg, rgba(6,182,212,0.12), rgba(16,185,129,0.1)); border: 1px solid rgba(6,182,212,0.25); border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">💎 Total Kas Riil (Modal + Cash Laci)</span>
+                    <span id="modalDetailCashSyncBadge" style="font-size: 9.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(6,182,212,0.2); color: var(--primary);">📱 HP Kasir</span>
+                </div>
+                <div id="modalDetailTotalKasAmount" style="font-size: 24px; font-weight: 800; font-family: var(--font-mono, monospace); color: var(--text-main);">Rp 0</div>
+                <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 6px;">
+                    <span>Modal Toko: <strong id="modalDetailModalVal" style="color: var(--text-main);">Rp 0</strong></span>
+                    <span>Cash Laci: <strong id="modalDetailCashVal" style="color: #10B981;">Rp 0</strong></span>
+                </div>
+            </div>
+
+            <!-- Card 2: Total Saldo Aplikasi & Komposisi Direct vs Hybrid -->
+            <div style="background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px;">
+                    <div>
+                        <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">💰 Total Seluruh Saldo Aplikasi</div>
+                        <div id="modalDetailTotalSaldoApp" style="font-size: 22px; font-weight: 800; font-family: var(--font-mono, monospace); color: var(--primary); margin-top: 2px;">Rp 0</div>
+                    </div>
+                    <span id="modalDetailAppCountBadge" class="balance-device-pill" style="font-size: 11px; font-weight: 700;">0 Akun Terpantau</span>
+                </div>
+
+                <!-- Grid Komposisi Mode -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                            <span style="font-size: 10px; font-weight: 700; color: #10B981;">🎯 SALDO DIRECT</span>
+                        </div>
+                        <div id="modalDetailSaldoDirect" style="font-size: 15px; font-weight: 800; font-family: var(--font-mono, monospace); color: var(--text-main);">Rp 0</div>
+                        <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Saldo real-time langsung</div>
+                    </div>
+
+                    <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                            <span style="font-size: 10px; font-weight: 700; color: #38BDF8;">⚡ SALDO HYBRID</span>
+                        </div>
+                        <div id="modalDetailSaldoHybrid" style="font-size: 15px; font-weight: 800; font-family: var(--font-mono, monospace); color: var(--text-main);">Rp 0</div>
+                        <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Baseline + mutasi</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Status Buku & Auto-Rollover -->
+            <div style="background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; font-size: 11.5px; display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: var(--text-muted);">🔄 Auto-Reset Ganti Hari:</span>
+                    <strong id="modalDetailAutoRolloverStatus" style="color: #10B981;">Aktif</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: var(--text-muted);">📅 Buku Shift Berjalan:</span>
+                    <span id="modalDetailBusinessDate" style="color: var(--text-main); font-family: var(--font-mono, monospace);">-</span>
+                </div>
+            </div>
+
+            <!-- Tombol Aksi Lengkap -->
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
+                <button type="button" class="btn-select-action" onclick="openWebStoreModalDialog(); closeBalanceSummaryDetailModal();" style="flex: 1; justify-content: center; font-weight: 700; background: rgba(16,185,129,0.12); color: #059669; border-color: rgba(16,185,129,0.35);">
+                    🏦 Kelola Modal
+                </button>
+                <button type="button" class="btn-select-action" onclick="quickManualRolloverWeb(); closeBalanceSummaryDetailModal();" style="flex: 1; justify-content: center; color: #D97706; font-weight: 700; background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.35);">
+                    📑 Tutup Buku Shift
+                </button>
+                <button type="button" class="btn-select-action" onclick="copyBalanceSummary()" style="flex: 1; justify-content: center;">
+                    📋 Salin Rekap WA
+                </button>
+                <button type="button" class="btn-select-action" onclick="refreshBalanceData()" style="flex: 1; justify-content: center;">
+                    🔄 Refresh
+                </button>
+            </div>
+
+            <!-- Footer: Tutup -->
+            <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--card-border); padding-top: 10px;">
+                <button type="button" class="btn-select-action" onclick="closeBalanceSummaryDetailModal()" style="background: var(--primary); color: #FFF; font-weight: 700; border: none; padding: 6px 20px;">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- APP LOGIC -->
     <script>
         // ============================================================================
@@ -2911,6 +3279,134 @@
         let dailySingleDaySelected = 3; // 1: D1, 2: D2, 3: D3
         let dailyProfitMode = false;
         let dailyHideZeroSell = true;
+
+        // ============================================================================
+        // Device Management & Discovery Helpers
+        // ============================================================================
+        function getDeletedDeviceIds() {
+            try {
+                const stored = localStorage.getItem('kspcheck_deleted_devices');
+                if (stored) {
+                    const arr = JSON.parse(stored);
+                    if (Array.isArray(arr)) return arr;
+                }
+            } catch(e) {}
+            return [];
+        }
+
+        function isDeviceDeleted(deviceId) {
+            if (!deviceId) return false;
+            return getDeletedDeviceIds().includes(String(deviceId));
+        }
+
+        function addDeletedDeviceId(deviceId) {
+            if (!deviceId) return;
+            const strId = String(deviceId);
+            const list = getDeletedDeviceIds();
+            if (!list.includes(strId)) {
+                list.push(strId);
+                localStorage.setItem('kspcheck_deleted_devices', JSON.stringify(list));
+            }
+        }
+
+        function removeDeletedDeviceId(deviceId) {
+            if (!deviceId) return;
+            const strId = String(deviceId);
+            let list = getDeletedDeviceIds();
+            list = list.filter(id => id !== strId);
+            localStorage.setItem('kspcheck_deleted_devices', JSON.stringify(list));
+        }
+
+        function clearAllDeletedDevices() {
+            if (!confirm('Pulihkan semua perangkat yang disembunyikan?')) return;
+            localStorage.removeItem('kspcheck_deleted_devices');
+            showToast('✅ Semua perangkat dipulihkan. Memuat ulang data...');
+            renderManageDevicesList();
+            fetchVouchersFromSupabase();
+        }
+
+        function getDiscoveredDevicesMap(includeDeleted = false) {
+            const devices = new Map();
+
+            const checkAndAdd = (devId, devName) => {
+                if (!devId || devId === 'test_dev' || String(devId).startsWith('test_')) return;
+                if (!includeDeleted && isDeviceDeleted(devId)) return;
+                const idStr = String(devId);
+                const nameStr = devName ? String(devName) : idStr;
+                if (!devices.has(idStr)) {
+                    devices.set(idStr, nameStr);
+                } else if (nameStr && nameStr !== idStr) {
+                    const existing = devices.get(idStr);
+                    if (existing === idStr) {
+                        devices.set(idStr, nameStr);
+                    }
+                }
+            };
+
+            if (Array.isArray(allVouchers)) {
+                allVouchers.forEach(v => checkAndAdd(v.device_id, v.device_name));
+            }
+            if (Array.isArray(allBarang)) {
+                allBarang.forEach(b => checkAndAdd(b.device_id, b.device_name));
+            }
+            if (allDailyReports && typeof allDailyReports.forEach === 'function') {
+                allDailyReports.forEach((val, devId) => {
+                    if (val && Array.isArray(val.items) && val.items.length > 0) {
+                        checkAndAdd(devId, val.deviceName || devId);
+                    }
+                });
+            }
+            if (Array.isArray(allBalances)) {
+                allBalances.forEach(b => checkAndAdd(b.device_id, b.device_name));
+            }
+            if (Array.isArray(allRestockOrders)) {
+                allRestockOrders.forEach(o => checkAndAdd(o.device_id, o.device_name));
+            }
+
+            return devices;
+        }
+
+        function generateDeviceCleanupSql(deviceId, deviceName) {
+            const cleanId = String(deviceId || '').replace(/'/g, "''");
+            const cleanName = String(deviceName || deviceId || '').replace(/--/g, '');
+            const dateStr = new Date().toLocaleString('id-ID');
+
+            return `-- ========================================================
+-- SCRIPT PEMBERSIHAN DATA SUPABASE (KSP CHECK)
+-- Perangkat : ${cleanName}
+-- Device ID : ${cleanId}
+-- Waktu     : ${dateStr}
+-- Cara pakai:
+-- 1. Buka dashboard Supabase proyek Anda (https://supabase.com/dashboard)
+-- 2. Buka menu "SQL Editor" di bilah samping kiri
+-- 3. Klik "New query", tempelkan script di bawah ini, lalu klik "Run"
+-- ========================================================
+
+-- 1. Hapus data stok voucher
+DELETE FROM public.vouchers WHERE device_id = '${cleanId}';
+
+-- 2. Hapus data barang & stok retail
+DELETE FROM public.barang WHERE device_id = '${cleanId}';
+
+-- 3. Hapus data laporan harian aktif
+DELETE FROM public.daily_reports WHERE device_id = '${cleanId}';
+
+-- 4. Hapus data arsip laporan harian (jika ada)
+DELETE FROM public.daily_report_archives 
+WHERE device_id = '${cleanId}' 
+   OR id LIKE '${cleanId}_%' 
+   OR id LIKE '${cleanId}-%';
+
+-- 5. Hapus data saldo kasir & e-wallet
+DELETE FROM public.app_balances WHERE device_id = '${cleanId}';
+
+-- 6. Hapus riwayat restock order perangkat
+DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
+
+-- ========================================================
+-- SELESAI: Seluruh data perangkat '${cleanId}' telah dibersihkan.
+-- ========================================================`;
+        }
 
         // 1. Initialization & PIN System
         document.addEventListener('DOMContentLoaded', () => {
@@ -3576,7 +4072,7 @@
 
                 if (vouchersRes.error) throw vouchersRes.error;
 
-                allVouchers = vouchersRes.data || [];
+                allVouchers = (vouchersRes.data || []).filter(v => !isDeviceDeleted(v.device_id));
                 // Sort by sort_order to match KSP Check exactly
                 allVouchers.sort((a, b) => {
                     let sA = (a.sort_order !== undefined && a.sort_order !== null && a.sort_order > 0) ? a.sort_order : 99999;
@@ -3592,7 +4088,7 @@
                 allDailyReports.clear();
                 if (reportsRes.data && Array.isArray(reportsRes.data)) {
                     reportsRes.data.forEach(r => {
-                        if (r.device_id && r.device_id !== 'test_dev' && !r.device_id.startsWith('test_') && r.report_data) {
+                        if (r.device_id && !isDeviceDeleted(r.device_id) && r.device_id !== 'test_dev' && !r.device_id.startsWith('test_') && r.report_data) {
                             let rData = r.report_data;
                             if (typeof rData === 'string') {
                                 try {
@@ -3612,9 +4108,11 @@
                 // Merge Supabase restock orders with local storage
                 if (ordersRes && ordersRes.data && Array.isArray(ordersRes.data)) {
                     const localMap = new Map();
-                    allRestockOrders.forEach(o => localMap.set(o.id, o));
+                    allRestockOrders.forEach(o => {
+                        if (!isDeviceDeleted(o.device_id)) localMap.set(o.id, o);
+                    });
                     ordersRes.data.forEach(so => {
-                        localMap.set(so.id, so);
+                        if (!isDeviceDeleted(so.device_id)) localMap.set(so.id, so);
                     });
                     allRestockOrders = Array.from(localMap.values());
                     allRestockOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -3656,31 +4154,7 @@
         function populateDeviceDropdown() {
             const select = document.getElementById('navDeviceFilter');
             const currentVal = select.value;
-            const devices = new Map();
-
-            allVouchers.forEach(v => {
-                if (v.device_id && v.device_id !== 'test_dev' && !v.device_id.startsWith('test_') && !devices.has(v.device_id)) {
-                    devices.set(v.device_id, v.device_name || v.device_id);
-                }
-            });
-
-            // Also check barang devices
-            if (Array.isArray(allBarang)) {
-                allBarang.forEach(b => {
-                    if (b.device_id && b.device_id !== 'test_dev' && !b.device_id.startsWith('test_') && !devices.has(b.device_id)) {
-                        devices.set(b.device_id, b.device_name || b.device_id);
-                    }
-                });
-            }
-
-            // Also check daily reports devices (hanya perangkat riil dengan laporan produk valid)
-            allDailyReports.forEach((val, devId) => {
-                if (devId && devId !== 'test_dev' && !devId.startsWith('test_') && !devices.has(devId)) {
-                    if (val && Array.isArray(val.items) && val.items.length > 0) {
-                        devices.set(devId, val.deviceName || devId);
-                    }
-                }
-            });
+            const devices = getDiscoveredDevicesMap();
 
             select.innerHTML = '<option value="all">📱 Semua Perangkat (' + devices.size + ')</option>';
             devices.forEach((name, id) => {
@@ -3707,6 +4181,7 @@
                 select.value = 'all';
             }
             updateOrderHeaderTitle();
+            updateSettingsMenuUI();
 
             // Munculkan dialog pilihan perangkat di awal load halaman jika perangkat ada > 1
             if (devices.size > 1 && !hasPromptedInitialDevice) {
@@ -3722,19 +4197,7 @@
 
             let devices = devicesMap;
             if (!devices) {
-                devices = new Map();
-                allVouchers.forEach(v => {
-                    if (v.device_id && v.device_id !== 'test_dev' && !v.device_id.startsWith('test_') && !devices.has(v.device_id)) {
-                        devices.set(v.device_id, v.device_name || v.device_id);
-                    }
-                });
-                allDailyReports.forEach((val, devId) => {
-                    if (devId && devId !== 'test_dev' && !devId.startsWith('test_') && !devices.has(devId)) {
-                        if (val && Array.isArray(val.items) && val.items.length > 0) {
-                            devices.set(devId, val.deviceName || devId);
-                        }
-                    }
-                });
+                devices = getDiscoveredDevicesMap();
             }
 
             const currentVal = document.getElementById('navDeviceFilter')?.value || 'all';
@@ -3805,6 +4268,251 @@
         function closeDeviceModal() {
             const modal = document.getElementById('deviceModal');
             if (modal) modal.style.display = 'none';
+        }
+
+        // ============================================================================
+        // Manage Devices Modal Operations
+        // ============================================================================
+        function renderManageDevicesList() {
+            const list = document.getElementById('manageDevicesList');
+            const summary = document.getElementById('manageDevicesSummary');
+            if (!list) return;
+
+            const activeDevices = getDiscoveredDevicesMap(false);
+            const deletedIds = getDeletedDeviceIds();
+            const currentVal = document.getElementById('navDeviceFilter')?.value || 'all';
+
+            if (summary) {
+                summary.innerHTML = `<strong>${activeDevices.size}</strong> perangkat aktif${deletedIds.length > 0 ? ` • <strong>${deletedIds.length}</strong> disembunyikan` : ''}`;
+            }
+
+            if (activeDevices.size === 0 && deletedIds.length === 0) {
+                list.innerHTML = `
+                    <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 12.5px;">
+                        Belum ada perangkat kasir yang terdeteksi dari database.
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            // Section: Perangkat Aktif
+            if (activeDevices.size > 0) {
+                html += `
+                    <div style="font-size: 10.5px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">
+                        Perangkat Kasir Aktif (${activeDevices.size}):
+                    </div>
+                `;
+
+                activeDevices.forEach((name, id) => {
+                    const isActive = (currentVal === id);
+                    const vCount = Array.isArray(allVouchers) ? allVouchers.filter(v => v.device_id === id).length : 0;
+                    const bCount = Array.isArray(allBarang) ? allBarang.filter(b => b.device_id === id).length : 0;
+                    const hasDaily = allDailyReports && allDailyReports.has(id);
+                    const hasBalance = Array.isArray(allBalances) && allBalances.some(b => b.device_id === id);
+                    const orderCount = Array.isArray(allRestockOrders) ? allRestockOrders.filter(o => o.device_id === id).length : 0;
+
+                    const escapedId = escapeHtml(id);
+                    const escapedName = escapeHtml(name);
+                    const jsId = id.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                    const jsName = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+                    html += `
+                        <div class="device-manage-item ${isActive ? 'is-active-dev' : ''}">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                                <div>
+                                    <div style="font-weight: 700; font-size: 13.5px; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                                        <span>📱</span> ${escapedName}
+                                        ${isActive ? '<span style="background: var(--primary); color: #fff; font-size: 9.5px; padding: 1px 6px; border-radius: 4px; font-weight: 700;">DIPILIH</span>' : ''}
+                                    </div>
+                                    <div style="font-size: 11px; color: var(--text-muted); font-family: monospace; margin-top: 2px;">
+                                        ID: ${escapedId}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-top: 2px;">
+                                <span style="font-size: 10.5px; background: rgba(79, 142, 247, 0.12); color: var(--primary); padding: 2px 7px; border-radius: 8px; font-weight: 600;">
+                                    🎟️ ${vCount} Voucher
+                                </span>
+                                <span style="font-size: 10.5px; background: rgba(16, 185, 129, 0.12); color: #10B981; padding: 2px 7px; border-radius: 8px; font-weight: 600;">
+                                    🛍️ ${bCount} Produk
+                                </span>
+                                ${hasDaily ? '<span style="font-size: 10.5px; background: rgba(245, 158, 11, 0.12); color: #F59E0B; padding: 2px 7px; border-radius: 8px; font-weight: 600;">📊 Laporan Harian</span>' : ''}
+                                ${hasBalance ? '<span style="font-size: 10.5px; background: rgba(139, 92, 246, 0.12); color: #8B5CF6; padding: 2px 7px; border-radius: 8px; font-weight: 600;">💳 Saldo</span>' : ''}
+                                ${orderCount > 0 ? `<span style="font-size: 10.5px; background: rgba(14, 165, 233, 0.12); color: #0EA5E9; padding: 2px 7px; border-radius: 8px; font-weight: 600;">📋 ${orderCount} Order</span>` : ''}
+                            </div>
+
+                            <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--card-border);">
+                                ${!isActive ? `
+                                    <button type="button" class="device-manage-btn device-manage-btn-outline" onclick="selectDeviceFromModal('${jsId}'); closeManageDevicesModal();" title="Gunakan filter perangkat ini">
+                                        📱 Pilih
+                                    </button>
+                                ` : ''}
+                                <button type="button" class="device-manage-btn device-manage-btn-outline" onclick="copyDeviceCleanupSql('${jsId}', '${jsName}')" title="Salin SQL pembersihan tanpa menghapus">
+                                    📋 Salin SQL
+                                </button>
+                                <button type="button" class="device-manage-btn device-manage-btn-danger" onclick="confirmDeleteDevice('${jsId}', '${jsName}')" title="Hapus perangkat dan salin SQL Supabase">
+                                    🗑️ Hapus
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // Section: Perangkat Disembunyikan / Dihapus
+            if (deletedIds.length > 0) {
+                html += `
+                    <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--card-border);">
+                        <div style="font-size: 10.5px; font-weight: 800; color: #EF4444; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>Perangkat Dihapus / Disembunyikan (${deletedIds.length}):</span>
+                            <button type="button" onclick="clearAllDeletedDevices()" style="background: none; border: none; color: var(--text-muted); font-size: 10.5px; text-decoration: underline; cursor: pointer;">
+                                Pulihkan Semua
+                            </button>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                `;
+
+                deletedIds.forEach(id => {
+                    const escapedId = escapeHtml(id);
+                    const jsId = id.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(239, 68, 68, 0.06); border: 1px dashed rgba(239, 68, 68, 0.25); border-radius: 8px; padding: 6px 10px;">
+                            <div style="font-size: 11px; font-family: monospace; color: var(--text-muted);">
+                                🗑️ ${escapedId}
+                            </div>
+                            <div style="display: flex; gap: 4px;">
+                                <button type="button" class="device-manage-btn device-manage-btn-outline" onclick="copyDeviceCleanupSql('${jsId}', '${jsId}')" style="padding: 3px 8px; font-size: 10.5px;">
+                                    📋 Salin SQL
+                                </button>
+                                <button type="button" class="device-manage-btn device-manage-btn-primary" onclick="restoreDeletedDevice('${jsId}')" style="padding: 3px 8px; font-size: 10.5px;">
+                                    ↺ Pulihkan
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+
+            list.innerHTML = html;
+        }
+
+        function showManageDevicesModal() {
+            const modal = document.getElementById('manageDevicesModal');
+            if (!modal) return;
+            renderManageDevicesList();
+            modal.style.display = 'flex';
+        }
+
+        function closeManageDevicesModal() {
+            const modal = document.getElementById('manageDevicesModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function confirmDeleteDevice(deviceId, deviceName) {
+            const promptMsg = `Hapus perangkat kasir:\n"${deviceName}" (${deviceId})?\n\n` +
+                `• Data perangkat ini akan langsung disembunyikan dari aplikasi web.\n` +
+                `• Script SQL pembersihan database Supabase akan OTOMATIS disalin ke clipboard Anda!`;
+            if (!confirm(promptMsg)) return;
+
+            deleteDeviceAndCopySql(deviceId, deviceName);
+        }
+
+        function deleteDeviceAndCopySql(deviceId, deviceName) {
+            if (!deviceId) return;
+
+            // 1. Generate SQL script
+            const sql = generateDeviceCleanupSql(deviceId, deviceName);
+
+            // 2. Salin SQL ke clipboard
+            copyToClipboard(sql, `🗑️ Perangkat "${deviceName}" dihapus!\n📋 Script SQL pembersihan database telah disalin ke clipboard.`);
+
+            // 3. Tampilkan SQL di preview box modal
+            const sqlBox = document.getElementById('manageDeviceSqlBox');
+            const sqlText = document.getElementById('manageDeviceSqlText');
+            if (sqlBox && sqlText) {
+                sqlText.value = sql;
+                sqlBox.style.display = 'block';
+            }
+
+            // 4. Catat ke localStorage (kspcheck_deleted_devices)
+            addDeletedDeviceId(deviceId);
+
+            // 5. Bersihkan dari state in-memory
+            if (Array.isArray(allVouchers)) {
+                allVouchers = allVouchers.filter(v => v.device_id !== deviceId);
+            }
+            if (Array.isArray(allBarang)) {
+                allBarang = allBarang.filter(b => b.device_id !== deviceId);
+            }
+            if (allDailyReports && typeof allDailyReports.delete === 'function') {
+                allDailyReports.delete(deviceId);
+            }
+            if (Array.isArray(allBalances)) {
+                allBalances = allBalances.filter(b => b.device_id !== deviceId);
+            }
+            if (Array.isArray(allRestockOrders)) {
+                allRestockOrders = allRestockOrders.filter(o => o.device_id !== deviceId);
+            }
+
+            // 6. Coba delete langsung via Supabase client jika koneksi tersedia
+            if (supabaseClient) {
+                try {
+                    supabaseClient.from('vouchers').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del vouchers:', e));
+                    supabaseClient.from('barang').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del barang:', e));
+                    supabaseClient.from('daily_reports').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del daily_reports:', e));
+                    supabaseClient.from('daily_report_archives').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del archives:', e));
+                    supabaseClient.from('app_balances').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del balances:', e));
+                    supabaseClient.from('restock_orders').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del orders:', e));
+                } catch (e) {
+                    console.warn('Error during client-side Supabase delete:', e);
+                }
+            }
+
+            // 7. Jika perangkat yang sedang dipilih dihapus, kembalikan ke 'all'
+            const select = document.getElementById('navDeviceFilter');
+            if (select && select.value === deviceId) {
+                select.value = 'all';
+            }
+
+            // 8. Re-render UI & Dropdown
+            populateDeviceDropdown();
+            onDeviceChange();
+            renderManageDevicesList();
+            updateSettingsMenuUI();
+        }
+
+        function copyDeviceCleanupSql(deviceId, deviceName) {
+            const sql = generateDeviceCleanupSql(deviceId, deviceName);
+            copyToClipboard(sql, `📋 Script SQL pembersihan "${deviceName}" disalin ke clipboard!`);
+            const sqlBox = document.getElementById('manageDeviceSqlBox');
+            const sqlText = document.getElementById('manageDeviceSqlText');
+            if (sqlBox && sqlText) {
+                sqlText.value = sql;
+                sqlBox.style.display = 'block';
+            }
+        }
+
+        function copyCurrentPreviewSql() {
+            const sqlText = document.getElementById('manageDeviceSqlText');
+            if (sqlText && sqlText.value) {
+                copyToClipboard(sqlText.value, '📋 Script SQL pembersihan Supabase berhasil disalin!');
+            }
+        }
+
+        function restoreDeletedDevice(deviceId) {
+            removeDeletedDeviceId(deviceId);
+            showToast(`✅ Perangkat (${deviceId}) dipulihkan. Mengambil data ulang...`);
+            renderManageDevicesList();
+            updateSettingsMenuUI();
+            fetchVouchersFromSupabase();
         }
 
         function updateOrderHeaderTitle() {
@@ -6772,6 +7480,7 @@
             const balancePane = document.getElementById('tabContentBalance');
             const produkPane = document.getElementById('tabContentProduk');
             const bottomBar = document.getElementById('bottomBarOrder');
+            const bottomDockBalance = document.getElementById('bottomDockBalance');
 
             if (orderPane) orderPane.style.display = (tab === 'order') ? 'block' : 'none';
             if (historyPane) historyPane.style.display = (tab === 'history') ? 'block' : 'none';
@@ -6780,6 +7489,7 @@
             if (balancePane) balancePane.style.display = (tab === 'balance') ? 'block' : 'none';
             if (produkPane) produkPane.style.display = (tab === 'produk') ? 'block' : 'none';
             if (bottomBar) bottomBar.style.display = (tab === 'order') ? 'flex' : 'none';
+            if (bottomDockBalance) bottomDockBalance.style.display = (tab === 'balance') ? 'flex' : 'none';
 
             if (tab === 'order') {
                 filterOrderProducts();
@@ -6894,6 +7604,10 @@
                 devText = devSelect.options[devSelect.selectedIndex].text.replace('📱 ', '').trim();
             }
             updateSettingsState('settingDeviceState', devText, currentDevVal !== 'all' ? 'on' : '');
+
+            const devicesMap = getDiscoveredDevicesMap();
+            const devCount = devicesMap.size;
+            updateSettingsState('settingManageDeviceState', `${devCount} HP`, devCount > 0 ? 'on' : '');
 
             const orderGroup = document.getElementById('settingsOrderGroup');
             const dailyGroup = document.getElementById('settingsDailyGroup');
@@ -7561,6 +8275,7 @@
         let balanceViewMode = 'cards'; // 'cards' | 'json'
         let balanceRealtimeChannel = null;
         let balanceInitialized = false;
+        let balanceSummaryStats = { totalSaldo: 0, directTot: 0, hybridTot: 0, appCount: 0 };
         let currentStoreCash = {
             modal_amount: 0,
             cash_amount: 0,
@@ -7586,6 +8301,74 @@
             'com.bri': { color: '#00529C', abbr: 'BRI' },
             'com.bankmandiri': { color: '#003366', abbr: 'MDR' }
         };
+
+        // Mapping icon aplikasi dari folder web/github_pages/iconapp/
+        const APP_CUSTOM_ICONS = {
+            'id.dana': 'iconapp/dana.webp',
+            'com.gojek.gopay': 'iconapp/gopay.webp',
+            'com.gojek.app': 'iconapp/gopay.webp',
+            'com.shopeepay.id': 'iconapp/shopeepay.webp',
+            'com.shopee.id': 'iconapp/shopeepay.webp',
+            'com.orderkuota.app': 'iconapp/orderkuota.webp',
+            'com.tekmo.app': 'iconapp/tekmo.webp',
+            'tekmo': 'iconapp/tekmo.webp'
+        };
+
+        // Fallback Authentic Vector SVG Icons (jika webp belum tersedia / gagal dimuat)
+        const APP_ICONS_SVG = {
+            'com.bca': `
+                <svg viewBox="0 0 48 48" width="100%" height="100%">
+                    <rect width="48" height="48" rx="10" fill="#005EAD"/>
+                    <path d="M12 33h24" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+                    <text x="24" y="27" font-family="'Arial Black', Arial, sans-serif" font-weight="900" font-size="13" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.5">BCA</text>
+                </svg>
+            `,
+            'com.bri': `
+                <svg viewBox="0 0 48 48" width="100%" height="100%">
+                    <rect width="48" height="48" rx="10" fill="#00529C"/>
+                    <circle cx="24" cy="24" r="14" fill="#0073E6"/>
+                    <path d="M17 16h6c3 0 5 1.5 5 4s-2 4-5 4h-6v-8zm4 5h2c1 0 1.5-.5 1.5-1.5s-.5-1.5-1.5-1.5h-2v3zm-4 5h7c3.5 0 5.5 1.8 5.5 4.5s-2 4.5-5.5 4.5h-7v-9zm4 6h3c1.2 0 1.8-.6 1.8-1.8s-.6-1.8-1.8-1.8h-3v3.6z" fill="#FFFFFF"/>
+                </svg>
+            `,
+            'com.bankmandiri': `
+                <svg viewBox="0 0 48 48" width="100%" height="100%">
+                    <rect width="48" height="48" rx="10" fill="#0A3977"/>
+                    <path d="M16 32V16l6 8 6-8v16" stroke="#FFB703" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <circle cx="34" cy="18" r="3" fill="#38BDF8"/>
+                </svg>
+            `,
+            'com.tekmo.app': `
+                <svg viewBox="0 0 48 48" width="100%" height="100%">
+                    <rect width="48" height="48" rx="10" fill="#0284C7"/>
+                    <text x="24" y="29" font-family="'Arial Black', Arial, sans-serif" font-weight="900" font-size="11" fill="#FFFFFF" text-anchor="middle">TEKMO</text>
+                </svg>
+            `
+        };
+
+        function getAppIconHtml(pkg, name) {
+            const iconPath = pkg ? APP_CUSTOM_ICONS[pkg] : null;
+            const svgIcon = pkg ? APP_ICONS_SVG[pkg] : null;
+            const brand = getAppBrand(pkg, name);
+            const fallbackAvatar = `
+                <div class="balance-app-avatar" style="background: ${brand.color}; width: 100%; height: 100%; border-radius: inherit; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #FFF;">
+                    ${escapeHtml(brand.abbr)}
+                </div>
+            `;
+
+            if (iconPath) {
+                return `
+                    <img src="${iconPath}" alt="${escapeHtml(pkg || '')}" class="balance-app-icon-img"
+                         onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                    <div class="balance-app-icon-fallback" style="display:none; width:100%; height:100%;">
+                        ${svgIcon || fallbackAvatar}
+                    </div>
+                `;
+            } else if (svgIcon) {
+                return svgIcon;
+            } else {
+                return fallbackAvatar;
+            }
+        }
 
         function getAppBrand(pkg, name) {
             if (pkg && APP_BRAND_PALETTE[pkg]) return APP_BRAND_PALETTE[pkg];
@@ -7644,7 +8427,7 @@
                     return;
                 }
 
-                allBalances = data || [];
+                allBalances = (data || []).filter(it => !isDeviceDeleted(it.device_id));
                 const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
                 const cashRow = allBalances.find(it => it.package_name === 'store_cash' && (selectedDevice === 'all' || it.device_id === selectedDevice))
                     || allBalances.find(it => it.package_name === 'store_cash');
@@ -7695,6 +8478,7 @@
             }
 
             if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                if (newRow && isDeviceDeleted(newRow.device_id)) return;
                 const idx = allBalances.findIndex(item => item.id === newRow.id);
                 if (idx >= 0) {
                     allBalances[idx] = newRow;
@@ -7776,6 +8560,13 @@
                 else hybridTot += val;
             });
 
+            balanceSummaryStats = {
+                totalSaldo: total,
+                directTot: directTot,
+                hybridTot: hybridTot,
+                appCount: filtered.length
+            };
+
             const elTot = document.getElementById('statBalanceTotal');
             const elDir = document.getElementById('statBalanceDirect');
             const elHyb = document.getElementById('statBalanceHybrid');
@@ -7785,6 +8576,10 @@
             if (elDir) elDir.textContent = fmtRp(directTot);
             if (elHyb) elHyb.textContent = fmtRp(hybridTot);
             if (elCnt) elCnt.textContent = `${filtered.length} Akun`;
+
+            if (typeof updateBalanceSummaryDetailModalUI === 'function') {
+                updateBalanceSummaryDetailModalUI();
+            }
 
             // Toggle empty state
             const emptyEl = document.getElementById('balanceEmptyState');
@@ -7821,86 +8616,144 @@
             let cls = 'balance-item-card';
             if (isHighlighted) cls += ' realtime-flash';
             card.className = cls;
-            card.id = 'balance_card_' + (item.id || item.package_name).replace(/[^a-zA-Z0-9_]/g, '_');
+            const safeId = (item.id || item.package_name || 'app').replace(/[^a-zA-Z0-9_]/g, '_');
+            card.id = 'balance_card_' + safeId;
 
-            const brand = getAppBrand(item.package_name, item.app_name);
-            const mode = (item.calculation_mode || 'DIRECT').toUpperCase();
-            const isDirect = mode === 'DIRECT';
-            const modeLabel = isDirect ? '🎯 Direct' : '⚡ Hybrid';
-            const modeCls = isDirect ? 'direct' : 'hybrid';
-
-            // Delta mutation badge
-            let deltaHtml = '';
-            const deltaAmt = Number(item.last_delta_amount) || 0;
-            const deltaType = (item.last_delta_type || '').toUpperCase();
-            if (deltaAmt !== 0 || deltaType) {
-                const isInc = deltaType === 'IN' || deltaAmt > 0;
-                const sign = isInc ? '+' : '-';
-                const deltaClass = isInc ? 'in' : 'out';
-                const absVal = fmtRp(Math.abs(deltaAmt));
-                deltaHtml = `<span class="balance-delta-pill ${deltaClass}">${sign}${absVal} (${deltaType || (isInc ? 'IN' : 'OUT')})</span>`;
-            }
-
-            // Device pill if viewing all devices
-            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
-            let devPill = '';
-            if (selectedDevice === 'all' && item.device_name) {
-                devPill = `<span class="balance-device-pill">📱 ${escapeHtml(item.device_name)}</span>`;
-            }
-
-            // Hybrid baseline info
-            let hybridInfo = '';
-            if (!isDirect && item.baseline_balance !== undefined) {
-                const bVal = fmtRp(item.baseline_balance || 0);
-                const bTime = item.baseline_timestamp_str || fmtTimeAgo(item.baseline_timestamp);
-                hybridInfo = `<div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">
-                    Baseline: <b>${bVal}</b> · ${escapeHtml(bTime)} · Δ ${item.delta_count || 0}x
-                </div>`;
-            }
-
-            // Snippet text preview
-            let snippetHtml = '';
-            if (item.raw_snippet) {
-                snippetHtml = `<div class="balance-snippet-details" title="${escapeHtml(item.raw_snippet)}">
-                    💬 ${escapeHtml(item.raw_snippet)}
-                </div>`;
-            }
-
+            const iconHtml = getAppIconHtml(item.package_name, item.app_name);
             const formattedBalance = item.formatted_balance || fmtRp(item.balance_value);
-            const timeAgo = fmtTimeAgo(item.updated_at || item.updated_at_str);
-            const fullDate = item.updated_at_str || '-';
+            const appDisplayName = item.app_name || item.package_name || 'Aplikasi';
+
+            card.onclick = () => openBalanceDetailModal(item);
+            card.title = `Klik untuk rincian & riwayat saldo ${appDisplayName}`;
 
             card.innerHTML = `
-                <div class="balance-card-header">
-                    <div class="balance-app-info">
-                        <div class="balance-app-avatar" style="background: ${brand.color};">
-                            ${escapeHtml(brand.abbr)}
-                        </div>
-                        <div class="balance-app-texts">
-                            <div class="balance-app-title" title="${escapeHtml(item.app_name)}">${escapeHtml(item.app_name)}</div>
-                            <div class="balance-app-pkg" title="${escapeHtml(item.package_name)}">${escapeHtml(item.package_name)}</div>
-                        </div>
+                <div class="balance-card-brand-row">
+                    <div class="balance-app-icon-frame">${iconHtml}</div>
+                    <div class="balance-app-title" title="${escapeHtml(appDisplayName)}">
+                        ${escapeHtml(appDisplayName)}
                     </div>
-                    <div class="balance-mode-badge ${modeCls}">${modeLabel}</div>
                 </div>
 
-                <div class="balance-amount-row">
+                <div class="balance-card-amount-box">
                     <div class="balance-amount-val">${escapeHtml(formattedBalance)}</div>
-                    ${deltaHtml}
-                </div>
-
-                ${hybridInfo}
-
-                ${snippetHtml}
-
-                <div class="balance-meta-row">
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                        ${devPill}
-                    </div>
-                    <div title="Diperbarui: ${escapeHtml(fullDate)}">🕒 ${escapeHtml(timeAgo)}</div>
                 </div>
             `;
             return card;
+        }
+
+        // ====================================================================
+        // APP BALANCE DETAIL MODAL DIALOG
+        // ====================================================================
+        let activeModalBalanceItem = null;
+
+        function openBalanceDetailModal(item) {
+            if (!item) return;
+            activeModalBalanceItem = item;
+
+            const iconHtml = getAppIconHtml(item.package_name, item.app_name);
+            const appDisplayName = item.app_name || item.package_name || 'Aplikasi';
+            const formattedBalance = item.formatted_balance || fmtRp(item.balance_value);
+
+            const iconEl = document.getElementById('modalAppIconFrame');
+            if (iconEl) iconEl.innerHTML = iconHtml;
+
+            const nameEl = document.getElementById('modalAppName');
+            if (nameEl) nameEl.textContent = appDisplayName;
+
+            const pkgEl = document.getElementById('modalAppPackage');
+            if (pkgEl) pkgEl.textContent = item.package_name || '-';
+
+            const balEl = document.getElementById('modalAppBalanceVal');
+            if (balEl) balEl.textContent = formattedBalance;
+
+            // Delta Badge
+            const deltaAmt = Number(item.last_delta_amount) || 0;
+            const deltaType = (item.last_delta_type || '').toUpperCase();
+            const deltaBadgeEl = document.getElementById('modalAppDeltaBadge');
+            if (deltaBadgeEl) {
+                if (deltaAmt !== 0 || deltaType) {
+                    const isInc = deltaType === 'IN' || deltaAmt > 0;
+                    const sign = isInc ? '+' : '-';
+                    const deltaClass = isInc ? 'in' : 'out';
+                    const absVal = fmtRp(Math.abs(deltaAmt));
+                    deltaBadgeEl.innerHTML = `<span class="balance-delta-pill ${deltaClass}">${sign}${absVal} (${deltaType || (isInc ? 'IN' : 'OUT')})</span>`;
+                } else {
+                    deltaBadgeEl.innerHTML = `<span style="font-size: 11px; color: var(--text-muted);">Tidak ada mutasi baru</span>`;
+                }
+            }
+
+            // Calculation Mode
+            const mode = (item.calculation_mode || 'DIRECT').toUpperCase();
+            const isDirect = mode === 'DIRECT';
+            const modeEl = document.getElementById('modalAppCalcMode');
+            const descEl = document.getElementById('modalAppCalcDesc');
+            if (modeEl) {
+                modeEl.className = 'balance-mode-badge ' + (isDirect ? 'direct' : 'hybrid');
+                modeEl.textContent = isDirect ? '🎯 DIRECT' : '⚡ HYBRID';
+            }
+            if (descEl) {
+                descEl.textContent = isDirect
+                    ? 'Perhitungan Saldo Langsung (Membaca saldo real-time langsung dari notifikasi aplikasi kasir).'
+                    : 'Perhitungan Saldo Hybrid (Baseline Saldo Awal + Akumulasi Mutasi Transaksi Masuk/Keluar).';
+            }
+
+            // Baseline (for Hybrid)
+            const baselineRow = document.getElementById('modalAppBaselineRow');
+            const baselineVal = document.getElementById('modalAppBaselineVal');
+            const baselineCnt = document.getElementById('modalAppBaselineCount');
+            if (baselineRow) {
+                if (!isDirect && item.baseline_balance !== undefined) {
+                    baselineRow.style.display = 'flex';
+                    if (baselineVal) baselineVal.textContent = fmtRp(item.baseline_balance || 0);
+                    if (baselineCnt) {
+                        const bTime = item.baseline_timestamp_str || fmtTimeAgo(item.baseline_timestamp);
+                        baselineCnt.textContent = `· ${bTime} · Δ ${item.delta_count || 0}x`;
+                    }
+                } else {
+                    baselineRow.style.display = 'none';
+                }
+            }
+
+            // Snippet & Time
+            const timeEl = document.getElementById('modalAppTime');
+            if (timeEl) {
+                const timeAgo = fmtTimeAgo(item.updated_at || item.updated_at_str);
+                const fullDate = item.updated_at_str || '';
+                timeEl.textContent = fullDate ? `${timeAgo} (${fullDate})` : timeAgo;
+            }
+
+            const snipEl = document.getElementById('modalAppSnippet');
+            if (snipEl) {
+                snipEl.textContent = item.raw_snippet ? `"${item.raw_snippet}"` : 'Belum ada ringkasan teks notifikasi mutasi.';
+            }
+
+            // Device
+            const devEl = document.getElementById('modalAppDevice');
+            if (devEl) {
+                devEl.textContent = item.device_name ? `📱 ${item.device_name}` : (item.device_id ? `📱 ${item.device_id}` : '📱 HP Kasir');
+            }
+
+            const modal = document.getElementById('webAppDetailModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeBalanceDetailModal() {
+            const modal = document.getElementById('webAppDetailModal');
+            if (modal) modal.style.display = 'none';
+            activeModalBalanceItem = null;
+        }
+
+        function copyBalanceDetailPackage() {
+            if (!activeModalBalanceItem || !activeModalBalanceItem.package_name) return;
+            copyToClipboard(activeModalBalanceItem.package_name, `📋 Package name disalin: ${activeModalBalanceItem.package_name}`);
+        }
+
+        function copyCurrentBalanceJson() {
+            if (!activeModalBalanceItem) return;
+            const payload = activeModalBalanceItem.raw_json && Object.keys(activeModalBalanceItem.raw_json).length > 0
+                ? activeModalBalanceItem.raw_json
+                : activeModalBalanceItem;
+            copyToClipboard(JSON.stringify(payload, null, 2), `📄 JSON data ${activeModalBalanceItem.app_name || activeModalBalanceItem.package_name} disalin!`);
         }
 
         function setBalanceFilter(mode, btn) {
@@ -8134,6 +8987,26 @@
             if (fixBtn && isDeficit) {
                 fixBtn.textContent = `+ Tambah Modal Rp ${deficitAmt.toLocaleString('id-ID')}`;
             }
+
+            // Update Sticky Bottom Dock Bar (Tab Saldo)
+            const dockCashVal = document.getElementById('dockBalanceCashVal');
+            const dockCashDot = document.getElementById('dockBalanceCashDot');
+            const dockModalVal = document.getElementById('dockBalanceModalVal');
+            if (dockCashVal) {
+                const sign = cash >= 0 ? '+' : '-';
+                dockCashVal.textContent = sign + 'Rp ' + Math.abs(cash).toLocaleString('id-ID');
+                dockCashVal.style.color = cash > 0 ? '#10B981' : (cash < 0 && isDeficit) ? '#EF4444' : cash < 0 ? '#F59E0B' : 'var(--text-main)';
+            }
+            if (dockCashDot) {
+                dockCashDot.style.color = isDeficit ? '#EF4444' : cash > 0 ? '#10B981' : cash < 0 ? '#F59E0B' : '#94A3B8';
+            }
+            if (dockModalVal) {
+                dockModalVal.textContent = 'Rp ' + modal.toLocaleString('id-ID');
+            }
+
+            if (typeof updateBalanceSummaryDetailModalUI === 'function') {
+                updateBalanceSummaryDetailModalUI();
+            }
         }
 
         function openWebStoreModalDialog() {
@@ -8302,6 +9175,73 @@
                 console.error('Upsert store_cash exception:', err);
                 showToast('❌ Error: ' + err.message);
             }
+        }
+
+        // ==================== BALANCE SUMMARY DETAIL MODAL CONTROLLER ====================
+
+        function updateBalanceSummaryDetailModalUI() {
+            const modal = document.getElementById('balanceSummaryDetailModal');
+            if (!modal || modal.style.display === 'none') return;
+
+            const m = currentStoreCash.modal_amount || 0;
+            const c = currentStoreCash.cash_amount || 0;
+            const effective = currentStoreCash.effective_cash !== undefined ? currentStoreCash.effective_cash : (m + c);
+            const isDeficit = currentStoreCash.is_deficit;
+            const isAuto = currentStoreCash.is_auto_rollover !== false;
+            const lastDate = currentStoreCash.last_business_date || '-';
+            const deviceName = currentStoreCash.device_name || 'HP Kasir';
+
+            const devBadge = document.getElementById('modalDetailCashSyncBadge');
+            if (devBadge) devBadge.textContent = '📱 ' + deviceName;
+
+            const elTotalKas = document.getElementById('modalDetailTotalKasAmount');
+            if (elTotalKas) {
+                elTotalKas.textContent = (effective >= 0 ? '' : '-') + 'Rp ' + Math.abs(effective).toLocaleString('id-ID');
+                elTotalKas.style.color = effective < 0 ? '#EF4444' : '#10B981';
+            }
+
+            const elModalVal = document.getElementById('modalDetailModalVal');
+            if (elModalVal) elModalVal.textContent = 'Rp ' + m.toLocaleString('id-ID');
+
+            const elCashVal = document.getElementById('modalDetailCashVal');
+            if (elCashVal) {
+                const sign = c >= 0 ? '+' : '-';
+                elCashVal.textContent = sign + 'Rp ' + Math.abs(c).toLocaleString('id-ID');
+                elCashVal.style.color = c > 0 ? '#10B981' : (c < 0 && isDeficit) ? '#EF4444' : c < 0 ? '#F59E0B' : 'var(--text-main)';
+            }
+
+            const elTotalApp = document.getElementById('modalDetailTotalSaldoApp');
+            if (elTotalApp) elTotalApp.textContent = fmtRp(balanceSummaryStats.totalSaldo || 0);
+
+            const elCountBadge = document.getElementById('modalDetailAppCountBadge');
+            if (elCountBadge) elCountBadge.textContent = `${balanceSummaryStats.appCount || 0} Akun Terpantau`;
+
+            const elDirect = document.getElementById('modalDetailSaldoDirect');
+            if (elDirect) elDirect.textContent = fmtRp(balanceSummaryStats.directTot || 0);
+
+            const elHybrid = document.getElementById('modalDetailSaldoHybrid');
+            if (elHybrid) elHybrid.textContent = fmtRp(balanceSummaryStats.hybridTot || 0);
+
+            const elAutoStatus = document.getElementById('modalDetailAutoRolloverStatus');
+            if (elAutoStatus) {
+                elAutoStatus.textContent = isAuto ? 'Aktif' : 'Nonaktif';
+                elAutoStatus.style.color = isAuto ? '#10B981' : '#F59E0B';
+            }
+
+            const elBizDate = document.getElementById('modalDetailBusinessDate');
+            if (elBizDate) elBizDate.textContent = lastDate;
+        }
+
+        function openBalanceSummaryDetailModal() {
+            const modal = document.getElementById('balanceSummaryDetailModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            updateBalanceSummaryDetailModalUI();
+        }
+
+        function closeBalanceSummaryDetailModal() {
+            const modal = document.getElementById('balanceSummaryDetailModal');
+            if (modal) modal.style.display = 'none';
         }
 
         // ============================================================================
@@ -8731,7 +9671,7 @@
                     return;
                 }
 
-                allBarang = data || [];
+                allBarang = (data || []).filter(b => !isDeviceDeleted(b.device_id));
 
                 const sqlBanner = document.getElementById('produkSqlGuideBanner');
                 if (sqlBanner) sqlBanner.style.display = 'none';
@@ -8794,6 +9734,7 @@
             }
 
             if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                if (newRow && isDeviceDeleted(newRow.device_id)) return;
                 const idx = allBarang.findIndex(item =>
                     (item.id && item.id === newRow.id) ||
                     (item.product_code && item.product_code === newRow.product_code) ||
