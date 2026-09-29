@@ -1,8 +1,9 @@
 {
-  "name": "KSP Check - Voucher & Stok",
-  "short_name": "KSP Check",
-  "description": "Interactive Stock, Restock Order & Laporan Harian KSP Check",
-  "start_url": "interactive_stock.html",
+  "id": "kspcheck-order-app",
+  "name": "Order Restok - KSP Check",
+  "short_name": "Order",
+  "description": "Tab Order Restok KSP Check",
+  "start_url": "interactive_stock.html?tab=order",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0F1117",
@@ -10,20 +11,20 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "icon-order.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-order-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icon-512.png",
+      "src": "icon-order-512.png",
       "sizes": "512x512",
       "type": "image/png"
-    },
-    {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
     }
   ],
   "shortcuts": [
@@ -40,13 +41,6 @@
       "description": "Buka tab Stok Produk & Aksesoris",
       "url": "interactive_stock.html?tab=produk",
       "icons": [{ "src": "icon-produk-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "🌅 Order Restok",
-      "short_name": "Order",
-      "description": "Buka tab Order Restok",
-      "url": "interactive_stock.html?tab=order",
-      "icons": [{ "src": "icon-order-192.png", "sizes": "192x192" }]
     },
     {
       "name": "📊 Riwayat Order",

@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgProduk" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E1B4B"/>
+      <stop offset="50%" stop-color="#18182E"/>
+      <stop offset="100%" stop-color="#0B0F19"/>
+    </linearGradient>
+
+    <!-- Shopping Bag Gradient -->
+    <linearGradient id="bagGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="50%" stop-color="#4F46E5"/>
+      <stop offset="100%" stop-color="#3730A3"/>
+    </linearGradient>
+
+    <!-- Tag Gradient -->
+    <linearGradient id="tagGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+
+    <!-- Badge Gradient -->
+    <linearGradient id="badgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <!-- Soft Drop Shadow -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#4F46E5" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background App Icon Shape (Squircle 512x512) -->
+  <rect width="512" height="512" rx="108" fill="url(#bgProduk)"/>
+  <rect width="484" height="484" x="14" y="14" rx="98" fill="none" stroke="#6366F1" stroke-width="8" opacity="0.8"/>
+
+  <!-- Shopping Bag Artwork -->
+  <g filter="url(#shadow)">
+    <!-- Bag Handles (Curved Arches) -->
+    <path d="M 200 160 C 200 105, 312 105, 312 160" fill="none" stroke="#C7D2FE" stroke-width="12" stroke-linecap="round"/>
+
+    <!-- Bag Main Trapezoid Body -->
+    <polygon points="160,165 352,165 380,340 132,340" fill="url(#bagGrad)" stroke="#818CF8" stroke-width="4" stroke-linejoin="round"/>
+
+    <!-- Top Fold Crease Overlay -->
+    <polygon points="160,165 352,165 344,185 168,185" fill="#EEF2FF" opacity="0.22"/>
+
+    <!-- Front Diagonal Fold Accent -->
+    <polygon points="168,185 344,185 300,340 212,340" fill="#312E81" opacity="0.45"/>
+
+    <!-- Barcode Stripes on Bag -->
+    <g transform="translate(195, 240)" fill="#FFFFFF" opacity="0.85">
+      <rect x="0" y="0" width="6" height="42" rx="2"/>
+      <rect x="12" y="0" width="10" height="42" rx="2"/>
+      <rect x="28" y="0" width="4" height="42" rx="1.5"/>
+      <rect x="38" y="0" width="14" height="42" rx="2"/>
+      <rect x="58" y="0" width="6" height="42" rx="2"/>
+      <rect x="70" y="0" width="12" height="42" rx="2"/>
+      <rect x="88" y="0" width="6" height="42" rx="2"/>
+      <rect x="100" y="0" width="16" height="42" rx="2"/>
+    </g>
+
+    <!-- Hanging Retail Price Tag -->
+    <g transform="translate(142, 195) rotate(-15)">
+      <!-- String -->
+      <line x1="16" y1="-12" x2="16" y2="4" stroke="#FEF3C7" stroke-width="2.5" stroke-dasharray="3,2"/>
+      <!-- Tag Body -->
+      <polygon points="4,10 28,10 36,36 16,52 -4,36" fill="url(#tagGrad)" stroke="#FFFFFF" stroke-width="2"/>
+      <!-- Hole -->
+      <circle cx="16" cy="18" r="4" fill="#1E1B4B"/>
+      <!-- Price symbol -->
+      <text x="16" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="900" fill="#FFFFFF" text-anchor="middle">Rp</text>
+    </g>
+  </g>
+
+  <!-- Top-Right Star / Stock Badge -->
+  <g filter="url(#shadow)">
+    <circle cx="380" cy="135" r="46" fill="url(#badgeGrad)" stroke="#FFFFFF" stroke-width="4"/>
+    <!-- Check / Star / Box Icon in Badge -->
+    <path d="M 380 115 L 386 128 L 400 130 L 390 140 L 392 154 L 380 147 L 368 154 L 370 140 L 360 130 L 374 128 Z" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Pill Tab Name (PRODUK) -->
+  <rect x="131" y="392" width="250" height="68" rx="34" fill="rgba(99, 102, 241, 0.28)" stroke="#818CF8" stroke-width="3"/>
+  <text x="256" y="440" font-family="Segoe UI, Arial, sans-serif" font-weight="bold" font-size="34" fill="#FFFFFF" text-anchor="middle">PRODUK</text>
+</svg>

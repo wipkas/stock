@@ -75,4 +75,8 @@
     <!-- Live Pulse Lightning Bolt -->
     <path d="M 364 306 L 334 354 L 358 354 L 350 404 L 388 348 L 362 348 Z" fill="url(#boltGrad)" stroke="#78350F" stroke-width="2" stroke-linejoin="round" filter="url(#glow)"/>
   </g>
+
+  <!-- Pill Tab Name (SALDO) -->
+  <rect x="131" y="392" width="250" height="68" rx="34" fill="rgba(6, 182, 212, 0.28)" stroke="#38BDF8" stroke-width="3"/>
+  <text x="256" y="440" font-family="Segoe UI, Arial, sans-serif" font-weight="bold" font-size="34" fill="#FFFFFF" text-anchor="middle">SALDO</text>
 </svg>

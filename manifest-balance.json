@@ -17,12 +17,24 @@
       "purpose": "any maskable"
     },
     {
-      "src": "icon-order-192.png",
+      "src": "icon-balance-192.png",
       "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-balance-512.png",
+      "sizes": "512x512",
       "type": "image/png"
     }
   ],
   "shortcuts": [
+    {
+      "name": "🛍️ Stok Produk",
+      "short_name": "Produk",
+      "description": "Buka tab Stok Produk & Aksesoris",
+      "url": "interactive_stock.html?tab=produk",
+      "icons": [{ "src": "icon-produk-192.png", "sizes": "192x192" }]
+    },
     {
       "name": "🌅 Order Restok",
       "short_name": "Order",
@@ -31,18 +43,18 @@
       "icons": [{ "src": "icon-order-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "📊 History Restok",
-      "short_name": "History",
-      "description": "Buka tab History Order",
+      "name": "📊 Riwayat Order",
+      "short_name": "Riwayat",
+      "description": "Buka tab Riwayat Order",
       "url": "interactive_stock.html?tab=history",
-      "icons": [{ "src": "icon-order-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "icon-history-192.png", "sizes": "192x192" }]
     },
     {
       "name": "🌙 Laporan Harian",
       "short_name": "Laporan",
       "description": "Buka tab Laporan Stok",
       "url": "interactive_stock.html?tab=daily",
-      "icons": [{ "src": "icon-order-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "icon-daily-192.png", "sizes": "192x192" }]
     },
     {
       "name": "💹 Margin Voucher",

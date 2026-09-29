@@ -17,12 +17,31 @@
       "purpose": "any maskable"
     },
     {
-      "src": "icon-order-192.png",
+      "src": "icon-margin-192.png",
       "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-margin-512.png",
+      "sizes": "512x512",
       "type": "image/png"
     }
   ],
   "shortcuts": [
+    {
+      "name": "💳 Saldo Realtime",
+      "short_name": "Saldo",
+      "description": "Buka tab Saldo Realtime",
+      "url": "interactive_stock.html?tab=balance",
+      "icons": [{ "src": "icon-balance-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "🛍️ Stok Produk",
+      "short_name": "Produk",
+      "description": "Buka tab Stok Produk & Aksesoris",
+      "url": "interactive_stock.html?tab=produk",
+      "icons": [{ "src": "icon-produk-192.png", "sizes": "192x192" }]
+    },
     {
       "name": "🌅 Order Restok",
       "short_name": "Order",
