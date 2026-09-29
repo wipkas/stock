@@ -1771,17 +1771,26 @@
             position: absolute;
             top: 8px;
             right: 8px;
-            font-size: 9.5px;
+            font-size: 10px;
             font-weight: 800;
-            padding: 3px 7px;
+            padding: 3.5px 8px;
             border-radius: 6px;
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
             z-index: 2;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
+            letter-spacing: 0.3px;
+            line-height: 1.2;
+        }
+        .produk-stock-overlay span:first-child {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #FFFFFF !important;
+            box-shadow: 0 0 4px rgba(255, 255, 255, 0.9);
+            flex-shrink: 0;
         }
         .produk-zoom-overlay {
             position: absolute;
@@ -1863,19 +1872,22 @@
             .produk-name { font-size: 11.5px; min-height: 31px; }
         }
         .status-safe {
-            background: rgba(46, 204, 135, 0.15);
-            color: var(--success);
-            border: 1px solid rgba(46, 204, 135, 0.3);
+            background: #059669 !important; /* Bold Solid Emerald Green */
+            color: #FFFFFF !important;
+            border: 1px solid rgba(255, 255, 255, 0.35) !important;
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
         }
         .status-warn {
-            background: rgba(245, 166, 35, 0.15);
-            color: var(--warning);
-            border: 1px solid rgba(245, 166, 35, 0.35);
+            background: #D97706 !important; /* Bold Solid Vivid Amber */
+            color: #FFFFFF !important;
+            border: 1px solid rgba(255, 255, 255, 0.35) !important;
+            box-shadow: 0 2px 8px rgba(217, 119, 6, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
         }
         .status-danger {
-            background: rgba(229, 83, 83, 0.15);
-            color: var(--danger);
-            border: 1px solid rgba(229, 83, 83, 0.35);
+            background: #DC2626 !important; /* Bold Solid Crimson Red */
+            color: #FFFFFF !important;
+            border: 1px solid rgba(255, 255, 255, 0.35) !important;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
         }
         .produk-pricing {
             font-size: 10.5px;
@@ -1979,6 +1991,67 @@
             display: block;
         }
 
+        /* Produk Filter Dropdown Menu */
+        .produk-filter-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            background: var(--card-bg, #181C27);
+            border: 1px solid var(--card-border, #262B3D);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+            padding: 8px;
+            min-width: 220px;
+            max-width: 280px;
+            max-height: 380px;
+            overflow-y: auto;
+            z-index: 500;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .produk-dropdown-section-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+            padding: 6px 8px 3px 8px;
+        }
+        .produk-dropdown-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease;
+            white-space: nowrap;
+        }
+        .produk-dropdown-item:hover {
+            background: var(--chip-bg, #222736);
+        }
+        .produk-dropdown-item.active {
+            background: rgba(139, 92, 246, 0.18);
+            color: #A78BFA;
+        }
+        .produk-dropdown-item .pdd-check {
+            display: none;
+            font-weight: 800;
+            color: #A78BFA;
+            font-size: 13px;
+        }
+        .produk-dropdown-item.active .pdd-check {
+            display: inline;
+        }
+        .produk-dropdown-sep {
+            height: 1px;
+            background: var(--card-border);
+            margin: 6px 0;
+        }
+
         /* Variant Card Styles (Grouped Products) */
         .produk-variant-badge-overlay {
             position: absolute;
@@ -2045,23 +2118,31 @@
             box-shadow: 0 2px 6px rgba(79, 142, 247, 0.35);
         }
         .pvc-stock {
-            font-size: 8.5px;
+            font-size: 9px;
             font-weight: 800;
-            padding: 0.5px 3.5px;
-            border-radius: 3px;
-            background: rgba(0, 0, 0, 0.15);
-            color: inherit;
+            padding: 1px 5px;
+            border-radius: 4px;
+            background: #1E293B;
+            color: #F8FAFC;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        body.light-theme .pvc-stock {
+            background: #475569;
+            color: #FFFFFF;
         }
         .pvc-chip.active .pvc-stock {
-            background: rgba(255, 255, 255, 0.28);
-            color: #FFFFFF;
+            background: #FFFFFF;
+            color: var(--primary);
+            font-weight: 900;
         }
         .pvc-stock.empty {
-            color: #EF4444;
+            background: #DC2626 !important;
+            color: #FFFFFF !important;
+            font-weight: 800;
         }
         .pvc-chip.active .pvc-stock.empty {
-            background: #EF4444;
-            color: #FFFFFF;
+            background: #EF4444 !important;
+            color: #FFFFFF !important;
         }
 
         /* Modal Variant Section & Table */
@@ -2357,6 +2438,46 @@
 
                 <!-- Tombol Rincian Hanya Ikon Tanpa Teks -->
                 <button type="button" class="btn-dock-detail" onclick="openBalanceSummaryDetailModal()" title="Rincian Lengkap Saldo &amp; Kas">
+                    📊
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticky Bottom Dock (Tab 6: Produk Retail & Aksesoris) -->
+    <div id="bottomDockProduk" class="balance-bottom-dock" style="display: none;">
+        <div class="balance-dock-inner">
+            <div class="balance-dock-left">
+                <!-- Item 1: Total SKU -->
+                <div class="balance-dock-item" id="dockProdukTotalSkuItem">
+                    <div class="balance-dock-label">
+                        <span>📦 Total Item</span>
+                    </div>
+                    <div class="balance-dock-val" id="dockProdukTotalSkuVal">0 SKU</div>
+                </div>
+
+                <div class="balance-dock-sep"></div>
+
+                <!-- Item 2: Total Stok Fisik -->
+                <div class="balance-dock-item" id="dockProdukTotalStockItem">
+                    <div class="balance-dock-label">
+                        <span>📊 Stok Fisik</span>
+                    </div>
+                    <div class="balance-dock-val" id="dockProdukTotalStockVal" style="color: #10B981;">0 pcs</div>
+                </div>
+
+                <div class="balance-dock-sep"></div>
+
+                <!-- Item 3: Total Nilai Modal -->
+                <div class="balance-dock-item" id="dockProdukTotalCostItem">
+                    <div class="balance-dock-label">
+                        <span>🏦 Nilai Modal</span>
+                    </div>
+                    <div class="balance-dock-val" id="dockProdukTotalCostVal" style="color: #F59E0B;">Rp 0</div>
+                </div>
+
+                <!-- Tombol Rincian Hanya Ikon Tanpa Teks -->
+                <button type="button" class="btn-dock-detail" onclick="openProdukSummaryDetailModal()" title="Rincian Lengkap Stok &amp; Nilai Aset">
                     📊
                 </button>
             </div>
@@ -2661,78 +2782,78 @@
     </div>
 
     <!-- ==================== TAB 6: PRODUK & AKSESORIS ==================== -->
-    <div id="tabContentProduk" class="container" style="display: none;">
-        <!-- Header Card -->
-        <div class="header-card" style="margin-bottom: 14px; border-left: 4px solid #8B5CF6;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <div>
-                    <div class="header-title" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <span>🛍️ Stok Barang &amp; Aksesoris</span>
-                        <span class="balance-live-badge" id="produkLiveBadge" title="Status Koneksi Realtime Supabase" style="color: #8B5CF6; background: rgba(139, 92, 246, 0.12); border-color: rgba(139, 92, 246, 0.25);">
-                            <span class="balance-live-dot" style="background: #8B5CF6; box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);"></span>
-                            <span id="produkLiveStatusText">Realtime Active</span>
-                        </span>
-                    </div>
-                    <div class="header-subtitle" id="produkSubtitle">Monitoring stok fisik barang retail terkini, nilai aset modal, dan estimasi laba.</div>
-                </div>
-                <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-                    <button type="button" class="btn-select-action" onclick="copyProdukSummary()" title="Salin ringkasan stok barang untuk laporan WhatsApp">📋 Salin Rekap</button>
-                    <button type="button" class="btn-select-action" onclick="fetchBarangFromSupabase(true)" title="Ambil ulang data barang dari Supabase">🔄 Refresh</button>
-                </div>
-            </div>
-
-            <!-- Stats Bar -->
-            <div class="stats-summary" id="produkStatsSummary" style="margin-top: 14px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
-                <div class="stat-box">
-                    <div class="stat-num primary" id="statProdukTotalSku">0 SKU</div>
-                    <div class="stat-label">📦 Total Item (SKU)</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-num success" id="statProdukTotalStock">0 pcs</div>
-                    <div class="stat-label">📊 Stok Fisik Total</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-num warning" id="statProdukTotalCost">Rp 0</div>
-                    <div class="stat-label">🏦 Total Nilai Modal</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-num primary" id="statProdukTotalSales">Rp 0</div>
-                    <div class="stat-label">🏷️ Potensi Nilai Jual</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-num success" id="statProdukTotalProfit">Rp 0</div>
-                    <div class="stat-label">💎 Potensi Laba Bersih</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-num danger" id="statProdukLowStock">0 Item</div>
-                    <div class="stat-label">⚠️ Stok Menipis/Habis</div>
-                </div>
-            </div>
+    <div id="tabContentProduk" class="container" style="display: none; padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));">
+        <!-- Hidden elements to preserve ID lookups safely without DOM null errors -->
+        <div style="display: none;">
+            <span id="statProdukTotalSku"></span>
+            <span id="statProdukTotalStock"></span>
+            <span id="statProdukTotalCost"></span>
+            <span id="statProdukTotalSales"></span>
+            <span id="statProdukTotalProfit"></span>
+            <span id="statProdukLowStock"></span>
+            <span id="produkLiveBadge"></span>
+            <span id="produkLiveStatusText"></span>
+            <span id="produkSubtitle"></span>
+            <div id="produkBrandChipsRow"></div>
+            <div id="chipProdukAll"></div>
+            <div id="produkSearchBox"></div>
         </div>
 
-        <!-- Controls Card -->
-        <div class="controls-card" style="margin-bottom: 14px;">
-            <!-- Stock Status Filter Chips -->
-            <div class="filter-row" style="margin-bottom: 8px;">
-                <div class="chip active" id="chipProdukAll" onclick="setProdukFilter('all', this)">Semua</div>
-                <div class="chip" onclick="setProdukFilter('low', this)">⚡ Perlu Restok</div>
-                <div class="chip" onclick="setProdukFilter('habis', this)">🔴 Habis (0)</div>
-                <div class="chip" onclick="setProdukFilter('menipis', this)">🟡 Menipis</div>
-                <div class="chip" onclick="setProdukFilter('aman', this)">🟢 Stok Aman</div>
-            </div>
+        <!-- Controls Card (Compact Single Dropdown Filter & Search Chip) -->
+        <div class="controls-card" style="margin-bottom: 14px; padding: 8px 12px;">
+            <div class="quick-select-row" style="margin: 0; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                    <!-- 1. Search Chip Group (Icon-triggered search) -->
+                    <div class="search-chip-group" id="produkSearchGroup">
+                        <button type="button" class="btn-select-action" id="btnProdukSearchToggle" onclick="toggleProdukSearch()" title="Cari barang atau SKU">🔍</button>
+                        <input type="text" id="produkSearchInput" class="search-chip-input" placeholder="Cari nama / SKU..." oninput="onProdukSearchInput()" onkeydown="if(event.key==='Escape') clearProdukSearch()" style="display: none;">
+                        <button type="button" class="search-chip-clear" id="btnProdukSearchClear" onclick="clearProdukSearch()" title="Hapus pencarian" style="display: none;">✕</button>
+                    </div>
 
-            <!-- Brand Filter Chips (Populated dynamically) -->
-            <div class="filter-row" id="produkBrandChipsRow" style="margin-bottom: 10px;">
-                <div class="chip active" onclick="setProdukBrand('all', this)">Semua Brand</div>
-            </div>
+                    <!-- 2. Single Filter Dropdown Button -->
+                    <div class="produk-filter-wrapper" id="produkFilterWrapper" style="position: relative;">
+                        <button type="button" class="btn-select-action" id="btnProdukFilterDropdown" onclick="toggleProdukFilterMenu(event)" title="Pilih filter status stok atau brand">
+                            <span id="produkFilterActiveIcon">🎯</span>
+                            <span id="produkFilterActiveLabel">Semua Produk</span>
+                            <span style="font-size: 10px; opacity: 0.7;">▾</span>
+                        </button>
 
-            <!-- Search & Sort Row -->
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
-                <div class="produk-search-box" id="produkSearchBox">
-                    <span style="font-size: 13px; color: var(--text-muted); margin-right: 6px;">🔍</span>
-                    <input type="text" id="produkSearchInput" placeholder="Cari nama barang atau kode SKU..." oninput="onProdukSearchInput()" onkeydown="if(event.key==='Escape') clearProdukSearch()">
-                    <button type="button" class="produk-search-clear" id="btnProdukSearchClear" onclick="clearProdukSearch()" title="Hapus pencarian">✕</button>
+                        <!-- Floating Dropdown Menu -->
+                        <div class="produk-filter-dropdown-menu" id="produkFilterDropdownMenu" style="display: none;">
+                            <div class="produk-dropdown-section-title">Status Stok</div>
+                            <div class="produk-dropdown-options" id="produkStatusFilterOptions">
+                                <div class="produk-dropdown-item active" data-filter="all" onclick="selectProdukFilterFromDropdown('all', 'Semua Produk', '🎯')">
+                                    <span>🎯 Semua Produk</span>
+                                    <span class="pdd-check">✓</span>
+                                </div>
+                                <div class="produk-dropdown-item" data-filter="low" onclick="selectProdukFilterFromDropdown('low', 'Perlu Restok', '⚡')">
+                                    <span>⚡ Perlu Restok</span>
+                                    <span class="pdd-check">✓</span>
+                                </div>
+                                <div class="produk-dropdown-item" data-filter="habis" onclick="selectProdukFilterFromDropdown('habis', 'Habis (0)', '🔴')">
+                                    <span>🔴 Habis (0)</span>
+                                    <span class="pdd-check">✓</span>
+                                </div>
+                                <div class="produk-dropdown-item" data-filter="menipis" onclick="selectProdukFilterFromDropdown('menipis', 'Stok Menipis', '🟡')">
+                                    <span>🟡 Stok Menipis</span>
+                                    <span class="pdd-check">✓</span>
+                                </div>
+                                <div class="produk-dropdown-item" data-filter="aman" onclick="selectProdukFilterFromDropdown('aman', 'Stok Aman', '🟢')">
+                                    <span>🟢 Stok Aman</span>
+                                    <span class="pdd-check">✓</span>
+                                </div>
+                            </div>
+
+                            <div class="produk-dropdown-sep"></div>
+
+                            <div class="produk-dropdown-section-title">Filter Brand</div>
+                            <div class="produk-dropdown-options" id="produkBrandDropdownOptions">
+                                <!-- Populated dynamically by updateProdukBrandChips() -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                     <button type="button" class="btn-select-action" id="btnToggleProdukViewMode" onclick="toggleProdukViewMode()" title="Ganti mode tampilan: Gabung Varian vs Satuan">
                         <span id="produkViewModeIcon">🗂️</span> <span id="produkViewModeText">Mode Varian</span>
@@ -3202,6 +3323,71 @@
             <!-- Footer: Tutup -->
             <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--card-border); padding-top: 10px;">
                 <button type="button" class="btn-select-action" onclick="closeBalanceSummaryDetailModal()" style="background: var(--primary); color: #FFF; font-weight: 700; border: none; padding: 6px 20px;">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Produk Summary Detail Modal (Web) -->
+    <div id="produkSummaryDetailModal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closeProdukSummaryDetailModal()">
+        <div class="device-modal-card" style="max-width: 500px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">🛍️</span>
+                    <div>
+                        <h2 style="font-size: 16px; font-weight: 800; color: var(--text-main); margin: 0;">Rincian Stok Barang &amp; Aset</h2>
+                        <p style="font-size: 11.5px; color: var(--text-muted); margin: 0;">Rekap total stok fisik retail, nilai aset modal, dan estimasi laba</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeProdukSummaryDetailModal()" title="Tutup" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1;">✕</button>
+            </div>
+
+            <!-- Card 1: Nilai Aset Modal & Proyeksi Laba -->
+            <div style="background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(16,185,129,0.1)); border: 1px solid rgba(139,92,246,0.25); border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">🏦 Total Nilai Aset Modal</span>
+                    <span id="modalProdukDeviceBadge" style="font-size: 9.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(139,92,246,0.2); color: #A78BFA;">📱 Semua Kasir</span>
+                </div>
+                <div id="modalProdukTotalCostAmount" style="font-size: 24px; font-weight: 800; font-family: var(--font-mono, monospace); color: #F59E0B;">Rp 0</div>
+                <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin-top: 8px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 8px;">
+                    <span>🏷️ Potensi Jual: <strong id="modalProdukTotalSalesVal" style="color: var(--text-main);">Rp 0</strong></span>
+                    <span>💎 Estimasi Laba: <strong id="modalProdukTotalProfitVal" style="color: #10B981;">Rp 0</strong></span>
+                </div>
+            </div>
+
+            <!-- Card 2: Stok Fisik & Item SKU -->
+            <div style="background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 10px;">
+                        <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📦 TOTAL ITEM</div>
+                        <div id="modalProdukTotalSkuCount" style="font-size: 18px; font-weight: 800; font-family: var(--font-mono, monospace); color: var(--primary); margin-top: 2px;">0 SKU</div>
+                    </div>
+                    <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 10px;">
+                        <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📊 TOTAL STOK FISIK</div>
+                        <div id="modalProdukTotalStockCount" style="font-size: 18px; font-weight: 800; font-family: var(--font-mono, monospace); color: #10B981; margin-top: 2px;">0 pcs</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--card-border); font-size: 11.5px;">
+                    <span style="color: var(--text-muted);">⚠️ Perlu Restok / Menipis:</span>
+                    <strong id="modalProdukLowStockCount" style="color: #EF4444;">0 Item</strong>
+                </div>
+            </div>
+
+            <!-- Tombol Aksi -->
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
+                <button type="button" class="btn-select-action" onclick="copyProdukSummary()" style="flex: 1; justify-content: center; font-weight: 700; background: rgba(16,185,129,0.12); color: #059669; border-color: rgba(16,185,129,0.35);">
+                    📋 Salin Rekap WA
+                </button>
+                <button type="button" class="btn-select-action" onclick="fetchBarangFromSupabase(true); closeProdukSummaryDetailModal();" style="flex: 1; justify-content: center;">
+                    🔄 Refresh Cloud
+                </button>
+            </div>
+
+            <!-- Footer: Tutup -->
+            <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--card-border); padding-top: 10px;">
+                <button type="button" class="btn-select-action" onclick="closeProdukSummaryDetailModal()" style="background: var(--primary); color: #FFF; font-weight: 700; border: none; padding: 6px 20px;">
                     Tutup
                 </button>
             </div>
@@ -7459,9 +7645,9 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             const dailyPane = document.getElementById('tabContentDaily');
             const marginPane = document.getElementById('tabContentMargin');
             const balancePane = document.getElementById('tabContentBalance');
-            const produkPane = document.getElementById('tabContentProduk');
             const bottomBar = document.getElementById('bottomBarOrder');
             const bottomDockBalance = document.getElementById('bottomDockBalance');
+            const bottomDockProduk = document.getElementById('bottomDockProduk');
 
             if (orderPane) orderPane.style.display = (tab === 'order') ? 'block' : 'none';
             if (historyPane) historyPane.style.display = (tab === 'history') ? 'block' : 'none';
@@ -7471,6 +7657,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             if (produkPane) produkPane.style.display = (tab === 'produk') ? 'block' : 'none';
             if (bottomBar) bottomBar.style.display = (tab === 'order') ? 'flex' : 'none';
             if (bottomDockBalance) bottomDockBalance.style.display = (tab === 'balance') ? 'flex' : 'none';
+            if (bottomDockProduk) bottomDockProduk.style.display = (tab === 'produk') ? 'flex' : 'none';
 
             if (tab === 'order') {
                 filterOrderProducts();
@@ -8291,7 +8478,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             'com.shopeepay.id': 'iconapp/shopeepay.webp',
             'com.shopee.id': 'iconapp/shopeepay.webp',
             'com.orderkuota.app': 'iconapp/orderkuota.webp',
-            'com.otoreport.tekmo': 'iconapp/tekmo.webp',
+            'com.tekmo.app': 'iconapp/tekmo.webp',
             'tekmo': 'iconapp/tekmo.webp'
         };
 
@@ -9737,9 +9924,6 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
         }
 
         function updateProdukBrandChips() {
-            const container = document.getElementById('produkBrandChipsRow');
-            if (!container) return;
-
             const brands = new Set();
             (allBarang || []).forEach(b => {
                 const br = (b.brand_name || 'Umum').trim();
@@ -9748,14 +9932,37 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
 
             const sortedBrands = Array.from(brands).sort((a, b) => a.localeCompare(b));
 
-            let html = `<div class="chip ${selectedProdukBrand === 'all' ? 'active' : ''}" onclick="setProdukBrand('all', this)">Semua Brand (${allBarang.length})</div>`;
-            sortedBrands.forEach(br => {
-                const count = allBarang.filter(b => (b.brand_name || 'Umum').trim() === br).length;
-                const isActive = (selectedProdukBrand === br);
-                html += `<div class="chip ${isActive ? 'active' : ''}" onclick="setProdukBrand('${escapeHtml(br)}', this)">${escapeHtml(br)} (${count})</div>`;
-            });
+            const dropdownContainer = document.getElementById('produkBrandDropdownOptions');
+            if (dropdownContainer) {
+                let dHtml = `
+                    <div class="produk-dropdown-item ${selectedProdukBrand === 'all' ? 'active' : ''}" data-brand="all" onclick="selectProdukBrandFromDropdown('all')">
+                        <span>🏷️ Semua Brand (${allBarang.length})</span>
+                        <span class="pdd-check">✓</span>
+                    </div>
+                `;
+                sortedBrands.forEach(br => {
+                    const count = allBarang.filter(b => (b.brand_name || 'Umum').trim() === br).length;
+                    const isActive = (selectedProdukBrand === br);
+                    dHtml += `
+                        <div class="produk-dropdown-item ${isActive ? 'active' : ''}" data-brand="${escapeHtml(br)}" onclick="selectProdukBrandFromDropdown('${escapeHtml(br)}')">
+                            <span>🏷️ ${escapeHtml(br)} (${count})</span>
+                            <span class="pdd-check">✓</span>
+                        </div>
+                    `;
+                });
+                dropdownContainer.innerHTML = dHtml;
+            }
 
-            container.innerHTML = html;
+            const container = document.getElementById('produkBrandChipsRow');
+            if (container) {
+                let html = `<div class="chip ${selectedProdukBrand === 'all' ? 'active' : ''}" onclick="setProdukBrand('all', this)">Semua Brand (${allBarang.length})</div>`;
+                sortedBrands.forEach(br => {
+                    const count = allBarang.filter(b => (b.brand_name || 'Umum').trim() === br).length;
+                    const isActive = (selectedProdukBrand === br);
+                    html += `<div class="chip ${isActive ? 'active' : ''}" onclick="setProdukBrand('${escapeHtml(br)}', this)">${escapeHtml(br)} (${count})</div>`;
+                });
+                container.innerHTML = html;
+            }
         }
 
         function setProdukFilter(type, elem) {
@@ -9776,20 +9983,103 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             renderProdukTab();
         }
 
+        function toggleProdukSearch() {
+            const group = document.getElementById('produkSearchGroup');
+            const input = document.getElementById('produkSearchInput');
+            const clearBtn = document.getElementById('btnProdukSearchClear');
+            if (!group || !input) return;
+
+            const isOpen = group.classList.contains('open');
+            if (isOpen) {
+                if (input.value.trim() !== '') {
+                    input.value = '';
+                    currentProdukSearchQuery = '';
+                    renderProdukTab();
+                }
+                group.classList.remove('open');
+                input.style.display = 'none';
+                if (clearBtn) clearBtn.style.display = 'none';
+            } else {
+                group.classList.add('open');
+                input.style.display = 'inline-block';
+                if (clearBtn) clearBtn.style.display = input.value ? 'inline-block' : 'none';
+                input.focus();
+            }
+        }
+
         function onProdukSearchInput() {
             const input = document.getElementById('produkSearchInput');
-            const box = document.getElementById('produkSearchBox');
+            const clearBtn = document.getElementById('btnProdukSearchClear');
             currentProdukSearchQuery = (input ? input.value : '').toLowerCase().trim();
-            if (box) box.classList.toggle('has-val', !!currentProdukSearchQuery);
+            if (clearBtn) clearBtn.style.display = currentProdukSearchQuery ? 'inline-block' : 'none';
             renderProdukTab();
         }
 
         function clearProdukSearch() {
+            const group = document.getElementById('produkSearchGroup');
             const input = document.getElementById('produkSearchInput');
-            const box = document.getElementById('produkSearchBox');
+            const clearBtn = document.getElementById('btnProdukSearchClear');
             if (input) input.value = '';
-            if (box) box.classList.remove('has-val');
             currentProdukSearchQuery = '';
+            if (group) group.classList.remove('open');
+            if (input) input.style.display = 'none';
+            if (clearBtn) clearBtn.style.display = 'none';
+            renderProdukTab();
+        }
+
+        function toggleProdukFilterMenu(event) {
+            if (event) event.stopPropagation();
+            const menu = document.getElementById('produkFilterDropdownMenu');
+            if (!menu) return;
+            menu.style.display = (menu.style.display === 'none' || !menu.style.display) ? 'block' : 'none';
+        }
+
+        function closeProdukFilterMenu() {
+            const menu = document.getElementById('produkFilterDropdownMenu');
+            if (menu) menu.style.display = 'none';
+        }
+
+        document.addEventListener('click', (event) => {
+            const wrapper = document.getElementById('produkFilterWrapper');
+            if (wrapper && !wrapper.contains(event.target)) {
+                closeProdukFilterMenu();
+            }
+        });
+
+        function selectProdukFilterFromDropdown(type, label, icon) {
+            currentProdukFilterType = type;
+            const iconEl = document.getElementById('produkFilterActiveIcon');
+            const labelEl = document.getElementById('produkFilterActiveLabel');
+            if (iconEl) iconEl.textContent = icon || '🎯';
+            if (labelEl) labelEl.textContent = label || 'Semua Produk';
+
+            const items = document.querySelectorAll('#produkStatusFilterOptions .produk-dropdown-item');
+            items.forEach(it => {
+                it.classList.toggle('active', it.getAttribute('data-filter') === type);
+            });
+
+            closeProdukFilterMenu();
+            renderProdukTab();
+        }
+
+        function selectProdukBrandFromDropdown(brand) {
+            selectedProdukBrand = brand;
+            const iconEl = document.getElementById('produkFilterActiveIcon');
+            const labelEl = document.getElementById('produkFilterActiveLabel');
+            if (brand === 'all') {
+                if (iconEl) iconEl.textContent = '🎯';
+                if (labelEl) labelEl.textContent = currentProdukFilterType !== 'all' ? 'Filter Aktif' : 'Semua Produk';
+            } else {
+                if (iconEl) iconEl.textContent = '🏷️';
+                if (labelEl) labelEl.textContent = brand;
+            }
+
+            const items = document.querySelectorAll('#produkBrandDropdownOptions .produk-dropdown-item');
+            items.forEach(it => {
+                it.classList.toggle('active', it.getAttribute('data-brand') === brand);
+            });
+
+            closeProdukFilterMenu();
             renderProdukTab();
         }
 
@@ -10282,6 +10572,65 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             if (elSales) elSales.textContent = formatRupiah(totalSales);
             if (elProfit) elProfit.textContent = formatRupiah(totalProfit);
             if (elLow) elLow.textContent = `${lowStockCount} Item`;
+
+            // Update Sticky Bottom Dock Bar (Tab Produk)
+            const dockSku = document.getElementById('dockProdukTotalSkuVal');
+            const dockStock = document.getElementById('dockProdukTotalStockVal');
+            const dockCost = document.getElementById('dockProdukTotalCostVal');
+            if (dockSku) dockSku.textContent = `${totalSku} SKU`;
+            if (dockStock) dockStock.textContent = `${totalStock.toLocaleString('id-ID')} pcs`;
+            if (dockCost) dockCost.textContent = formatRupiah(totalCost);
+
+            // Update Modal Dialog Summary jika sedang aktif
+            updateProdukSummaryDetailModalUI({ totalSku, totalStock, totalCost, totalSales, totalProfit, lowStockCount });
+        }
+
+        let currentProdukStatsData = { totalSku: 0, totalStock: 0, totalCost: 0, totalSales: 0, totalProfit: 0, lowStockCount: 0 };
+
+        function updateProdukSummaryDetailModalUI(stats) {
+            if (stats) currentProdukStatsData = stats;
+            const modal = document.getElementById('produkSummaryDetailModal');
+            if (!modal || modal.style.display === 'none') return;
+
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            let devLabel = 'Semua Kasir';
+            if (selectedDevice !== 'all') {
+                const sel = document.getElementById('navDeviceFilter');
+                if (sel && sel.selectedIndex >= 0) devLabel = sel.options[sel.selectedIndex].text.replace('📱 ', '');
+            }
+
+            const devBadge = document.getElementById('modalProdukDeviceBadge');
+            if (devBadge) devBadge.textContent = '📱 ' + devLabel;
+
+            const costEl = document.getElementById('modalProdukTotalCostAmount');
+            if (costEl) costEl.textContent = formatRupiah(currentProdukStatsData.totalCost || 0);
+
+            const salesEl = document.getElementById('modalProdukTotalSalesVal');
+            if (salesEl) salesEl.textContent = formatRupiah(currentProdukStatsData.totalSales || 0);
+
+            const profitEl = document.getElementById('modalProdukTotalProfitVal');
+            if (profitEl) profitEl.textContent = formatRupiah(currentProdukStatsData.totalProfit || 0);
+
+            const skuEl = document.getElementById('modalProdukTotalSkuCount');
+            if (skuEl) skuEl.textContent = `${currentProdukStatsData.totalSku || 0} SKU`;
+
+            const stockEl = document.getElementById('modalProdukTotalStockCount');
+            if (stockEl) stockEl.textContent = `${(currentProdukStatsData.totalStock || 0).toLocaleString('id-ID')} pcs`;
+
+            const lowEl = document.getElementById('modalProdukLowStockCount');
+            if (lowEl) lowEl.textContent = `${currentProdukStatsData.lowStockCount || 0} Item`;
+        }
+
+        function openProdukSummaryDetailModal() {
+            const modal = document.getElementById('produkSummaryDetailModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            updateProdukSummaryDetailModalUI();
+        }
+
+        function closeProdukSummaryDetailModal() {
+            const modal = document.getElementById('produkSummaryDetailModal');
+            if (modal) modal.style.display = 'none';
         }
 
         function copyProdukSummary() {
