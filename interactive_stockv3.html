@@ -777,6 +777,46 @@
             background: rgba(56, 189, 248, 0.22);
             border-color: var(--primary);
         }
+        .template-subtab {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            background: transparent;
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            transition: all 0.15s ease;
+        }
+        .template-subtab:hover {
+            border-color: var(--primary);
+            color: var(--text-main);
+        }
+        .template-subtab.active {
+            background: var(--card-selected-bg, rgba(56, 189, 248, 0.15));
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .btn-ai-prompt {
+            background: rgba(168, 85, 247, 0.12);
+            border: 1px solid rgba(168, 85, 247, 0.35);
+            color: #C084FC;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .btn-ai-prompt:hover {
+            background: rgba(168, 85, 247, 0.25);
+            border-color: #C084FC;
+            color: #E9D5FF;
+        }
 
         /* ==================== TAB 4: MARGIN VOUCHER STYLES ==================== */
         :root {
@@ -2428,7 +2468,7 @@
                             <button class="settings-item" id="settingOrderHistory" onclick="toggleOrderHistoryFromMenu()">
                                 <span class="settings-icon">📋</span><span class="settings-label">Riwayat Order</span><span class="settings-state" id="settingOrderHistoryState">Tersembunyi</span>
                             </button>
-                            <button class="settings-item" id="settingOrderTemplate" onclick="showOrderTemplateModal(); closeSettingsMenu()">
+                            <button class="settings-item" id="settingOrderTemplate" onclick="showTemplateModal('order'); closeSettingsMenu()">
                                 <span class="settings-icon">📝</span><span class="settings-label">Template Teks Order</span><span class="settings-state" id="settingOrderTemplateState">Default</span>
                             </button>
                         </div>
@@ -2439,6 +2479,9 @@
                             </button>
                             <button class="settings-item" id="settingAudit" onclick="toggleAuditFromMenu()">
                                 <span class="settings-icon">📜</span><span class="settings-label">Riwayat Audit</span><span class="settings-state" id="settingAuditState">Tersembunyi</span>
+                            </button>
+                            <button class="settings-item" id="settingDailyTemplate" onclick="showTemplateModal('daily'); closeSettingsMenu()">
+                                <span class="settings-icon">📝</span><span class="settings-label">Template Teks Rekap</span><span class="settings-state" id="settingDailyTemplateState">Default</span>
                             </button>
                         </div>
                         <div class="settings-group">
@@ -2746,6 +2789,7 @@
             <div class="quick-select-row">
                 <button class="btn-select-action" id="btnTtsDaily" onclick="speakStockReportTts()"><span id="ttsIcon">🔊</span> <span id="ttsBtnText">Bacakan Terjual (TTS)</span></button>
                 <button class="btn-select-action" id="btnTtsSpeed" onclick="cycleTtsSpeed()">⚡ <span id="ttsSpeedLabel">1.5x</span></button>
+                <button class="btn-select-action" onclick="showTemplateModal('daily')" title="Atur Template Rekap Laporan" style="padding: 6px 10px;">⚙️</button>
                 <button class="btn-select-action" onclick="copyDailySummaryText()">📋 Salin Teks Rekap</button>
             </div>
         </div>
@@ -3148,82 +3192,148 @@
         </div>
     </div>
 
-    <!-- Order Template Modal -->
+    <!-- Unified Template Modal (Order & Rekap Laporan) -->
     <div id="orderTemplateModal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closeOrderTemplateModal()">
         <div class="order-template-card">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <!-- Modal Header -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 8px;">
                 <div>
                     <h2 style="font-size: 16px; font-weight: 800; color: var(--text-main); margin: 0 0 3px 0; display: flex; align-items: center; gap: 7px;">
-                        <span>📝</span> Template Teks Order
+                        <span>📝</span> Format Template Pesan
                     </h2>
                     <p style="font-size: 11.5px; color: var(--text-muted); margin: 0;">
-                        Atur format data yang disalin &amp; dikirim di Tab Order. Tersimpan di browser ini (lokal).
+                        Atur format teks salin order &amp; rekap laporan. Tersimpan di browser lokal.
                     </p>
                 </div>
-                <button type="button" onclick="closeOrderTemplateModal()" title="Tutup" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1;">✕</button>
+                <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                    <button type="button" class="btn-ai-prompt" onclick="copyAiInstructionPrompt()" title="Salin instruksi panduan &amp; contoh format untuk ditanyakan ke AI (ChatGPT/Claude/Gemini)">
+                        <span>🤖</span> Salin Instruksi AI
+                    </button>
+                    <button type="button" onclick="closeOrderTemplateModal()" title="Tutup" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1;">✕</button>
+                </div>
+            </div>
+
+            <!-- Subtab Navigation -->
+            <div style="display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                <button type="button" id="tabBtnOrderTpl" class="template-subtab active" onclick="switchTemplateSubtab('order')">
+                    🌅 Order Restock
+                </button>
+                <button type="button" id="tabBtnDailyTpl" class="template-subtab" onclick="switchTemplateSubtab('daily')">
+                    📊 Rekap Laporan
+                </button>
             </div>
 
             <div style="flex: 1; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; gap: 12px;">
-                <!-- Tag Variabel Utama -->
-                <div>
-                    <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-                        Sisipkan Variabel Pesan Utama:
-                    </div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-                        <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{deviceName}')" title="Nama perangkat HP kasir aktif">📱 {deviceName}</button>
-                        <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{date}')" title="Tanggal hari ini">📅 {date}</button>
-                        <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{time}')" title="Jam saat ini">⏰ {time}</button>
-                        <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{items}')" title="Daftar rincian item per provider">📦 {items}</button>
-                        <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{totalJenis}')" title="Jumlah jenis produk">🏷️ {totalJenis}</button>
-                        <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{totalPcs}')" title="Total fisik pcs">🔢 {totalPcs}</button>
-                        <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{totalEstCost}')" title="Estimasi total biaya">💰 {totalEstCost}</button>
-                    </div>
-                </div>
-
-                <!-- Textarea Format Utama -->
-                <div>
-                    <label for="orderTemplateTextarea" style="display: block; font-size: 11.5px; font-weight: 700; margin-bottom: 4px; color: var(--text-main);">
-                        Format Pesan Utama:
-                    </label>
-                    <textarea id="orderTemplateTextarea" rows="7" oninput="updateOrderTemplatePreview()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 8px 10px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; line-height: 1.45; resize: vertical; outline: none;"></textarea>
-                </div>
-
-                <!-- Format Baris Item -->
-                <div style="background: rgba(148, 163, 184, 0.05); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 10px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <label for="orderItemTemplateInput" style="font-size: 11.5px; font-weight: 700; color: var(--text-main); margin: 0;">
-                            Format Baris Item (di dalam {items}):
-                        </label>
-                        <div style="display: flex; gap: 4px;">
-                            <button type="button" class="btn-var-chip" onclick="insertItemTemplateVar('{name}')" style="padding: 2px 5px; font-size: 10px;">{name}</button>
-                            <button type="button" class="btn-var-chip" onclick="insertItemTemplateVar('{qty}')" style="padding: 2px 5px; font-size: 10px;">{qty}</button>
-                            <button type="button" class="btn-var-chip" onclick="insertItemTemplateVar('{cost}')" style="padding: 2px 5px; font-size: 10px;">{cost}</button>
-                            <button type="button" class="btn-var-chip" onclick="insertItemTemplateVar('{subtotal}')" style="padding: 2px 5px; font-size: 10px;">{subtotal}</button>
+                <!-- PANEL 1: ORDER RESTOCK -->
+                <div id="panelOrderTemplate" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div>
+                        <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Sisipkan Variabel Pesan Utama:
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                            <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{deviceName}')" title="Nama perangkat HP kasir aktif">📱 {deviceName}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{date}')" title="Tanggal hari ini">📅 {date}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{time}')" title="Jam saat ini">⏰ {time}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{items}')" title="Daftar rincian item per provider">📦 {items}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{totalJenis}')" title="Jumlah jenis produk">🏷️ {totalJenis}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{totalPcs}')" title="Total fisik pcs">🔢 {totalPcs}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{totalEstCost}')" title="Estimasi total biaya">💰 {totalEstCost}</button>
                         </div>
                     </div>
-                    <input type="text" id="orderItemTemplateInput" oninput="updateOrderTemplatePreview()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 6px; padding: 6px 8px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; outline: none;" value="• {name}: *{qty} pcs*">
+
+                    <div>
+                        <label for="orderTemplateTextarea" style="display: block; font-size: 11.5px; font-weight: 700; margin-bottom: 4px; color: var(--text-main);">
+                            Format Pesan Utama Order:
+                        </label>
+                        <textarea id="orderTemplateTextarea" rows="6" oninput="updateOrderTemplatePreview()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 8px 10px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; line-height: 1.45; resize: vertical; outline: none;"></textarea>
+                    </div>
+
+                    <div style="background: rgba(148, 163, 184, 0.05); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <label for="orderItemTemplateInput" style="font-size: 11.5px; font-weight: 700; color: var(--text-main); margin: 0;">
+                                Format Baris Item (di dalam {items}):
+                            </label>
+                            <div style="display: flex; gap: 4px;">
+                                <button type="button" class="btn-var-chip" onclick="insertItemTemplateVar('{name}')" style="padding: 2px 5px; font-size: 10px;">{name}</button>
+                                <button type="button" class="btn-var-chip" onclick="insertItemTemplateVar('{qty}')" style="padding: 2px 5px; font-size: 10px;">{qty}</button>
+                                <button type="button" class="btn-var-chip" onclick="insertItemTemplateVar('{cost}')" style="padding: 2px 5px; font-size: 10px;">{cost}</button>
+                                <button type="button" class="btn-var-chip" onclick="insertItemTemplateVar('{subtotal}')" style="padding: 2px 5px; font-size: 10px;">{subtotal}</button>
+                            </div>
+                        </div>
+                        <input type="text" id="orderItemTemplateInput" oninput="updateOrderTemplatePreview()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 6px; padding: 6px 8px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; outline: none;" value="• {name}: *{qty} pcs*">
+                    </div>
+
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Preview Hasil Salin Order:</span>
+                            <span id="orderTemplatePreviewDevice" style="font-size: 11px; font-weight: 700; color: var(--primary, #38BDF8);">📱 POCO F5</span>
+                        </div>
+                        <pre id="orderTemplateLivePreview" style="background: var(--input-bg, #090D16); border: 1px solid var(--card-border, #1E293B); border-radius: 8px; padding: 10px; font-family: monospace, Consolas, sans-serif; font-size: 11px; line-height: 1.4; color: var(--primary, #38BDF8); white-space: pre-wrap; word-break: break-word; max-height: 130px; overflow-y: auto; margin: 0;"></pre>
+                    </div>
                 </div>
 
-                <!-- Live Preview -->
-                <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <span style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Preview Hasil Salin:</span>
-                        <span id="orderTemplatePreviewDevice" style="font-size: 11px; font-weight: 700; color: var(--primary, #38BDF8);">📱 POCO F5</span>
+                <!-- PANEL 2: REKAP LAPORAN -->
+                <div id="panelDailyTemplate" style="display: none; flex-direction: column; gap: 12px;">
+                    <div>
+                        <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Sisipkan Variabel Pesan Utama:
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{deviceName}')" title="Nama perangkat HP kasir aktif">📱 {deviceName}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{date}')" title="Tanggal / rentang laporan">📅 {date}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{shift}')" title="Shift kerja">⏱️ {shift}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{items}')" title="Daftar produk terjual">📦 {items}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{totalSold}')" title="Total fisik pcs terjual">🔢 {totalSold}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{totalAwal}')" title="Total stok awal periode">📥 {totalAwal}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{totalAkhir}')" title="Total stok akhir / sisa">📤 {totalAkhir}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{totalOmset}')" title="Total pendapatan omset">💵 {totalOmset}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{totalProfit}')" title="Total laba / keuntungan">📈 {totalProfit}</button>
+                        </div>
                     </div>
-                    <pre id="orderTemplateLivePreview" style="background: var(--input-bg, #090D16); border: 1px solid var(--card-border, #1E293B); border-radius: 8px; padding: 10px; font-family: monospace, Consolas, sans-serif; font-size: 11px; line-height: 1.4; color: var(--primary, #38BDF8); white-space: pre-wrap; word-break: break-word; max-height: 140px; overflow-y: auto; margin: 0;"></pre>
+
+                    <div>
+                        <label for="dailyTemplateTextarea" style="display: block; font-size: 11.5px; font-weight: 700; margin-bottom: 4px; color: var(--text-main);">
+                            Format Pesan Utama Rekap:
+                        </label>
+                        <textarea id="dailyTemplateTextarea" rows="6" oninput="updateDailyTemplatePreview()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 8px 10px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; line-height: 1.45; resize: vertical; outline: none;"></textarea>
+                    </div>
+
+                    <div style="background: rgba(148, 163, 184, 0.05); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <label for="dailyItemTemplateInput" style="font-size: 11.5px; font-weight: 700; color: var(--text-main); margin: 0;">
+                                Format Baris Item (di dalam {items}):
+                            </label>
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{name}')" style="padding: 2px 5px; font-size: 10px;">{name}</button>
+                                <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{sold}')" style="padding: 2px 5px; font-size: 10px;">{sold}</button>
+                                <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{stokAwal}')" style="padding: 2px 5px; font-size: 10px; color: #10B981; border-color: rgba(16, 185, 129, 0.4);">{stokAwal}</button>
+                                <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{stokAkhir}')" style="padding: 2px 5px; font-size: 10px; color: #F59E0B; border-color: rgba(245, 158, 11, 0.4);">{stokAkhir}</button>
+                                <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{revK}')" style="padding: 2px 5px; font-size: 10px;">{revK}</button>
+                            </div>
+                        </div>
+                        <input type="text" id="dailyItemTemplateInput" oninput="updateDailyTemplatePreview()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 6px; padding: 6px 8px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; outline: none;" value="• {name}: *{sold} pcs* (Awal: {stokAwal} | Sisa: {stokAkhir})">
+                    </div>
+
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Preview Hasil Salin Rekap:</span>
+                            <span id="dailyTemplatePreviewDevice" style="font-size: 11px; font-weight: 700; color: #10B981;">📱 POCO F5</span>
+                        </div>
+                        <pre id="dailyTemplateLivePreview" style="background: var(--input-bg, #090D16); border: 1px solid var(--card-border, #1E293B); border-radius: 8px; padding: 10px; font-family: monospace, Consolas, sans-serif; font-size: 11px; line-height: 1.4; color: #10B981; white-space: pre-wrap; word-break: break-word; max-height: 130px; overflow-y: auto; margin: 0;"></pre>
+                    </div>
                 </div>
             </div>
 
             <!-- Footer Buttons -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--card-border, #334155);">
-                <button type="button" onclick="resetOrderTemplateToDefault()" style="padding: 7px 11px; background: transparent; border: 1px solid var(--card-border, #334155); border-radius: 8px; font-size: 11.5px; font-weight: 600; color: var(--text-muted); cursor: pointer;">
+                <button type="button" onclick="resetCurrentTemplateToDefault()" style="padding: 7px 11px; background: transparent; border: 1px solid var(--card-border, #334155); border-radius: 8px; font-size: 11.5px; font-weight: 600; color: var(--text-muted); cursor: pointer;">
                     ↺ Reset Default
                 </button>
                 <div style="display: flex; gap: 8px;">
                     <button type="button" onclick="closeOrderTemplateModal()" style="padding: 7px 13px; background: transparent; border: 1px solid var(--card-border, #334155); border-radius: 8px; font-size: 11.5px; font-weight: 600; color: var(--text-muted); cursor: pointer;">
                         Batal
                     </button>
-                    <button type="button" onclick="saveOrderTemplateFromModal()" style="padding: 7px 15px; background: var(--primary, #38BDF8); color: #fff; border: none; border-radius: 8px; font-size: 11.5px; font-weight: 700; cursor: pointer;">
+                    <button type="button" onclick="saveTemplateFromModal()" style="padding: 7px 15px; background: var(--primary, #38BDF8); color: #fff; border: none; border-radius: 8px; font-size: 11.5px; font-weight: 700; cursor: pointer;">
                         💾 Simpan Template
                     </button>
                 </div>
@@ -5619,6 +5729,59 @@ Estimasi Biaya: *{totalEstCost}*`;
             } catch (e) {}
         }
 
+        // Template Rekap Laporan Harian
+        const DEFAULT_REKAP_TEMPLATE = `📊 *REKAP LAPORAN STOK HARIAN*
+📱 Perangkat: *{deviceName}*
+📅 Tanggal: {date}
+⏱️ Shift: {shift}
+━━━━━━━━━━━━━━━━━━━━
+
+{items}
+
+━━━━━━━━━━━━━━━━━━━━
+📦 Total Terjual: *{totalSold}*
+📊 Total Stok: *Awal {totalAwal} ➔ Akhir {totalAkhir}*
+💵 Total Omset: *{totalOmset}*
+📈 Total Keuntungan: *{totalProfit}*`;
+
+        const DEFAULT_REKAP_ITEM_TEMPLATE = `• {name}: *{sold} pcs* (Awal: {stokAwal} | Sisa: {stokAkhir})`;
+
+        function getRekapTemplate() {
+            try {
+                const saved = localStorage.getItem('kspcheck_rekap_template');
+                if (saved && saved.trim()) return saved;
+            } catch (e) {}
+            return DEFAULT_REKAP_TEMPLATE;
+        }
+
+        function getRekapItemTemplate() {
+            try {
+                const saved = localStorage.getItem('kspcheck_rekap_item_template');
+                if (saved && saved.trim()) return saved;
+            } catch (e) {}
+            return DEFAULT_REKAP_ITEM_TEMPLATE;
+        }
+
+        function saveRekapTemplate(mainTemplate, itemTemplate) {
+            try {
+                if (mainTemplate !== undefined) {
+                    localStorage.setItem('kspcheck_rekap_template', mainTemplate);
+                }
+                if (itemTemplate !== undefined) {
+                    localStorage.setItem('kspcheck_rekap_item_template', itemTemplate);
+                }
+            } catch (e) {
+                console.error('Failed to save rekap template to localStorage', e);
+            }
+        }
+
+        function resetRekapTemplate() {
+            try {
+                localStorage.removeItem('kspcheck_rekap_template');
+                localStorage.removeItem('kspcheck_rekap_item_template');
+            } catch (e) {}
+        }
+
         function getOrderActiveDeviceName(selectedCards) {
             const select = document.getElementById('navDeviceFilter');
             const selectedDevice = select ? select.value : 'all';
@@ -5751,16 +5914,53 @@ Estimasi Biaya: *{totalEstCost}*`;
             recordRestockOrder('whatsapp');
         }
 
-        // Modal Template Handler
-        function showOrderTemplateModal() {
+        // Modal Template Handler (Unified for Order & Rekap)
+        let currentTemplateSubtab = 'order';
+
+        function switchTemplateSubtab(tab) {
+            currentTemplateSubtab = tab;
+            const btnOrder = document.getElementById('tabBtnOrderTpl');
+            const btnDaily = document.getElementById('tabBtnDailyTpl');
+            const panelOrder = document.getElementById('panelOrderTemplate');
+            const panelDaily = document.getElementById('panelDailyTemplate');
+
+            if (btnOrder) btnOrder.classList.toggle('active', tab === 'order');
+            if (btnDaily) btnDaily.classList.toggle('active', tab === 'daily');
+
+            if (panelOrder) panelOrder.style.display = (tab === 'order') ? 'flex' : 'none';
+            if (panelDaily) panelDaily.style.display = (tab === 'daily') ? 'flex' : 'none';
+
+            if (tab === 'order') {
+                updateOrderTemplatePreview();
+            } else {
+                updateDailyTemplatePreview();
+            }
+        }
+
+        function showTemplateModal(initialTab) {
             const modal = document.getElementById('orderTemplateModal');
             if (!modal) return;
-            const textarea = document.getElementById('orderTemplateTextarea');
-            const itemInput = document.getElementById('orderItemTemplateInput');
-            if (textarea) textarea.value = getOrderTemplate();
-            if (itemInput) itemInput.value = getOrderItemTemplate();
-            updateOrderTemplatePreview();
+
+            const orderTextarea = document.getElementById('orderTemplateTextarea');
+            const orderItemInput = document.getElementById('orderItemTemplateInput');
+            if (orderTextarea) orderTextarea.value = getOrderTemplate();
+            if (orderItemInput) orderItemInput.value = getOrderItemTemplate();
+
+            const dailyTextarea = document.getElementById('dailyTemplateTextarea');
+            const dailyItemInput = document.getElementById('dailyItemTemplateInput');
+            if (dailyTextarea) dailyTextarea.value = getRekapTemplate();
+            if (dailyItemInput) dailyItemInput.value = getRekapItemTemplate();
+
+            switchTemplateSubtab(initialTab || 'order');
             modal.style.display = 'flex';
+        }
+
+        function showOrderTemplateModal() {
+            showTemplateModal('order');
+        }
+
+        function showDailyTemplateModal() {
+            showTemplateModal('daily');
         }
 
         function closeOrderTemplateModal() {
@@ -5796,30 +5996,86 @@ Estimasi Biaya: *{totalEstCost}*`;
             updateOrderTemplatePreview();
         }
 
-        function resetOrderTemplateToDefault() {
-            const textarea = document.getElementById('orderTemplateTextarea');
-            const itemInput = document.getElementById('orderItemTemplateInput');
-            if (textarea) textarea.value = DEFAULT_ORDER_TEMPLATE;
-            if (itemInput) itemInput.value = DEFAULT_ORDER_ITEM_TEMPLATE;
-            updateOrderTemplatePreview();
-            showToast('Template di-reset ke format default');
+        function insertDailyTemplateVar(variableTag) {
+            const textarea = document.getElementById('dailyTemplateTextarea');
+            if (!textarea) return;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            const before = text.substring(0, start);
+            const after = text.substring(end, text.length);
+            textarea.value = before + variableTag + after;
+            textarea.selectionStart = textarea.selectionEnd = start + variableTag.length;
+            textarea.focus();
+            updateDailyTemplatePreview();
         }
 
-        function saveOrderTemplateFromModal() {
-            const textarea = document.getElementById('orderTemplateTextarea');
-            const itemInput = document.getElementById('orderItemTemplateInput');
-            const mainTpl = textarea ? textarea.value : DEFAULT_ORDER_TEMPLATE;
-            const itemTpl = itemInput ? itemInput.value : DEFAULT_ORDER_ITEM_TEMPLATE;
+        function insertDailyItemTemplateVar(variableTag) {
+            const input = document.getElementById('dailyItemTemplateInput');
+            if (!input) return;
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const text = input.value;
+            const before = text.substring(0, start);
+            const after = text.substring(end, text.length);
+            input.value = before + variableTag + after;
+            input.selectionStart = input.selectionEnd = start + variableTag.length;
+            input.focus();
+            updateDailyTemplatePreview();
+        }
 
-            if (mainTpl.trim() === DEFAULT_ORDER_TEMPLATE.trim() && itemTpl.trim() === DEFAULT_ORDER_ITEM_TEMPLATE.trim()) {
+        function resetCurrentTemplateToDefault() {
+            if (currentTemplateSubtab === 'order') {
+                const textarea = document.getElementById('orderTemplateTextarea');
+                const itemInput = document.getElementById('orderItemTemplateInput');
+                if (textarea) textarea.value = DEFAULT_ORDER_TEMPLATE;
+                if (itemInput) itemInput.value = DEFAULT_ORDER_ITEM_TEMPLATE;
+                updateOrderTemplatePreview();
+                showToast('Template order di-reset ke format default');
+            } else {
+                const textarea = document.getElementById('dailyTemplateTextarea');
+                const itemInput = document.getElementById('dailyItemTemplateInput');
+                if (textarea) textarea.value = DEFAULT_REKAP_TEMPLATE;
+                if (itemInput) itemInput.value = DEFAULT_REKAP_ITEM_TEMPLATE;
+                updateDailyTemplatePreview();
+                showToast('Template rekap di-reset ke format default');
+            }
+        }
+
+        function resetOrderTemplateToDefault() {
+            resetCurrentTemplateToDefault();
+        }
+
+        function saveTemplateFromModal() {
+            const orderTextarea = document.getElementById('orderTemplateTextarea');
+            const orderItemInput = document.getElementById('orderItemTemplateInput');
+            const mainOrderTpl = orderTextarea ? orderTextarea.value : DEFAULT_ORDER_TEMPLATE;
+            const itemOrderTpl = orderItemInput ? orderItemInput.value : DEFAULT_ORDER_ITEM_TEMPLATE;
+
+            if (mainOrderTpl.trim() === DEFAULT_ORDER_TEMPLATE.trim() && itemOrderTpl.trim() === DEFAULT_ORDER_ITEM_TEMPLATE.trim()) {
                 resetOrderTemplate();
             } else {
-                saveOrderTemplate(mainTpl, itemTpl);
+                saveOrderTemplate(mainOrderTpl, itemOrderTpl);
+            }
+
+            const dailyTextarea = document.getElementById('dailyTemplateTextarea');
+            const dailyItemInput = document.getElementById('dailyItemTemplateInput');
+            const mainDailyTpl = dailyTextarea ? dailyTextarea.value : DEFAULT_REKAP_TEMPLATE;
+            const itemDailyTpl = dailyItemInput ? dailyItemInput.value : DEFAULT_REKAP_ITEM_TEMPLATE;
+
+            if (mainDailyTpl.trim() === DEFAULT_REKAP_TEMPLATE.trim() && itemDailyTpl.trim() === DEFAULT_REKAP_ITEM_TEMPLATE.trim()) {
+                resetRekapTemplate();
+            } else {
+                saveRekapTemplate(mainDailyTpl, itemDailyTpl);
             }
 
             closeOrderTemplateModal();
             updateSettingsMenuUI();
-            showToast('✅ Template order berhasil disimpan!');
+            showToast('✅ Format template berhasil disimpan!');
+        }
+
+        function saveOrderTemplateFromModal() {
+            saveTemplateFromModal();
         }
 
         function updateOrderTemplatePreview() {
@@ -5833,13 +6089,178 @@ Estimasi Biaya: *{totalEstCost}*`;
             const itemTpl = itemInput ? itemInput.value : DEFAULT_ORDER_ITEM_TEMPLATE;
 
             const previewText = generateWaText(mainTpl, itemTpl);
-            previewEl.textContent = previewText || '(Template kosong)';
+            previewEl.textContent = previewText || '(Template order kosong)';
 
             if (previewDevEl) {
                 const rawCards = document.querySelectorAll('.product-card.selected');
                 const devName = getOrderActiveDeviceName(Array.from(rawCards));
                 previewDevEl.textContent = '📱 ' + devName;
             }
+        }
+
+        function updateDailyTemplatePreview() {
+            const textarea = document.getElementById('dailyTemplateTextarea');
+            const itemInput = document.getElementById('dailyItemTemplateInput');
+            const previewEl = document.getElementById('dailyTemplateLivePreview');
+            const previewDevEl = document.getElementById('dailyTemplatePreviewDevice');
+            if (!previewEl) return;
+
+            const mainTpl = textarea ? textarea.value : DEFAULT_REKAP_TEMPLATE;
+            const itemTpl = itemInput ? itemInput.value : DEFAULT_REKAP_ITEM_TEMPLATE;
+
+            const previewText = generateDailySummaryText(mainTpl, itemTpl);
+            previewEl.textContent = previewText || '(Template rekap kosong)';
+
+            if (previewDevEl) {
+                const devName = getOrderActiveDeviceName([]);
+                previewDevEl.textContent = '📱 ' + devName;
+            }
+        }
+
+        function copyAiInstructionPrompt() {
+            const promptText = `PANDUAN & ATURAN FORMAT TEMPLATE KSP CHECK (UNTUK ASISTEN AI):
+
+Anda adalah asisten AI yang bertugas merancang atau memodifikasi format template pesan teks untuk aplikasi manajemen stok voucher pulsa & konter (KSP Check).
+
+Aplikasi ini mendukung 2 jenis template kustom yang disimpan di browser lokal:
+1. TEMPLATE ORDER RESTOCK (Pemesanan stok voucher baru ke sales/supplier)
+2. TEMPLATE REKAP LAPORAN (Rekap penjualan, pergerakan stok awal/akhir, dan omset harian kasir)
+
+Gunakan daftar placeholder / variabel berikut ini agar dapat diproses oleh sistem:
+
+============================================================
+1. TEMPLATE ORDER RESTOCK
+============================================================
+Variabel Pesan Utama:
+• {deviceName}   : Nama HP kasir / cabang aktif (contoh: "POCO F5" atau "Semua Perangkat")
+• {date}         : Tanggal order (contoh: "Rabu, 30 September 2026")
+• {time}         : Jam saat order dibuat (contoh: "11:45")
+• {items}        : Daftar voucher yang dikelompokkan per provider
+• {totalJenis}   : Jumlah jenis produk (contoh: "5 jenis")
+• {totalPcs}     : Total jumlah kuantitas barang (contoh: "50 pcs")
+• {totalEstCost} : Total estimasi biaya modal (contoh: "Rp 500.000")
+
+Variabel Baris Item (di dalam {items}):
+• {name}         : Nama produk voucher
+• {qty}          : Kuantitas yang dipesan
+• {cost}         : Harga modal per pcs (contoh: "Rp 10.000")
+• {subtotal}     : Total modal item (contoh: "Rp 100.000")
+
+Contoh Format Order:
+*ORDER RESTOCK VOUCHER*
+📱 Perangkat: *{deviceName}*
+📅 Tanggal: {date}
+---------------------------------
+
+{items}
+
+---------------------------------
+Total Produk: *{totalJenis}*
+Total Quantity: *{totalPcs}*
+Estimasi Biaya: *{totalEstCost}*
+
+Contoh Baris Item:
+• {name}: *{qty} pcs*
+
+============================================================
+2. TEMPLATE REKAP LAPORAN HARIAN
+============================================================
+Variabel Pesan Utama:
+• {deviceName}   : Nama HP kasir / cabang aktif
+• {date}         : Tanggal / rentang tanggal laporan
+• {shift}        : Shift kerja (contoh: "Semua Shift", "Shift 1 (Pagi)", "Shift 2 (Malam)")
+• {items}        : Daftar produk terjual yang dikelompokkan per provider
+• {totalSold}    : Total produk terjual (contoh: "20 pcs")
+• {totalAwal}    : Total stok awal seluruh produk (contoh: "50 pcs")
+• {totalAkhir}   : Total stok akhir / sisa fisik seluruh produk (contoh: "30 pcs")
+• {totalOmset}   : Total pendapatan omset kotor (contoh: "Rp 275.000")
+• {totalProfit}  : Total keuntungan laba bersih (contoh: "Rp 35.000")
+• {totalJenis}   : Total jenis produk yang laku
+
+Variabel Baris Item (di dalam {items}):
+• {name}         : Nama produk
+• {sold}         : Jumlah produk terjual
+• {stokAwal}     : Stok awal produk pada periode tersebut
+• {stokAkhir}    : Stok akhir / sisa fisik produk
+• {price}        : Harga jual
+• {cost}         : Harga modal
+• {rev}          : Total omset dari produk ini
+• {revK}         : Omset singkat (contoh: "120K")
+• {profit}       : Total laba dari produk ini
+
+============================================================
+BEBERAPA CONTOH FORMAT TEMPLATE:
+============================================================
+
+--- CONTOH 1: Gaya WhatsApp Elegan & Rinci (Kasir/Owner) ---
+[Format Utama Rekap]:
+📊 *REKAP LAPORAN STOK HARIAN*
+📱 Perangkat: *{deviceName}*
+📅 Tanggal: {date}
+⏱️ Shift: {shift}
+━━━━━━━━━━━━━━━━━━━━
+
+{items}
+
+━━━━━━━━━━━━━━━━━━━━
+📦 Total Terjual: *{totalSold}*
+📊 Total Stok: *Awal {totalAwal} ➔ Akhir {totalAkhir}*
+💵 Total Omset: *{totalOmset}*
+📈 Total Keuntungan: *{totalProfit}*
+
+[Format Baris Item]:
+• {name}: *{sold} pcs* (Awal: {stokAwal} | Sisa: {stokAkhir})
+
+--- CONTOH 2: Gaya Minimalis & Hemat Karakter (Tanpa Emoji) ---
+[Format Utama Order]:
+ORDER RESTOCK - {deviceName}
+Tgl: {date} {time}
+-----------------
+{items}
+-----------------
+Total: {totalPcs} ({totalJenis})
+Est. Modal: {totalEstCost}
+
+[Format Baris Item]:
+- {name} x{qty}
+
+--- CONTOH 3: Gaya Khusus Sales / Supplier (Fokus Qty & Stok, Tanpa Laba/Modal) ---
+[Format Utama Order]:
+Halo Sales, mau order restock voucher toko kami:
+Toko: {deviceName}
+Tanggal: {date}
+
+{items}
+
+Total Order: {totalPcs} ({totalJenis})
+Mohon segera dikirim ya. Terima kasih!
+
+[Format Baris Item]:
+• {name} = {qty} pcs
+
+--- CONTOH 4: Format Laporan Singkat Kasir Tutup Shift ---
+[Format Utama Rekap]:
+*LAPORAN TUTUP SHIFT*
+Kasir: {deviceName} | Shift: {shift}
+Tanggal: {date}
+
+{items}
+
+Ringkasan:
+- Terjual: {totalSold}
+- Sisa Stok Toko: {totalAkhir}
+- Setoran Omset: {totalOmset}
+Alhamdulillah shift selesai.
+
+[Format Baris Item]:
+- {name} : laku {sold} (sisa {stokAkhir})
+
+============================================================
+PETUNJUK:
+Silakan minta kepada AI:
+"Tolong buatkan format template [Order Restock / Rekap Laporan] dengan gaya [santai / formal / tabel / khusus sales] dan sertakan [informasi yang Anda inginkan] sesuai daftar variabel di atas."`;
+
+            copyToClipboard(promptText, '✅ Instruksi & contoh format AI berhasil disalin! Tempel di AI (ChatGPT/Claude/Gemini).');
         }
 
         // ==================== 7B. RIWAYAT ORDER RESTOCK & PENCOCOKAN BIAYA ====================
@@ -7532,34 +7953,43 @@ Estimasi Biaya: *{totalEstCost}*`;
             document.getElementById('dailyTotalProfit').innerText = formatRupiah(totalGrandProfit);
         }
 
-        function copyDailySummaryText() {
+        function generateDailySummaryText(overrideMainTpl, overrideItemTpl) {
             const data = window.DAILY_REPORT_DATA;
-            if (!data) return;
+            if (!data && overrideMainTpl === undefined) return '';
 
-            const d1DateStr = data.d1Date || 'D-2';
-            const d2DateStr = data.d2Date || 'D-1';
-            const d3DateStr = data.d3Date || 'Hari Ini';
+            const d1DateStr = data?.d1Date || 'D-2';
+            const d2DateStr = data?.d2Date || 'D-1';
+            const d3DateStr = data?.d3Date || 'Hari Ini';
 
             const selDay = dailySingleDaySelected || 3;
             const selDateStr = (selDay === 1 ? d1DateStr : (selDay === 2 ? d2DateStr : d3DateStr));
 
             let dateHeaderStr = selDateStr;
-            if (dailyDaysMode === 2) dateHeaderStr = d2DateStr + ' - ' + d3DateStr + ' (' + (data.displayDate || '') + ')';
-            if (dailyDaysMode === 3) dateHeaderStr = d1DateStr + ' - ' + d3DateStr + ' (' + (data.displayDate || '') + ')';
+            if (dailyDaysMode === 2) dateHeaderStr = d2DateStr + ' - ' + d3DateStr + (data?.displayDate ? ' (' + data.displayDate + ')' : '');
+            if (dailyDaysMode === 3) dateHeaderStr = d1DateStr + ' - ' + d3DateStr + (data?.displayDate ? ' (' + data.displayDate + ')' : '');
 
-            let items = data.items || [];
+            let items = data?.items || [];
 
             let shiftStr = 'Semua Shift';
             if (dailyShift === 1) shiftStr = 'Shift 1 (Pagi)';
             else if (dailyShift === 2) shiftStr = 'Shift 2 (Malam)';
             else if (dailyShift === 4) shiftStr = 'Rincian Shift (P|M)';
 
-            let sb = '📊 *REKAP LAPORAN STOK HARIAN*\n';
-            sb += '📅 ' + dateHeaderStr + '\n';
-            sb += '⏱️ Shift: ' + shiftStr + '\n';
-            sb += '━━━━━━━━━━━━━━━━━━━━\n';
+            // Dapatkan nama perangkat kasir aktif
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            let deviceName = 'Semua Perangkat';
+            if (selectedDevice && selectedDevice !== 'all') {
+                deviceName = getDeviceName(selectedDevice);
+            } else {
+                const allDevIds = new Set((allVouchers || []).map(v => v.device_id).filter(d => d && d !== 'all'));
+                if (allDevIds.size === 1) {
+                    deviceName = getDeviceName(Array.from(allDevIds)[0]);
+                }
+            }
 
             let totalSold = 0;
+            let totalAwal = 0;
+            let totalAkhir = 0;
             let totalRev = 0;
             let totalProf = 0;
 
@@ -7573,29 +8003,75 @@ Estimasi Biaya: *{totalEstCost}*`;
                     continue;
                 }
                 if (it.type === 'product') {
-                    let soldD1 = (dailyShift === 1 ? it.soldD1Pagi : (dailyShift === 2 ? it.soldD1Malam : it.soldD1Total)) || 0;
-                    let soldD2 = (dailyShift === 1 ? it.soldD2Pagi : (dailyShift === 2 ? it.soldD2Malam : it.soldD2Total)) || 0;
-                    let soldD3 = (dailyShift === 1 ? it.soldD3Pagi : (dailyShift === 2 ? it.soldD3Malam : it.soldD3Total)) || 0;
+                    let currentStock = it.currentStock || 0;
+                    let soldAfter = it.soldAfter || 0;
+                    let addedAfter = it.addedAfter || 0;
+                    let stockAkhir = currentStock + soldAfter - addedAfter;
 
-                    let sold = soldD3;
-                    if (dailyDaysMode === 1) {
-                        if (selDay === 1) sold = soldD1;
-                        else if (selDay === 2) sold = soldD2;
-                        else sold = soldD3;
-                    } else if (dailyDaysMode === 2) {
-                        sold = soldD2 + soldD3;
-                    } else if (dailyDaysMode === 3) {
-                        sold = soldD1 + soldD2 + soldD3;
+                    let soldD1Total = it.soldD1Total || 0;
+                    let soldD1Pagi = it.soldD1Pagi || 0;
+                    let soldD1Malam = it.soldD1Malam || 0;
+                    let addedD1 = (it.addedD1 || 0) + (it.restockedD1 || 0);
+
+                    let soldD2Total = it.soldD2Total || 0;
+                    let soldD2Pagi = it.soldD2Pagi || 0;
+                    let soldD2Malam = it.soldD2Malam || 0;
+                    let addedD2 = (it.addedD2 || 0) + (it.restockedD2 || 0);
+
+                    let soldD3Total = it.soldD3Total || 0;
+                    let soldD3Pagi = it.soldD3Pagi || 0;
+                    let soldD3Malam = it.soldD3Malam || 0;
+                    let addedD3 = (it.addedD3 || 0) + (it.restockedD3 || 0);
+
+                    let activeSoldD1 = (dailyShift === 1 ? soldD1Pagi : (dailyShift === 2 ? soldD1Malam : soldD1Total));
+                    let activeSoldD2 = (dailyShift === 1 ? soldD2Pagi : (dailyShift === 2 ? soldD2Malam : soldD2Total));
+                    let activeSoldD3 = (dailyShift === 1 ? soldD3Pagi : (dailyShift === 2 ? soldD3Malam : soldD3Total));
+
+                    let d3Awal = stockAkhir + soldD3Total - addedD3;
+                    let d2Awal = d3Awal + soldD2Total - addedD2;
+                    let d1Awal = d2Awal + soldD1Total - addedD1;
+
+                    let singleStokAwal = d3Awal;
+                    let singleAdded = addedD3;
+                    let singleSold = activeSoldD3;
+                    let singleSisa = stockAkhir;
+
+                    if (selDay === 1) {
+                        singleStokAwal = d1Awal;
+                        singleAdded = addedD1;
+                        singleSold = activeSoldD1;
+                        singleSisa = d1Awal + addedD1 - soldD1Total;
+                    } else if (selDay === 2) {
+                        singleStokAwal = d2Awal;
+                        singleAdded = addedD2;
+                        singleSold = activeSoldD2;
+                        singleSisa = d2Awal + addedD2 - soldD2Total;
                     }
 
-                    if (sold === 0 && dailyHideZeroSell) continue;
+                    let itemStokAwal = singleStokAwal;
+                    let itemStokAkhir = singleSisa;
+                    let itemSold = singleSold;
+
+                    if (dailyDaysMode === 2) {
+                        itemStokAwal = d2Awal;
+                        itemStokAkhir = stockAkhir;
+                        itemSold = activeSoldD2 + activeSoldD3;
+                    } else if (dailyDaysMode === 3) {
+                        itemStokAwal = d1Awal;
+                        itemStokAkhir = stockAkhir;
+                        itemSold = activeSoldD1 + activeSoldD2 + activeSoldD3;
+                    }
+
+                    if (itemSold === 0 && dailyHideZeroSell && !it.isNew && !it.isDeleted) continue;
 
                     let price = parseLong(it.price);
                     let cost = parseLong(it.cost);
-                    let rev = price * sold;
-                    let prof = (price - cost) * sold;
+                    let rev = price * itemSold;
+                    let prof = (price - cost) * itemSold;
 
-                    totalSold += sold;
+                    totalSold += itemSold;
+                    totalAwal += itemStokAwal;
+                    totalAkhir += itemStokAkhir;
                     totalRev += rev;
                     totalProf += prof;
 
@@ -7604,28 +8080,89 @@ Estimasi Biaya: *{totalEstCost}*`;
                     }
                     provGroups[currentProv].push({
                         name: it.productName,
-                        sold: sold,
-                        rev: rev
+                        sold: itemSold,
+                        stokAwal: itemStokAwal,
+                        stokAkhir: itemStokAkhir,
+                        price: price,
+                        cost: cost,
+                        rev: rev,
+                        profit: prof
                     });
                 }
             }
 
-            for (let prov in provGroups) {
-                let prods = provGroups[prov];
-                if (prods && prods.length > 0) {
-                    sb += '\n🔹 *' + prov + '*\n';
-                    for (let j = 0; j < prods.length; j++) {
-                        sb += '  • ' + prods[j].name + ': ' + prods[j].sold + ' pcs (' + formatK(prods[j].rev) + ')\n';
-                    }
-                }
+            // Jika dipanggil dari preview modal dan belum ada data laporan nyata, sediakan dummy preview
+            if (Object.keys(provGroups).length === 0 && overrideMainTpl !== undefined) {
+                provGroups['TELKOMSEL'] = [
+                    { name: 'TELKOMSEL 1.5GB 3HR', sold: 10, stokAwal: 25, stokAkhir: 15, price: 12000, cost: 10000, rev: 120000, profit: 20000 },
+                    { name: 'TELKOMSEL 3GB 5HR', sold: 5, stokAwal: 15, stokAkhir: 10, price: 20000, cost: 17000, rev: 100000, profit: 15000 }
+                ];
+                provGroups['INDOSAT'] = [
+                    { name: 'INDOSAT 3GB 30HR', sold: 5, stokAwal: 10, stokAkhir: 5, price: 21000, cost: 18000, rev: 105000, profit: 15000 }
+                ];
+                totalSold = 20;
+                totalAwal = 50;
+                totalAkhir = 30;
+                totalRev = 325000;
+                totalProf = 50000;
+                dateHeaderStr = dateHeaderStr || 'Hari Ini';
             }
 
-            sb += '\n━━━━━━━━━━━━━━━━━━━━\n';
-            sb += '📦 Total Terjual: *' + totalSold + ' pcs*\n';
-            sb += '💵 Total Omset: *' + formatRupiah(totalRev) + '*\n';
-            sb += '📈 Total Keuntungan: *' + formatRupiah(totalProf) + '*\n';
+            const itemTemplate = (overrideItemTpl !== undefined) ? overrideItemTpl : getRekapItemTemplate();
+            const mainTemplate = (overrideMainTpl !== undefined) ? overrideMainTpl : getRekapTemplate();
 
-            copyToClipboard(sb.trim(), '✓ Teks rekap laporan harian berhasil disalin!');
+            let formattedItems = '';
+            const provKeys = Object.keys(provGroups);
+            provKeys.forEach((prov, pIdx) => {
+                if (pIdx > 0) formattedItems += '\n\n';
+                formattedItems += `*${prov.toUpperCase()}*\n`;
+                const prods = provGroups[prov];
+                prods.forEach((item, iIdx) => {
+                    let line = itemTemplate
+                        .replace(/{name}/g, item.name)
+                        .replace(/{sold}/g, String(item.sold))
+                        .replace(/{stokAwal}/g, String(item.stokAwal))
+                        .replace(/{stokAkhir}/g, String(item.stokAkhir))
+                        .replace(/{price}/g, `Rp ${item.price.toLocaleString('id-ID')}`)
+                        .replace(/{cost}/g, `Rp ${item.cost.toLocaleString('id-ID')}`)
+                        .replace(/{rev}/g, `Rp ${item.rev.toLocaleString('id-ID')}`)
+                        .replace(/{revK}/g, formatK(item.rev))
+                        .replace(/{profit}/g, `Rp ${item.profit.toLocaleString('id-ID')}`);
+                    if (iIdx > 0) formattedItems += '\n';
+                    formattedItems += line;
+                });
+            });
+
+            let totalJenis = 0;
+            provKeys.forEach(p => totalJenis += provGroups[p].length);
+
+            let text = mainTemplate
+                .replace(/{deviceName}/g, deviceName)
+                .replace(/{device}/g, deviceName)
+                .replace(/{date}/g, dateHeaderStr)
+                .replace(/{shift}/g, shiftStr)
+                .replace(/{items}/g, formattedItems)
+                .replace(/{totalSold}/g, `${totalSold} pcs`)
+                .replace(/{sold}/g, String(totalSold))
+                .replace(/{totalAwal}/g, `${totalAwal} pcs`)
+                .replace(/{stokAwal}/g, String(totalAwal))
+                .replace(/{totalAkhir}/g, `${totalAkhir} pcs`)
+                .replace(/{stokAkhir}/g, String(totalAkhir))
+                .replace(/{totalOmset}/g, formatRupiah(totalRev))
+                .replace(/{totalProfit}/g, formatRupiah(totalProf))
+                .replace(/{totalJenis}/g, `${totalJenis} jenis`)
+                .replace(/{jenis}/g, String(totalJenis));
+
+            return text;
+        }
+
+        function copyDailySummaryText() {
+            const text = generateDailySummaryText();
+            if (!text) {
+                showToast('Tidak ada data rekap laporan untuk disalin');
+                return;
+            }
+            copyToClipboard(text, '✓ Teks rekap laporan harian berhasil disalin!');
         }
 
         // ==================== 9. TAB 2 SUB-VIEW: AUDIT TRAIL TABLE ====================
@@ -8369,6 +8906,8 @@ Estimasi Biaya: *{totalEstCost}*`;
             updateSettingsState('settingOrderHistoryState', orderHistoryVisible ? 'Terbuka' : 'Tersembunyi', orderHistoryVisible ? 'on' : '');
             const hasCustomOrderTemplate = !!(localStorage.getItem('kspcheck_order_template') || localStorage.getItem('kspcheck_order_item_template'));
             updateSettingsState('settingOrderTemplateState', hasCustomOrderTemplate ? 'Kustom' : 'Default', hasCustomOrderTemplate ? 'on' : '');
+            const hasCustomDailyTemplate = !!(localStorage.getItem('kspcheck_rekap_template') || localStorage.getItem('kspcheck_rekap_item_template'));
+            updateSettingsState('settingDailyTemplateState', hasCustomDailyTemplate ? 'Kustom' : 'Default', hasCustomDailyTemplate ? 'on' : '');
             updateSettingsState('settingHideZeroState', dailyHideZeroSell ? 'Aktif' : 'Mati', dailyHideZeroSell ? 'on' : '');
             updateSettingsState('settingAuditState', auditVisible ? 'Terbuka' : 'Tersembunyi', auditVisible ? 'on' : '');
             updateSettingsState('settingLockState', REQUIRE_PIN ? 'Aktif' : 'Nonaktif', REQUIRE_PIN ? 'on' : '');
