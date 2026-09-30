@@ -2484,6 +2484,12 @@
                                 <span class="settings-icon">📝</span><span class="settings-label">Template Teks Rekap</span><span class="settings-state" id="settingDailyTemplateState">Default</span>
                             </button>
                         </div>
+                        <div class="settings-group" id="settingsMarginGroup">
+                            <div class="settings-title">Margin Voucher</div>
+                            <button class="settings-item" id="settingMarginTemplate" onclick="showTemplateModal('margin'); closeSettingsMenu()">
+                                <span class="settings-icon">📝</span><span class="settings-label">Template Teks Margin</span><span class="settings-state" id="settingMarginTemplateState">Default</span>
+                            </button>
+                        </div>
                         <div class="settings-group">
                             <div class="settings-title">Navigasi</div>
                             <button class="settings-item" onclick="triggerInstallApp(); closeSettingsMenu()">
@@ -2895,11 +2901,14 @@
                 <button type="button" class="margin-cbtn chg" id="btnMarginChg" onclick="copyMarginChanges()" disabled title="Salin daftar item yang harga jualnya diubah lewat stepper">
                     📋 Salin Perubahan
                 </button>
-                <button type="button" class="margin-cbtn" id="btnMarginAll" onclick="copyMarginAll()" title="Salin daftar harga provider yang aktif">
-                    📋 Salin Provider Ini
+                <button type="button" class="margin-cbtn" id="btnMarginFiltered" onclick="copyMarginFiltered()" title="Salin daftar harga voucher yang tampil di layar (sesuai filter / pencarian)">
+                    📋 Salin
                 </button>
-                <button type="button" class="margin-cbtn" id="btnMarginAllProv" onclick="copyMarginAllProviders()" title="Salin semua daftar harga provider">
-                    📋 Salin Semua
+                <button type="button" class="margin-cbtn" id="btnMarginAllProv" onclick="copyMarginAllProviders()" title="Salin semua daftar harga dari seluruh provider">
+                    📑 Salin Semua
+                </button>
+                <button type="button" class="margin-cbtn" onclick="showTemplateModal('margin')" title="Atur Format Template Teks Margin" style="padding: 4px 8px; font-size: 12px;">
+                    ⚙️
                 </button>
             </div>
         </div>
@@ -3202,12 +3211,12 @@
                         <span>📝</span> Format Template Pesan
                     </h2>
                     <p style="font-size: 11.5px; color: var(--text-muted); margin: 0;">
-                        Atur format teks salin order &amp; rekap laporan. Tersimpan di browser lokal.
+                        Atur format teks salin order, rekap laporan &amp; margin voucher. Tersimpan di browser lokal.
                     </p>
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
                     <button type="button" class="btn-ai-prompt" onclick="copyAiInstructionPrompt()" title="Salin instruksi panduan &amp; contoh format untuk ditanyakan ke AI (ChatGPT/Claude/Gemini)">
-                        <span>🤖</span> Salin Instruksi AI
+                        <span>🤖</span> Salin Instruksi
                     </button>
                     <button type="button" onclick="closeOrderTemplateModal()" title="Tutup" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1;">✕</button>
                 </div>
@@ -3220,6 +3229,9 @@
                 </button>
                 <button type="button" id="tabBtnDailyTpl" class="template-subtab" onclick="switchTemplateSubtab('daily')">
                     📊 Rekap Laporan
+                </button>
+                <button type="button" id="tabBtnMarginTpl" class="template-subtab" onclick="switchTemplateSubtab('margin')">
+                    💹 Margin Harga
                 </button>
             </div>
 
@@ -3288,6 +3300,7 @@
                             <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{totalAkhir}')" title="Total stok akhir / sisa">📤 {totalAkhir}</button>
                             <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{totalOmset}')" title="Total pendapatan omset">💵 {totalOmset}</button>
                             <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{totalProfit}')" title="Total laba / keuntungan">📈 {totalProfit}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{aiPrompt}')" title="Letak custom prompt instruksi audit">🤖 {aiPrompt}</button>
                         </div>
                     </div>
 
@@ -3306,12 +3319,35 @@
                             <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                                 <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{name}')" style="padding: 2px 5px; font-size: 10px;">{name}</button>
                                 <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{sold}')" style="padding: 2px 5px; font-size: 10px;">{sold}</button>
-                                <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{stokAwal}')" style="padding: 2px 5px; font-size: 10px; color: #10B981; border-color: rgba(16, 185, 129, 0.4);">{stokAwal}</button>
+                                <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{stokAwal}')" style="padding: 2px 5px; font-size: 10px; color: #10B981; border-color: rgba(16, 185, 129, 0.4);" title="Stok awal (+penambahan jika ada)">{stokAwal}</button>
+                                <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{penambahan}')" style="padding: 2px 5px; font-size: 10px; color: #38BDF8; border-color: rgba(56, 189, 248, 0.4);" title="Tanda penambahan stok (+X)">{penambahan}</button>
                                 <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{stokAkhir}')" style="padding: 2px 5px; font-size: 10px; color: #F59E0B; border-color: rgba(245, 158, 11, 0.4);">{stokAkhir}</button>
                                 <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{revK}')" style="padding: 2px 5px; font-size: 10px;">{revK}</button>
                             </div>
                         </div>
                         <input type="text" id="dailyItemTemplateInput" oninput="updateDailyTemplatePreview()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 6px; padding: 6px 8px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; outline: none;" value="• {name}: *{sold} pcs* (Awal: {stokAwal} | Sisa: {stokAkhir})">
+                    </div>
+
+                    <!-- Opsi Sisipkan Prompt Audit AI -->
+                    <div style="background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.22); border-radius: 8px; padding: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label for="dailyIncludeAiPromptCheck" style="display: flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 700; color: var(--primary, #38BDF8); cursor: pointer; margin: 0;">
+                                <input type="checkbox" id="dailyIncludeAiPromptCheck" onchange="updateDailyTemplatePreview()" style="accent-color: var(--primary, #38BDF8); width: 15px; height: 15px; cursor: pointer;" checked>
+                                <span>🤖 Sisipkan Prompt Audit di Akhir Pesan</span>
+                            </label>
+                            <button type="button" id="btnToggleAiPromptText" onclick="toggleAiPromptTextEditor()" style="background: none; border: none; color: var(--text-muted); font-size: 11px; cursor: pointer; text-decoration: underline; padding: 0;">
+                                Edit Prompt ✎
+                            </button>
+                        </div>
+                        <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 3px; line-height: 1.35;">
+                            Meminta AI mengecek ketidakcocokan Sisa Kemarin vs Stok Awal Hari Ini saat teks rekap ditempel ke chat AI.
+                        </div>
+                        <div id="dailyAiPromptTextWrapper" style="display: none; margin-top: 8px;">
+                            <label for="dailyAiPromptTextarea" style="display: block; font-size: 10.5px; font-weight: 600; color: var(--text-muted); margin-bottom: 3px;">
+                                Teks Instruksi:
+                            </label>
+                            <textarea id="dailyAiPromptTextarea" rows="3" oninput="updateDailyTemplatePreview()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 6px; padding: 6px 8px; font-family: monospace, Consolas, sans-serif; font-size: 11px; line-height: 1.4; resize: vertical; outline: none;"></textarea>
+                        </div>
                     </div>
 
                     <div>
@@ -3320,6 +3356,62 @@
                             <span id="dailyTemplatePreviewDevice" style="font-size: 11px; font-weight: 700; color: #10B981;">📱 POCO F5</span>
                         </div>
                         <pre id="dailyTemplateLivePreview" style="background: var(--input-bg, #090D16); border: 1px solid var(--card-border, #1E293B); border-radius: 8px; padding: 10px; font-family: monospace, Consolas, sans-serif; font-size: 11px; line-height: 1.4; color: #10B981; white-space: pre-wrap; word-break: break-word; max-height: 130px; overflow-y: auto; margin: 0;"></pre>
+                    </div>
+                </div>
+
+                <!-- PANEL 3: MARGIN VOUCHER -->
+                <div id="panelMarginTemplate" style="display: none; flex-direction: column; gap: 12px;">
+                    <div>
+                        <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Pilih Template Teks Margin:
+                        </div>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button type="button" class="btn-select-action active" id="btnMarginSubChg" onclick="switchMarginSubtype('chg')" style="font-size: 11px; padding: 5px 11px;">
+                                ✎ Salin Perubahan
+                            </button>
+                            <button type="button" class="btn-select-action" id="btnMarginSubFiltered" onclick="switchMarginSubtype('filtered')" style="font-size: 11px; padding: 5px 11px;">
+                                📋 Salin (Tampil / Filter)
+                            </button>
+                            <button type="button" class="btn-select-action" id="btnMarginSubAll" onclick="switchMarginSubtype('all')" style="font-size: 11px; padding: 5px 11px;">
+                                📑 Salin Semua Provider
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Sisipkan Variabel Pesan Utama:
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 5px;" id="marginMainChips">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="marginTemplateTextarea" id="lblMarginMainTpl" style="display: block; font-size: 11.5px; font-weight: 700; margin-bottom: 4px; color: var(--text-main);">
+                            Format Pesan Utama:
+                        </label>
+                        <textarea id="marginTemplateTextarea" rows="5" oninput="onMarginTemplateInput()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 8px 10px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; line-height: 1.45; resize: vertical; outline: none;"></textarea>
+                    </div>
+
+                    <div style="background: rgba(148, 163, 184, 0.05); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <label for="marginItemTemplateInput" style="font-size: 11.5px; font-weight: 700; color: var(--text-main); margin: 0;">
+                                Format Baris Item (di dalam {items}):
+                            </label>
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap;" id="marginItemChips">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                        <input type="text" id="marginItemTemplateInput" oninput="onMarginTemplateInput()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 6px; padding: 6px 8px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; outline: none;">
+                    </div>
+
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Preview Hasil Salin Margin:</span>
+                            <span id="marginTemplatePreviewBadge" style="font-size: 11px; font-weight: 700; color: #10B981;">✎ Perubahan Harga</span>
+                        </div>
+                        <pre id="marginTemplateLivePreview" style="background: var(--input-bg, #090D16); border: 1px solid var(--card-border, #1E293B); border-radius: 8px; padding: 10px; font-family: monospace, Consolas, sans-serif; font-size: 11px; line-height: 1.4; color: #10B981; white-space: pre-wrap; word-break: break-word; max-height: 130px; overflow-y: auto; margin: 0;"></pre>
                     </div>
                 </div>
             </div>
@@ -5746,6 +5838,8 @@ Estimasi Biaya: *{totalEstCost}*`;
 
         const DEFAULT_REKAP_ITEM_TEMPLATE = `• {name}: *{sold} pcs* (Awal: {stokAwal} | Sisa: {stokAkhir})`;
 
+        const DEFAULT_REKAP_AI_PROMPT = `Tolong bandingkan data laporan tanggal {date} di atas dengan data laporan tanggal kemarin yang sudah pernah saya kirim. Analisa apakah ada ketidakcocokan antara Sisa Kemarin vs Stok Awal Hari Ini (selisih fisik ganti hari)?`;
+
         function getRekapTemplate() {
             try {
                 const saved = localStorage.getItem('kspcheck_rekap_template');
@@ -5762,13 +5856,51 @@ Estimasi Biaya: *{totalEstCost}*`;
             return DEFAULT_REKAP_ITEM_TEMPLATE;
         }
 
-        function saveRekapTemplate(mainTemplate, itemTemplate) {
+        function getRekapIncludeAiPrompt() {
+            try {
+                const saved = localStorage.getItem('kspcheck_rekap_include_ai');
+                if (saved === null) return true; // Default aktif
+                return saved === 'true';
+            } catch (e) {
+                return true;
+            }
+        }
+
+        function setRekapIncludeAiPrompt(enabled) {
+            try {
+                localStorage.setItem('kspcheck_rekap_include_ai', enabled ? 'true' : 'false');
+            } catch (e) {}
+        }
+
+        function getRekapAiPromptText() {
+            try {
+                const saved = localStorage.getItem('kspcheck_rekap_ai_prompt');
+                if (saved && saved.trim()) return saved;
+            } catch (e) {}
+            return DEFAULT_REKAP_AI_PROMPT;
+        }
+
+        function saveRekapAiPromptText(txt) {
+            try {
+                if (txt !== undefined) {
+                    localStorage.setItem('kspcheck_rekap_ai_prompt', txt);
+                }
+            } catch (e) {}
+        }
+
+        function saveRekapTemplate(mainTemplate, itemTemplate, includeAi, aiPromptText) {
             try {
                 if (mainTemplate !== undefined) {
                     localStorage.setItem('kspcheck_rekap_template', mainTemplate);
                 }
                 if (itemTemplate !== undefined) {
                     localStorage.setItem('kspcheck_rekap_item_template', itemTemplate);
+                }
+                if (includeAi !== undefined) {
+                    setRekapIncludeAiPrompt(includeAi);
+                }
+                if (aiPromptText !== undefined) {
+                    saveRekapAiPromptText(aiPromptText);
                 }
             } catch (e) {
                 console.error('Failed to save rekap template to localStorage', e);
@@ -5779,6 +5911,141 @@ Estimasi Biaya: *{totalEstCost}*`;
             try {
                 localStorage.removeItem('kspcheck_rekap_template');
                 localStorage.removeItem('kspcheck_rekap_item_template');
+                localStorage.removeItem('kspcheck_rekap_include_ai');
+                localStorage.removeItem('kspcheck_rekap_ai_prompt');
+            } catch (e) {}
+        }
+
+        // Template Margin Voucher (Perubahan, Salin Filter, Salin Semua)
+        const DEFAULT_MARGIN_CHG_TEMPLATE = `=== Perubahan Harga — {date} ===
+Total: {total} berubah
+
+{items}`;
+
+        const DEFAULT_MARGIN_CHG_ITEM_TEMPLATE = `• {name}: {price} ({diff}) | modal: {cost} | margin: {margin} ({pct})`;
+
+        const DEFAULT_MARGIN_FILTERED_TEMPLATE = `=== Daftar Harga & Margin ({filter}) — {date} ===
+Total: {total}
+
+{items}`;
+
+        const DEFAULT_MARGIN_FILTERED_ITEM_TEMPLATE = `• {name}: {price} | modal: {cost} | margin: {margin} ({pct})`;
+
+        const DEFAULT_MARGIN_ALL_TEMPLATE = `=== Daftar Harga Semua Provider — {date} ===
+Total: {total} ({totalProv})
+
+{items}`;
+
+        const DEFAULT_MARGIN_ALL_ITEM_TEMPLATE = `• {name}: {price} | modal: {cost} | margin: {margin} ({pct})`;
+
+        function getDefaultMarginTemplate(subtype) {
+            if (subtype === 'chg') return DEFAULT_MARGIN_CHG_TEMPLATE;
+            if (subtype === 'filtered') return DEFAULT_MARGIN_FILTERED_TEMPLATE;
+            if (subtype === 'all') return DEFAULT_MARGIN_ALL_TEMPLATE;
+            return DEFAULT_MARGIN_FILTERED_TEMPLATE;
+        }
+
+        function getDefaultMarginItemTemplate(subtype) {
+            if (subtype === 'chg') return DEFAULT_MARGIN_CHG_ITEM_TEMPLATE;
+            if (subtype === 'filtered') return DEFAULT_MARGIN_FILTERED_ITEM_TEMPLATE;
+            if (subtype === 'all') return DEFAULT_MARGIN_ALL_ITEM_TEMPLATE;
+            return DEFAULT_MARGIN_FILTERED_ITEM_TEMPLATE;
+        }
+
+        function getMarginChgTemplate() {
+            try {
+                const s = localStorage.getItem('kspcheck_margin_chg_template');
+                if (s && s.trim()) return s;
+            } catch (e) {}
+            return DEFAULT_MARGIN_CHG_TEMPLATE;
+        }
+
+        function getMarginChgItemTemplate() {
+            try {
+                const s = localStorage.getItem('kspcheck_margin_chg_item_template');
+                if (s && s.trim()) return s;
+            } catch (e) {}
+            return DEFAULT_MARGIN_CHG_ITEM_TEMPLATE;
+        }
+
+        function getMarginFilteredTemplate() {
+            try {
+                const s = localStorage.getItem('kspcheck_margin_filtered_template');
+                if (s && s.trim()) return s;
+            } catch (e) {}
+            return DEFAULT_MARGIN_FILTERED_TEMPLATE;
+        }
+
+        function getMarginFilteredItemTemplate() {
+            try {
+                const s = localStorage.getItem('kspcheck_margin_filtered_item_template');
+                if (s && s.trim()) return s;
+            } catch (e) {}
+            return DEFAULT_MARGIN_FILTERED_ITEM_TEMPLATE;
+        }
+
+        function getMarginAllTemplate() {
+            try {
+                const s = localStorage.getItem('kspcheck_margin_all_template');
+                if (s && s.trim()) return s;
+            } catch (e) {}
+            return DEFAULT_MARGIN_ALL_TEMPLATE;
+        }
+
+        function getMarginAllItemTemplate() {
+            try {
+                const s = localStorage.getItem('kspcheck_margin_all_item_template');
+                if (s && s.trim()) return s;
+            } catch (e) {}
+            return DEFAULT_MARGIN_ALL_ITEM_TEMPLATE;
+        }
+
+        function saveMarginTemplates(buffers) {
+            try {
+                if (!buffers) return;
+                if (buffers.chg) {
+                    if (buffers.chg.main.trim() === DEFAULT_MARGIN_CHG_TEMPLATE.trim() &&
+                        buffers.chg.item.trim() === DEFAULT_MARGIN_CHG_ITEM_TEMPLATE.trim()) {
+                        localStorage.removeItem('kspcheck_margin_chg_template');
+                        localStorage.removeItem('kspcheck_margin_chg_item_template');
+                    } else {
+                        localStorage.setItem('kspcheck_margin_chg_template', buffers.chg.main);
+                        localStorage.setItem('kspcheck_margin_chg_item_template', buffers.chg.item);
+                    }
+                }
+                if (buffers.filtered) {
+                    if (buffers.filtered.main.trim() === DEFAULT_MARGIN_FILTERED_TEMPLATE.trim() &&
+                        buffers.filtered.item.trim() === DEFAULT_MARGIN_FILTERED_ITEM_TEMPLATE.trim()) {
+                        localStorage.removeItem('kspcheck_margin_filtered_template');
+                        localStorage.removeItem('kspcheck_margin_filtered_item_template');
+                    } else {
+                        localStorage.setItem('kspcheck_margin_filtered_template', buffers.filtered.main);
+                        localStorage.setItem('kspcheck_margin_filtered_item_template', buffers.filtered.item);
+                    }
+                }
+                if (buffers.all) {
+                    if (buffers.all.main.trim() === DEFAULT_MARGIN_ALL_TEMPLATE.trim() &&
+                        buffers.all.item.trim() === DEFAULT_MARGIN_ALL_ITEM_TEMPLATE.trim()) {
+                        localStorage.removeItem('kspcheck_margin_all_template');
+                        localStorage.removeItem('kspcheck_margin_all_item_template');
+                    } else {
+                        localStorage.setItem('kspcheck_margin_all_template', buffers.all.main);
+                        localStorage.setItem('kspcheck_margin_all_item_template', buffers.all.item);
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to save margin templates to localStorage', e);
+            }
+        }
+
+        function resetMarginTemplates() {
+            try {
+                localStorage.removeItem('kspcheck_margin_chg_template');
+                localStorage.removeItem('kspcheck_margin_chg_item_template');
+                localStorage.removeItem('kspcheck_margin_filtered_template');
+                localStorage.removeItem('kspcheck_margin_filtered_item_template');
+                localStorage.removeItem('kspcheck_margin_all_template');
+                localStorage.removeItem('kspcheck_margin_all_item_template');
             } catch (e) {}
         }
 
@@ -5914,32 +6181,436 @@ Estimasi Biaya: *{totalEstCost}*`;
             recordRestockOrder('whatsapp');
         }
 
-        // Modal Template Handler (Unified for Order & Rekap)
+        // Modal Template Handler (Unified for Order, Rekap & Margin)
         let currentTemplateSubtab = 'order';
+        let currentMarginSubtype = 'chg'; // 'chg' | 'filtered' | 'all'
+        let marginTemplateBuffers = {
+            chg: { main: '', item: '' },
+            filtered: { main: '', item: '' },
+            all: { main: '', item: '' }
+        };
+
+        function initMarginTemplateBuffers() {
+            marginTemplateBuffers = {
+                chg: { main: getMarginChgTemplate(), item: getMarginChgItemTemplate() },
+                filtered: { main: getMarginFilteredTemplate(), item: getMarginFilteredItemTemplate() },
+                all: { main: getMarginAllTemplate(), item: getMarginAllItemTemplate() }
+            };
+        }
 
         function switchTemplateSubtab(tab) {
             currentTemplateSubtab = tab;
             const btnOrder = document.getElementById('tabBtnOrderTpl');
             const btnDaily = document.getElementById('tabBtnDailyTpl');
+            const btnMargin = document.getElementById('tabBtnMarginTpl');
             const panelOrder = document.getElementById('panelOrderTemplate');
             const panelDaily = document.getElementById('panelDailyTemplate');
+            const panelMargin = document.getElementById('panelMarginTemplate');
 
             if (btnOrder) btnOrder.classList.toggle('active', tab === 'order');
             if (btnDaily) btnDaily.classList.toggle('active', tab === 'daily');
+            if (btnMargin) btnMargin.classList.toggle('active', tab === 'margin');
 
             if (panelOrder) panelOrder.style.display = (tab === 'order') ? 'flex' : 'none';
             if (panelDaily) panelDaily.style.display = (tab === 'daily') ? 'flex' : 'none';
+            if (panelMargin) panelMargin.style.display = (tab === 'margin') ? 'flex' : 'none';
 
             if (tab === 'order') {
                 updateOrderTemplatePreview();
-            } else {
+            } else if (tab === 'daily') {
                 updateDailyTemplatePreview();
+            } else if (tab === 'margin') {
+                if (!marginTemplateBuffers.chg.main) initMarginTemplateBuffers();
+                renderMarginTemplateSubtypeUI();
+                updateMarginTemplatePreview();
             }
+        }
+
+        function switchMarginSubtype(subtype) {
+            const textarea = document.getElementById('marginTemplateTextarea');
+            const itemInput = document.getElementById('marginItemTemplateInput');
+            if (textarea && itemInput && marginTemplateBuffers[currentMarginSubtype]) {
+                marginTemplateBuffers[currentMarginSubtype].main = textarea.value;
+                marginTemplateBuffers[currentMarginSubtype].item = itemInput.value;
+            }
+
+            currentMarginSubtype = subtype;
+            renderMarginTemplateSubtypeUI();
+            updateMarginTemplatePreview();
+        }
+
+        function renderMarginTemplateSubtypeUI() {
+            const btnChg = document.getElementById('btnMarginSubChg');
+            const btnFiltered = document.getElementById('btnMarginSubFiltered');
+            const btnAll = document.getElementById('btnMarginSubAll');
+            if (btnChg) btnChg.classList.toggle('active', currentMarginSubtype === 'chg');
+            if (btnFiltered) btnFiltered.classList.toggle('active', currentMarginSubtype === 'filtered');
+            if (btnAll) btnAll.classList.toggle('active', currentMarginSubtype === 'all');
+
+            const badge = document.getElementById('marginTemplatePreviewBadge');
+            const lblMain = document.getElementById('lblMarginMainTpl');
+            if (badge) {
+                if (currentMarginSubtype === 'chg') badge.textContent = '✎ Perubahan Harga';
+                else if (currentMarginSubtype === 'filtered') badge.textContent = '📋 Salin (Tampil di Layar)';
+                else badge.textContent = '📑 Salin Semua Provider';
+            }
+            if (lblMain) {
+                if (currentMarginSubtype === 'chg') lblMain.textContent = 'Format Pesan Perubahan Harga:';
+                else if (currentMarginSubtype === 'filtered') lblMain.textContent = 'Format Pesan Salin Tampil (Filter):';
+                else lblMain.textContent = 'Format Pesan Salin Semua Provider:';
+            }
+
+            const buf = marginTemplateBuffers[currentMarginSubtype] || {
+                main: getDefaultMarginTemplate(currentMarginSubtype),
+                item: getDefaultMarginItemTemplate(currentMarginSubtype)
+            };
+
+            const textarea = document.getElementById('marginTemplateTextarea');
+            const itemInput = document.getElementById('marginItemTemplateInput');
+            if (textarea) textarea.value = buf.main;
+            if (itemInput) itemInput.value = buf.item;
+
+            // Render main template variable chips
+            const mainChipsContainer = document.getElementById('marginMainChips');
+            if (mainChipsContainer) {
+                let chipsHtml = '';
+                const addChip = (v, title, emoji) => {
+                    chipsHtml += `<button type="button" class="btn-var-chip" onclick="insertMarginTemplateVar('${v}')" title="${title}">${emoji ? emoji + ' ' : ''}${v}</button>`;
+                };
+                addChip('{date}', 'Tanggal saat ini', '📅');
+                addChip('{total}', 'Total item', '🔢');
+                if (currentMarginSubtype === 'filtered') {
+                    addChip('{filter}', 'Keterangan filter / pencarian aktif', '🔍');
+                    addChip('{totalProv}', 'Jumlah provider tampil', '🏢');
+                } else if (currentMarginSubtype === 'all') {
+                    addChip('{totalProv}', 'Total jumlah provider', '🏢');
+                }
+                addChip('{items}', 'Rincian daftar item', '📦');
+                mainChipsContainer.innerHTML = chipsHtml;
+            }
+
+            // Render item template variable chips
+            const itemChipsContainer = document.getElementById('marginItemChips');
+            if (itemChipsContainer) {
+                let chipsHtml = '';
+                const addItemChip = (v, title) => {
+                    chipsHtml += `<button type="button" class="btn-var-chip" onclick="insertMarginItemTemplateVar('${v}')" style="padding: 2px 5px; font-size: 10px;" title="${title}">${v}</button>`;
+                };
+                addItemChip('{name}', 'Nama produk voucher');
+                addItemChip('{price}', 'Harga jual (Rp)');
+                if (currentMarginSubtype === 'chg') {
+                    addItemChip('{diff}', 'Selisih harga');
+                    addItemChip('{oldPrice}', 'Harga lama');
+                }
+                addItemChip('{cost}', 'Harga modal (Rp)');
+                addItemChip('{margin}', 'Nominal margin');
+                addItemChip('{pct}', 'Persen margin (%)');
+                addItemChip('{stock}', 'Stok voucher saat ini');
+                itemChipsContainer.innerHTML = chipsHtml;
+            }
+        }
+
+        function onMarginTemplateInput() {
+            const textarea = document.getElementById('marginTemplateTextarea');
+            const itemInput = document.getElementById('marginItemTemplateInput');
+            if (marginTemplateBuffers[currentMarginSubtype]) {
+                if (textarea) marginTemplateBuffers[currentMarginSubtype].main = textarea.value;
+                if (itemInput) marginTemplateBuffers[currentMarginSubtype].item = itemInput.value;
+            }
+            updateMarginTemplatePreview();
+        }
+
+        function insertMarginTemplateVar(variableTag) {
+            const textarea = document.getElementById('marginTemplateTextarea');
+            if (!textarea) return;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            textarea.value = text.substring(0, start) + variableTag + text.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start + variableTag.length;
+            textarea.focus();
+            onMarginTemplateInput();
+        }
+
+        function insertMarginItemTemplateVar(variableTag) {
+            const input = document.getElementById('marginItemTemplateInput');
+            if (!input) return;
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const text = input.value;
+            input.value = text.substring(0, start) + variableTag + text.substring(end);
+            input.selectionStart = input.selectionEnd = start + variableTag.length;
+            input.focus();
+            onMarginTemplateInput();
+        }
+
+        function fmtMarginVal(n) {
+            return Math.round(n || 0).toLocaleString('id-ID');
+        }
+
+        function fmtMarginRupiah(n) {
+            return 'Rp ' + fmtMarginVal(n);
+        }
+
+        function calcItemMargin(price, cost) {
+            if (!cost) return null;
+            const v = price - cost;
+            return { val: v, pct: Math.round((v / cost) * 100) };
+        }
+
+        function formatMarginItemLine(tpl, it, price, oldPrice) {
+            const cost = it.c || 0;
+            const diff = oldPrice !== undefined ? price - oldPrice : null;
+            const m = calcItemMargin(price, cost);
+            const mVal = m ? m.val : (price - cost);
+            const mPct = m ? m.pct : (cost ? Math.round(((price - cost) / cost) * 100) : 0);
+            const mFormatted = (mVal > 0 ? '+' : '') + fmtMarginVal(mVal);
+            const pctFormatted = (mPct > 0 ? '+' : '') + mPct + '%';
+            const stock = it.stock !== undefined ? it.stock : (it.stk !== undefined ? it.stk : 0);
+
+            let line = tpl
+                .replace(/{name}/g, it.n || '')
+                .replace(/{price}/g, fmtMarginRupiah(price))
+                .replace(/{priceRaw}/g, String(price))
+                .replace(/{cost}/g, fmtMarginRupiah(cost))
+                .replace(/{costRaw}/g, String(cost))
+                .replace(/{margin}/g, mFormatted)
+                .replace(/{marginRaw}/g, String(mVal))
+                .replace(/{pct}/g, pctFormatted)
+                .replace(/{stock}/g, String(stock));
+
+            if (diff !== null) {
+                const diffFormatted = (diff > 0 ? '+' : '') + fmtMarginVal(diff);
+                line = line
+                    .replace(/{diff}/g, diffFormatted)
+                    .replace(/{diffRaw}/g, String(diff))
+                    .replace(/{oldPrice}/g, fmtMarginRupiah(oldPrice))
+                    .replace(/{oldPriceRaw}/g, String(oldPrice));
+            } else {
+                line = line
+                    .replace(/{diff}/g, '')
+                    .replace(/{diffRaw}/g, '')
+                    .replace(/{oldPrice}/g, '')
+                    .replace(/{oldPriceRaw}/g, '');
+            }
+            return line;
+        }
+
+        function generateMarginText(type, overrideMainTpl, overrideItemTpl) {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+
+            if (type === 'chg') {
+                const mainTpl = (overrideMainTpl !== undefined) ? overrideMainTpl : getMarginChgTemplate();
+                const itemTpl = (overrideItemTpl !== undefined) ? overrideItemTpl : getMarginChgItemTemplate();
+
+                const provList = (typeof marginActive !== 'undefined' && marginActive === MARGIN_ALL) ? (marginProvs || []) : [marginActive || 'ALL'];
+                const changedByProv = new Map();
+                let totalChanged = 0;
+
+                if (typeof marginData !== 'undefined' && typeof marginOverrides !== 'undefined') {
+                    provList.forEach(prov => {
+                        if (!marginData[prov] || !marginData[prov].items) return;
+                        const items = marginData[prov].items;
+                        const changedKeys = Object.keys(marginOverrides).filter(k => k.startsWith(prov + '_'));
+                        if (!changedKeys.length) return;
+                        changedKeys.sort((a, b) => parseInt(a.split('_').pop()) - parseInt(b.split('_').pop()));
+
+                        const list = [];
+                        changedKeys.forEach(k => {
+                            const idx = parseInt(k.split('_').pop());
+                            const it = items[idx];
+                            if (!it) return;
+                            list.push({ it, price: marginOverrides[k], oldPrice: it.p });
+                            totalChanged++;
+                        });
+                        if (list.length > 0) changedByProv.set(prov, list);
+                    });
+                }
+
+                // Fallback mock preview if no overrides exist
+                if (totalChanged === 0 && overrideMainTpl !== undefined) {
+                    changedByProv.set('TELKOMSEL', [
+                        { it: { n: 'TELKOMSEL 3GB 5HR', c: 16500, p: 17500, stock: 12 }, price: 18500, oldPrice: 17500 },
+                        { it: { n: 'TELKOMSEL 5GB 7HR', c: 24000, p: 26000, stock: 6 }, price: 27000, oldPrice: 26000 }
+                    ]);
+                    changedByProv.set('INDOSAT', [
+                        { it: { n: 'INDOSAT 3GB 30HR', c: 18000, p: 20000, stock: 15 }, price: 19000, oldPrice: 20000 }
+                    ]);
+                    totalChanged = 3;
+                }
+
+                if (totalChanged === 0) return '';
+
+                let formattedItems = '';
+                const provEntries = Array.from(changedByProv.entries());
+                provEntries.forEach(([prov, items], pIdx) => {
+                    if (provEntries.length > 1) {
+                        if (pIdx > 0) formattedItems += '\n\n';
+                        formattedItems += `── ${prov} ──\n`;
+                    }
+                    items.forEach((entry, iIdx) => {
+                        const line = formatMarginItemLine(itemTpl, entry.it, entry.price, entry.oldPrice);
+                        if (iIdx > 0) formattedItems += '\n';
+                        formattedItems += line;
+                    });
+                });
+
+                return mainTpl
+                    .replace(/{title}/g, 'Perubahan Harga')
+                    .replace(/{date}/g, dateStr)
+                    .replace(/{total}/g, `${totalChanged} item`)
+                    .replace(/{totalRaw}/g, String(totalChanged))
+                    .replace(/{items}/g, formattedItems);
+
+            } else if (type === 'filtered') {
+                const mainTpl = (overrideMainTpl !== undefined) ? overrideMainTpl : getMarginFilteredTemplate();
+                const itemTpl = (overrideItemTpl !== undefined) ? overrideItemTpl : getMarginFilteredItemTemplate();
+
+                const rows = Array.from(document.querySelectorAll('.margin-item-row')).filter(r => r.style.display !== 'none');
+                const provMap = new Map();
+                let totalItems = 0;
+
+                if (typeof marginData !== 'undefined') {
+                    rows.forEach(row => {
+                        const prov = row.dataset.prov;
+                        const idx = parseInt(row.dataset.idx, 10);
+                        if (!prov || isNaN(idx) || !marginData[prov] || !marginData[prov].items || !marginData[prov].items[idx]) return;
+                        const it = marginData[prov].items[idx];
+                        const price = (typeof getMarginP === 'function') ? getMarginP(prov, idx) : it.p;
+                        if (!provMap.has(prov)) provMap.set(prov, []);
+                        provMap.get(prov).push({ it, price, oldPrice: it.p });
+                        totalItems++;
+                    });
+                }
+
+                // Fallback mock preview if no items visible or called from template modal
+                if (totalItems === 0 && overrideMainTpl !== undefined) {
+                    provMap.set('TELKOMSEL', [
+                        { it: { n: 'TELKOMSEL 1.5GB 3HR', c: 10000, p: 12000, stock: 14 }, price: 12000, oldPrice: 12000 },
+                        { it: { n: 'TELKOMSEL 3GB 5HR', c: 16500, p: 18500, stock: 8 }, price: 18500, oldPrice: 18500 }
+                    ]);
+                    provMap.set('AXIS', [
+                        { it: { n: 'AXIS AIGO 2GB 5HR', c: 11000, p: 13000, stock: 3 }, price: 13000, oldPrice: 13000 }
+                    ]);
+                    totalItems = 3;
+                }
+
+                if (totalItems === 0) return '';
+
+                const filterParts = [];
+                if (typeof marginActive !== 'undefined' && marginActive !== MARGIN_ALL) {
+                    filterParts.push(marginActive);
+                }
+                if (typeof marginSearchVal !== 'undefined' && marginSearchVal) {
+                    filterParts.push(`"${marginSearchVal}"`);
+                }
+                if (typeof marginActiveF !== 'undefined' && marginActiveF) {
+                    if (marginActiveF === 'neg') filterParts.push('Minus');
+                    else if (marginActiveF === 'r500') filterParts.push('< 500');
+                    else if (marginActiveF === 'r1k') filterParts.push('< 1.000');
+                    else if (marginActiveF === 'r2k') filterParts.push('< 2.000');
+                    else if (marginActiveF === 'stock') filterParts.push('Stok Rendah');
+                }
+                const filterDesc = filterParts.length > 0 ? filterParts.join(' • ') : 'Tampil di Layar';
+
+                let formattedItems = '';
+                const provEntries = Array.from(provMap.entries());
+                provEntries.forEach(([prov, items], pIdx) => {
+                    if (provEntries.length > 1) {
+                        if (pIdx > 0) formattedItems += '\n\n';
+                        formattedItems += `── ${prov} (${items.length} item) ──\n`;
+                    }
+                    items.forEach((entry, iIdx) => {
+                        const line = formatMarginItemLine(itemTpl, entry.it, entry.price, entry.oldPrice);
+                        if (iIdx > 0) formattedItems += '\n';
+                        formattedItems += line;
+                    });
+                });
+
+                return mainTpl
+                    .replace(/{title}/g, `Daftar Harga & Margin (${filterDesc})`)
+                    .replace(/{date}/g, dateStr)
+                    .replace(/{filter}/g, filterDesc)
+                    .replace(/{total}/g, `${totalItems} item`)
+                    .replace(/{totalRaw}/g, String(totalItems))
+                    .replace(/{totalProv}/g, `${provEntries.length} provider`)
+                    .replace(/{items}/g, formattedItems);
+
+            } else if (type === 'all') {
+                const mainTpl = (overrideMainTpl !== undefined) ? overrideMainTpl : getMarginAllTemplate();
+                const itemTpl = (overrideItemTpl !== undefined) ? overrideItemTpl : getMarginAllItemTemplate();
+
+                const provMap = new Map();
+                let totalItems = 0;
+
+                const provList = (typeof marginProvs !== 'undefined' && marginProvs.length > 0) ? marginProvs : [];
+                if (typeof marginData !== 'undefined') {
+                    provList.forEach(prov => {
+                        if (!marginData[prov] || !marginData[prov].items) return;
+                        const items = marginData[prov].items;
+                        const list = [];
+                        items.forEach((it, idx) => {
+                            const price = (typeof getMarginP === 'function') ? getMarginP(prov, idx) : it.p;
+                            list.push({ it, price, oldPrice: it.p });
+                            totalItems++;
+                        });
+                        if (list.length > 0) provMap.set(prov, list);
+                    });
+                }
+
+                // Fallback mock preview if no items exist or called from template modal
+                if (totalItems === 0 && overrideMainTpl !== undefined) {
+                    provMap.set('TELKOMSEL', [
+                        { it: { n: 'TELKOMSEL 1.5GB 3HR', c: 10000, p: 12000, stock: 14 }, price: 12000, oldPrice: 12000 },
+                        { it: { n: 'TELKOMSEL 3GB 5HR', c: 16500, p: 18500, stock: 8 }, price: 18500, oldPrice: 18500 }
+                    ]);
+                    provMap.set('INDOSAT', [
+                        { it: { n: 'INDOSAT 3GB 30HR', c: 18000, p: 20000, stock: 15 }, price: 20000, oldPrice: 20000 }
+                    ]);
+                    totalItems = 3;
+                }
+
+                if (totalItems === 0) return '';
+
+                let formattedItems = '';
+                const provEntries = Array.from(provMap.entries());
+                provEntries.forEach(([prov, items], pIdx) => {
+                    if (pIdx > 0) formattedItems += '\n\n';
+                    formattedItems += `── ${prov} (${items.length} item) ──\n`;
+                    items.forEach((entry, iIdx) => {
+                        const line = formatMarginItemLine(itemTpl, entry.it, entry.price, entry.oldPrice);
+                        if (iIdx > 0) formattedItems += '\n';
+                        formattedItems += line;
+                    });
+                });
+
+                return mainTpl
+                    .replace(/{title}/g, 'Daftar Harga Semua Provider')
+                    .replace(/{date}/g, dateStr)
+                    .replace(/{total}/g, `${totalItems} item`)
+                    .replace(/{totalRaw}/g, String(totalItems))
+                    .replace(/{totalProv}/g, `${provEntries.length} provider`)
+                    .replace(/{items}/g, formattedItems);
+            }
+            return '';
+        }
+
+        function updateMarginTemplatePreview() {
+            const previewEl = document.getElementById('marginTemplateLivePreview');
+            if (!previewEl) return;
+            const buf = marginTemplateBuffers[currentMarginSubtype];
+            const mainTpl = buf ? buf.main : getDefaultMarginTemplate(currentMarginSubtype);
+            const itemTpl = buf ? buf.item : getDefaultMarginItemTemplate(currentMarginSubtype);
+            const previewText = generateMarginText(currentMarginSubtype, mainTpl, itemTpl);
+            previewEl.textContent = previewText || '(Template margin kosong)';
         }
 
         function showTemplateModal(initialTab) {
             const modal = document.getElementById('orderTemplateModal');
             if (!modal) return;
+
+            initMarginTemplateBuffers();
 
             const orderTextarea = document.getElementById('orderTemplateTextarea');
             const orderItemInput = document.getElementById('orderItemTemplateInput');
@@ -5948,11 +6619,24 @@ Estimasi Biaya: *{totalEstCost}*`;
 
             const dailyTextarea = document.getElementById('dailyTemplateTextarea');
             const dailyItemInput = document.getElementById('dailyItemTemplateInput');
+            const dailyIncludeAi = document.getElementById('dailyIncludeAiPromptCheck');
+            const dailyAiPromptTextarea = document.getElementById('dailyAiPromptTextarea');
             if (dailyTextarea) dailyTextarea.value = getRekapTemplate();
             if (dailyItemInput) dailyItemInput.value = getRekapItemTemplate();
+            if (dailyIncludeAi) dailyIncludeAi.checked = getRekapIncludeAiPrompt();
+            if (dailyAiPromptTextarea) dailyAiPromptTextarea.value = getRekapAiPromptText();
 
             switchTemplateSubtab(initialTab || 'order');
             modal.style.display = 'flex';
+        }
+
+        function toggleAiPromptTextEditor() {
+            const wrapper = document.getElementById('dailyAiPromptTextWrapper');
+            const btn = document.getElementById('btnToggleAiPromptText');
+            if (!wrapper) return;
+            const isHidden = (wrapper.style.display === 'none' || !wrapper.style.display);
+            wrapper.style.display = isHidden ? 'block' : 'none';
+            if (btn) btn.textContent = isHidden ? 'Tutup Editor ✕' : 'Edit Prompt ✎';
         }
 
         function showOrderTemplateModal() {
@@ -6032,13 +6716,28 @@ Estimasi Biaya: *{totalEstCost}*`;
                 if (itemInput) itemInput.value = DEFAULT_ORDER_ITEM_TEMPLATE;
                 updateOrderTemplatePreview();
                 showToast('Template order di-reset ke format default');
-            } else {
+            } else if (currentTemplateSubtab === 'daily') {
                 const textarea = document.getElementById('dailyTemplateTextarea');
                 const itemInput = document.getElementById('dailyItemTemplateInput');
+                const dailyIncludeAi = document.getElementById('dailyIncludeAiPromptCheck');
+                const dailyAiPromptTextarea = document.getElementById('dailyAiPromptTextarea');
                 if (textarea) textarea.value = DEFAULT_REKAP_TEMPLATE;
                 if (itemInput) itemInput.value = DEFAULT_REKAP_ITEM_TEMPLATE;
+                if (dailyIncludeAi) dailyIncludeAi.checked = true;
+                if (dailyAiPromptTextarea) dailyAiPromptTextarea.value = DEFAULT_REKAP_AI_PROMPT;
                 updateDailyTemplatePreview();
                 showToast('Template rekap di-reset ke format default');
+            } else if (currentTemplateSubtab === 'margin') {
+                if (marginTemplateBuffers[currentMarginSubtype]) {
+                    marginTemplateBuffers[currentMarginSubtype] = {
+                        main: getDefaultMarginTemplate(currentMarginSubtype),
+                        item: getDefaultMarginItemTemplate(currentMarginSubtype)
+                    };
+                }
+                renderMarginTemplateSubtypeUI();
+                updateMarginTemplatePreview();
+                const subLabels = { chg: 'perubahan harga', filtered: 'salin filter', all: 'salin semua provider' };
+                showToast(`Template margin ${subLabels[currentMarginSubtype] || ''} di-reset ke format default`);
             }
         }
 
@@ -6047,6 +6746,7 @@ Estimasi Biaya: *{totalEstCost}*`;
         }
 
         function saveTemplateFromModal() {
+            // 1. Simpan Template Order
             const orderTextarea = document.getElementById('orderTemplateTextarea');
             const orderItemInput = document.getElementById('orderItemTemplateInput');
             const mainOrderTpl = orderTextarea ? orderTextarea.value : DEFAULT_ORDER_TEMPLATE;
@@ -6058,16 +6758,33 @@ Estimasi Biaya: *{totalEstCost}*`;
                 saveOrderTemplate(mainOrderTpl, itemOrderTpl);
             }
 
+            // 2. Simpan Template Rekap Laporan
             const dailyTextarea = document.getElementById('dailyTemplateTextarea');
             const dailyItemInput = document.getElementById('dailyItemTemplateInput');
+            const dailyIncludeAi = document.getElementById('dailyIncludeAiPromptCheck');
+            const dailyAiPromptTextarea = document.getElementById('dailyAiPromptTextarea');
             const mainDailyTpl = dailyTextarea ? dailyTextarea.value : DEFAULT_REKAP_TEMPLATE;
             const itemDailyTpl = dailyItemInput ? dailyItemInput.value : DEFAULT_REKAP_ITEM_TEMPLATE;
+            const includeAi = dailyIncludeAi ? dailyIncludeAi.checked : true;
+            const aiPromptText = dailyAiPromptTextarea ? dailyAiPromptTextarea.value : DEFAULT_REKAP_AI_PROMPT;
 
-            if (mainDailyTpl.trim() === DEFAULT_REKAP_TEMPLATE.trim() && itemDailyTpl.trim() === DEFAULT_REKAP_ITEM_TEMPLATE.trim()) {
+            if (mainDailyTpl.trim() === DEFAULT_REKAP_TEMPLATE.trim() &&
+                itemDailyTpl.trim() === DEFAULT_REKAP_ITEM_TEMPLATE.trim() &&
+                includeAi === true &&
+                aiPromptText.trim() === DEFAULT_REKAP_AI_PROMPT.trim()) {
                 resetRekapTemplate();
             } else {
-                saveRekapTemplate(mainDailyTpl, itemDailyTpl);
+                saveRekapTemplate(mainDailyTpl, itemDailyTpl, includeAi, aiPromptText);
             }
+
+            // 3. Simpan Template Margin (Perubahan, Filter, Semua)
+            const marginTextarea = document.getElementById('marginTemplateTextarea');
+            const marginItemInput = document.getElementById('marginItemTemplateInput');
+            if (marginTextarea && marginItemInput && marginTemplateBuffers[currentMarginSubtype]) {
+                marginTemplateBuffers[currentMarginSubtype].main = marginTextarea.value;
+                marginTemplateBuffers[currentMarginSubtype].item = marginItemInput.value;
+            }
+            saveMarginTemplates(marginTemplateBuffers);
 
             closeOrderTemplateModal();
             updateSettingsMenuUI();
@@ -6101,14 +6818,18 @@ Estimasi Biaya: *{totalEstCost}*`;
         function updateDailyTemplatePreview() {
             const textarea = document.getElementById('dailyTemplateTextarea');
             const itemInput = document.getElementById('dailyItemTemplateInput');
+            const dailyIncludeAi = document.getElementById('dailyIncludeAiPromptCheck');
+            const dailyAiPromptTextarea = document.getElementById('dailyAiPromptTextarea');
             const previewEl = document.getElementById('dailyTemplateLivePreview');
             const previewDevEl = document.getElementById('dailyTemplatePreviewDevice');
             if (!previewEl) return;
 
             const mainTpl = textarea ? textarea.value : DEFAULT_REKAP_TEMPLATE;
             const itemTpl = itemInput ? itemInput.value : DEFAULT_REKAP_ITEM_TEMPLATE;
+            const includeAi = dailyIncludeAi ? dailyIncludeAi.checked : getRekapIncludeAiPrompt();
+            const aiPromptText = dailyAiPromptTextarea ? dailyAiPromptTextarea.value : getRekapAiPromptText();
 
-            const previewText = generateDailySummaryText(mainTpl, itemTpl);
+            const previewText = generateDailySummaryText(mainTpl, itemTpl, includeAi, aiPromptText);
             previewEl.textContent = previewText || '(Template rekap kosong)';
 
             if (previewDevEl) {
@@ -6122,9 +6843,10 @@ Estimasi Biaya: *{totalEstCost}*`;
 
 Anda adalah asisten AI yang bertugas merancang atau memodifikasi format template pesan teks untuk aplikasi manajemen stok voucher pulsa & konter (KSP Check).
 
-Aplikasi ini mendukung 2 jenis template kustom yang disimpan di browser lokal:
+Aplikasi ini mendukung 3 kelompok template kustom yang disimpan di browser lokal:
 1. TEMPLATE ORDER RESTOCK (Pemesanan stok voucher baru ke sales/supplier)
 2. TEMPLATE REKAP LAPORAN (Rekap penjualan, pergerakan stok awal/akhir, dan omset harian kasir)
+3. TEMPLATE MARGIN VOUCHER (Pengecekan harga jual, modal, margin nominal & persentase keuntungan)
 
 Gunakan daftar placeholder / variabel berikut ini agar dapat diproses oleh sistem:
 
@@ -6171,22 +6893,48 @@ Variabel Pesan Utama:
 • {shift}        : Shift kerja (contoh: "Semua Shift", "Shift 1 (Pagi)", "Shift 2 (Malam)")
 • {items}        : Daftar produk terjual yang dikelompokkan per provider
 • {totalSold}    : Total produk terjual (contoh: "20 pcs")
-• {totalAwal}    : Total stok awal seluruh produk (contoh: "50 pcs")
+• {totalAwal}    : Total stok awal seluruh produk (otomatis menyertakan (+X) jika ada restok)
+• {totalAwalRaw} : Angka total stok awal murni (contoh: "50 pcs")
+• {totalTambah}  : Total stok masuk/restok seluruh produk (contoh: "(+5 pcs)")
 • {totalAkhir}   : Total stok akhir / sisa fisik seluruh produk (contoh: "30 pcs")
 • {totalOmset}   : Total pendapatan omset kotor (contoh: "Rp 275.000")
 • {totalProfit}  : Total keuntungan laba bersih (contoh: "Rp 35.000")
 • {totalJenis}   : Total jenis produk yang laku
+• {aiPrompt}     : Instruksi audit otomatis untuk AI (opsional; jika tidak diletakkan, prompt akan otomatis disisipkan di baris paling akhir)
 
 Variabel Baris Item (di dalam {items}):
 • {name}         : Nama produk
 • {sold}         : Jumlah produk terjual
-• {stokAwal}     : Stok awal produk pada periode tersebut
+• {stokAwal}     : Stok awal produk (otomatis menyertakan (+X) jika ada restok/penambahan, misal: "25 (+5)")
+• {stokAwalRaw}  : Angka stok awal murni tanpa tanda penambahan (contoh: "25")
+• {penambahan}   : Nilai penambahan saja (contoh: " (+5)" atau kosong jika tidak ada)
+• {tambah}       : Nilai penambahan bertanda plus (contoh: "+5")
+• {masuk}        : Jumlah stok masuk angka murni (contoh: "5" atau "0")
 • {stokAkhir}    : Stok akhir / sisa fisik produk
 • {price}        : Harga jual
 • {cost}         : Harga modal
 • {rev}          : Total omset dari produk ini
 • {revK}         : Omset singkat (contoh: "120K")
 • {profit}       : Total laba dari produk ini
+
+============================================================
+3. TEMPLATE MARGIN VOUCHER
+============================================================
+Mendukung 3 format subtipe teks margin:
+A. TEMPLATE PERUBAHAN HARGA:
+   Menyalin hanya produk yang harganya diubah lewat stepper (+ / -).
+   Variabel Pesan Utama : {date}, {total}, {items}
+   Variabel Baris Item  : {name}, {price}, {diff} (selisih perubahan harga, misal: +1.000), {oldPrice}, {cost}, {margin}, {pct}, {stock}
+
+B. TEMPLATE SALIN TAMPIL (FILTER):
+   Menyalin hanya produk yang sedang tampil di layar sesuai filter chip / pencarian aktif.
+   Variabel Pesan Utama : {date}, {filter} (keterangan filter/pencarian), {total}, {totalProv}, {items}
+   Variabel Baris Item  : {name}, {price}, {cost}, {margin}, {pct}, {stock}
+
+C. TEMPLATE SALIN SEMUA PROVIDER:
+   Menyalin seluruh daftar harga dari semua provider.
+   Variabel Pesan Utama : {date}, {total}, {totalProv}, {items}
+   Variabel Baris Item  : {name}, {price}, {cost}, {margin}, {pct}, {stock}
 
 ============================================================
 BEBERAPA CONTOH FORMAT TEMPLATE:
@@ -6208,23 +6956,40 @@ BEBERAPA CONTOH FORMAT TEMPLATE:
 💵 Total Omset: *{totalOmset}*
 📈 Total Keuntungan: *{totalProfit}*
 
-[Format Baris Item]:
+[Format Baris Item Rekap]:
 • {name}: *{sold} pcs* (Awal: {stokAwal} | Sisa: {stokAkhir})
 
---- CONTOH 2: Gaya Minimalis & Hemat Karakter (Tanpa Emoji) ---
-[Format Utama Order]:
-ORDER RESTOCK - {deviceName}
-Tgl: {date} {time}
------------------
+--- CONTOH 2: Format Salin Perubahan Harga Margin ---
+[Format Utama Margin Perubahan]:
+=== Perubahan Harga — {date} ===
+Total: {total} berubah
+
 {items}
------------------
-Total: {totalPcs} ({totalJenis})
-Est. Modal: {totalEstCost}
 
 [Format Baris Item]:
-- {name} x{qty}
+• {name}: {price} ({diff}) | modal: {cost} | margin: {margin} ({pct})
 
---- CONTOH 3: Gaya Khusus Sales / Supplier (Fokus Qty & Stok, Tanpa Laba/Modal) ---
+--- CONTOH 3: Format Salin Margin Sesuai Filter ---
+[Format Utama Margin Filter]:
+=== Daftar Harga & Margin ({filter}) — {date} ===
+Total: {total}
+
+{items}
+
+[Format Baris Item]:
+• {name}: {price} | modal: {cost} | margin: {margin} ({pct})
+
+--- CONTOH 4: Format Salin Semua Provider ---
+[Format Utama Margin Semua]:
+=== Daftar Harga Semua Provider — {date} ===
+Total: {total} ({totalProv})
+
+{items}
+
+[Format Baris Item]:
+• {name}: {price} | modal: {cost} | margin: {margin} ({pct})
+
+--- CONTOH 5: Gaya Khusus Sales / Supplier Restock ---
 [Format Utama Order]:
 Halo Sales, mau order restock voucher toko kami:
 Toko: {deviceName}
@@ -6238,27 +7003,10 @@ Mohon segera dikirim ya. Terima kasih!
 [Format Baris Item]:
 • {name} = {qty} pcs
 
---- CONTOH 4: Format Laporan Singkat Kasir Tutup Shift ---
-[Format Utama Rekap]:
-*LAPORAN TUTUP SHIFT*
-Kasir: {deviceName} | Shift: {shift}
-Tanggal: {date}
-
-{items}
-
-Ringkasan:
-- Terjual: {totalSold}
-- Sisa Stok Toko: {totalAkhir}
-- Setoran Omset: {totalOmset}
-Alhamdulillah shift selesai.
-
-[Format Baris Item]:
-- {name} : laku {sold} (sisa {stokAkhir})
-
 ============================================================
 PETUNJUK:
 Silakan minta kepada AI:
-"Tolong buatkan format template [Order Restock / Rekap Laporan] dengan gaya [santai / formal / tabel / khusus sales] dan sertakan [informasi yang Anda inginkan] sesuai daftar variabel di atas."`;
+"Tolong buatkan format template [Order Restock / Rekap Laporan / Margin Voucher] dengan gaya [santai / formal / tabel / ringkas] dan sertakan [informasi yang Anda inginkan] sesuai daftar variabel di atas."`;
 
             copyToClipboard(promptText, '✅ Instruksi & contoh format AI berhasil disalin! Tempel di AI (ChatGPT/Claude/Gemini).');
         }
@@ -7953,7 +8701,7 @@ Silakan minta kepada AI:
             document.getElementById('dailyTotalProfit').innerText = formatRupiah(totalGrandProfit);
         }
 
-        function generateDailySummaryText(overrideMainTpl, overrideItemTpl) {
+        function generateDailySummaryText(overrideMainTpl, overrideItemTpl, overrideIncludeAiPrompt, overrideAiPromptText) {
             const data = window.DAILY_REPORT_DATA;
             if (!data && overrideMainTpl === undefined) return '';
 
@@ -7989,6 +8737,7 @@ Silakan minta kepada AI:
 
             let totalSold = 0;
             let totalAwal = 0;
+            let totalAdded = 0;
             let totalAkhir = 0;
             let totalRev = 0;
             let totalProf = 0;
@@ -8051,15 +8800,18 @@ Silakan minta kepada AI:
                     let itemStokAwal = singleStokAwal;
                     let itemStokAkhir = singleSisa;
                     let itemSold = singleSold;
+                    let itemAdded = singleAdded;
 
                     if (dailyDaysMode === 2) {
                         itemStokAwal = d2Awal;
                         itemStokAkhir = stockAkhir;
                         itemSold = activeSoldD2 + activeSoldD3;
+                        itemAdded = addedD2 + addedD3;
                     } else if (dailyDaysMode === 3) {
                         itemStokAwal = d1Awal;
                         itemStokAkhir = stockAkhir;
                         itemSold = activeSoldD1 + activeSoldD2 + activeSoldD3;
+                        itemAdded = addedD1 + addedD2 + addedD3;
                     }
 
                     if (itemSold === 0 && dailyHideZeroSell && !it.isNew && !it.isDeleted) continue;
@@ -8071,6 +8823,7 @@ Silakan minta kepada AI:
 
                     totalSold += itemSold;
                     totalAwal += itemStokAwal;
+                    totalAdded += itemAdded;
                     totalAkhir += itemStokAkhir;
                     totalRev += rev;
                     totalProf += prof;
@@ -8082,6 +8835,7 @@ Silakan minta kepada AI:
                         name: it.productName,
                         sold: itemSold,
                         stokAwal: itemStokAwal,
+                        added: itemAdded,
                         stokAkhir: itemStokAkhir,
                         price: price,
                         cost: cost,
@@ -8094,15 +8848,16 @@ Silakan minta kepada AI:
             // Jika dipanggil dari preview modal dan belum ada data laporan nyata, sediakan dummy preview
             if (Object.keys(provGroups).length === 0 && overrideMainTpl !== undefined) {
                 provGroups['TELKOMSEL'] = [
-                    { name: 'TELKOMSEL 1.5GB 3HR', sold: 10, stokAwal: 25, stokAkhir: 15, price: 12000, cost: 10000, rev: 120000, profit: 20000 },
-                    { name: 'TELKOMSEL 3GB 5HR', sold: 5, stokAwal: 15, stokAkhir: 10, price: 20000, cost: 17000, rev: 100000, profit: 15000 }
+                    { name: 'TELKOMSEL 1.5GB 3HR', sold: 10, stokAwal: 25, added: 5, stokAkhir: 20, price: 12000, cost: 10000, rev: 120000, profit: 20000 },
+                    { name: 'TELKOMSEL 3GB 5HR', sold: 5, stokAwal: 15, added: 0, stokAkhir: 10, price: 20000, cost: 17000, rev: 100000, profit: 15000 }
                 ];
                 provGroups['INDOSAT'] = [
-                    { name: 'INDOSAT 3GB 30HR', sold: 5, stokAwal: 10, stokAkhir: 5, price: 21000, cost: 18000, rev: 105000, profit: 15000 }
+                    { name: 'INDOSAT 3GB 30HR', sold: 5, stokAwal: 10, added: 0, stokAkhir: 5, price: 21000, cost: 18000, rev: 105000, profit: 15000 }
                 ];
                 totalSold = 20;
                 totalAwal = 50;
-                totalAkhir = 30;
+                totalAdded = 5;
+                totalAkhir = 35;
                 totalRev = 325000;
                 totalProf = 50000;
                 dateHeaderStr = dateHeaderStr || 'Hari Ini';
@@ -8118,10 +8873,16 @@ Silakan minta kepada AI:
                 formattedItems += `*${prov.toUpperCase()}*\n`;
                 const prods = provGroups[prov];
                 prods.forEach((item, iIdx) => {
+                    const itemAddStr = (item.added && item.added > 0) ? ` (+${item.added})` : '';
+                    const itemFullStokAwal = `${item.stokAwal}${itemAddStr}`;
                     let line = itemTemplate
                         .replace(/{name}/g, item.name)
                         .replace(/{sold}/g, String(item.sold))
-                        .replace(/{stokAwal}/g, String(item.stokAwal))
+                        .replace(/{stokAwal}/g, itemFullStokAwal)
+                        .replace(/{stokAwalRaw}/g, String(item.stokAwal))
+                        .replace(/{penambahan}/g, itemAddStr)
+                        .replace(/{tambah}/g, (item.added && item.added > 0) ? `+${item.added}` : '')
+                        .replace(/{masuk}/g, String(item.added || 0))
                         .replace(/{stokAkhir}/g, String(item.stokAkhir))
                         .replace(/{price}/g, `Rp ${item.price.toLocaleString('id-ID')}`)
                         .replace(/{cost}/g, `Rp ${item.cost.toLocaleString('id-ID')}`)
@@ -8136,6 +8897,9 @@ Silakan minta kepada AI:
             let totalJenis = 0;
             provKeys.forEach(p => totalJenis += provGroups[p].length);
 
+            const totalAddStr = (totalAdded > 0) ? ` (+${totalAdded})` : '';
+            const fullTotalAwal = `${totalAwal}${totalAddStr}`;
+
             let text = mainTemplate
                 .replace(/{deviceName}/g, deviceName)
                 .replace(/{device}/g, deviceName)
@@ -8144,14 +8908,30 @@ Silakan minta kepada AI:
                 .replace(/{items}/g, formattedItems)
                 .replace(/{totalSold}/g, `${totalSold} pcs`)
                 .replace(/{sold}/g, String(totalSold))
-                .replace(/{totalAwal}/g, `${totalAwal} pcs`)
-                .replace(/{stokAwal}/g, String(totalAwal))
+                .replace(/{totalAwal}/g, `${fullTotalAwal} pcs`)
+                .replace(/{stokAwal}/g, fullTotalAwal)
+                .replace(/{totalAwalRaw}/g, `${totalAwal} pcs`)
+                .replace(/{totalTambah}/g, totalAdded > 0 ? `(+${totalAdded} pcs)` : '')
+                .replace(/{totalMasuk}/g, `${totalAdded} pcs`)
                 .replace(/{totalAkhir}/g, `${totalAkhir} pcs`)
                 .replace(/{stokAkhir}/g, String(totalAkhir))
                 .replace(/{totalOmset}/g, formatRupiah(totalRev))
                 .replace(/{totalProfit}/g, formatRupiah(totalProf))
                 .replace(/{totalJenis}/g, `${totalJenis} jenis`)
                 .replace(/{jenis}/g, String(totalJenis));
+
+            const shouldIncludeAi = (overrideIncludeAiPrompt !== undefined) ? overrideIncludeAiPrompt : getRekapIncludeAiPrompt();
+            const rawAiPrompt = (overrideAiPromptText !== undefined) ? overrideAiPromptText : getRekapAiPromptText();
+            const formattedAiPrompt = (rawAiPrompt || '')
+                .replace(/{date}/g, dateHeaderStr)
+                .replace(/{deviceName}/g, deviceName)
+                .trim();
+
+            if (text.includes('{aiPrompt}')) {
+                text = text.replace(/{aiPrompt}/g, shouldIncludeAi ? formattedAiPrompt : '');
+            } else if (shouldIncludeAi && formattedAiPrompt) {
+                text += '\n\n' + formattedAiPrompt;
+            }
 
             return text;
         }
@@ -8908,6 +9688,15 @@ Silakan minta kepada AI:
             updateSettingsState('settingOrderTemplateState', hasCustomOrderTemplate ? 'Kustom' : 'Default', hasCustomOrderTemplate ? 'on' : '');
             const hasCustomDailyTemplate = !!(localStorage.getItem('kspcheck_rekap_template') || localStorage.getItem('kspcheck_rekap_item_template'));
             updateSettingsState('settingDailyTemplateState', hasCustomDailyTemplate ? 'Kustom' : 'Default', hasCustomDailyTemplate ? 'on' : '');
+            const hasCustomMarginTemplate = !!(
+                localStorage.getItem('kspcheck_margin_chg_template') ||
+                localStorage.getItem('kspcheck_margin_chg_item_template') ||
+                localStorage.getItem('kspcheck_margin_filtered_template') ||
+                localStorage.getItem('kspcheck_margin_filtered_item_template') ||
+                localStorage.getItem('kspcheck_margin_all_template') ||
+                localStorage.getItem('kspcheck_margin_all_item_template')
+            );
+            updateSettingsState('settingMarginTemplateState', hasCustomMarginTemplate ? 'Kustom' : 'Default', hasCustomMarginTemplate ? 'on' : '');
             updateSettingsState('settingHideZeroState', dailyHideZeroSell ? 'Aktif' : 'Mati', dailyHideZeroSell ? 'on' : '');
             updateSettingsState('settingAuditState', auditVisible ? 'Terbuka' : 'Tersembunyi', auditVisible ? 'on' : '');
             updateSettingsState('settingLockState', REQUIRE_PIN ? 'Aktif' : 'Nonaktif', REQUIRE_PIN ? 'on' : '');
@@ -9509,13 +10298,13 @@ Silakan minta kepada AI:
                 btnChg.disabled = !anyChanged;
                 btnChg.innerHTML = '📋 Salin Perubahan';
             }
-            const btnAll = document.getElementById('btnMarginAll');
-            if (btnAll) {
-                btnAll.innerHTML = marginActive === MARGIN_ALL ? '📋 Salin Semua' : '📋 Salin Provider Ini';
+            const btnFiltered = document.getElementById('btnMarginFiltered');
+            if (btnFiltered) {
+                btnFiltered.innerHTML = '📋 Salin';
             }
             const btnAllProv = document.getElementById('btnMarginAllProv');
             if (btnAllProv) {
-                btnAllProv.innerHTML = '📋 Salin Semua';
+                btnAllProv.innerHTML = '📑 Salin Semua';
             }
         }
 
@@ -9528,59 +10317,34 @@ Silakan minta kepada AI:
         }
 
         function copyMarginChanges() {
-            const date = new Date().toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
-            const lines = [];
-            let total = 0;
-            const provList = marginActive === MARGIN_ALL ? marginProvs : [marginActive];
-            provList.forEach(prov => {
-                if (!marginData[prov]) return;
-                const items = marginData[prov].items;
-                const changed = Object.keys(marginOverrides).filter(k => k.startsWith(prov + '_'));
-                if (!changed.length) return;
-                if (marginActive === MARGIN_ALL) lines.push(`── ${prov} ──`);
-                changed.sort((a, b) => parseInt(a.split('_').pop()) - parseInt(b.split('_').pop()))
-                    .forEach(k => {
-                        const idx = parseInt(k.split('_').pop());
-                        lines.push(mkMarginLine(items[idx], marginOverrides[k], items[idx].p));
-                        total++;
-                    });
-                if (marginActive === MARGIN_ALL) lines.push('');
-            });
-            if (!total) {
+            const text = generateMarginText('chg');
+            if (!text) {
                 showToast('ℹ️ Tidak ada perubahan harga untuk disalin.');
                 return;
             }
-            lines.unshift(`=== Perubahan Harga${marginActive === MARGIN_ALL ? ' Semua Provider' : ' ' + marginActive} — ${date} ===`, `${total} item berubah`, '');
-            copyToClipboard(lines.join('\n'), `✓ ${total} perubahan harga disalin!`);
+            copyToClipboard(text, '✓ Perubahan harga berhasil disalin!');
         }
 
-        function copyMarginAll() {
-            if (marginActive === MARGIN_ALL) {
-                copyMarginAllProviders();
+        function copyMarginFiltered() {
+            const text = generateMarginText('filtered');
+            if (!text) {
+                showToast('ℹ️ Tidak ada item yang tampil di layar.');
                 return;
             }
-            if (!marginData[marginActive]) return;
-            const items = marginData[marginActive].items;
-            const date = new Date().toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
-            const lines = [`=== Daftar Harga ${marginActive} — ${date} ===`, `${items.length} item`, ''];
-            items.forEach((it, i) => lines.push(mkMarginLine(it, getMarginP(marginActive, i))));
-            copyToClipboard(lines.join('\n'), `✓ ${items.length} item ${marginActive} disalin!`);
+            copyToClipboard(text, '✓ Daftar item yang tampil berhasil disalin!');
         }
 
         function copyMarginAllProviders() {
-            const date = new Date().toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
-            const lines = [`=== Daftar Harga Semua Provider — ${date} ===`, ''];
-            let total = 0;
-            marginProvs.forEach(prov => {
-                if (!marginData[prov]) return;
-                const items = marginData[prov].items;
-                lines.push(`── ${prov} (${items.length} item) ──`);
-                items.forEach((it, i) => lines.push(mkMarginLine(it, getMarginP(prov, i))));
-                lines.push('');
-                total += items.length;
-            });
-            lines.splice(1, 0, `Total: ${total} item di ${marginProvs.length} provider`);
-            copyToClipboard(lines.join('\n'), `✓ Total ${total} item berhasil disalin!`);
+            const text = generateMarginText('all');
+            if (!text) {
+                showToast('ℹ️ Tidak ada data voucher.');
+                return;
+            }
+            copyToClipboard(text, '✓ Total semua item berhasil disalin!');
+        }
+
+        function copyMarginAll() {
+            copyMarginFiltered();
         }
 
         // ==================== TAB 5: SALDO REALTIME APLIKASI ====================
