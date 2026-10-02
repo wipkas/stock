@@ -254,6 +254,8 @@
         .card-produk { --card-accent: #EC4899; --icon-bg: rgba(236, 72, 153, 0.14); --icon-border: rgba(236, 72, 153, 0.35); }
         .card-margin { --card-accent: #F97316; --icon-bg: rgba(249, 115, 22, 0.14); --icon-border: rgba(249, 115, 22, 0.35); }
         .card-feerule { --card-accent: #3B82F6; --icon-bg: rgba(59, 130, 246, 0.14); --icon-border: rgba(59, 130, 246, 0.35); }
+        .card-store { --card-accent: #059669; --icon-bg: rgba(5, 150, 105, 0.14); --icon-border: rgba(5, 150, 105, 0.35); }
+        .card-karyawan { --card-accent: #6366F1; --icon-bg: rgba(99, 102, 241, 0.14); --icon-border: rgba(99, 102, 241, 0.35); }
 
         /* Modal Dialog */
         .modal-backdrop {
@@ -497,6 +499,18 @@
                 <div class="menu-card-title">Fee Rule</div>
             </a>
 
+            <!-- 8. KELOLA TOKO -->
+            <a href="store_manager.html" class="menu-card card-store" title="Kelola Toko & Shift">
+                <div class="menu-card-icon">🏢</div>
+                <div class="menu-card-title">Kelola Toko</div>
+            </a>
+
+            <!-- 9. PORTAL KARYAWAN -->
+            <a href="karyawan.html" class="menu-card card-karyawan" title="Portal Karyawan & Kasir">
+                <div class="menu-card-icon">👤</div>
+                <div class="menu-card-title">Karyawan</div>
+            </a>
+
         </main>
     </div>
 
@@ -593,6 +607,30 @@
                             <span style="color: #3B82F6; font-size: 11px;">Buka &rarr;</span>
                         </div>
                         <p class="modal-item-desc">Pengaturan tier dan aturan biaya admin otomatis untuk transaksi top-up, pulsa, dan tarik tunai.</p>
+                    </div>
+                </a>
+
+                <!-- 8. Kelola Toko -->
+                <a href="store_manager.html" class="modal-item">
+                    <div class="modal-item-icon">🏢</div>
+                    <div>
+                        <div class="modal-item-title">
+                            <span>Kelola Toko &amp; Shift</span>
+                            <span style="color: #059669; font-size: 11px;">Buka &rarr;</span>
+                        </div>
+                        <p class="modal-item-desc">Manajemen cabang toko, pengaturan jam shift kerja, batas toleransi ganti shift (30 menit), dan password login karyawan.</p>
+                    </div>
+                </a>
+
+                <!-- 9. Portal Karyawan -->
+                <a href="karyawan.html" class="modal-item">
+                    <div class="modal-item-icon">👤</div>
+                    <div>
+                        <div class="modal-item-title">
+                            <span>Portal Karyawan</span>
+                            <span style="color: #6366F1; font-size: 11px;">Buka &rarr;</span>
+                        </div>
+                        <p class="modal-item-desc">Halaman khusus login kasir &amp; personel toko dengan validasi shift mandiri dan konfirmasi password saat masa pergantian shift aktif.</p>
                     </div>
                 </a>
 

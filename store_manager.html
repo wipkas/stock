@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>KSP Check - Kelola Cabang &amp; Shift</title>
+
+    <!-- Web App Manifest & Favicons -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-order.svg">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <meta name="theme-color" content="#0F1117">
+
+    <!-- Supabase JS Client & CryptoJS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0F1117;
+            --card-bg: #181C27;
+            --card-border: #262B3D;
+            --card-hover: #1E2436;
+            --primary: #4F8EF7;
+            --primary-hover: #3B7ADF;
+            --primary-glow: rgba(79, 142, 247, 0.15);
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text-main: #FFFFFF;
+            --text-muted: #8A92A6;
+            --chip-bg: #222736;
+            --input-bg: #11141F;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --modal-backdrop: rgba(0, 0, 0, 0.75);
+        }
+
+        body.light-theme {
+            --bg-color: #F8F5EE;
+            --card-bg: #FFFFFF;
+            --card-border: #E8E1D5;
+            --card-hover: #F2EFE8;
+            --primary: #2B6CB0;
+            --primary-hover: #2C5282;
+            --primary-glow: rgba(43, 108, 176, 0.12);
+            --success: #059669;
+            --warning: #D97706;
+            --danger: #DC2626;
+            --text-main: #2D3748;
+            --text-muted: #718096;
+            --chip-bg: #EFE8DC;
+            --input-bg: #FAF8F5;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --modal-backdrop: rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.25s ease, color 0.25s ease;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 14px 12px;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0 16px 0;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 16px;
+            gap: 10px;
+        }
+
+        .brand-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .btn-nav-action {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-nav-action:hover {
+            border-color: var(--primary);
+            background: var(--chip-bg);
+            transform: translateY(-1px);
+        }
+
+        .top-title {
+            font-size: 16px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 750;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.15s ease, transform 0.1s ease;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+
+        /* Sub-Header & Live Clock */
+        .sub-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .clock-badge {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--chip-bg);
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+        }
+
+        /* Store Cards Grid */
+        .store-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 14px;
+        }
+
+        .store-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .store-card:hover {
+            border-color: var(--primary);
+            background: var(--card-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 24px var(--shadow-color);
+        }
+
+        .store-card:active {
+            transform: scale(0.98);
+        }
+
+        .store-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .store-card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(79, 142, 247, 0.12);
+            border: 1px solid rgba(79, 142, 247, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .store-name {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 3px;
+        }
+
+        .badge-status {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        .badge-active {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-transition {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            animation: pulseWarning 1.5s infinite;
+        }
+
+        @keyframes pulseWarning {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .store-stat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: var(--chip-bg);
+            border: 1px solid var(--card-border);
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .stat-val {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .store-meta-list {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 12px;
+        }
+
+        .store-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .store-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 10px;
+            border-top: 1px solid var(--card-border);
+            font-size: 11.5px;
+            font-weight: 750;
+            color: var(--primary);
+        }
+
+        /* Detail Sub-Dashboard (When a Store is Clicked) */
+        .detail-view {
+            display: none;
+        }
+
+        .detail-view.active {
+            display: block;
+        }
+
+        .detail-header-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .btn-back-stores {
+            background: var(--chip-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-back-stores:hover {
+            border-color: var(--primary);
+        }
+
+        /* Feature Cards inside Store Detail */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 12px;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 16px;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 3px 8px var(--shadow-color);
+        }
+
+        .feature-card:hover {
+            border-color: var(--feature-accent, var(--primary));
+            background: var(--card-hover);
+            transform: translateY(-2px);
+        }
+
+        .feature-card-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .feature-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--chip-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .feature-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .feature-desc {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            line-height: 1.45;
+            margin-bottom: 12px;
+        }
+
+        .feature-action {
+            font-size: 11.5px;
+            font-weight: 750;
+            color: var(--feature-accent, var(--primary));
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Modal Dialog Styles */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: var(--modal-backdrop);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+
+        .modal-backdrop.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            max-width: 540px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            transform: translateY(15px) scale(0.96);
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .modal-backdrop.open .modal-card {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .modal-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 22px;
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 8px;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 16px 18px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .modal-footer {
+            padding: 14px 18px;
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-secondary {
+            background: var(--chip-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* Form Controls */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            font-weight: 750;
+            color: var(--text-main);
+        }
+
+        .form-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .form-input, .form-select {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .form-input:focus, .form-select:focus {
+            border-color: var(--primary);
+        }
+
+        .shift-setting-box {
+            background: var(--chip-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .shift-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .time-range-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .time-input {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            border-radius: 8px;
+            padding: 6px 8px;
+            font-size: 12px;
+            font-weight: 700;
+            outline: none;
+        }
+
+        /* Employee list box inside form */
+        .emp-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .emp-item-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            padding: 8px 10px;
+            border-radius: 10px;
+        }
+
+        .emp-name-input {
+            flex: 2;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 12px;
+            font-weight: 700;
+            outline: none;
+        }
+
+        .emp-pass-input {
+            flex: 1.5;
+            background: var(--chip-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            font-size: 11.5px;
+            padding: 5px 8px;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .btn-del-emp {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px;
+        }
+
+        /* PIN Gate Modal */
+        #pinModal {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            background: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .pin-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            max-width: 360px;
+            width: 100%;
+            padding: 28px 24px;
+            text-align: center;
+            box-shadow: 0 15px 35px var(--shadow-color);
+        }
+
+        .pin-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            background: rgba(79, 142, 247, 0.15);
+            color: var(--primary);
+            font-size: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px auto;
+        }
+
+        .pin-input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            font-size: 22px;
+            letter-spacing: 6px;
+            font-weight: 800;
+            text-align: center;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            outline: none;
+        }
+
+        .pin-input:focus {
+            border-color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PIN SECURITY GATE (Same as interactive_stock.html) -->
+    <div id="pinModal">
+        <div class="pin-card">
+            <div class="pin-icon">🔒</div>
+            <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 6px;">Akses Kelola Toko</h2>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 18px;">Masukkan PIN Toko untuk membuka manajemen cabang &amp; shift karyawan.</p>
+
+            <form onsubmit="handlePinSubmit(event)">
+                <input type="password" id="pinInput" class="pin-input" placeholder="••••" autofocus required>
+                <div id="pinError" style="color: var(--danger); font-size: 11px; margin-bottom: 12px; display: none;">PIN salah atau file config.enc tidak cocok!</div>
+                <button type="submit" id="btnUnlock" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 13px;">Buka Manajemen Toko</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div class="container" id="mainApp" style="display: none;">
+
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <a href="index.html" class="btn-nav-action" title="Kembali ke Menu Utama">🏠</a>
+                <div class="brand-box">
+                    <span style="font-size: 20px;">🏢</span>
+                    <div>
+                        <h1 class="top-title">Kelola Toko &amp; Shift</h1>
+                        <p style="font-size: 11px; color: var(--text-muted);">Manajemen Multi-Cabang &amp; Karyawan</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="top-actions">
+                <button class="btn-primary" onclick="openAddStoreModal()">
+                    <span>➕</span> Tambah Cabang
+                </button>
+                <button class="btn-nav-action" id="themeToggleBtn" onclick="toggleTheme()" title="Ubah Tema">🌙</button>
+                <button class="btn-nav-action" onclick="lockStoreManager()" title="Kunci / Logout">🔒</button>
+            </div>
+        </header>
+
+        <!-- VIEW 1: DAFTAR SEMUA CABANG (DEFAULT) -->
+        <section id="storesListView">
+            <div class="sub-header">
+                <div>
+                    <h2 style="font-size: 15px; font-weight: 800;">Daftar Cabang Toko</h2>
+                    <p style="font-size: 11.5px; color: var(--text-muted);">Pilih cabang untuk mengelola karyawan, shift, dan fitur operasional</p>
+                </div>
+                <div class="clock-badge">
+                    <span>⏱️</span> <span id="liveClockDisplay">--:--:-- WIB</span>
+                </div>
+            </div>
+
+            <!-- Stores Cards Grid -->
+            <div class="store-grid" id="storesGridContainer">
+                <!-- Dynamically rendered -->
+            </div>
+        </section>
+
+        <!-- VIEW 2: SUB-DASHBOARD CABANG (SAAT CARD CABANG DI-KLIK) -->
+        <section id="storeDetailView" class="detail-view">
+            <div class="detail-header-card">
+                <div>
+                    <button class="btn-back-stores" onclick="backToStoresList()">
+                        &larr; Kembali ke Semua Cabang
+                    </button>
+                    <h2 id="detailStoreName" style="font-size: 18px; font-weight: 800; margin-top: 8px;">Nama Cabang</h2>
+                    <p id="detailStoreMeta" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Shift &amp; Info Karyawan</p>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-primary" onclick="openEditCurrentStoreModal()" style="background: var(--chip-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                        ✏️ Edit Pengaturan
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status Shift Sekarang & Alert Toleransi 30 Menit -->
+            <div id="shiftAlertBanner" style="padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; display: none;"></div>
+
+            <!-- Grid Card Fitur Toko Cabang -->
+            <h3 style="font-size: 14px; font-weight: 800; margin-bottom: 10px; color: var(--text-muted);">MODUL OPERASIONAL CABANG</h3>
+            <div class="feature-grid">
+
+                <!-- 1. Jadwal Shift & Jam Kerja -->
+                <div class="feature-card" style="--feature-accent: #8B5CF6;" onclick="openShiftSettingsModal()">
+                    <div>
+                        <div class="feature-card-top">
+                            <div class="feature-icon">⏰</div>
+                            <div class="feature-title">Pengaturan Jam Shift</div>
+                        </div>
+                        <p class="feature-desc" id="featureShiftSummary">Atur rentang jam kerja shift 1, shift 2, dan batas toleransi pergantian shift.</p>
+                    </div>
+                    <div class="feature-action">
+                        <span>Konfigurasi Shift</span>
+                        <span>&rarr;</span>
+                    </div>
+                </div>
+
+                <!-- 2. Kelola Karyawan & Password -->
+                <div class="feature-card" style="--feature-accent: #10B981;" onclick="openManageEmployeesModal()">
+                    <div>
+                        <div class="feature-card-top">
+                            <div class="feature-icon">👥</div>
+                            <div class="feature-title">Karyawan &amp; Password</div>
+                        </div>
+                        <p class="feature-desc" id="featureEmpSummary">Daftar nama karyawan bertugas, password akses mandiri, dan penugasan shift.</p>
+                    </div>
+                    <div class="feature-action">
+                        <span>Kelola Personel</span>
+                        <span>&rarr;</span>
+                    </div>
+                </div>
+
+                <!-- 3. Portal Akses Karyawan -->
+                <a id="linkPortalKaryawan" href="#" class="feature-card" style="--feature-accent: #0EA5E9;">
+                    <div>
+                        <div class="feature-card-top">
+                            <div class="feature-icon">👤</div>
+                            <div class="feature-title">Portal Karyawan</div>
+                        </div>
+                        <p class="feature-desc">Halaman khusus login kasir &amp; karyawan untuk input transaksi dengan verifikasi shift.</p>
+                    </div>
+                    <div class="feature-action">
+                        <span>Buka Halaman Karyawan</span>
+                        <span>&rarr;</span>
+                    </div>
+                </a>
+
+                <!-- 4. Laporan & Rekap Tutup Shift -->
+                <a id="linkLaporanShift" href="interactive_stock.html?tab=daily" class="feature-card" style="--feature-accent: #EC4899;">
+                    <div>
+                        <div class="feature-card-top">
+                            <div class="feature-icon">🌙</div>
+                            <div class="feature-title">Rekap Shift &amp; Laporan</div>
+                        </div>
+                        <p class="feature-desc">Periksa penjualan voucher, modal kasir, dan ringkasan tutup buku shift cabang ini.</p>
+                    </div>
+                    <div class="feature-action">
+                        <span>Buka Laporan Shift</span>
+                        <span>&rarr;</span>
+                    </div>
+                </a>
+
+                <!-- 5. Monitoring Saldo E-Wallet Toko -->
+                <a href="interactive_stock.html?tab=balance" class="feature-card" style="--feature-accent: #F59E0B;">
+                    <div>
+                        <div class="feature-card-top">
+                            <div class="feature-icon">💳</div>
+                            <div class="feature-title">Monitoring Saldo Realtime</div>
+                        </div>
+                        <p class="feature-desc">Pantau saldo terkini DANA, GoPay, ShopeePay, OrderKuota, Tekmo kasir cabang ini.</p>
+                    </div>
+                    <div class="feature-action">
+                        <span>Buka Saldo</span>
+                        <span>&rarr;</span>
+                    </div>
+                </a>
+
+                <!-- 6. Uji Konfirmasi Transisi Shift (Simulasi) -->
+                <div class="feature-card" style="--feature-accent: #F97316;" onclick="testShiftTransitionPrompt()">
+                    <div>
+                        <div class="feature-card-top">
+                            <div class="feature-icon">🛡️</div>
+                            <div class="feature-title">Uji Validasi Transisi (30m)</div>
+                        </div>
+                        <p class="feature-desc">Simulasikan verifikasi password karyawan &amp; pemilihan shift saat masa pergantian shift aktif.</p>
+                    </div>
+                    <div class="feature-action">
+                        <span>Uji Verifikasi</span>
+                        <span>&rarr;</span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </div>
+
+    <!-- MODAL 1: FORM TAMBAH / EDIT TOKO CABANG -->
+    <div id="storeFormModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'storeFormModal')">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="storeModalHeading">Tambah Cabang Toko</h3>
+                    <p class="modal-subtitle">Atur nama toko, pengaturan shift kerja, dan personel karyawan</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('storeFormModal')">&times;</button>
+            </div>
+            <form onsubmit="saveStoreForm(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="formStoreId">
+
+                    <!-- Nama Toko -->
+                    <div class="form-group">
+                        <label class="form-label" for="formStoreName">Nama Cabang Toko *</label>
+                        <input type="text" id="formStoreName" class="form-input" placeholder="Misal: KSP Check Cabang Utama" required>
+                    </div>
+
+                    <!-- Jumlah Transaksi per Bulan (Estimasi / Target) -->
+                    <div class="form-group">
+                        <label class="form-label" for="formMonthlyTx">Estimasi / Transaksi per Bulan</label>
+                        <input type="number" id="formMonthlyTx" class="form-input" placeholder="Misal: 1500" value="1250">
+                        <span class="form-hint">Digunakan untuk visualisasi transaksi bulanan di kartu cabang.</span>
+                    </div>
+
+                    <!-- Pengaturan Shift -->
+                    <div class="form-group">
+                        <label class="form-label">Konfigurasi Shift Kerja</label>
+                        <div class="shift-setting-box">
+                            <div class="shift-row">
+                                <span style="font-size: 12px; font-weight: 700;">Jumlah Shift:</span>
+                                <select id="formShiftCount" class="form-select" style="padding: 4px 8px; font-size: 12px;" onchange="renderShiftInputs()">
+                                    <option value="1">1 Shift</option>
+                                    <option value="2" selected>2 Shift (Pagi &amp; Siang/Malam)</option>
+                                    <option value="3">3 Shift (24 Jam)</option>
+                                </select>
+                            </div>
+
+                            <!-- Shift 1 Setting -->
+                            <div class="shift-row" id="shift1Row">
+                                <span style="font-size: 11.5px; font-weight: 700; color: #F59E0B;">🌅 Shift 1:</span>
+                                <div class="time-range-wrap">
+                                    <input type="time" id="s1Start" class="time-input" value="07:00">
+                                    <span style="font-size: 11px;">s/d</span>
+                                    <input type="time" id="s1End" class="time-input" value="15:00">
+                                </div>
+                            </div>
+
+                            <!-- Shift 2 Setting -->
+                            <div class="shift-row" id="shift2Row">
+                                <span style="font-size: 11.5px; font-weight: 700; color: #10B981;">🌙 Shift 2:</span>
+                                <div class="time-range-wrap">
+                                    <input type="time" id="s2Start" class="time-input" value="15:00">
+                                    <span style="font-size: 11px;">s/d</span>
+                                    <input type="time" id="s2End" class="time-input" value="23:00">
+                                </div>
+                            </div>
+
+                            <!-- Shift 3 Setting -->
+                            <div class="shift-row" id="shift3Row" style="display: none;">
+                                <span style="font-size: 11.5px; font-weight: 700; color: #8B5CF6;">🌌 Shift 3:</span>
+                                <div class="time-range-wrap">
+                                    <input type="time" id="s3Start" class="time-input" value="23:00">
+                                    <span style="font-size: 11px;">s/d</span>
+                                    <input type="time" id="s3End" class="time-input" value="07:00">
+                                </div>
+                            </div>
+
+                            <!-- Buffer / Toleransi Batas Pergantian Shift -->
+                            <div class="shift-row" style="border-top: 1px dashed var(--card-border); padding-top: 8px;">
+                                <div>
+                                    <span style="font-size: 12px; font-weight: 700;">Batas Toleransi Ganti Shift:</span>
+                                    <div class="form-hint">Masa konfirmasi wajib saat karyawan serah terima</div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <input type="number" id="formShiftBuffer" class="time-input" style="width: 60px; text-align: center;" value="30" min="5" max="120">
+                                    <span style="font-size: 11px;">menit</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Karyawan & Password Login -->
+                    <div class="form-group">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <label class="form-label">Daftar Karyawan &amp; Password</label>
+                            <button type="button" class="btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="addEmployeeRow()">
+                                + Tambah Karyawan
+                            </button>
+                        </div>
+                        <div class="form-hint">Password digunakan untuk login ke portal khusus karyawan.</div>
+                        <div class="emp-list-container" id="empListContainer">
+                            <!-- Dynamic Employee Rows -->
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('storeFormModal')">Batal</button>
+                    <button type="submit" class="btn-primary">Simpan Cabang Toko</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: SIMULASI / KONFIRMASI PASSWORD PADA MASA TRANSISI SHIFT -->
+    <div id="transitionConfirmModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'transitionConfirmModal')">
+        <div class="modal-card" style="max-width: 420px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">⏰ Konfirmasi Pergantian Shift</h3>
+                    <p class="modal-subtitle">Masa transisi shift aktif (Toleransi 30 Menit)</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('transitionConfirmModal')">&times;</button>
+            </div>
+            <form onsubmit="handleTransitionVerify(event)">
+                <div class="modal-body">
+                    <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); padding: 12px; border-radius: 12px; font-size: 12px; color: var(--text-main); line-height: 1.45;">
+                        ⚠️ <b>Pemberitahuan Sistem:</b> Saat ini waktu operasional berada di rentang masa pergantian shift. Setiap pembaruan data wajib diverifikasi untuk identifikasi shift dan personel penanggung jawab.
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Pilih Shift Transaksi Ini *</label>
+                        <select id="transShiftSelect" class="form-select" required>
+                            <option value="1">Shift 1 (Pagi)</option>
+                            <option value="2">Shift 2 (Malam)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Pilih Karyawan PIC *</label>
+                        <select id="transEmpSelect" class="form-select" required>
+                            <!-- Dynamically populated -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Masukkan Password Karyawan *</label>
+                        <input type="password" id="transEmpPassword" class="form-input" placeholder="Masukkan password Anda" required>
+                        <div id="transError" style="color: var(--danger); font-size: 11px; display: none;">Password salah!</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('transitionConfirmModal')">Batal</button>
+                    <button type="submit" class="btn-primary">Verifikasi &amp; Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- APP SCRIPT LOGIC -->
+    <script>
+        let supabaseClient = null;
+        let storesData = [];
+        let activeStoreId = null;
+
+        // Initial default store dataset
+        const DEFAULT_STORES = [
+            {
+                id: 'store_pusat',
+                name: 'KSP Check - Cabang Utama',
+                monthly_tx: 1850,
+                shift_count: 2,
+                shifts: [
+                    { shift_num: 1, name: 'Shift Pagi', start: '07:00', end: '15:00' },
+                    { shift_num: 2, name: 'Shift Malam', start: '15:00', end: '23:00' }
+                ],
+                buffer_minutes: 30,
+                employees: [
+                    { id: 'emp_1', name: 'Ahmad Kasir 1', password: '123', shift_num: 1 },
+                    { id: 'emp_2', name: 'Budi Kasir 2', password: '456', shift_num: 2 }
+                ]
+            },
+            {
+                id: 'store_pasar',
+                name: 'KSP Check - Cabang Pasar',
+                monthly_tx: 1120,
+                shift_count: 2,
+                shifts: [
+                    { shift_num: 1, name: 'Shift Pagi', start: '07:00', end: '15:00' },
+                    { shift_num: 2, name: 'Shift Siang', start: '15:00', end: '22:00' }
+                ],
+                buffer_minutes: 30,
+                employees: [
+                    { id: 'emp_3', name: 'Siti Kasir', password: '321', shift_num: 1 },
+                    { id: 'emp_4', name: 'Dewi Kasir', password: '654', shift_num: 2 }
+                ]
+            }
+        ];
+
+        // 1. Initial Load & Security Verification
+        document.addEventListener('DOMContentLoaded', () => {
+            applySavedTheme();
+            startLiveClock();
+            loadStoresData();
+
+            // Check if PIN already saved in localStorage (Same key as interactive_stock.html)
+            const savedPin = localStorage.getItem('kspcheck_viewer_pin');
+            if (savedPin) {
+                unlockWithPin(savedPin);
+            } else {
+                document.getElementById('pinModal').style.display = 'flex';
+            }
+        });
+
+        // 2. PIN Unlock Logic (Identical to interactive_stock.html)
+        async function handlePinSubmit(e) {
+            e.preventDefault();
+            const pin = document.getElementById('pinInput').value.trim();
+            if (!pin) return;
+            unlockWithPin(pin);
+        }
+
+        async function unlockWithPin(pin) {
+            const btn = document.getElementById('btnUnlock');
+            const errBox = document.getElementById('pinError');
+            if (btn) btn.innerText = 'Membuka...';
+            if (errBox) errBox.style.display = 'none';
+
+            try {
+                // Fetch config.enc
+                const res = await fetch('./config.enc?t=' + Date.now());
+                if (!res.ok) throw new Error('File config.enc tidak ditemukan.');
+                const base64Encrypted = await res.text();
+
+                // Decrypt AES-256-CBC
+                const combined = CryptoJS.enc.Base64.parse(base64Encrypted.trim());
+                const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4), 16);
+                const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4), combined.sigBytes - 16);
+                const cipherParams = CryptoJS.lib.CipherParams.create({ ciphertext: ciphertext });
+
+                const key = CryptoJS.SHA256(pin);
+                const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
+                    iv: iv,
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+
+                const decryptedJson = decrypted.toString(CryptoJS.enc.Utf8);
+                if (!decryptedJson) throw new Error('PIN Salah!');
+
+                const config = JSON.parse(decryptedJson);
+                if (!config.supabase_url || !config.supabase_anon_key) {
+                    throw new Error('Format konfigurasi tidak valid.');
+                }
+
+                // PIN Valid! Remember PIN
+                localStorage.setItem('kspcheck_viewer_pin', pin);
+
+                // Initialize Supabase Client
+                supabaseClient = supabase.createClient(config.supabase_url, config.supabase_anon_key);
+
+                // Reveal Admin Dashboard
+                document.getElementById('pinModal').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+
+                renderStoresGrid();
+
+            } catch (err) {
+                console.error(err);
+                if (errBox) {
+                    errBox.innerText = err.message || 'PIN Salah!';
+                    errBox.style.display = 'block';
+                }
+                document.getElementById('pinModal').style.display = 'flex';
+                document.getElementById('mainApp').style.display = 'none';
+            } finally {
+                if (btn) btn.innerText = 'Buka Manajemen Toko';
+            }
+        }
+
+        function lockStoreManager() {
+            localStorage.removeItem('kspcheck_viewer_pin');
+            document.getElementById('pinInput').value = '';
+            document.getElementById('pinModal').style.display = 'flex';
+            document.getElementById('mainApp').style.display = 'none';
+        }
+
+        // 3. LocalStorage & Stores Data Management
+        function loadStoresData() {
+            const raw = localStorage.getItem('kspcheck_stores_data');
+            if (raw) {
+                try {
+                    storesData = JSON.parse(raw);
+                } catch(e) {
+                    storesData = DEFAULT_STORES;
+                }
+            } else {
+                storesData = DEFAULT_STORES;
+                saveStoresData();
+            }
+        }
+
+        function saveStoresData() {
+            localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesData));
+        }
+
+        // 4. Live Clock & Shift Transition Calculation
+        function startLiveClock() {
+            setInterval(() => {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) + ' WIB';
+                const clockEl = document.getElementById('liveClockDisplay');
+                if (clockEl) clockEl.innerText = timeStr;
+            }, 1000);
+        }
+
+        // Calculate current shift and if in transition buffer window
+        function getShiftStatus(store) {
+            const now = new Date();
+            const nowMin = now.getHours() * 60 + now.getMinutes();
+            const buffer = parseInt(store.buffer_minutes || 30);
+
+            let currentShift = null;
+            let inTransition = false;
+            let transitionInfo = '';
+
+            for (const s of store.shifts) {
+                const [startH, startM] = s.start.split(':').map(Number);
+                const [endH, endM] = s.end.split(':').map(Number);
+                let startMin = startH * 60 + startM;
+                let endMin = endH * 60 + endM;
+
+                if (endMin < startMin) {
+                    // Overnight shift
+                    if (nowMin >= startMin || nowMin < endMin) currentShift = s;
+                } else {
+                    if (nowMin >= startMin && nowMin < endMin) currentShift = s;
+                }
+
+                // Check transition near end time (+/- buffer window)
+                const diffToEnd = Math.abs(nowMin - endMin);
+                if (diffToEnd <= buffer) {
+                    inTransition = true;
+                    transitionInfo = `Transisi Shift ${s.shift_num} (Toleransi ${buffer}m)`;
+                }
+            }
+
+            return {
+                currentShift: currentShift || store.shifts[0],
+                inTransition: inTransition,
+                transitionInfo: transitionInfo
+            };
+        }
+
+        // 5. Render Stores Cards Grid (Admin View)
+        function renderStoresGrid() {
+            const container = document.getElementById('storesGridContainer');
+            if (!container) return;
+
+            if (storesData.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px 10px; color: var(--text-muted); font-size: 13px;">
+                        Belum ada cabang toko terdaftar. Klik <b>+ Tambah Cabang</b> di atas untuk membuat cabang pertama.
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            storesData.forEach(store => {
+                const status = getShiftStatus(store);
+                const empCount = (store.employees || []).length;
+                const monthlyTx = (store.monthly_tx || 0).toLocaleString('id-ID');
+
+                let badgeHtml = '';
+                if (status.inTransition) {
+                    badgeHtml = `<span class="badge-status badge-transition">⚠️ Transisi Shift (${store.buffer_minutes}m)</span>`;
+                } else {
+                    badgeHtml = `<span class="badge-status badge-active">🟢 Shift ${status.currentShift.shift_num} Aktif</span>`;
+                }
+
+                html += `
+                <div class="store-card" onclick="selectStore('${store.id}')">
+                    <div>
+                        <div class="store-card-header">
+                            <div class="store-card-icon">🏬</div>
+                            ${badgeHtml}
+                        </div>
+                        <h3 class="store-name">${escapeHtml(store.name)}</h3>
+                        
+                        <div class="store-stat-row">
+                            <span class="stat-label">Transaksi per Bulan:</span>
+                            <span class="stat-val">${monthlyTx} tx</span>
+                        </div>
+
+                        <div class="store-meta-list">
+                            <div class="store-meta-item">
+                                <span>⏰</span>
+                                <span>${store.shift_count || 2} Shift (${store.shifts[0]?.start} - ${store.shifts[store.shifts.length - 1]?.end || '23:00'})</span>
+                            </div>
+                            <div class="store-meta-item">
+                                <span>🛡️</span>
+                                <span>Toleransi Ganti Shift: ${store.buffer_minutes || 30} menit</span>
+                            </div>
+                            <div class="store-meta-item">
+                                <span>👥</span>
+                                <span>${empCount} Karyawan Terdaftar</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="store-card-footer">
+                        <span>Kelola Fitur Toko</span>
+                        <span>Buka &rarr;</span>
+                    </div>
+                </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // 6. View Sub-Dashboard When a Store is Clicked
+        function selectStore(storeId) {
+            const store = storesData.find(s => s.id === storeId);
+            if (!store) return;
+
+            activeStoreId = storeId;
+            document.getElementById('storesListView').style.display = 'none';
+            const detailView = document.getElementById('storeDetailView');
+            detailView.classList.add('active');
+
+            // Header titles
+            document.getElementById('detailStoreName').innerText = store.name;
+            document.getElementById('detailStoreMeta').innerText = `${store.shift_count} Shift • ${store.buffer_minutes} Menit Toleransi • ${(store.employees || []).length} Karyawan`;
+
+            // Shift summary text
+            let sText = store.shifts.map(s => `Shift ${s.shift_num}: ${s.start}-${s.end}`).join(' | ');
+            document.getElementById('featureShiftSummary').innerText = `${sText} (Toleransi: ${store.buffer_minutes}m).`;
+            document.getElementById('featureEmpSummary').innerText = `${(store.employees || []).length} personel terdaftar dengan password masing-masing.`;
+
+            // Portal link update
+            const pLink = document.getElementById('linkPortalKaryawan');
+            if (pLink) pLink.href = `karyawan.html?store=${encodeURIComponent(store.id)}`;
+
+            // Transition status alert banner
+            const status = getShiftStatus(store);
+            const banner = document.getElementById('shiftAlertBanner');
+            if (status.inTransition) {
+                banner.style.display = 'block';
+                banner.style.background = 'rgba(245, 158, 11, 0.12)';
+                banner.style.border = '1px solid rgba(245, 158, 11, 0.35)';
+                banner.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 750; color: #F59E0B; font-size: 13px;">
+                        <span>⚠️</span> Masa Pergantian Shift Aktif (${status.transitionInfo})
+                    </div>
+                    <p style="font-size: 12px; color: var(--text-main); margin-top: 4px;">
+                        Saat ini berada di masa transisi pergantian shift. Setiap pembaruan data wajib memasukkan password karyawan &amp; konfirmasi shift.
+                    </p>`;
+            } else {
+                banner.style.display = 'block';
+                banner.style.background = 'rgba(16, 185, 129, 0.1)';
+                banner.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+                banner.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 750; color: #10B981; font-size: 13px;">
+                        <span>🟢</span> Jam Kerja Normal: Shift ${status.currentShift.shift_num} (${status.currentShift.start} - ${status.currentShift.end})
+                    </div>`;
+            }
+        }
+
+        function backToStoresList() {
+            activeStoreId = null;
+            document.getElementById('storeDetailView').classList.remove('active');
+            document.getElementById('storesListView').style.display = 'block';
+            renderStoresGrid();
+        }
+
+        // 7. Store Form Modal (Add / Edit)
+        function openAddStoreModal() {
+            document.getElementById('storeModalHeading').innerText = 'Tambah Cabang Toko';
+            document.getElementById('formStoreId').value = '';
+            document.getElementById('formStoreName').value = '';
+            document.getElementById('formMonthlyTx').value = '1200';
+            document.getElementById('formShiftCount').value = '2';
+            document.getElementById('formShiftBuffer').value = '30';
+            document.getElementById('s1Start').value = '07:00';
+            document.getElementById('s1End').value = '15:00';
+            document.getElementById('s2Start').value = '15:00';
+            document.getElementById('s2End').value = '23:00';
+            renderShiftInputs();
+
+            // Clear employees and add 2 initial rows
+            const empCont = document.getElementById('empListContainer');
+            empCont.innerHTML = '';
+            addEmployeeRow('Kasir 1', '123', 1);
+            addEmployeeRow('Kasir 2', '456', 2);
+
+            openModal('storeFormModal');
+        }
+
+        function openEditCurrentStoreModal() {
+            const store = storesData.find(s => s.id === activeStoreId);
+            if (!store) return;
+
+            document.getElementById('storeModalHeading').innerText = 'Edit Cabang Toko';
+            document.getElementById('formStoreId').value = store.id;
+            document.getElementById('formStoreName').value = store.name;
+            document.getElementById('formMonthlyTx').value = store.monthly_tx || 0;
+            document.getElementById('formShiftCount').value = store.shift_count || 2;
+            document.getElementById('formShiftBuffer').value = store.buffer_minutes || 30;
+
+            if (store.shifts[0]) {
+                document.getElementById('s1Start').value = store.shifts[0].start;
+                document.getElementById('s1End').value = store.shifts[0].end;
+            }
+            if (store.shifts[1]) {
+                document.getElementById('s2Start').value = store.shifts[1].start;
+                document.getElementById('s2End').value = store.shifts[1].end;
+            }
+            if (store.shifts[2]) {
+                document.getElementById('s3Start').value = store.shifts[2].start;
+                document.getElementById('s3End').value = store.shifts[2].end;
+            }
+            renderShiftInputs();
+
+            // Render existing employees
+            const empCont = document.getElementById('empListContainer');
+            empCont.innerHTML = '';
+            (store.employees || []).forEach(emp => {
+                addEmployeeRow(emp.name, emp.password, emp.shift_num);
+            });
+
+            openModal('storeFormModal');
+        }
+
+        function renderShiftInputs() {
+            const count = parseInt(document.getElementById('formShiftCount').value);
+            document.getElementById('shift1Row').style.display = (count >= 1) ? 'flex' : 'none';
+            document.getElementById('shift2Row').style.display = (count >= 2) ? 'flex' : 'none';
+            document.getElementById('shift3Row').style.display = (count >= 3) ? 'flex' : 'none';
+        }
+
+        function addEmployeeRow(name = '', pass = '', shift = 1) {
+            const cont = document.getElementById('empListContainer');
+            const rowId = 'empRow_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+            const div = document.createElement('div');
+            div.className = 'emp-item-row';
+            div.id = rowId;
+            div.innerHTML = `
+                <input type="text" class="emp-name-input" placeholder="Nama Karyawan" value="${escapeHtml(name)}" required>
+                <input type="password" class="emp-pass-input" placeholder="Password PIN" value="${escapeHtml(pass)}" required>
+                <select class="form-select emp-shift-select" style="padding: 4px 6px; font-size: 11px;">
+                    <option value="1" ${shift == 1 ? 'selected' : ''}>Shift 1</option>
+                    <option value="2" ${shift == 2 ? 'selected' : ''}>Shift 2</option>
+                    <option value="3" ${shift == 3 ? 'selected' : ''}>Shift 3</option>
+                </select>
+                <button type="button" class="btn-del-emp" onclick="document.getElementById('${rowId}').remove()">&times;</button>
+            `;
+            cont.appendChild(div);
+        }
+
+        function saveStoreForm(e) {
+            e.preventDefault();
+            const storeId = document.getElementById('formStoreId').value || ('store_' + Date.now());
+            const name = document.getElementById('formStoreName').value.trim();
+            const monthlyTx = parseInt(document.getElementById('formMonthlyTx').value) || 0;
+            const shiftCount = parseInt(document.getElementById('formShiftCount').value) || 2;
+            const buffer = parseInt(document.getElementById('formShiftBuffer').value) || 30;
+
+            const shifts = [];
+            if (shiftCount >= 1) {
+                shifts.push({ shift_num: 1, name: 'Shift 1', start: document.getElementById('s1Start').value, end: document.getElementById('s1End').value });
+            }
+            if (shiftCount >= 2) {
+                shifts.push({ shift_num: 2, name: 'Shift 2', start: document.getElementById('s2Start').value, end: document.getElementById('s2End').value });
+            }
+            if (shiftCount >= 3) {
+                shifts.push({ shift_num: 3, name: 'Shift 3', start: document.getElementById('s3Start').value, end: document.getElementById('s3End').value });
+            }
+
+            // Gather employees
+            const employees = [];
+            document.querySelectorAll('#empListContainer .emp-item-row').forEach(row => {
+                const empName = row.querySelector('.emp-name-input')?.value.trim();
+                const empPass = row.querySelector('.emp-pass-input')?.value.trim();
+                const empShift = parseInt(row.querySelector('.emp-shift-select')?.value) || 1;
+                if (empName && empPass) {
+                    employees.push({
+                        id: 'emp_' + Math.random().toString(36).substr(2, 6),
+                        name: empName,
+                        password: empPass,
+                        shift_num: empShift
+                    });
+                }
+            });
+
+            const newStore = {
+                id: storeId,
+                name: name,
+                monthly_tx: monthlyTx,
+                shift_count: shiftCount,
+                shifts: shifts,
+                buffer_minutes: buffer,
+                employees: employees
+            };
+
+            const existingIdx = storesData.findIndex(s => s.id === storeId);
+            if (existingIdx >= 0) {
+                storesData[existingIdx] = newStore;
+            } else {
+                storesData.push(newStore);
+            }
+
+            saveStoresData();
+            closeModal('storeFormModal');
+
+            if (activeStoreId === storeId) {
+                selectStore(storeId);
+            } else {
+                renderStoresGrid();
+            }
+        }
+
+        // 8. Shift Transition Prompt Simulation (Testing requirement)
+        function testShiftTransitionPrompt() {
+            const store = storesData.find(s => s.id === activeStoreId);
+            if (!store) return;
+
+            const empSelect = document.getElementById('transEmpSelect');
+            empSelect.innerHTML = '';
+            (store.employees || []).forEach(emp => {
+                const opt = document.createElement('option');
+                opt.value = emp.id;
+                opt.textContent = `${emp.name} (Shift ${emp.shift_num})`;
+                empSelect.appendChild(opt);
+            });
+
+            document.getElementById('transEmpPassword').value = '';
+            document.getElementById('transError').style.display = 'none';
+            openModal('transitionConfirmModal');
+        }
+
+        function handleTransitionVerify(e) {
+            e.preventDefault();
+            const store = storesData.find(s => s.id === activeStoreId);
+            if (!store) return;
+
+            const empId = document.getElementById('transEmpSelect').value;
+            const pass = document.getElementById('transEmpPassword').value.trim();
+            const selectedShift = document.getElementById('transShiftSelect').value;
+
+            const emp = (store.employees || []).find(x => x.id === empId);
+            if (!emp || emp.password !== pass) {
+                const errBox = document.getElementById('transError');
+                errBox.innerText = 'Password karyawan salah!';
+                errBox.style.display = 'block';
+                return;
+            }
+
+            closeModal('transitionConfirmModal');
+            alert(`✅ Verifikasi Berhasil!\n\nData tercatat:\n• Toko: ${store.name}\n• PIC: ${emp.name}\n• Shift: Shift ${selectedShift}\n• Waktu: ${new Date().toLocaleTimeString('id-ID')} WIB\n\nIdentitas shift dan karyawan berhasil divalidasi.`);
+        }
+
+        function openShiftSettingsModal() {
+            openEditCurrentStoreModal();
+        }
+
+        function openManageEmployeesModal() {
+            openEditCurrentStoreModal();
+        }
+
+        // Modal Utility Helpers
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('open');
+        }
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('open');
+        }
+
+        function handleBackdropClose(e, id) {
+            if (e.target && e.target.id === id) {
+                closeModal(id);
+            }
+        }
+
+        // Theme management
+        function applySavedTheme() {
+            const savedTheme = localStorage.getItem('kspcheck_theme');
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+                if (themeBtn) themeBtn.innerText = '☀️';
+            } else {
+                document.body.classList.remove('light-theme');
+                if (themeBtn) themeBtn.innerText = '🌙';
+            }
+        }
+
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light-theme');
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (isLight) {
+                localStorage.setItem('kspcheck_theme', 'light');
+                if (themeBtn) themeBtn.innerText = '☀️';
+            } else {
+                localStorage.setItem('kspcheck_theme', 'dark');
+                if (themeBtn) themeBtn.innerText = '🌙';
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
+    </script>
+</body>
+</html>
