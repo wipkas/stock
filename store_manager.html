@@ -291,20 +291,7 @@
             color: var(--primary);
         }
 
-        .store-meta-list {
-            font-size: 11.5px;
-            color: var(--text-muted);
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            margin-bottom: 12px;
-        }
 
-        .store-meta-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
 
         .store-card-footer {
             display: flex;
@@ -639,24 +626,56 @@
         }
 
         .emp-name-input {
-            flex: 2;
+            flex: 1;
+            min-width: 0;
             background: transparent;
             border: none;
             color: var(--text-main);
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 700;
             outline: none;
         }
 
-        .emp-pass-input {
-            flex: 1.5;
-            background: var(--chip-bg);
+        .emp-shift-select {
+            flex: 0 0 88px;
+            padding: 5px 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .btn-emp-pass {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 750;
+            cursor: pointer;
             border: 1px solid var(--card-border);
-            color: var(--text-main);
-            font-size: 11.5px;
-            padding: 5px 8px;
-            border-radius: 6px;
-            outline: none;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-emp-pass.has-pass {
+            border-color: rgba(16, 185, 129, 0.4);
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--success);
+        }
+
+        .btn-emp-pass.has-pass:hover {
+            background: rgba(16, 185, 129, 0.22);
+        }
+
+        .btn-emp-pass.no-pass {
+            border-color: rgba(245, 158, 11, 0.4);
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--warning);
+        }
+
+        .btn-emp-pass.no-pass:hover {
+            background: rgba(245, 158, 11, 0.22);
         }
 
         .btn-del-emp {
@@ -664,8 +683,20 @@
             border: none;
             color: var(--danger);
             cursor: pointer;
-            font-size: 14px;
-            padding: 4px;
+            font-size: 16px;
+            padding: 4px 6px;
+            line-height: 1;
+            flex-shrink: 0;
+            border-radius: 6px;
+            transition: background 0.15s;
+        }
+
+        .btn-del-emp:hover {
+            background: rgba(239, 68, 68, 0.15);
+        }
+
+        #empPasswordModal {
+            z-index: 1100;
         }
 
         /* PIN Gate Modal */
@@ -993,13 +1024,13 @@
                     <!-- Karyawan & Password Login -->
                     <div class="form-group">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <label class="form-label">Daftar Karyawan &amp; Password</label>
+                            <label class="form-label">Daftar Karyawan</label>
                             <button type="button" class="btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="addEmployeeRow()">
                                 + Tambah Karyawan
                             </button>
                         </div>
                         <div class="form-hint" style="background: rgba(79, 142, 247, 0.1); border: 1px solid rgba(79, 142, 247, 0.25); padding: 8px 10px; border-radius: 8px; margin: 4px 0 8px 0; font-size: 11px; line-height: 1.45; color: var(--text-main);">
-                            💡 <b>Login Cepat Karyawan:</b> Setiap karyawan wajib diberi Password / PIN yang <b>unik</b> (tidak boleh sama dengan karyawan lain di toko ini maupun cabang lain). Karyawan akan login instan cukup dengan mengetik PIN tanpa perlu memilih cabang.
+                            💡 <b>Password Karyawan:</b> Klik tombol <b>🔑 PIN</b> pada masing-masing karyawan untuk memasukkan atau mengubah password/PIN login unik.
                         </div>
                         <div class="emp-list-container" id="empListContainer">
                             <!-- Dynamic Employee Rows -->
@@ -1055,6 +1086,49 @@
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary" onclick="closeModal('transitionConfirmModal')">Batal</button>
                     <button type="submit" class="btn-primary">Verifikasi &amp; Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: DIALOG KHUSUS ATUR PASSWORD / PIN KARYAWAN -->
+    <div id="empPasswordModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'empPasswordModal')">
+        <div class="modal-card" style="max-width: 380px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">🔐 Atur Password / PIN</h3>
+                    <p class="modal-subtitle">Karyawan: <b id="pwModalEmpName" style="color: var(--primary);">-</b></p>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('empPasswordModal')">&times;</button>
+            </div>
+            <form onsubmit="handleSaveEmpPasswordModal(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label" for="pwModalInput">Password / PIN Unik Karyawan *</label>
+                        <div style="position: relative; display: flex; align-items: center;">
+                            <input type="password" 
+                                   id="pwModalInput" 
+                                   class="form-input" 
+                                   inputmode="numeric" 
+                                   autocomplete="off"
+                                   placeholder="Ketik PIN..." 
+                                   style="font-size: 20px; letter-spacing: 4px; text-align: center; font-weight: 800; padding: 12px 42px 12px 12px; width: 100%;" 
+                                   required>
+                            <button type="button" 
+                                    id="btnTogglePwModal" 
+                                    onclick="togglePwModalVisibility()" 
+                                    style="position: absolute; right: 10px; background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); padding: 6px;" 
+                                    title="Lihat PIN">👁️</button>
+                        </div>
+                        <div class="form-hint" style="margin-top: 6px; line-height: 1.45;">
+                            💡 PIN ini wajib <b>unik</b> (berbeda dengan karyawan/cabang lain) agar kasir dapat langsung login tanpa memilih cabang toko.
+                        </div>
+                        <div id="pwModalError" style="color: var(--danger); font-size: 11.5px; margin-top: 6px; display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); padding: 6px 10px; border-radius: 8px;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('empPasswordModal')">Batal</button>
+                    <button type="submit" class="btn-primary">Simpan PIN</button>
                 </div>
             </form>
         </div>
@@ -1295,20 +1369,6 @@
                             <span class="stat-val">${monthlyTx} tx</span>
                         </div>
 
-                        <div class="store-meta-list">
-                            <div class="store-meta-item">
-                                <span>⏰</span>
-                                <span>${store.shift_count || 2} Shift (${store.shifts[0]?.start} - ${store.shifts[store.shifts.length - 1]?.end || '23:00'})</span>
-                            </div>
-                            <div class="store-meta-item">
-                                <span>🛡️</span>
-                                <span>Toleransi Ganti Shift: ${store.buffer_minutes || 30} menit</span>
-                            </div>
-                            <div class="store-meta-item">
-                                <span>👥</span>
-                                <span>${empCount} Karyawan Terdaftar</span>
-                            </div>
-                        </div>
                     </div>
 
                     <div class="store-card-footer">
@@ -1393,8 +1453,8 @@
             // Clear employees and add 2 initial rows
             const empCont = document.getElementById('empListContainer');
             empCont.innerHTML = '';
-            addEmployeeRow('Kasir 1', '123', 1);
-            addEmployeeRow('Kasir 2', '456', 2);
+            addEmployeeRow('Kasir 1', '', 1);
+            addEmployeeRow('Kasir 2', '', 2);
 
             openModal('storeFormModal');
         }
@@ -1448,17 +1508,116 @@
             div.className = 'emp-item-row';
             div.id = rowId;
             if (id) div.dataset.empId = id;
+            div.dataset.empPass = pass ? String(pass).trim() : '';
+
+            const hasPass = Boolean(pass && String(pass).trim().length > 0);
+            const btnClass = hasPass ? 'btn-emp-pass has-pass' : 'btn-emp-pass no-pass';
+            const btnLabel = hasPass ? '🔑 PIN Tersedia' : '🔑 Set PIN';
+
             div.innerHTML = `
                 <input type="text" class="emp-name-input" placeholder="Nama Karyawan" value="${escapeHtml(name)}" required>
-                <input type="text" class="emp-pass-input" placeholder="Password PIN Unik" value="${escapeHtml(pass)}" style="font-weight: 700; letter-spacing: 1px;" required>
-                <select class="form-select emp-shift-select" style="padding: 4px 6px; font-size: 11px;">
+                <select class="form-select emp-shift-select">
                     <option value="1" ${shift == 1 ? 'selected' : ''}>Shift 1</option>
                     <option value="2" ${shift == 2 ? 'selected' : ''}>Shift 2</option>
                     <option value="3" ${shift == 3 ? 'selected' : ''}>Shift 3</option>
                 </select>
-                <button type="button" class="btn-del-emp" onclick="document.getElementById('${rowId}').remove()">&times;</button>
+                <button type="button" class="${btnClass}" onclick="openEmpPasswordModal('${rowId}')" title="Klik untuk atur Password / PIN">${btnLabel}</button>
+                <button type="button" class="btn-del-emp" onclick="document.getElementById('${rowId}').remove()" title="Hapus Karyawan">&times;</button>
             `;
             cont.appendChild(div);
+        }
+
+        // Dedicated Employee Password Modal Logic
+        let activeEditingEmpRowId = null;
+
+        function openEmpPasswordModal(rowId) {
+            const row = document.getElementById(rowId);
+            if (!row) return;
+
+            activeEditingEmpRowId = rowId;
+            const nameInput = row.querySelector('.emp-name-input');
+            const empName = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : 'Karyawan Baru';
+            const currentPass = row.dataset.empPass || '';
+
+            document.getElementById('pwModalEmpName').innerText = empName;
+            const passInput = document.getElementById('pwModalInput');
+            passInput.value = currentPass;
+            passInput.type = 'password';
+            const toggleBtn = document.getElementById('btnTogglePwModal');
+            if (toggleBtn) toggleBtn.innerText = '👁️';
+            document.getElementById('pwModalError').style.display = 'none';
+
+            openModal('empPasswordModal');
+            setTimeout(() => {
+                passInput.focus();
+                try { passInput.select(); } catch(e) {}
+            }, 120);
+        }
+
+        function togglePwModalVisibility() {
+            const input = document.getElementById('pwModalInput');
+            const btn = document.getElementById('btnTogglePwModal');
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (btn) btn.innerText = '🙈';
+            } else {
+                input.type = 'password';
+                if (btn) btn.innerText = '👁️';
+            }
+            input.focus();
+        }
+
+        function handleSaveEmpPasswordModal(e) {
+            e.preventDefault();
+            if (!activeEditingEmpRowId) return;
+
+            const row = document.getElementById(activeEditingEmpRowId);
+            if (!row) return;
+
+            const newPass = document.getElementById('pwModalInput').value.trim();
+            const errBox = document.getElementById('pwModalError');
+
+            if (!newPass) {
+                errBox.innerText = 'Password PIN tidak boleh kosong!';
+                errBox.style.display = 'block';
+                return;
+            }
+
+            // 1. Check duplicate within current form
+            const allRows = document.querySelectorAll('#empListContainer .emp-item-row');
+            for (const r of allRows) {
+                if (r.id === activeEditingEmpRowId) continue;
+                if (r.dataset.empPass && r.dataset.empPass.trim() === newPass) {
+                    const otherName = r.querySelector('.emp-name-input')?.value.trim() || 'Karyawan lain';
+                    errBox.innerText = `⚠️ PIN "${newPass}" sudah digunakan oleh ${otherName} di form ini.`;
+                    errBox.style.display = 'block';
+                    return;
+                }
+            }
+
+            // 2. Check duplicate across other branches
+            const currentStoreId = document.getElementById('formStoreId').value;
+            for (const otherStore of storesData) {
+                if (otherStore.id === currentStoreId) continue;
+                const conflict = (otherStore.employees || []).find(o => String(o.password).trim() === newPass);
+                if (conflict) {
+                    errBox.innerText = `⚠️ PIN "${newPass}" sudah dipakai oleh ${conflict.name} di ${otherStore.name}.`;
+                    errBox.style.display = 'block';
+                    return;
+                }
+            }
+
+            // Success: update row dataset and button
+            row.dataset.empPass = newPass;
+            const passBtn = row.querySelector('.btn-emp-pass');
+            if (passBtn) {
+                passBtn.className = 'btn-emp-pass has-pass';
+                passBtn.innerHTML = `🔑 PIN Tersedia`;
+            }
+
+            errBox.style.display = 'none';
+            closeModal('empPasswordModal');
         }
 
         function saveStoreForm(e) {
@@ -1487,12 +1646,17 @@
 
             for (const row of rows) {
                 const empName = row.querySelector('.emp-name-input')?.value.trim();
-                const empPass = row.querySelector('.emp-pass-input')?.value.trim();
+                const empPass = (row.dataset.empPass || '').trim();
                 const empShift = parseInt(row.querySelector('.emp-shift-select')?.value) || 1;
                 const existingEmpId = row.dataset.empId;
 
-                if (!empName || !empPass) {
-                    alert('⚠️ Nama dan Password PIN setiap karyawan wajib diisi!');
+                if (!empName) {
+                    alert('⚠️ Nama setiap karyawan wajib diisi!');
+                    return;
+                }
+
+                if (!empPass) {
+                    alert(`⚠️ Password PIN untuk karyawan "${empName}" belum diatur! Silakan klik tombol "🔑 Set PIN".`);
                     return;
                 }
 
