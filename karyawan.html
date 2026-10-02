@@ -371,40 +371,50 @@
             </div>
         </header>
 
-        <!-- VIEW 1: FORM LOGIN KARYAWAN -->
+        <!-- VIEW 1: FORM LOGIN CEPAT KARYAWAN -->
         <section id="loginSection" class="login-card">
             <div class="login-header">
-                <div class="login-avatar">👤</div>
-                <h1 style="font-size: 19px; font-weight: 800; margin-bottom: 4px;">Login Karyawan</h1>
-                <p style="font-size: 12px; color: var(--text-muted);">Pilih cabang toko dan masukkan password PIN Anda</p>
+                <div class="login-avatar">⚡</div>
+                <h1 style="font-size: 20px; font-weight: 800; margin-bottom: 6px;">Login Karyawan</h1>
+                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.45;">
+                    Masukkan Password / PIN unik Anda.<br>Cabang &amp; nama karyawan terdeteksi otomatis.
+                </p>
             </div>
 
             <form onsubmit="handleEmployeeLogin(event)">
-                <!-- 1. Pilih Cabang Toko -->
-                <div class="form-group">
-                    <label class="form-label" for="loginStoreSelect">Cabang Toko</label>
-                    <select id="loginStoreSelect" class="form-select" onchange="populateEmployeesDropdown()" required>
-                        <!-- Populated dynamically -->
-                    </select>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label class="form-label" for="loginPasswordInput" style="text-align: center; display: block; margin-bottom: 8px;">
+                        Password / PIN Karyawan
+                    </label>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <input type="password" 
+                               id="loginPasswordInput" 
+                               class="form-input" 
+                               inputmode="numeric" 
+                               autocomplete="current-password"
+                               autofocus 
+                               placeholder="Ketik PIN..." 
+                               style="font-size: 22px; letter-spacing: 5px; text-align: center; font-weight: 800; padding: 14px 44px 14px 14px; width: 100%;" 
+                               required>
+                        <button type="button" 
+                                id="btnTogglePass" 
+                                onclick="togglePasswordVisibility()" 
+                                style="position: absolute; right: 10px; background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); padding: 6px;" 
+                                title="Lihat PIN">👁️</button>
+                    </div>
+                    <div id="loginError" style="color: var(--danger); font-size: 12px; margin-top: 8px; text-align: center; font-weight: 600; display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); padding: 8px 12px; border-radius: 8px;"></div>
                 </div>
 
-                <!-- 2. Pilih Nama Karyawan -->
-                <div class="form-group">
-                    <label class="form-label" for="loginEmpSelect">Nama Karyawan</label>
-                    <select id="loginEmpSelect" class="form-select" required>
-                        <!-- Populated dynamically -->
-                    </select>
-                </div>
-
-                <!-- 3. Password Login Karyawan -->
-                <div class="form-group">
-                    <label class="form-label" for="loginPasswordInput">Password / PIN Karyawan</label>
-                    <input type="password" id="loginPasswordInput" class="form-input" placeholder="Masukkan password PIN Anda" required>
-                    <div id="loginError" style="color: var(--danger); font-size: 11.5px; margin-top: 4px; display: none;">Password salah!</div>
-                </div>
-
-                <button type="submit" class="btn-submit">Masuk ke Portal</button>
+                <button type="submit" class="btn-submit" style="font-size: 15px; padding: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>Masuk ke Portal</span> ➜
+                </button>
             </form>
+
+            <div style="margin-top: 20px; padding-top: 14px; border-top: 1px dashed var(--card-border); text-align: center;">
+                <div style="font-size: 11px; color: var(--text-muted); line-height: 1.45;">
+                    💡 <i>Tips: Masukkan PIN unik yang diberikan oleh Admin Toko. Sistem akan langsung mengenali nama dan cabang Anda.</i>
+                </div>
+            </div>
         </section>
 
         <!-- VIEW 2: DASHBOARD KARYAWAN (SETELAH LOGIN) -->
@@ -519,28 +529,49 @@
         document.addEventListener('DOMContentLoaded', () => {
             applySavedTheme();
             loadStoresData();
-            populateStoresDropdown();
-
-            // Check if store specified in query param
-            const urlParams = new URLSearchParams(window.location.search);
-            const storeParam = urlParams.get('store');
-            if (storeParam) {
-                const storeSelect = document.getElementById('loginStoreSelect');
-                if (storeSelect) {
-                    storeSelect.value = storeParam;
-                    populateEmployeesDropdown();
-                }
-            }
 
             // Check if employee already logged in
             const savedSession = sessionStorage.getItem('kspcheck_active_emp');
+            let sessionRestored = false;
             if (savedSession) {
                 try {
                     const session = JSON.parse(savedSession);
-                    restoreSession(session);
+                    sessionRestored = restoreSession(session);
                 } catch(e) {}
             }
+
+            if (!sessionRestored) {
+                focusPasswordInput();
+            }
         });
+
+        function focusPasswordInput() {
+            // Immediate focus for mobile keyboard auto-open
+            setTimeout(() => {
+                const passInput = document.getElementById('loginPasswordInput');
+                const loginSec = document.getElementById('loginSection');
+                if (passInput && loginSec && loginSec.style.display !== 'none') {
+                    passInput.focus();
+                    try {
+                        passInput.select();
+                    } catch(e) {}
+                }
+            }, 120);
+        }
+
+        function togglePasswordVisibility() {
+            const input = document.getElementById('loginPasswordInput');
+            const btn = document.getElementById('btnTogglePass');
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (btn) btn.innerText = '🙈';
+            } else {
+                input.type = 'password';
+                if (btn) btn.innerText = '👁️';
+            }
+            input.focus();
+        }
 
         function loadStoresData() {
             const raw = localStorage.getItem('kspcheck_stores_data');
@@ -563,74 +594,64 @@
                             { id: 'emp_1', name: 'Ahmad Kasir 1', password: '123', shift_num: 1 },
                             { id: 'emp_2', name: 'Budi Kasir 2', password: '456', shift_num: 2 }
                         ]
+                    },
+                    {
+                        id: 'store_pasar',
+                        name: 'KSP Check - Cabang Pasar',
+                        buffer_minutes: 30,
+                        shifts: [
+                            { shift_num: 1, name: 'Shift Pagi', start: '07:00', end: '15:00' },
+                            { shift_num: 2, name: 'Shift Siang', start: '15:00', end: '22:00' }
+                        ],
+                        employees: [
+                            { id: 'emp_3', name: 'Siti Kasir', password: '321', shift_num: 1 },
+                            { id: 'emp_4', name: 'Dewi Kasir', password: '654', shift_num: 2 }
+                        ]
                     }
                 ];
             }
         }
 
-        function populateStoresDropdown() {
-            const select = document.getElementById('loginStoreSelect');
-            select.innerHTML = '<option value="">-- Pilih Cabang Toko --</option>';
-            storesData.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.id;
-                opt.textContent = '🏬 ' + s.name;
-                select.appendChild(opt);
-            });
-            if (storesData.length === 1) {
-                select.value = storesData[0].id;
-            }
-            populateEmployeesDropdown();
-        }
-
-        function populateEmployeesDropdown() {
-            const storeId = document.getElementById('loginStoreSelect').value;
-            const select = document.getElementById('loginEmpSelect');
-            select.innerHTML = '';
-
-            const store = storesData.find(s => s.id === storeId);
-            if (!store || !store.employees || store.employees.length === 0) {
-                select.innerHTML = '<option value="">(Tidak ada karyawan terdaftar)</option>';
-                return;
-            }
-
-            store.employees.forEach(emp => {
-                const opt = document.createElement('option');
-                opt.value = emp.id;
-                opt.textContent = `${emp.name} (Shift ${emp.shift_num})`;
-                select.appendChild(opt);
-            });
-        }
-
         function handleEmployeeLogin(e) {
             e.preventDefault();
-            const storeId = document.getElementById('loginStoreSelect').value;
-            const empId = document.getElementById('loginEmpSelect').value;
             const pass = document.getElementById('loginPasswordInput').value.trim();
             const errBox = document.getElementById('loginError');
 
-            const store = storesData.find(s => s.id === storeId);
-            if (!store) {
-                errBox.innerText = 'Pilih cabang toko!';
+            if (!pass) {
+                errBox.innerText = 'Silakan ketik Password / PIN Anda!';
                 errBox.style.display = 'block';
                 return;
             }
 
-            const emp = (store.employees || []).find(x => x.id === empId);
-            if (!emp || emp.password !== pass) {
-                errBox.innerText = 'Password PIN Karyawan salah!';
+            // Search employee across all stores by unique password
+            let match = null;
+            for (const store of storesData) {
+                const emp = (store.employees || []).find(x => String(x.password).trim() === pass);
+                if (emp) {
+                    match = { store, employee: emp };
+                    break;
+                }
+            }
+
+            if (!match) {
+                errBox.innerText = '❌ Password PIN tidak terdaftar! Periksa kembali atau tanyakan Admin Toko.';
                 errBox.style.display = 'block';
+                const input = document.getElementById('loginPasswordInput');
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
                 return;
             }
 
             errBox.style.display = 'none';
-            currentStore = store;
-            currentEmployee = emp;
+            currentStore = match.store;
+            currentEmployee = match.employee;
 
             // Save active session
             sessionStorage.setItem('kspcheck_active_emp', JSON.stringify({
-                storeId: store.id,
-                empId: emp.id
+                storeId: currentStore.id,
+                empId: currentEmployee.id
             }));
 
             activateDashboard();
@@ -638,13 +659,14 @@
 
         function restoreSession(session) {
             const store = storesData.find(s => s.id === session.storeId);
-            if (!store) return;
+            if (!store) return false;
             const emp = (store.employees || []).find(x => x.id === session.empId);
-            if (!emp) return;
+            if (!emp) return false;
 
             currentStore = store;
             currentEmployee = emp;
             activateDashboard();
+            return true;
         }
 
         function activateDashboard() {
@@ -653,7 +675,7 @@
             document.getElementById('btnLogoutEmp').style.display = 'flex';
 
             document.getElementById('dashEmpName').innerText = `Halo, ${currentEmployee.name} 👋`;
-            document.getElementById('dashStoreName').innerText = currentStore.name;
+            document.getElementById('dashStoreName').innerHTML = `🏬 <b>${escapeHtml(currentStore.name)}</b>`;
             document.getElementById('dashEmpShiftBadge').innerText = `Shift ${currentEmployee.shift_num}`;
 
             updateShiftStatusBanner();
@@ -663,10 +685,14 @@
             sessionStorage.removeItem('kspcheck_active_emp');
             currentStore = null;
             currentEmployee = null;
-            document.getElementById('loginPasswordInput').value = '';
+            const input = document.getElementById('loginPasswordInput');
+            if (input) input.value = '';
+            const errBox = document.getElementById('loginError');
+            if (errBox) errBox.style.display = 'none';
             document.getElementById('dashboardSection').classList.remove('active');
             document.getElementById('loginSection').style.display = 'block';
             document.getElementById('btnLogoutEmp').style.display = 'none';
+            focusPasswordInput();
         }
 
         // Shift calculation & transition banner

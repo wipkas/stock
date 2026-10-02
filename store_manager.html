@@ -963,7 +963,9 @@
                                 + Tambah Karyawan
                             </button>
                         </div>
-                        <div class="form-hint">Password digunakan untuk login ke portal khusus karyawan.</div>
+                        <div class="form-hint" style="background: rgba(79, 142, 247, 0.1); border: 1px solid rgba(79, 142, 247, 0.25); padding: 8px 10px; border-radius: 8px; margin: 4px 0 8px 0; font-size: 11px; line-height: 1.45; color: var(--text-main);">
+                            💡 <b>Login Cepat Karyawan:</b> Setiap karyawan wajib diberi Password / PIN yang <b>unik</b> (tidak boleh sama dengan karyawan lain di toko ini maupun cabang lain). Karyawan akan login instan cukup dengan mengetik PIN tanpa perlu memilih cabang.
+                        </div>
                         <div class="emp-list-container" id="empListContainer">
                             <!-- Dynamic Employee Rows -->
                         </div>
@@ -1305,7 +1307,7 @@
 
             // Portal link update
             const pLink = document.getElementById('linkPortalKaryawan');
-            if (pLink) pLink.href = `karyawan.html?store=${encodeURIComponent(store.id)}`;
+            if (pLink) pLink.href = 'karyawan.html';
 
             // Transition status alert banner
             const status = getShiftStatus(store);
@@ -1391,7 +1393,7 @@
             const empCont = document.getElementById('empListContainer');
             empCont.innerHTML = '';
             (store.employees || []).forEach(emp => {
-                addEmployeeRow(emp.name, emp.password, emp.shift_num);
+                addEmployeeRow(emp.name, emp.password, emp.shift_num, emp.id);
             });
 
             openModal('storeFormModal');
@@ -1404,15 +1406,16 @@
             document.getElementById('shift3Row').style.display = (count >= 3) ? 'flex' : 'none';
         }
 
-        function addEmployeeRow(name = '', pass = '', shift = 1) {
+        function addEmployeeRow(name = '', pass = '', shift = 1, id = '') {
             const cont = document.getElementById('empListContainer');
             const rowId = 'empRow_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
             const div = document.createElement('div');
             div.className = 'emp-item-row';
             div.id = rowId;
+            if (id) div.dataset.empId = id;
             div.innerHTML = `
                 <input type="text" class="emp-name-input" placeholder="Nama Karyawan" value="${escapeHtml(name)}" required>
-                <input type="password" class="emp-pass-input" placeholder="Password PIN" value="${escapeHtml(pass)}" required>
+                <input type="text" class="emp-pass-input" placeholder="Password PIN Unik" value="${escapeHtml(pass)}" style="font-weight: 700; letter-spacing: 1px;" required>
                 <select class="form-select emp-shift-select" style="padding: 4px 6px; font-size: 11px;">
                     <option value="1" ${shift == 1 ? 'selected' : ''}>Shift 1</option>
                     <option value="2" ${shift == 2 ? 'selected' : ''}>Shift 2</option>
@@ -1442,21 +1445,46 @@
                 shifts.push({ shift_num: 3, name: 'Shift 3', start: document.getElementById('s3Start').value, end: document.getElementById('s3End').value });
             }
 
-            // Gather employees
+            // Gather employees & validate uniqueness
             const employees = [];
-            document.querySelectorAll('#empListContainer .emp-item-row').forEach(row => {
+            const rows = document.querySelectorAll('#empListContainer .emp-item-row');
+            const seenInStore = new Set();
+
+            for (const row of rows) {
                 const empName = row.querySelector('.emp-name-input')?.value.trim();
                 const empPass = row.querySelector('.emp-pass-input')?.value.trim();
                 const empShift = parseInt(row.querySelector('.emp-shift-select')?.value) || 1;
-                if (empName && empPass) {
-                    employees.push({
-                        id: 'emp_' + Math.random().toString(36).substr(2, 6),
-                        name: empName,
-                        password: empPass,
-                        shift_num: empShift
-                    });
+                const existingEmpId = row.dataset.empId;
+
+                if (!empName || !empPass) {
+                    alert('⚠️ Nama dan Password PIN setiap karyawan wajib diisi!');
+                    return;
                 }
-            });
+
+                // Check intra-store duplicate
+                if (seenInStore.has(empPass)) {
+                    alert(`⚠️ Password PIN "${empPass}" digunakan lebih dari satu karyawan di cabang ini. Setiap karyawan wajib memiliki PIN yang berbeda!`);
+                    return;
+                }
+                seenInStore.add(empPass);
+
+                // Check conflict with other branches
+                for (const otherStore of storesData) {
+                    if (otherStore.id === storeId) continue;
+                    const conflict = (otherStore.employees || []).find(o => String(o.password).trim() === empPass);
+                    if (conflict) {
+                        alert(`⚠️ Password PIN "${empPass}" sudah dipakai oleh karyawan "${conflict.name}" di cabang "${otherStore.name}".\n\nMohon buat PIN yang unik agar sistem dapat mengenali cabang dan nama karyawan secara otomatis saat login.`);
+                        return;
+                    }
+                }
+
+                employees.push({
+                    id: existingEmpId || ('emp_' + Math.random().toString(36).substr(2, 6)),
+                    name: empName,
+                    password: empPass,
+                    shift_num: empShift
+                });
+            }
 
             const newStore = {
                 id: storeId,
