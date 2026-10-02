@@ -40,6 +40,11 @@
                     pTitle = '🛍️ Stok Produk - KSP Check';
                     iconSvg = 'icon-produk.svg';
                     iconPng = 'icon-produk-192.png';
+                } else if (cleanT === 'feerule' || cleanT === 'rule' || cleanT === 'fee') {
+                    mFile = 'manifest-order.json';
+                    pTitle = '⚖️ Fee Rule - KSP Check';
+                    iconSvg = 'icon-order.svg';
+                    iconPng = 'icon-order-192.png';
                 }
                 document.title = pTitle;
                 document.write('<link id="appManifest" rel="manifest" href="' + mFile + '">');
@@ -2418,6 +2423,40 @@
             table.daily-table th { background: #EEEEEE; color: #000000; }
             table.daily-table td { color: #000000; }
         }
+
+        /* ==================== TAB FEE RULE STYLES ==================== */
+        .cat-badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.2px; text-transform: uppercase; }
+        .cat-tarik { background: rgba(46, 204, 135, 0.15); color: #2ECC87; border: 1px solid rgba(46, 204, 135, 0.3); }
+        .cat-topup { background: rgba(79, 142, 247, 0.15); color: #60A5FA; border: 1px solid rgba(79, 142, 247, 0.3); }
+        .cat-game  { background: rgba(168, 85, 247, 0.15); color: #C084FC; border: 1px solid rgba(168, 85, 247, 0.3); }
+        .cat-pulsa { background: rgba(245, 166, 35, 0.15); color: #F5A623; border: 1px solid rgba(245, 166, 35, 0.3); }
+        .cat-qris  { background: rgba(14, 165, 233, 0.15); color: #38BDF8; border: 1px solid rgba(14, 165, 233, 0.3); }
+        .cat-other { background: rgba(148, 163, 184, 0.15); color: #94A3B8; border: 1px solid rgba(148, 163, 184, 0.3); }
+
+        .badge-fixed { background: rgba(245, 158, 11, 0.15); color: #FBBF24; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-family: monospace; font-size: 11px; display: inline-block; }
+        .badge-fee { background: rgba(46, 204, 135, 0.12); color: #2ECC87; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-family: monospace; font-size: 11px; display: inline-block; }
+        .badge-fee-percent { background: rgba(59, 130, 246, 0.12); color: #60A5FA; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-family: monospace; font-size: 11px; display: inline-block; }
+
+        .fee-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12.5px; }
+        .fee-table th { background: var(--table-header); color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 14px; border-bottom: 1px solid var(--table-border); white-space: nowrap; }
+        .fee-table td { padding: 12px 14px; border-bottom: 1px solid var(--table-border); vertical-align: middle; color: var(--text-main); }
+        .fee-table tr:last-child td { border-bottom: none; }
+        .fee-table tr:hover { background: var(--table-alt-row); }
+
+        .fee-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+        .fee-switch input { opacity: 0; width: 0; height: 0; }
+        .fee-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .2s; border-radius: 20px; }
+        .fee-slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%; }
+        .fee-switch input:checked + .fee-slider { background-color: var(--success); }
+        .fee-switch input:checked + .fee-slider:before { transform: translateX(16px); }
+
+        .btn-table-action { background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-muted); border-radius: 6px; padding: 5px 9px; font-size: 11px; cursor: pointer; transition: all 0.15s ease; }
+        .btn-table-action:hover { color: var(--text-main); border-color: var(--primary); background: var(--chip-bg); }
+        .btn-table-action.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+        .fee-rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; padding: 16px; }
+        .fee-rule-card { background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.15s ease; }
+        .fee-rule-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
     </style>
 </head>
 <body>
@@ -2511,6 +2550,9 @@
             </button>
             <button class="tab" id="tabBtnBalance" onclick="switchTab('balance')" title="Pantau saldo realtime aplikasi e-wallet / bank">
                 💳 Saldo <span class="tab-live-pulse" title="Realtime Live"></span>
+            </button>
+            <button class="tab" id="tabBtnFeeRule" onclick="switchTab('feerule')" title="Kelola aturan biaya admin transaksi">
+                ⚖️ Fee Rule <span class="tab-live-pulse" title="Realtime Live"></span>
             </button>
         </div>
     </div>
@@ -3059,6 +3101,198 @@
                 <div style="font-weight: 700; color: var(--warning); margin-bottom: 4px;">⚠️ Tabel `barang` belum dibuat di Supabase</div>
                 <div>Jalankan script <code>docs/supabase_barang_sync.sql</code> di Supabase Dashboard ➔ SQL Editor ➔ Run.</div>
             </div>
+        </div>
+    </div>
+
+    <!-- ==================== TAB 7: FEE RULES (ATURAN BIAYA ADMIN) ==================== -->
+    <div id="tabContentFeeRule" class="container" style="display: none; padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));">
+        <!-- Header Card with Stats -->
+        <div class="header-card">
+            <div class="header-title-row" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                <div class="header-title" style="font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                    <span>⚖️ Aturan Biaya Admin Transaksi</span>
+                    <span id="feeRuleLiveBadge" class="badge-cloud" style="font-size: 11px; padding: 3px 8px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; background: rgba(46, 204, 135, 0.12); color: var(--success); border: 1px solid rgba(46, 204, 135, 0.25);">
+                        <span class="pulse-dot"></span> Cloud Live
+                    </span>
+                </div>
+                <div style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;" id="feeRuleSubtitle">
+                    Sinkronisasi dua arah dengan KSP Check Android
+                </div>
+            </div>
+
+            <div class="stats-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+                <div class="stat-box">
+                    <div class="stat-num primary" id="statFeeRuleTotal">0</div>
+                    <div class="stat-label">Total Fee Rules</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num success" id="statFeeRuleActive">0</div>
+                    <div class="stat-label">Rule Aktif</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num danger" id="statFeeRuleInactive">0</div>
+                    <div class="stat-label">Rule Nonaktif</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num warning" id="statFeeRuleCategories">0</div>
+                    <div class="stat-label">Kategori Layanan</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Card (Search, Actions, Category Chips) -->
+        <div class="controls-card" style="margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 0 12px; height: 38px; flex: 1; min-width: 220px;">
+                    <span>🔍</span>
+                    <input type="text" id="feeRuleSearchInput" placeholder="Cari nama rule atau kategori (Diamond, DANA, Tarik)..." oninput="filterFeeRules()" style="background: transparent; border: none; outline: none; color: var(--text-main); font-size: 12.5px; width: 100%; margin-left: 8px;">
+                    <button type="button" id="btnFeeRuleClearSearch" onclick="clearFeeRuleSearch()" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; display: none; padding: 2px 6px;">✕</button>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-select-action" onclick="openAddFeeRuleModal()" style="color: #fff; background: var(--primary); border-color: var(--primary);">
+                        <span>➕</span> Tambah Rule
+                    </button>
+                    <button type="button" class="btn-select-action" onclick="fetchFeeRulesFromSupabase(true)" title="Segarkan data dari Supabase Cloud">
+                        <span>🔄</span> Refresh
+                    </button>
+                    <button type="button" class="btn-select-action" onclick="exportFeeRulesJson()" title="Salin data aturan ke JSON">
+                        <span>📋</span> Salin JSON
+                    </button>
+                    <button type="button" class="btn-select-action" id="btnFeeRuleToggleView" onclick="toggleFeeRuleViewMode()">
+                        <span id="feeRuleViewModeIcon">🗂️</span> <span id="feeRuleViewModeText">Mode Kartu</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Category Chips -->
+            <div class="category-chips-wrap" id="feeRuleCategoryChips" style="display: flex; overflow-x: auto; scrollbar-width: none; gap: 6px; padding-bottom: 2px; -webkit-overflow-scrolling: touch;">
+                <!-- Populated dynamically via JavaScript -->
+            </div>
+        </div>
+
+        <!-- Rules Display Area (Table & Grid) -->
+        <div class="table-card" id="feeRuleTableContainer" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px var(--shadow-color);">
+            <div class="table-responsive" style="overflow-x: auto; width: 100%;">
+                <table class="fee-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 45px; text-align: center;">Prio</th>
+                            <th>Nama Rule</th>
+                            <th>Kategori</th>
+                            <th>Rentang Nominal</th>
+                            <th>Biaya Admin / Harga Jual</th>
+                            <th style="text-align: center; width: 75px;">Status</th>
+                            <th style="text-align: right; width: 120px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="feeRuleTableBody">
+                        <!-- Populated dynamically via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="feeRuleGridContainer" class="table-card" style="display: none; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; overflow: hidden;">
+            <div class="fee-rules-grid" id="feeRuleGridBody">
+                <!-- Populated dynamically via JavaScript -->
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="balance-empty-state" id="feeRuleEmptyState" style="display: none; text-align: center; padding: 40px 16px;">
+            <div style="font-size: 36px; margin-bottom: 8px;">⚖️</div>
+            <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;" id="feeRuleEmptyTitle">Belum Ada Aturan Fee Rule di Cloud</div>
+            <p style="color: var(--text-muted); font-size: 12px; max-width: 440px; margin: 0 auto 12px auto;" id="feeRuleEmptyMsg">
+                Buka menu <b>Fee Rule</b> di aplikasi kasir HP dan klik tombol <b>☁️ Sync</b> untuk menyinkronkan seluruh aturan biaya admin ke Supabase.
+            </p>
+            <div id="feeRuleSqlGuideBanner" style="display: none; background: rgba(245, 166, 35, 0.1); border: 1px dashed rgba(245, 166, 35, 0.4); border-radius: 10px; padding: 12px; max-width: 480px; margin: 0 auto; text-align: left; font-size: 11.5px; color: var(--text-main);">
+                <div style="font-weight: 700; color: var(--warning); margin-bottom: 4px;">⚠️ Tabel `fee_rules` belum dibuat di Supabase</div>
+                <div>Jalankan script <code>docs/supabase_fee_rules_sync.sql</code> di Supabase Dashboard ➔ SQL Editor ➔ Run.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Form: Add / Edit Fee Rule -->
+    <div class="modal-overlay" id="feeRuleModal" style="display: none;">
+        <div class="modal-card" style="max-width: 480px; width: 100%;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px;">
+                <div style="font-size: 16px; font-weight: 800;" id="feeRuleModalTitle">Tambah Fee Rule Baru</div>
+                <button type="button" class="btn-modal-close" onclick="closeFeeRuleModal()" style="background: transparent; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer;">✕</button>
+            </div>
+            
+            <form id="feeRuleForm" onsubmit="handleSaveFeeRule(event)">
+                <input type="hidden" id="formFeeRuleId">
+                <input type="hidden" id="formFeeRuleDeviceId">
+
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Nama Rule</label>
+                    <input type="text" class="input-modern" id="formFeeRuleName" placeholder="Contoh: DANA 10k-50k atau 50 Diamond" required style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Kategori</label>
+                        <input type="text" class="input-modern" id="formFeeRuleCategory" list="feeCategoryOptions" placeholder="Pilih/Ketik Kategori" required style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                        <datalist id="feeCategoryOptions">
+                            <option value="TARIK_EWALLET">
+                            <option value="TARIK_MBANKING">
+                            <option value="TOPUP_EWALLET">
+                            <option value="TRANSFER_BANK">
+                            <option value="FF">
+                            <option value="ML">
+                            <option value="TARIK_QRIS">
+                            <option value="PulsaTsel">
+                            <option value="Maxim">
+                            <option value="Token">
+                        </datalist>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Prioritas</label>
+                        <input type="number" class="input-modern mono" id="formFeeRulePriority" value="10" min="1" max="999" style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Nominal Minimal (Rp)</label>
+                        <input type="number" class="input-modern mono" id="formFeeRuleMinAmount" placeholder="0" style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Nominal Maksimal (Rp)</label>
+                        <input type="number" class="input-modern mono" id="formFeeRuleMaxAmount" placeholder="0 (Tanpa Batas)" style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Biaya Flat (Rp)</label>
+                        <input type="number" class="input-modern mono" id="formFeeRuleFeeAmount" placeholder="0" style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Biaya Persen (%)</label>
+                        <input type="number" step="0.1" class="input-modern mono" id="formFeeRuleFeePercent" placeholder="0" style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Override Harga Jual Langsung (Rp) <span style="font-weight: normal; color: var(--text-muted);">(Game/Voucher)</span></label>
+                    <input type="number" class="input-modern mono" id="formFeeRuleFixedAmount" placeholder="0 jika menggunakan biaya admin" style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-bottom: 18px;">
+                    <span style="font-size: 13px; font-weight: 700;">Status Rule Aktif</span>
+                    <label class="fee-switch">
+                        <input type="checkbox" id="formFeeRuleIsActive" checked>
+                        <span class="fee-slider"></span>
+                    </label>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn-select-action" onclick="closeFeeRuleModal()">Batal</button>
+                    <button type="submit" class="btn-select-action" style="color: #fff; background: var(--primary); border-color: var(--primary);">Simpan Rule</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -5188,6 +5422,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             if (typeof buildMarginFromVouchers === 'function') buildMarginFromVouchers();
             if (typeof renderBalanceTab === 'function') renderBalanceTab();
             if (typeof renderProdukTab === 'function') renderProdukTab();
+            if (typeof renderFeeRuleTabOnDeviceChange === 'function') renderFeeRuleTabOnDeviceChange();
         }
 
         // 4. Render Dynamic Product List (Tab 1: Order Restock)
@@ -7113,7 +7348,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     const targetDev = it.device_id || order.device_id;
 
                     let matchV = null;
-                    if (pId >= 100) {
+                    if (pId > 0) {
                         matchV = allVouchers.find(v => {
                             const vId = parseInt(v.product_id || v.id || 0, 10);
                             return vId === pId;
@@ -7121,24 +7356,19 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     }
 
                     if (!matchV) {
-                        // Cari voucher yang cocok dengan perangkat, nama bersih, dan harga modal (agar varian nama kembar tidak tertukar)
+                        const itProv = (it.provider_name || '').toLowerCase().trim();
+                        // Cari voucher yang cocok dengan perangkat, provider, dan nama bersih
                         matchV = allVouchers.find(v => {
                             if (targetDev && targetDev !== 'all' && v.device_id && v.device_id !== targetDev) return false;
-                            if (cleanProdName(v.product_name) !== cleanName) return false;
-                            if (it.cost_price && v.cost_price) {
-                                return Math.abs(parseInt(v.cost_price, 10) - it.cost_price) <= 100;
-                            }
-                            return true;
+                            if (itProv && v.provider_name && v.provider_name.toLowerCase().trim() !== itProv) return false;
+                            return cleanProdName(v.product_name) === cleanName;
                         });
 
                         // Fallback jika tidak cocok perangkat
                         if (!matchV) {
                             matchV = allVouchers.find(v => {
-                                if (cleanProdName(v.product_name) !== cleanName) return false;
-                                if (it.cost_price && v.cost_price) {
-                                    return Math.abs(parseInt(v.cost_price, 10) - it.cost_price) <= 100;
-                                }
-                                return true;
+                                if (itProv && v.provider_name && v.provider_name.toLowerCase().trim() !== itProv) return false;
+                                return cleanProdName(v.product_name) === cleanName;
                             });
                         }
 
@@ -7231,7 +7461,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     const name = c.getAttribute('data-name') || '';
                     const cat = c.getAttribute('data-category') || '';
                     const prov = c.getAttribute('data-provider') || 'Lainnya';
-                    const pId = parseInt(c.getAttribute('data-product-id') || c.getAttribute('data-id') || '0', 10);
+                    const pId = parseInt(c.getAttribute('data-product-id') || '0', 10);
                     const itemDevId = c.getAttribute('data-device-id') || selectedDevice;
 
                     items.push({
@@ -7367,14 +7597,13 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                             const rItem = rep.items.find(ri => {
                                 if (!ri || ri.type !== 'product') return false;
                                 const rPId = parseInt(ri.productId || ri.product_id || 0, 10);
-                                if (itemId >= 100 && rPId >= 100) {
-                                    return rPId === itemId; // WAJIB sama persis jika ID ada
+                                if (itemId > 0 && rPId > 0 && rPId === itemId) {
+                                    return true;
                                 }
                                 const cleanRi = cleanProdName(ri.productName);
                                 if (cleanRi !== cleanItemName) return false;
-                                if (item.cost_price && ri.cost) {
-                                    const parsedCost = parseInt(String(ri.cost).replace(/[^\d]/g, ''), 10) || 0;
-                                    if (parsedCost > 0) return Math.abs(parsedCost - item.cost_price) <= 100;
+                                if (item.provider_name && ri.providerName) {
+                                    if (cleanProdName(item.provider_name) !== cleanProdName(ri.providerName)) return false;
                                 }
                                 return true;
                             });
@@ -7412,7 +7641,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
                                 if (rItem.cost) {
                                     const parsedCost = parseInt(String(rItem.cost).replace(/[^\d]/g, ''), 10) || 0;
-                                    if (parsedCost > 0 && Math.abs(parsedCost - item.cost_price) <= 1000) {
+                                    if (parsedCost > 0) {
                                         latestUnitCost = parsedCost;
                                     }
                                 }
@@ -7422,18 +7651,16 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
                     // 2. SUMBER PENDUKUNG: AUDIT TRAIL CHANGE_HISTORY DI Supabase (allVouchers)
                     let incomingFromAudit = 0;
+                    const itProv = (item.provider_name || '').toLowerCase().trim();
                     const vMatches = allVouchers.filter(v => {
                         if (targetDev && targetDev !== 'all' && v.device_id && v.device_id !== targetDev) return false;
                         const vId = parseInt(v.product_id || v.id || 0, 10);
-                        if (itemId >= 100 && vId >= 100) {
-                            return vId === itemId; // WAJIB sama persis jika ID ada
+                        if (itemId > 0 && vId > 0 && vId === itemId) {
+                            return true; // WAJIB sama persis jika ID ada
                         }
+                        if (itProv && v.provider_name && v.provider_name.toLowerCase().trim() !== itProv) return false;
                         const cleanVName = cleanProdName(v.product_name);
-                        if (cleanVName !== cleanItemName) return false;
-                        if (item.cost_price && v.cost_price) {
-                            return Math.abs(parseInt(v.cost_price, 10) - item.cost_price) <= 100;
-                        }
-                        return true;
+                        return cleanVName === cleanItemName;
                     });
 
                     vMatches.forEach(v => {
@@ -7446,7 +7673,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                                 if (diff > 0 && entryTime >= (orderTime - 600000)) {
                                     incomingFromAudit += diff;
                                     const entryNewCost = parseInt(entry.new_cost_price || 0, 10);
-                                    if (entryNewCost > 0 && Math.abs(entryNewCost - item.cost_price) <= 1000) {
+                                    if (entryNewCost > 0) {
                                         latestUnitCost = entryNewCost;
                                     }
                                 }
@@ -7454,7 +7681,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         }
 
                         const vCost = parseInt(v.cost_price || 0, 10);
-                        if (vCost > 0 && latestUnitCost === item.cost_price && Math.abs(vCost - item.cost_price) <= 1000) {
+                        if (vCost > 0 && latestUnitCost === item.cost_price) {
                             latestUnitCost = vCost;
                         }
                     });
@@ -7518,6 +7745,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     }
                 }
             });
+            saveRestockOrdersToStorage();
         }
 
         let historySelectedDateStr = getLocalDateString(new Date());
@@ -9432,6 +9660,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 case 'margin': return '💹 Margin Voucher - KSP Check';
                 case 'balance': return '💳 Saldo Realtime - KSP Check';
                 case 'produk': return '🛍️ Stok Produk - KSP Check';
+                case 'feerule': return '⚖️ Fee Rule - KSP Check';
                 case 'order':
                 default:
                     return '🌅 Order Restok - KSP Check';
@@ -9449,6 +9678,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     if (cleanT === 'margin' || cleanT === 'marginvoucher' || cleanT === 'untung') return 'margin';
                     if (cleanT === 'balance' || cleanT === 'saldo' || cleanT === 'ewallet') return 'balance';
                     if (cleanT === 'produk' || cleanT === 'barang') return 'produk';
+                    if (cleanT === 'feerule' || cleanT === 'rule' || cleanT === 'fee') return 'feerule';
                     if (cleanT === 'order') return 'order';
                 }
             } catch (e) {}
@@ -9462,6 +9692,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     if (cleanHash === 'margin' || cleanHash === 'marginvoucher' || cleanHash === 'untung') return 'margin';
                     if (cleanHash === 'balance' || cleanHash === 'saldo' || cleanHash === 'ewallet') return 'balance';
                     if (cleanHash === 'produk' || cleanHash === 'barang') return 'produk';
+                    if (cleanHash === 'feerule' || cleanHash === 'rule' || cleanHash === 'fee') return 'feerule';
                     if (cleanHash === 'order') return 'order';
                     if (cleanHash.includes('tab=')) {
                         const val = cleanHash.split('tab=')[1].split('&')[0];
@@ -9470,6 +9701,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         if (val === 'margin' || val === 'marginvoucher' || val === 'untung') return 'margin';
                         if (val === 'balance' || val === 'saldo' || val === 'ewallet') return 'balance';
                         if (val === 'produk' || val === 'barang') return 'produk';
+                        if (val === 'feerule' || val === 'rule' || val === 'fee') return 'feerule';
                         if (val === 'order') return 'order';
                     }
                 }
@@ -9478,7 +9710,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             // Fallback: Jika dibuka dari pintasan PWA tanpa parameter (?tab=...), gunakan tab yang terakhir aktif
             try {
                 const lastTab = localStorage.getItem('kspcheck_last_active_tab');
-                if (lastTab && ['order', 'history', 'daily', 'margin', 'balance', 'produk'].includes(lastTab)) {
+                if (lastTab && ['order', 'history', 'daily', 'margin', 'balance', 'produk', 'feerule'].includes(lastTab)) {
                     return lastTab;
                 }
             } catch (e) {}
@@ -9510,7 +9742,8 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     'daily': { manifest: 'manifest-daily.json', svg: 'icon-daily.svg', png: 'icon-daily-192.png' },
                     'margin': { manifest: 'manifest-margin.json', svg: 'icon-margin.svg', png: 'icon-margin-192.png' },
                     'balance': { manifest: 'manifest-balance.json', svg: 'icon-balance.svg', png: 'icon-balance-192.png' },
-                    'produk': { manifest: 'manifest-produk.json', svg: 'icon-produk.svg', png: 'icon-produk-192.png' }
+                    'produk': { manifest: 'manifest-produk.json', svg: 'icon-produk.svg', png: 'icon-produk-192.png' },
+                    'feerule': { manifest: 'manifest-order.json', svg: 'icon-order.svg', png: 'icon-order-192.png' }
                 };
 
                 const assets = tabAssets[tab] || tabAssets['order'];
@@ -9557,7 +9790,8 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 'daily': 'tabBtnDaily',
                 'margin': 'tabBtnMargin',
                 'balance': 'tabBtnBalance',
-                'produk': 'tabBtnProduk'
+                'produk': 'tabBtnProduk',
+                'feerule': 'tabBtnFeeRule'
             };
 
             Object.entries(tabMap).forEach(([key, btnId]) => {
@@ -9571,6 +9805,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const marginPane = document.getElementById('tabContentMargin');
             const balancePane = document.getElementById('tabContentBalance');
             const produkPane = document.getElementById('tabContentProduk');
+            const feeRulePane = document.getElementById('tabContentFeeRule');
             const bottomBar = document.getElementById('bottomBarOrder');
             const bottomDockBalance = document.getElementById('bottomDockBalance');
             const bottomDockProduk = document.getElementById('bottomDockProduk');
@@ -9581,6 +9816,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             if (marginPane) marginPane.style.display = (tab === 'margin') ? 'block' : 'none';
             if (balancePane) balancePane.style.display = (tab === 'balance') ? 'block' : 'none';
             if (produkPane) produkPane.style.display = (tab === 'produk') ? 'block' : 'none';
+            if (feeRulePane) feeRulePane.style.display = (tab === 'feerule') ? 'block' : 'none';
             if (bottomBar) bottomBar.style.display = (tab === 'order') ? 'flex' : 'none';
             if (bottomDockBalance) bottomDockBalance.style.display = (tab === 'balance') ? 'flex' : 'none';
             if (bottomDockProduk) bottomDockProduk.style.display = (tab === 'produk') ? 'flex' : 'none';
@@ -9598,6 +9834,8 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 initBalanceTab();
             } else if (tab === 'produk') {
                 initProdukTab();
+            } else if (tab === 'feerule') {
+                initFeeRuleTab();
             }
 
             if (updateUrl) {
@@ -12958,6 +13196,511 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             }
 
             copyToClipboard(sb, '📋 Rekap stok barang berhasil disalin untuk WhatsApp!');
+        }
+
+        // ==================== TAB 7: FEE RULES (ATURAN BIAYA ADMIN) CONTROLLER ====================
+        let allFeeRules = [];
+        let feeRuleSelectedCategory = 'ALL';
+        let feeRuleViewMode = 'table'; // 'table' or 'grid'
+
+        async function initFeeRuleTab() {
+            if (!allFeeRules || allFeeRules.length === 0) {
+                await fetchFeeRulesFromSupabase();
+            } else {
+                renderFeeRuleCategoryChips();
+                filterFeeRules();
+            }
+        }
+
+        function renderFeeRuleTabOnDeviceChange() {
+            if (currentTab === 'feerule') {
+                renderFeeRuleCategoryChips();
+                filterFeeRules();
+            }
+        }
+
+        async function fetchFeeRulesFromSupabase(forceNotify = false) {
+            if (!supabaseClient) {
+                const empty = document.getElementById('feeRuleEmptyState');
+                if (empty) empty.style.display = 'block';
+                return;
+            }
+
+            try {
+                const sub = document.getElementById('feeRuleSubtitle');
+                if (sub && currentTab === 'feerule') {
+                    sub.textContent = 'Mengambil aturan biaya admin dari Supabase cloud...';
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('fee_rules')
+                    .select('*')
+                    .order('priority', { ascending: true })
+                    .order('category', { ascending: true });
+
+                if (error) {
+                    console.warn('Supabase fetch fee_rules error:', error);
+                    const sqlBanner = document.getElementById('feeRuleSqlGuideBanner');
+                    if (sqlBanner && (error.code === '42P01' || (error.message && error.message.toLowerCase().includes('fee_rules')))) {
+                        sqlBanner.style.display = 'block';
+                        const empty = document.getElementById('feeRuleEmptyState');
+                        if (empty) empty.style.display = 'block';
+                    }
+                    if (forceNotify) showToast('❌ Gagal memuat fee rules: ' + error.message);
+                    return;
+                }
+
+                const sqlBanner = document.getElementById('feeRuleSqlGuideBanner');
+                if (sqlBanner) sqlBanner.style.display = 'none';
+
+                allFeeRules = (data || []).filter(r => !isDeviceDeleted(r.device_id));
+
+                renderFeeRuleCategoryChips();
+                filterFeeRules();
+
+                if (sub) {
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    sub.textContent = `Tersinkron cloud (${allFeeRules.length} aturan • ${timeStr} WIB)`;
+                }
+
+                if (forceNotify) showToast(`✅ Sukses memuat ${allFeeRules.length} fee rules dari cloud!`);
+
+            } catch (err) {
+                console.error('Fetch fee rules exception:', err);
+                if (forceNotify) showToast('❌ Error: ' + err.message);
+            }
+        }
+
+        function renderFeeRuleCategoryChips() {
+            const container = document.getElementById('feeRuleCategoryChips');
+            if (!container) return;
+
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const scopedRules = (selectedDevice === 'all')
+                ? allFeeRules
+                : allFeeRules.filter(r => r.device_id === selectedDevice || r.device_id === 'global');
+
+            const counts = {};
+            scopedRules.forEach(r => {
+                const cat = r.category || 'Umum';
+                counts[cat] = (counts[cat] || 0) + 1;
+            });
+
+            const categories = Object.keys(counts).sort();
+
+            let html = `
+                <div class="chip ${feeRuleSelectedCategory === 'ALL' ? 'active' : ''}" onclick="selectFeeRuleCategory('ALL')">
+                    <span>Semua Kategori</span>
+                    <span class="chip-count">${scopedRules.length}</span>
+                </div>
+            `;
+
+            categories.forEach(cat => {
+                html += `
+                    <div class="chip ${feeRuleSelectedCategory === cat ? 'active' : ''}" onclick="selectFeeRuleCategory('${escapeHtml(cat)}')">
+                        <span>${escapeHtml(cat)}</span>
+                        <span class="chip-count">${counts[cat]}</span>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function selectFeeRuleCategory(cat) {
+            feeRuleSelectedCategory = cat;
+            renderFeeRuleCategoryChips();
+            filterFeeRules();
+        }
+
+        function clearFeeRuleSearch() {
+            const input = document.getElementById('feeRuleSearchInput');
+            if (input) input.value = '';
+            filterFeeRules();
+        }
+
+        function filterFeeRules() {
+            const query = (document.getElementById('feeRuleSearchInput')?.value || '').toLowerCase().trim();
+            const btnClear = document.getElementById('btnFeeRuleClearSearch');
+            if (btnClear) btnClear.style.display = query ? 'block' : 'none';
+
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            let filtered = allFeeRules.filter(r => {
+                const matchDevice = (selectedDevice === 'all') || (r.device_id === selectedDevice) || (r.device_id === 'global');
+                const matchCat = (feeRuleSelectedCategory === 'ALL' || (r.category || 'Umum') === feeRuleSelectedCategory);
+                const matchQuery = !query ||
+                    (r.name && r.name.toLowerCase().includes(query)) ||
+                    (r.category && r.category.toLowerCase().includes(query));
+                return matchDevice && matchCat && matchQuery;
+            });
+
+            filtered.sort((a, b) => {
+                const pa = (a.priority !== undefined && a.priority !== null) ? Number(a.priority) : 10;
+                const pb = (b.priority !== undefined && b.priority !== null) ? Number(b.priority) : 10;
+                if (pa !== pb) return pa - pb;
+                const ca = a.category || '';
+                const cb = b.category || '';
+                if (ca !== cb) return ca.localeCompare(cb);
+                return (Number(a.min_amount) || Number(a.minAmount) || 0) - (Number(b.min_amount) || Number(b.minAmount) || 0);
+            });
+
+            renderFeeRuleTable(filtered);
+            renderFeeRuleGrid(filtered);
+            updateFeeRuleStats(filtered);
+
+            const emptyState = document.getElementById('feeRuleEmptyState');
+            const tableContainer = document.getElementById('feeRuleTableContainer');
+            const gridContainer = document.getElementById('feeRuleGridContainer');
+
+            if (filtered.length === 0) {
+                if (emptyState) emptyState.style.display = 'block';
+                if (tableContainer) tableContainer.style.display = 'none';
+                if (gridContainer) gridContainer.style.display = 'none';
+            } else {
+                if (emptyState) emptyState.style.display = 'none';
+                if (tableContainer) tableContainer.style.display = (feeRuleViewMode === 'table') ? 'block' : 'none';
+                if (gridContainer) gridContainer.style.display = (feeRuleViewMode === 'grid') ? 'block' : 'none';
+            }
+        }
+
+        function getFeeRuleCategoryBadgeClass(category) {
+            const cat = (category || '').toUpperCase();
+            if (cat.includes('TARIK')) return 'cat-tarik';
+            if (cat.includes('TOPUP') || cat.includes('BANK')) return 'cat-topup';
+            if (cat === 'FF' || cat === 'ML' || cat.includes('GAME')) return 'cat-game';
+            if (cat.includes('PULSA') || cat.includes('TOKEN') || cat.includes('MAXIM')) return 'cat-pulsa';
+            if (cat.includes('QRIS')) return 'cat-qris';
+            return 'cat-other';
+        }
+
+        function renderFeeRuleTable(rules) {
+            const tbody = document.getElementById('feeRuleTableBody');
+            if (!tbody) return;
+
+            tbody.innerHTML = rules.map((r) => {
+                const fixedAmt = Number(r.fixed_amount || r.fixedAmount || 0);
+                const minAmt = Number(r.min_amount || r.minAmount || 0);
+                const maxAmt = Number(r.max_amount || r.maxAmount || 0);
+                const feeAmt = Number(r.fee_amount || r.feeAmount || 0);
+                const feePct = Number(r.fee_percent || r.feePercent || 0);
+                const isActive = (r.is_active !== undefined) ? !!r.is_active : (r.isActive !== undefined ? !!r.isActive : true);
+                const priority = (r.priority !== undefined && r.priority !== null) ? r.priority : 10;
+                const rowId = r.id || `${r.device_id}_${r.rule_id}`;
+
+                let rangeText = '-';
+                if (fixedAmt > 0) {
+                    rangeText = '<span style="color: var(--text-muted); font-size: 11px;">Override Harga Jual</span>';
+                } else if (minAmt > 0 || maxAmt > 0) {
+                    rangeText = `<span class="mono" style="font-weight: 600;">${formatRupiah(minAmt)} - ${maxAmt >= 99999999 ? '∞' : formatRupiah(maxAmt)}</span>`;
+                }
+
+                let feeBadge = '';
+                if (fixedAmt > 0) {
+                    feeBadge = `<span class="badge-fixed">Harga Jual: ${formatRupiah(fixedAmt)}</span>`;
+                } else if (feeAmt > 0 && feePct > 0) {
+                    feeBadge = `<span class="badge-fee">${formatRupiah(feeAmt)}</span> <span class="badge-fee-percent">+${feePct}%</span>`;
+                } else if (feeAmt > 0) {
+                    feeBadge = `<span class="badge-fee">${formatRupiah(feeAmt)}</span>`;
+                } else if (feePct > 0) {
+                    feeBadge = `<span class="badge-fee-percent">${feePct}%</span>`;
+                } else {
+                    feeBadge = `<span style="color: var(--text-muted); font-size: 11px;">Gratis / Rp 0</span>`;
+                }
+
+                return `
+                    <tr>
+                        <td style="text-align: center; color: var(--text-muted); font-family: monospace; font-size: 11px;">
+                            ${priority}
+                        </td>
+                        <td>
+                            <div style="font-weight: 700;">${escapeHtml(r.name || 'Rule')}</div>
+                            ${r.device_name ? `<div style="font-size: 10px; color: var(--text-muted);">📱 ${escapeHtml(r.device_name)}</div>` : ''}
+                        </td>
+                        <td>
+                            <span class="cat-badge ${getFeeRuleCategoryBadgeClass(r.category)}">${escapeHtml(r.category || 'Umum')}</span>
+                        </td>
+                        <td>${rangeText}</td>
+                        <td>${feeBadge}</td>
+                        <td style="text-align: center;">
+                            <label class="fee-switch">
+                                <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleFeeRuleActiveWeb('${rowId}', this.checked)">
+                                <span class="fee-slider"></span>
+                            </label>
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <button type="button" class="btn-table-action" onclick="openEditFeeRuleModal('${rowId}')">✏️ Edit</button>
+                            <button type="button" class="btn-table-action danger" onclick="deleteFeeRuleWeb('${rowId}')">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderFeeRuleGrid(rules) {
+            const container = document.getElementById('feeRuleGridBody');
+            if (!container) return;
+
+            container.innerHTML = rules.map(r => {
+                const fixedAmt = Number(r.fixed_amount || r.fixedAmount || 0);
+                const minAmt = Number(r.min_amount || r.minAmount || 0);
+                const maxAmt = Number(r.max_amount || r.maxAmount || 0);
+                const feeAmt = Number(r.fee_amount || r.feeAmount || 0);
+                const feePct = Number(r.fee_percent || r.feePercent || 0);
+                const isActive = (r.is_active !== undefined) ? !!r.is_active : (r.isActive !== undefined ? !!r.isActive : true);
+                const rowId = r.id || `${r.device_id}_${r.rule_id}`;
+
+                let feeDesc = '';
+                if (fixedAmt > 0) {
+                    feeDesc = `<span class="badge-fixed">Harga: ${formatRupiah(fixedAmt)}</span>`;
+                } else {
+                    feeDesc = `<span class="badge-fee">${formatRupiah(feeAmt)}</span> ${feePct > 0 ? '<span class="badge-fee-percent">+' + feePct + '%</span>' : ''}`;
+                }
+
+                return `
+                    <div class="fee-rule-card">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                <span class="cat-badge ${getFeeRuleCategoryBadgeClass(r.category)}">${escapeHtml(r.category || 'Umum')}</span>
+                                <label class="fee-switch">
+                                    <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleFeeRuleActiveWeb('${rowId}', this.checked)">
+                                    <span class="fee-slider"></span>
+                                </label>
+                            </div>
+                            <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px;">${escapeHtml(r.name || 'Rule')}</div>
+                            <div style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 10px;">
+                                ${fixedAmt > 0 ? 'Mode Override Harga Langsung' : formatRupiah(minAmt) + ' - ' + (maxAmt >= 99999999 ? '∞' : formatRupiah(maxAmt))}
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--card-border); padding-top: 10px; margin-top: 6px;">
+                            <div>${feeDesc}</div>
+                            <div style="display: flex; gap: 6px;">
+                                <button type="button" class="btn-table-action" onclick="openEditFeeRuleModal('${rowId}')">✏️</button>
+                                <button type="button" class="btn-table-action danger" onclick="deleteFeeRuleWeb('${rowId}')">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateFeeRuleStats(scopedRules) {
+            let active = 0;
+            const cats = new Set();
+            scopedRules.forEach(r => {
+                const isAct = (r.is_active !== undefined) ? !!r.is_active : (r.isActive !== undefined ? !!r.isActive : true);
+                if (isAct) active++;
+                if (r.category) cats.add(r.category);
+            });
+
+            const statTotal = document.getElementById('statFeeRuleTotal');
+            const statActive = document.getElementById('statFeeRuleActive');
+            const statInactive = document.getElementById('statFeeRuleInactive');
+            const statCats = document.getElementById('statFeeRuleCategories');
+
+            if (statTotal) statTotal.textContent = scopedRules.length;
+            if (statActive) statActive.textContent = active;
+            if (statInactive) statInactive.textContent = scopedRules.length - active;
+            if (statCats) statCats.textContent = cats.size;
+        }
+
+        async function toggleFeeRuleActiveWeb(id, isActive) {
+            const rule = allFeeRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id));
+            if (!rule) return;
+
+            rule.is_active = isActive;
+            rule.isActive = isActive;
+            filterFeeRules();
+
+            if (supabaseClient) {
+                try {
+                    const rowId = rule.id || `${rule.device_id}_${rule.rule_id}`;
+                    const { error } = await supabaseClient
+                        .from('fee_rules')
+                        .update({ is_active: isActive, updated_at: new Date().toISOString() })
+                        .eq('id', rowId);
+
+                    if (error) {
+                        console.warn('Supabase toggle error:', error);
+                        showToast('❌ Gagal update status di cloud: ' + error.message);
+                    } else {
+                        showToast(`Rule "${rule.name}" sekarang ${isActive ? 'AKTIF' : 'NONAKTIF'}`);
+                    }
+                } catch (e) {
+                    showToast('❌ Error toggle status: ' + e.message);
+                }
+            } else {
+                showToast(`Rule "${rule.name}" sekarang ${isActive ? 'AKTIF' : 'NONAKTIF'} (Lokal)`);
+            }
+        }
+
+        function toggleFeeRuleViewMode() {
+            const table = document.getElementById('feeRuleTableContainer');
+            const grid = document.getElementById('feeRuleGridContainer');
+            const text = document.getElementById('feeRuleViewModeText');
+            const icon = document.getElementById('feeRuleViewModeIcon');
+
+            if (feeRuleViewMode === 'table') {
+                feeRuleViewMode = 'grid';
+                if (table) table.style.display = 'none';
+                if (grid) grid.style.display = 'block';
+                if (text) text.textContent = 'Mode Tabel';
+                if (icon) icon.textContent = '📑';
+            } else {
+                feeRuleViewMode = 'table';
+                if (table) table.style.display = 'block';
+                if (grid) grid.style.display = 'none';
+                if (text) text.textContent = 'Mode Kartu';
+                if (icon) icon.textContent = '🗂️';
+            }
+        }
+
+        function openAddFeeRuleModal() {
+            document.getElementById('feeRuleModalTitle').textContent = 'Tambah Fee Rule Baru';
+            document.getElementById('formFeeRuleId').value = '';
+            document.getElementById('formFeeRuleDeviceId').value = document.getElementById('navDeviceFilter')?.value || 'web_dashboard';
+            document.getElementById('feeRuleForm').reset();
+            document.getElementById('formFeeRulePriority').value = '10';
+            document.getElementById('formFeeRuleIsActive').checked = true;
+            document.getElementById('feeRuleModal').style.display = 'flex';
+        }
+
+        function openEditFeeRuleModal(id) {
+            const rule = allFeeRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id));
+            if (!rule) return;
+
+            document.getElementById('feeRuleModalTitle').textContent = 'Edit Fee Rule';
+            document.getElementById('formFeeRuleId').value = rule.id || `${rule.device_id}_${rule.rule_id}`;
+            document.getElementById('formFeeRuleDeviceId').value = rule.device_id || 'web_dashboard';
+            document.getElementById('formFeeRuleName').value = rule.name || '';
+            document.getElementById('formFeeRuleCategory').value = rule.category || 'Umum';
+            document.getElementById('formFeeRulePriority').value = (rule.priority !== undefined && rule.priority !== null) ? rule.priority : 10;
+            document.getElementById('formFeeRuleMinAmount').value = (rule.min_amount || rule.minAmount) ? (rule.min_amount || rule.minAmount) : '';
+            document.getElementById('formFeeRuleMaxAmount').value = (rule.max_amount || rule.maxAmount) ? (rule.max_amount || rule.maxAmount) : '';
+            document.getElementById('formFeeRuleFeeAmount').value = (rule.fee_amount || rule.feeAmount) ? (rule.fee_amount || rule.feeAmount) : '';
+            document.getElementById('formFeeRuleFeePercent').value = (rule.fee_percent || rule.feePercent) ? (rule.fee_percent || rule.feePercent) : '';
+            document.getElementById('formFeeRuleFixedAmount').value = (rule.fixed_amount || rule.fixedAmount) ? (rule.fixed_amount || rule.fixedAmount) : '';
+            document.getElementById('formFeeRuleIsActive').checked = (rule.is_active !== undefined) ? !!rule.is_active : (rule.isActive !== undefined ? !!rule.isActive : true);
+
+            document.getElementById('feeRuleModal').style.display = 'flex';
+        }
+
+        function closeFeeRuleModal() {
+            const modal = document.getElementById('feeRuleModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function handleSaveFeeRule(event) {
+            event.preventDefault();
+            const idVal = document.getElementById('formFeeRuleId').value;
+            const deviceId = document.getElementById('formFeeRuleDeviceId').value || 'web_dashboard';
+            const name = document.getElementById('formFeeRuleName').value.trim();
+            const category = document.getElementById('formFeeRuleCategory').value.trim() || 'Umum';
+            const priority = parseInt(document.getElementById('formFeeRulePriority').value) || 10;
+            const minAmount = parseFloat(document.getElementById('formFeeRuleMinAmount').value) || 0;
+            const maxAmount = parseFloat(document.getElementById('formFeeRuleMaxAmount').value) || 0;
+            const feeAmount = parseFloat(document.getElementById('formFeeRuleFeeAmount').value) || 0;
+            const feePercent = parseFloat(document.getElementById('formFeeRuleFeePercent').value) || 0;
+            const fixedAmount = parseFloat(document.getElementById('formFeeRuleFixedAmount').value) || 0;
+            const isActive = document.getElementById('formFeeRuleIsActive').checked;
+
+            const rowId = idVal || `${deviceId}_${Date.now()}`;
+            const rowData = {
+                id: rowId,
+                device_id: deviceId,
+                device_name: 'Web Dashboard',
+                name: name,
+                category: category,
+                priority: priority,
+                min_amount: minAmount,
+                max_amount: maxAmount,
+                fee_amount: feeAmount,
+                fee_percent: feePercent,
+                fixed_amount: fixedAmount,
+                is_active: isActive,
+                updated_at: new Date().toISOString()
+            };
+
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient.from('fee_rules').upsert(rowData);
+                    if (error) throw error;
+                    showToast(`✅ Rule "${name}" berhasil disimpan ke cloud!`);
+                    await fetchFeeRulesFromSupabase(false);
+                } catch (e) {
+                    console.error('Error saving fee rule to Supabase:', e);
+                    showToast('❌ Gagal simpan ke Supabase: ' + e.message);
+                }
+            } else {
+                const existingIdx = allFeeRules.findIndex(r => (r.id === rowId || `${r.device_id}_${r.rule_id}` === rowId));
+                if (existingIdx >= 0) {
+                    allFeeRules[existingIdx] = { ...allFeeRules[existingIdx], ...rowData };
+                } else {
+                    allFeeRules.unshift(rowData);
+                }
+                renderFeeRuleCategoryChips();
+                filterFeeRules();
+                showToast(`Rule "${name}" disimpan secara lokal.`);
+            }
+
+            closeFeeRuleModal();
+        }
+
+        async function deleteFeeRuleWeb(id) {
+            const rule = allFeeRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id));
+            if (!rule) return;
+
+            if (!confirm(`Hapus aturan "${rule.name}" (${rule.category}) dari Supabase Cloud?`)) {
+                return;
+            }
+
+            if (supabaseClient) {
+                try {
+                    const rowId = rule.id || `${rule.device_id}_${rule.rule_id}`;
+                    const { error } = await supabaseClient.from('fee_rules').delete().eq('id', rowId);
+                    if (error) throw error;
+                    showToast(`🗑️ Rule "${rule.name}" berhasil dihapus dari cloud!`);
+                    await fetchFeeRulesFromSupabase(false);
+                } catch (e) {
+                    showToast('❌ Gagal hapus rule: ' + e.message);
+                }
+            } else {
+                allFeeRules = allFeeRules.filter(r => (r.id !== id && `${r.device_id}_${r.rule_id}` !== id));
+                renderFeeRuleCategoryChips();
+                filterFeeRules();
+                showToast(`Rule "${rule.name}" dihapus.`);
+            }
+        }
+
+        function exportFeeRulesJson() {
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const scopedRules = (selectedDevice === 'all')
+                ? allFeeRules
+                : allFeeRules.filter(r => r.device_id === selectedDevice || r.device_id === 'global');
+
+            const exportData = scopedRules.map(r => ({
+                category: r.category || 'Umum',
+                name: r.name || 'Rule',
+                minAmount: Number(r.min_amount || r.minAmount || 0),
+                maxAmount: Number(r.max_amount || r.maxAmount || 0),
+                feeAmount: Number(r.fee_amount || r.feeAmount || 0),
+                feePercent: Number(r.fee_percent || r.feePercent || 0),
+                fixedAmount: Number(r.fixed_amount || r.fixedAmount || 0),
+                isActive: (r.is_active !== undefined) ? !!r.is_active : (r.isActive !== undefined ? !!r.isActive : true)
+            }));
+
+            const jsonStr = JSON.stringify(exportData, null, 2);
+            navigator.clipboard.writeText(jsonStr).then(() => {
+                showToast('📋 JSON ' + exportData.length + ' rules disalin ke Clipboard!');
+            }).catch(() => {
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'fee_rules_export.json';
+                a.click();
+                showToast('💾 Berkas fee_rules_export.json berhasil diunduh!');
+            });
         }
     </script>
 </body>
