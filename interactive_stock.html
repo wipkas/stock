@@ -11,40 +11,40 @@
                 var p = new URLSearchParams(window.location.search);
                 var t = p.get('tab') || (window.location.hash.includes('tab=') ? window.location.hash.split('tab=')[1].split('&')[0] : '');
                 var cleanT = (t || '').toLowerCase().trim();
-                var mFile = 'manifest-order.json';
+                var mFile = 'assets/manifests/manifest-order.json';
                 var pTitle = '🌅 Order Restok - KSP Check';
-                var iconSvg = 'icon-order.svg';
-                var iconPng = 'icon-order-192.png';
+                var iconSvg = 'assets/icons/icon-order.svg';
+                var iconPng = 'assets/icons/icon-order-192.png';
                 if (cleanT === 'history' || cleanT === 'riwayat' || cleanT === 'hist') {
-                    mFile = 'manifest-history.json';
+                    mFile = 'assets/manifests/manifest-history.json';
                     pTitle = '📊 Riwayat Order - KSP Check';
-                    iconSvg = 'icon-history.svg';
-                    iconPng = 'icon-history-192.png';
+                    iconSvg = 'assets/icons/icon-history.svg';
+                    iconPng = 'assets/icons/icon-history-192.png';
                 } else if (cleanT === 'daily' || cleanT === 'laporan' || cleanT === 'report') {
-                    mFile = 'manifest-daily.json';
+                    mFile = 'assets/manifests/manifest-daily.json';
                     pTitle = '🌙 Laporan Harian - KSP Check';
-                    iconSvg = 'icon-daily.svg';
-                    iconPng = 'icon-daily-192.png';
+                    iconSvg = 'assets/icons/icon-daily.svg';
+                    iconPng = 'assets/icons/icon-daily-192.png';
                 } else if (cleanT === 'margin' || cleanT === 'marginvoucher' || cleanT === 'untung') {
-                    mFile = 'manifest-margin.json';
+                    mFile = 'assets/manifests/manifest-margin.json';
                     pTitle = '💹 Margin Voucher - KSP Check';
-                    iconSvg = 'icon-margin.svg';
-                    iconPng = 'icon-margin-192.png';
+                    iconSvg = 'assets/icons/icon-margin.svg';
+                    iconPng = 'assets/icons/icon-margin-192.png';
                 } else if (cleanT === 'balance' || cleanT === 'saldo' || cleanT === 'ewallet') {
-                    mFile = 'manifest-balance.json';
+                    mFile = 'assets/manifests/manifest-balance.json';
                     pTitle = '💳 Saldo Realtime - KSP Check';
-                    iconSvg = 'icon-balance.svg';
-                    iconPng = 'icon-balance-192.png';
+                    iconSvg = 'assets/icons/icon-balance.svg';
+                    iconPng = 'assets/icons/icon-balance-192.png';
                 } else if (cleanT === 'produk' || cleanT === 'barang') {
-                    mFile = 'manifest-produk.json';
+                    mFile = 'assets/manifests/manifest-produk.json';
                     pTitle = '🛍️ Stok Produk - KSP Check';
-                    iconSvg = 'icon-produk.svg';
-                    iconPng = 'icon-produk-192.png';
+                    iconSvg = 'assets/icons/icon-produk.svg';
+                    iconPng = 'assets/icons/icon-produk-192.png';
                 } else if (cleanT === 'feerule' || cleanT === 'rule' || cleanT === 'fee') {
-                    mFile = 'manifest-order.json';
+                    mFile = 'assets/manifests/manifest-order.json';
                     pTitle = '⚖️ Fee Rule - KSP Check';
-                    iconSvg = 'icon-order.svg';
-                    iconPng = 'icon-order-192.png';
+                    iconSvg = 'assets/icons/icon-order.svg';
+                    iconPng = 'assets/icons/icon-order-192.png';
                 }
                 document.title = pTitle;
                 document.write('<link id="appManifest" rel="manifest" href="' + mFile + '">');
@@ -52,17 +52,17 @@
                 document.write('<link id="appFaviconPng" rel="icon" type="image/png" sizes="192x192" href="' + iconPng + '">');
                 document.write('<link id="appTouchIcon" rel="apple-touch-icon" href="' + iconPng + '">');
             } catch(e) {
-                document.write('<link id="appManifest" rel="manifest" href="manifest.json">');
-                document.write('<link id="appFavicon" rel="icon" type="image/svg+xml" href="icon-order.svg">');
-                document.write('<link id="appFaviconPng" rel="icon" type="image/png" sizes="192x192" href="icon-order-192.png">');
-                document.write('<link id="appTouchIcon" rel="apple-touch-icon" href="icon-order-192.png">');
+                document.write('<link id="appManifest" rel="manifest" href="assets/manifests/manifest.json">');
+                document.write('<link id="appFavicon" rel="icon" type="image/svg+xml" href="assets/icons/icon-order.svg">');
+                document.write('<link id="appFaviconPng" rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-order-192.png">');
+                document.write('<link id="appTouchIcon" rel="apple-touch-icon" href="assets/icons/icon-order-192.png">');
             }
         })();
     </script>
     <noscript>
-        <link id="appManifest" rel="manifest" href="manifest.json">
-        <link rel="icon" type="image/svg+xml" href="icon-order.svg">
-        <link rel="apple-touch-icon" href="icon-order-192.png">
+        <link id="appManifest" rel="manifest" href="assets/manifests/manifest.json">
+        <link rel="icon" type="image/svg+xml" href="assets/icons/icon-order.svg">
+        <link rel="apple-touch-icon" href="assets/icons/icon-order-192.png">
     </noscript>
     <meta name="theme-color" content="#0F1117">
     <meta name="mobile-web-app-capable" content="yes">
@@ -2519,9 +2519,6 @@
                             <button class="settings-item" onclick="showManageDevicesModal(); closeSettingsMenu()">
                                 <span class="settings-icon">⚙️</span><span class="settings-label">Kelola Perangkat</span><span class="settings-state" id="settingManageDeviceState">0 HP</span>
                             </button>
-                            <a href="index.html" class="settings-item" style="text-decoration:none">
-                                <span class="settings-icon">📋</span><span class="settings-label">Mode Tabel Ringkas</span><span class="settings-state">Buka →</span>
-                            </a>
                             <button class="settings-item" onclick="lockViewer(); closeSettingsMenu()">
                                 <span class="settings-icon">🔒</span><span class="settings-label">Kunci PIN</span><span class="settings-state" id="settingLockState">–</span>
                             </button>
@@ -9737,13 +9734,13 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 const touchIcon = document.getElementById('appTouchIcon');
 
                 const tabAssets = {
-                    'order': { manifest: 'manifest-order.json', svg: 'icon-order.svg', png: 'icon-order-192.png' },
-                    'history': { manifest: 'manifest-history.json', svg: 'icon-history.svg', png: 'icon-history-192.png' },
-                    'daily': { manifest: 'manifest-daily.json', svg: 'icon-daily.svg', png: 'icon-daily-192.png' },
-                    'margin': { manifest: 'manifest-margin.json', svg: 'icon-margin.svg', png: 'icon-margin-192.png' },
-                    'balance': { manifest: 'manifest-balance.json', svg: 'icon-balance.svg', png: 'icon-balance-192.png' },
-                    'produk': { manifest: 'manifest-produk.json', svg: 'icon-produk.svg', png: 'icon-produk-192.png' },
-                    'feerule': { manifest: 'manifest-order.json', svg: 'icon-order.svg', png: 'icon-order-192.png' }
+                    'order': { manifest: 'assets/manifests/manifest-order.json', svg: 'assets/icons/icon-order.svg', png: 'assets/icons/icon-order-192.png' },
+                    'history': { manifest: 'assets/manifests/manifest-history.json', svg: 'assets/icons/icon-history.svg', png: 'assets/icons/icon-history-192.png' },
+                    'daily': { manifest: 'assets/manifests/manifest-daily.json', svg: 'assets/icons/icon-daily.svg', png: 'assets/icons/icon-daily-192.png' },
+                    'margin': { manifest: 'assets/manifests/manifest-margin.json', svg: 'assets/icons/icon-margin.svg', png: 'assets/icons/icon-margin-192.png' },
+                    'balance': { manifest: 'assets/manifests/manifest-balance.json', svg: 'assets/icons/icon-balance.svg', png: 'assets/icons/icon-balance-192.png' },
+                    'produk': { manifest: 'assets/manifests/manifest-produk.json', svg: 'assets/icons/icon-produk.svg', png: 'assets/icons/icon-produk-192.png' },
+                    'feerule': { manifest: 'assets/manifests/manifest-order.json', svg: 'assets/icons/icon-order.svg', png: 'assets/icons/icon-order-192.png' }
                 };
 
                 const assets = tabAssets[tab] || tabAssets['order'];
@@ -10655,16 +10652,16 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             'com.bankmandiri': { color: '#003366', abbr: 'MDR' }
         };
 
-        // Mapping icon aplikasi dari folder web/github_pages/iconapp/
+        // Mapping icon aplikasi dari folder assets/iconapp/
         const APP_CUSTOM_ICONS = {
-            'id.dana': 'iconapp/dana.webp',
-            'com.gojek.gopay': 'iconapp/gopay.webp',
-            'com.gojek.app': 'iconapp/gopay.webp',
-            'com.shopeepay.id': 'iconapp/shopeepay.webp',
-            'com.shopee.id': 'iconapp/shopeepay.webp',
-            'com.orderkuota.app': 'iconapp/orderkuota.webp',
-            'com.otoreport.tekmo': 'iconapp/tekmo.webp',
-            'com.tekmo.app': 'iconapp/tekmo.webp'
+            'id.dana': 'assets/iconapp/dana.webp',
+            'com.gojek.gopay': 'assets/iconapp/gopay.webp',
+            'com.gojek.app': 'assets/iconapp/gopay.webp',
+            'com.shopeepay.id': 'assets/iconapp/shopeepay.webp',
+            'com.shopee.id': 'assets/iconapp/shopeepay.webp',
+            'com.orderkuota.app': 'assets/iconapp/orderkuota.webp',
+            'com.otoreport.tekmo': 'assets/iconapp/tekmo.webp',
+            'com.tekmo.app': 'assets/iconapp/tekmo.webp'
         };
 
         // Fallback Authentic Vector SVG Icons (jika webp belum tersedia / gagal dimuat)

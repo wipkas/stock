@@ -3,26 +3,26 @@
   "name": "Riwayat Order - KSP Check",
   "short_name": "Riwayat",
   "description": "Tab Riwayat & Rekonsiliasi Order KSP Check",
-  "start_url": "interactive_stock.html?tab=history",
-  "scope": "./",
+  "start_url": "../../interactive_stock.html?tab=history",
+  "scope": "../../",
   "display": "standalone",
   "background_color": "#0F1117",
   "theme_color": "#0F1117",
   "orientation": "any",
   "icons": [
     {
-      "src": "icon-history.svg",
+      "src": "../icons/icon-history.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "icon-history-192.png",
+      "src": "../icons/icon-history-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icon-history-512.png",
+      "src": "../icons/icon-history-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
@@ -32,29 +32,29 @@
       "name": "💳 Saldo Realtime",
       "short_name": "Saldo",
       "description": "Buka tab Saldo Realtime",
-      "url": "interactive_stock.html?tab=balance",
-      "icons": [{ "src": "icon-balance-192.png", "sizes": "192x192" }]
+      "url": "../../interactive_stock.html?tab=balance",
+      "icons": [{ "src": "../icons/icon-balance-192.png", "sizes": "192x192" }]
     },
     {
       "name": "🛍️ Stok Produk",
       "short_name": "Produk",
       "description": "Buka tab Stok Produk & Aksesoris",
-      "url": "interactive_stock.html?tab=produk",
-      "icons": [{ "src": "icon-produk-192.png", "sizes": "192x192" }]
+      "url": "../../interactive_stock.html?tab=produk",
+      "icons": [{ "src": "../icons/icon-produk-192.png", "sizes": "192x192" }]
     },
     {
       "name": "🌅 Order Restok",
       "short_name": "Order",
       "description": "Buka tab Order Restok",
-      "url": "interactive_stock.html?tab=order",
-      "icons": [{ "src": "icon-order-192.png", "sizes": "192x192" }]
+      "url": "../../interactive_stock.html?tab=order",
+      "icons": [{ "src": "../icons/icon-order-192.png", "sizes": "192x192" }]
     },
     {
       "name": "🌙 Laporan Harian",
       "short_name": "Laporan",
       "description": "Buka tab Laporan Stok Harian",
-      "url": "interactive_stock.html?tab=daily",
-      "icons": [{ "src": "icon-daily-192.png", "sizes": "192x192" }]
+      "url": "../../interactive_stock.html?tab=daily",
+      "icons": [{ "src": "../icons/icon-daily-192.png", "sizes": "192x192" }]
     }
   ]
 }

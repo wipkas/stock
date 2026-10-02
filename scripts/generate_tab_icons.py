@@ -322,10 +322,15 @@ def create_tab_icon(tab_type, size):
     return final_img
 
 if __name__ == "__main__":
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.normpath(os.path.join(script_dir, "..", "assets", "icons"))
+    os.makedirs(output_dir, exist_ok=True)
     tabs = ['order', 'history', 'daily', 'margin', 'balance', 'produk']
     for tab in tabs:
         img192 = create_tab_icon(tab, 192)
-        img192.save(f"web/github_pages/icon-{tab}-192.png", "PNG")
+        p192 = os.path.join(output_dir, f"icon-{tab}-192.png")
+        img192.save(p192, "PNG")
         img512 = create_tab_icon(tab, 512)
-        img512.save(f"web/github_pages/icon-{tab}-512.png", "PNG")
-        print(f"Generated PNGs for {tab}: icon-{tab}-192.png, icon-{tab}-512.png")
+        p512 = os.path.join(output_dir, f"icon-{tab}-512.png")
+        img512.save(p512, "PNG")
+        print(f"Generated PNGs for {tab}: {p192}, {p512}")
