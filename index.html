@@ -2,76 +2,659 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KSP Check - Redirecting...</title>
-    <meta http-equiv="refresh" content="0; url=interactive_stock.html">
-    <script>
-        (function() {
-            var target = "interactive_stock.html" + window.location.search + window.location.hash;
-            window.location.replace(target);
-        })();
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>KSP Check - Menu Utama</title>
+
+    <!-- Web App Manifest & Favicons -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-order.svg">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <meta name="theme-color" content="#0F1117">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="KSP Check">
+
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        :root {
+            --bg-color: #0F1117;
+            --card-bg: #181C27;
+            --card-border: #262B3D;
+            --card-hover: #1E2436;
+            --primary: #4F8EF7;
+            --primary-hover: #3B7ADF;
+            --primary-glow: rgba(79, 142, 247, 0.15);
+            --text-main: #FFFFFF;
+            --text-muted: #8A92A6;
+            --chip-bg: #222736;
+            --shadow-color: rgba(0, 0, 0, 0.35);
+            --modal-backdrop: rgba(0, 0, 0, 0.7);
+        }
+
+        body.light-theme {
+            --bg-color: #F8F5EE;
+            --card-bg: #FFFFFF;
+            --card-border: #E8E1D5;
+            --card-hover: #F2EFE8;
+            --primary: #2B6CB0;
+            --primary-hover: #2C5282;
+            --primary-glow: rgba(43, 108, 176, 0.12);
+            --text-main: #2D3748;
+            --text-muted: #718096;
+            --chip-bg: #EFE8DC;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --modal-backdrop: rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
-            background-color: #0F1117;
-            color: #FFFFFF;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 14px 12px;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 0 14px 0;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 14px;
+        }
+
+        .brand-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+            border-radius: 12px;
+            padding: 4px 6px;
+            margin-left: -6px;
+            transition: background-color 0.15s ease;
+        }
+
+        .brand-box:hover {
+            background: var(--chip-bg);
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-            text-align: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+            flex-shrink: 0;
         }
-        .container {
-            background: #181C27;
-            border: 1px solid #262B3D;
-            border-radius: 16px;
-            padding: 32px 28px;
-            max-width: 400px;
-            width: 100%;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+
+        .brand-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(79, 142, 247, 0.2);
-            border-top-color: #4F8EF7;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 18px;
+
+        .brand-title {
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: -0.2px;
+            color: var(--text-main);
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+
+        .info-pill {
+            font-size: 10px;
+            font-weight: 750;
+            padding: 2px 7px;
+            border-radius: 12px;
+            background: var(--primary-glow);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            line-height: 1.2;
         }
-        h1 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: #FFFFFF; }
-        p { font-size: 13px; color: #8A92A6; margin-bottom: 18px; line-height: 1.5; }
-        a {
-            display: inline-block;
-            background: #4F8EF7;
-            color: #FFFFFF;
+
+        .brand-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-action {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
             text-decoration: none;
-            font-size: 13px;
-            font-weight: 600;
-            padding: 10px 20px;
-            border-radius: 8px;
-            transition: background 0.2s;
+            transition: all 0.15s ease;
         }
-        a:hover { background: #3B7ADF; }
+
+        .btn-action:hover {
+            border-color: var(--primary);
+            background: var(--chip-bg);
+            transform: translateY(-1px);
+        }
+
+        /* 3-Column Mobile Menu Grid */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        @media (min-width: 600px) {
+            .menu-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 14px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .menu-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px;
+            }
+        }
+
+        .menu-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 14px 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            aspect-ratio: 1 / 1;
+            min-height: 100px;
+            transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            box-shadow: 0 3px 10px var(--shadow-color);
+        }
+
+        .menu-card:hover {
+            border-color: var(--card-accent, var(--primary));
+            background: var(--card-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px var(--shadow-color);
+        }
+
+        .menu-card:active {
+            transform: scale(0.93);
+        }
+
+        .menu-card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            background: var(--icon-bg, #222736);
+            border: 1px solid var(--icon-border, #3E465E);
+            margin-bottom: 8px;
+            transition: transform 0.18s ease;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .menu-card:hover .menu-card-icon {
+            transform: scale(1.08);
+        }
+
+        .menu-card-title {
+            font-size: 12px;
+            font-weight: 750;
+            color: var(--text-main);
+            line-height: 1.25;
+            word-break: break-word;
+            padding: 0 4px;
+        }
+
+        /* Specific card theme colors */
+        .card-order { --card-accent: #F59E0B; --icon-bg: rgba(245, 158, 11, 0.14); --icon-border: rgba(245, 158, 11, 0.35); }
+        .card-history { --card-accent: #10B981; --icon-bg: rgba(16, 185, 129, 0.14); --icon-border: rgba(16, 185, 129, 0.35); }
+        .card-daily { --card-accent: #8B5CF6; --icon-bg: rgba(139, 92, 246, 0.14); --icon-border: rgba(139, 92, 246, 0.35); }
+        .card-balance { --card-accent: #0EA5E9; --icon-bg: rgba(14, 165, 233, 0.14); --icon-border: rgba(14, 165, 233, 0.35); }
+        .card-produk { --card-accent: #EC4899; --icon-bg: rgba(236, 72, 153, 0.14); --icon-border: rgba(236, 72, 153, 0.35); }
+        .card-margin { --card-accent: #F97316; --icon-bg: rgba(249, 115, 22, 0.14); --icon-border: rgba(249, 115, 22, 0.35); }
+        .card-feerule { --card-accent: #3B82F6; --icon-bg: rgba(59, 130, 246, 0.14); --icon-border: rgba(59, 130, 246, 0.35); }
+
+        /* Modal Dialog */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: var(--modal-backdrop);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+
+        .modal-backdrop.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            transform: translateY(15px) scale(0.96);
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .modal-backdrop.open .modal-card {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .modal-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .modal-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 22px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            line-height: 1;
+            transition: color 0.15s;
+        }
+
+        .modal-close-btn:hover {
+            color: var(--text-main);
+            background: var(--chip-bg);
+        }
+
+        .modal-body {
+            padding: 14px 18px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .modal-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 12px;
+            background: var(--chip-bg);
+            border: 1px solid var(--card-border);
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.15s;
+        }
+
+        .modal-item:hover {
+            border-color: var(--primary);
+        }
+
+        .modal-item-icon {
+            font-size: 24px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .modal-item-title {
+            font-size: 13px;
+            font-weight: 750;
+            color: var(--text-main);
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-item-desc {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .modal-footer {
+            padding: 12px 18px;
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            justify-content: flex-end;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-btn-close {
+            background: var(--chip-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            font-size: 12px;
+            font-weight: 650;
+            padding: 7px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .modal-btn-close:hover {
+            background: var(--primary);
+            color: #FFFFFF;
+            border-color: var(--primary);
+        }
+
+        @media (max-width: 360px) {
+            .menu-grid {
+                gap: 8px;
+            }
+            .menu-card {
+                padding: 10px 4px;
+                min-height: 90px;
+                border-radius: 13px;
+            }
+            .menu-card-icon {
+                width: 38px;
+                height: 38px;
+                font-size: 19px;
+                margin-bottom: 6px;
+            }
+            .menu-card-title {
+                font-size: 11px;
+            }
+        }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <div class="spinner"></div>
-        <h1>Membuka KSP Check Stock...</h1>
-        <p>Anda sedang dialihkan ke dashboard interaktif stok &amp; order.</p>
-        <a id="redirectLink" href="interactive_stock.html">Buka Aplikasi Manual &rarr;</a>
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="brand-box" onclick="openInfoModal()" role="button" tabindex="0" title="Sentuh untuk melihat info modul">
+                <div class="brand-icon">⚡</div>
+                <div>
+                    <div class="brand-title-wrap">
+                        <h1 class="brand-title">KSP Check</h1>
+                        <span class="info-pill">ℹ️ Info</span>
+                    </div>
+                    <p class="brand-subtitle">Sentuh untuk panduan menu</p>
+                </div>
+            </div>
+
+            <div class="top-actions">
+                <button class="btn-action" id="themeToggleBtn" onclick="toggleTheme()" title="Ubah Tema">🌙</button>
+                <a href="interactive_stock.html" class="btn-action" title="Buka Aplikasi Lengkap">📱</a>
+            </div>
+        </header>
+
+        <!-- 3-COLUMN MENU CARDS -->
+        <main class="menu-grid">
+
+            <!-- 1. ORDER RESTOK -->
+            <a href="interactive_stock.html?tab=order" class="menu-card card-order" title="Order Restok">
+                <div class="menu-card-icon">🌅</div>
+                <div class="menu-card-title">Order Restok</div>
+            </a>
+
+            <!-- 2. RIWAYAT ORDER -->
+            <a href="interactive_stock.html?tab=history" class="menu-card card-history" title="Riwayat Order">
+                <div class="menu-card-icon">📊</div>
+                <div class="menu-card-title">Riwayat Order</div>
+            </a>
+
+            <!-- 3. LAPORAN HARIAN -->
+            <a href="interactive_stock.html?tab=daily" class="menu-card card-daily" title="Laporan Harian">
+                <div class="menu-card-icon">🌙</div>
+                <div class="menu-card-title">Laporan Harian</div>
+            </a>
+
+            <!-- 4. SALDO REALTIME -->
+            <a href="interactive_stock.html?tab=balance" class="menu-card card-balance" title="Saldo Realtime">
+                <div class="menu-card-icon">💳</div>
+                <div class="menu-card-title">Saldo Realtime</div>
+            </a>
+
+            <!-- 5. STOK PRODUK -->
+            <a href="interactive_stock.html?tab=produk" class="menu-card card-produk" title="Stok Produk">
+                <div class="menu-card-icon">🛍️</div>
+                <div class="menu-card-title">Stok Produk</div>
+            </a>
+
+            <!-- 6. MARGIN VOUCHER -->
+            <a href="interactive_stock.html?tab=margin" class="menu-card card-margin" title="Margin Voucher">
+                <div class="menu-card-icon">💹</div>
+                <div class="menu-card-title">Margin Voucher</div>
+            </a>
+
+            <!-- 7. FEE RULE -->
+            <a href="interactive_stock.html?tab=feerule" class="menu-card card-feerule" title="Fee Rule">
+                <div class="menu-card-icon">⚖️</div>
+                <div class="menu-card-title">Fee Rule</div>
+            </a>
+
+        </main>
     </div>
+
+    <!-- MODAL DIALOG DESKRIPSI & PANDUAN MENU -->
+    <div id="infoModal" class="modal-backdrop" onclick="handleBackdropClick(event)">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h2 class="modal-title">Panduan Modul KSP Check</h2>
+                    <p class="modal-subtitle">Sentuh item untuk langsung membuka modul terkait</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeInfoModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+
+                <!-- 1. Order Restok -->
+                <a href="interactive_stock.html?tab=order" class="modal-item">
+                    <div class="modal-item-icon">🌅</div>
+                    <div>
+                        <div class="modal-item-title">
+                            <span>Order Restok</span>
+                            <span style="color: #F59E0B; font-size: 11px;">Buka &rarr;</span>
+                        </div>
+                        <p class="modal-item-desc">Hitung otomatis stok menipis/habis, atur stepper jumlah restok, dan buat pesan order WhatsApp ke distributor.</p>
+                    </div>
+                </a>
+
+                <!-- 2. Riwayat Order -->
+                <a href="interactive_stock.html?tab=history" class="modal-item">
+                    <div class="modal-item-icon">📊</div>
+                    <div>
+                        <div class="modal-item-title">
+                            <span>Riwayat Order</span>
+                            <span style="color: #10B981; font-size: 11px;">Buka &rarr;</span>
+                        </div>
+                        <p class="modal-item-desc">Histori pesanan restok kasir terdahulu, audit trail pergerakan stok, dan rekonsiliasi data voucher masuk.</p>
+                    </div>
+                </a>
+
+                <!-- 3. Laporan Harian -->
+                <a href="interactive_stock.html?tab=daily" class="modal-item">
+                    <div class="modal-item-icon">🌙</div>
+                    <div>
+                        <div class="modal-item-title">
+                            <span>Laporan Harian</span>
+                            <span style="color: #8B5CF6; font-size: 11px;">Buka &rarr;</span>
+                        </div>
+                        <p class="modal-item-desc">Rekapitulasi penjualan voucher, pergeseran stok, perhitungan modal etalase, dan ringkasan tutup buku per shift kasir.</p>
+                    </div>
+                </a>
+
+                <!-- 4. Saldo Realtime -->
+                <a href="interactive_stock.html?tab=balance" class="modal-item">
+                    <div class="modal-item-icon">💳</div>
+                    <div>
+                        <div class="modal-item-title">
+                            <span>Saldo Realtime</span>
+                            <span style="color: #0EA5E9; font-size: 11px;">Buka &rarr;</span>
+                        </div>
+                        <p class="modal-item-desc">Pantau saldo terkini akun e-wallet (DANA, GoPay, ShopeePay, OrderKuota, Tekmo), rekening bank, dan kas fisik toko.</p>
+                    </div>
+                </a>
+
+                <!-- 5. Stok Produk -->
+                <a href="interactive_stock.html?tab=produk" class="modal-item">
+                    <div class="modal-item-icon">🛍️</div>
+                    <div>
+                        <div class="modal-item-title">
+                            <span>Stok Produk</span>
+                            <span style="color: #EC4899; font-size: 11px;">Buka &rarr;</span>
+                        </div>
+                        <p class="modal-item-desc">Katalog dan pencatatan barang fisik retail, aksesoris handphone, kabel charger, kartu perdana paket, dan audit stok fisik.</p>
+                    </div>
+                </a>
+
+                <!-- 6. Margin Voucher -->
+                <a href="interactive_stock.html?tab=margin" class="modal-item">
+                    <div class="modal-item-icon">💹</div>
+                    <div>
+                        <div class="modal-item-title">
+                            <span>Margin Voucher</span>
+                            <span style="color: #F97316; font-size: 11px;">Buka &rarr;</span>
+                        </div>
+                        <p class="modal-item-desc">Simulasi keuntungan voucher, evaluasi perbandingan harga beli distributor vs harga jual etalase per provider.</p>
+                    </div>
+                </a>
+
+                <!-- 7. Fee Rule -->
+                <a href="interactive_stock.html?tab=feerule" class="modal-item">
+                    <div class="modal-item-icon">⚖️</div>
+                    <div>
+                        <div class="modal-item-title">
+                            <span>Fee Rule</span>
+                            <span style="color: #3B82F6; font-size: 11px;">Buka &rarr;</span>
+                        </div>
+                        <p class="modal-item-desc">Pengaturan tier dan aturan biaya admin otomatis untuk transaksi top-up, pulsa, dan tarik tunai.</p>
+                    </div>
+                </a>
+
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn-close" onclick="closeInfoModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        var btn = document.getElementById('redirectLink');
-        if (btn) {
-            btn.href = "interactive_stock.html" + window.location.search + window.location.hash;
+        // 1. Theme Management
+        function applySavedTheme() {
+            const savedTheme = localStorage.getItem('kspcheck_theme');
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+                if (themeBtn) themeBtn.innerText = '☀️';
+            } else {
+                document.body.classList.remove('light-theme');
+                if (themeBtn) themeBtn.innerText = '🌙';
+            }
         }
+
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light-theme');
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (isLight) {
+                localStorage.setItem('kspcheck_theme', 'light');
+                if (themeBtn) themeBtn.innerText = '☀️';
+            } else {
+                localStorage.setItem('kspcheck_theme', 'dark');
+                if (themeBtn) themeBtn.innerText = '🌙';
+            }
+        }
+
+        // 2. Modal Dialog Management
+        function openInfoModal() {
+            const modal = document.getElementById('infoModal');
+            if (modal) modal.classList.add('open');
+        }
+
+        function closeInfoModal() {
+            const modal = document.getElementById('infoModal');
+            if (modal) modal.classList.remove('open');
+        }
+
+        function handleBackdropClick(e) {
+            if (e.target && e.target.id === 'infoModal') {
+                closeInfoModal();
+            }
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeInfoModal();
+        });
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            applySavedTheme();
+        });
     </script>
 </body>
 </html>

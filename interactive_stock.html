@@ -2464,8 +2464,11 @@
     <!-- TOP NAVIGATION -->
     <div class="top-nav-bar">
         <div class="nav-container">
-            <div style="font-weight: 800; font-size: 15px; color: var(--primary); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
-                <span>⚡</span> KSP Check
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <a href="index.html" class="btn-nav-action" title="Menu Utama (Home)" style="text-decoration:none;">🏠</a>
+                <a href="index.html" style="font-weight: 800; font-size: 15px; color: var(--primary); display: flex; align-items: center; gap: 6px; white-space: nowrap; text-decoration: none;">
+                    <span>⚡</span> KSP Check
+                </a>
             </div>
 
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -2519,6 +2522,9 @@
                             <button class="settings-item" onclick="showManageDevicesModal(); closeSettingsMenu()">
                                 <span class="settings-icon">⚙️</span><span class="settings-label">Kelola Perangkat</span><span class="settings-state" id="settingManageDeviceState">0 HP</span>
                             </button>
+                            <a href="index.html" class="settings-item" style="text-decoration:none">
+                                <span class="settings-icon">🏠</span><span class="settings-label">Menu Utama (Card Hub)</span><span class="settings-state">Buka →</span>
+                            </a>
                             <button class="settings-item" onclick="lockViewer(); closeSettingsMenu()">
                                 <span class="settings-icon">🔒</span><span class="settings-label">Kunci PIN</span><span class="settings-state" id="settingLockState">–</span>
                             </button>
@@ -2530,6 +2536,9 @@
 
         <!-- Line Tabs -->
         <div class="tabs-line">
+            <a href="index.html" class="tab" title="Kembali ke Menu Utama" style="text-decoration:none; display:flex; align-items:center; gap:4px; flex-shrink:0;">
+                🏠 Menu
+            </a>
             <button class="tab active" id="tabBtnOrder" onclick="switchTab('order')">
                 🌅 Order
             </button>
