@@ -40,6 +40,11 @@
                     pTitle = '🛍️ Stok Produk - KSP Check';
                     iconSvg = 'icon-produk.svg';
                     iconPng = 'icon-produk-192.png';
+                } else if (cleanT === 'feerule' || cleanT === 'rule' || cleanT === 'fee') {
+                    mFile = 'manifest-order.json';
+                    pTitle = '⚖️ Fee Rule - KSP Check';
+                    iconSvg = 'icon-order.svg';
+                    iconPng = 'icon-order-192.png';
                 }
                 document.title = pTitle;
                 document.write('<link id="appManifest" rel="manifest" href="' + mFile + '">');
@@ -2418,6 +2423,40 @@
             table.daily-table th { background: #EEEEEE; color: #000000; }
             table.daily-table td { color: #000000; }
         }
+
+        /* ==================== TAB FEE RULE STYLES ==================== */
+        .cat-badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.2px; text-transform: uppercase; }
+        .cat-tarik { background: rgba(46, 204, 135, 0.15); color: #2ECC87; border: 1px solid rgba(46, 204, 135, 0.3); }
+        .cat-topup { background: rgba(79, 142, 247, 0.15); color: #60A5FA; border: 1px solid rgba(79, 142, 247, 0.3); }
+        .cat-game  { background: rgba(168, 85, 247, 0.15); color: #C084FC; border: 1px solid rgba(168, 85, 247, 0.3); }
+        .cat-pulsa { background: rgba(245, 166, 35, 0.15); color: #F5A623; border: 1px solid rgba(245, 166, 35, 0.3); }
+        .cat-qris  { background: rgba(14, 165, 233, 0.15); color: #38BDF8; border: 1px solid rgba(14, 165, 233, 0.3); }
+        .cat-other { background: rgba(148, 163, 184, 0.15); color: #94A3B8; border: 1px solid rgba(148, 163, 184, 0.3); }
+
+        .badge-fixed { background: rgba(245, 158, 11, 0.15); color: #FBBF24; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-family: monospace; font-size: 11px; display: inline-block; }
+        .badge-fee { background: rgba(46, 204, 135, 0.12); color: #2ECC87; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-family: monospace; font-size: 11px; display: inline-block; }
+        .badge-fee-percent { background: rgba(59, 130, 246, 0.12); color: #60A5FA; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-family: monospace; font-size: 11px; display: inline-block; }
+
+        .fee-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12.5px; }
+        .fee-table th { background: var(--table-header); color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 14px; border-bottom: 1px solid var(--table-border); white-space: nowrap; }
+        .fee-table td { padding: 12px 14px; border-bottom: 1px solid var(--table-border); vertical-align: middle; color: var(--text-main); }
+        .fee-table tr:last-child td { border-bottom: none; }
+        .fee-table tr:hover { background: var(--table-alt-row); }
+
+        .fee-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+        .fee-switch input { opacity: 0; width: 0; height: 0; }
+        .fee-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .2s; border-radius: 20px; }
+        .fee-slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%; }
+        .fee-switch input:checked + .fee-slider { background-color: var(--success); }
+        .fee-switch input:checked + .fee-slider:before { transform: translateX(16px); }
+
+        .btn-table-action { background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-muted); border-radius: 6px; padding: 5px 9px; font-size: 11px; cursor: pointer; transition: all 0.15s ease; }
+        .btn-table-action:hover { color: var(--text-main); border-color: var(--primary); background: var(--chip-bg); }
+        .btn-table-action.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+        .fee-rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; padding: 16px; }
+        .fee-rule-card { background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.15s ease; }
+        .fee-rule-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
     </style>
 </head>
 <body>
@@ -2443,7 +2482,7 @@
                     <button class="btn-nav-action btn-settings" id="btnSettingsToggle" onclick="toggleSettingsMenu(event)" title="Pengaturan tampilan" aria-label="Pengaturan tampilan" aria-expanded="false">⚙️</button>
                     <div class="settings-dropdown" id="settingsDropdown" role="menu">
                         <div class="settings-group">
-                            <div class="settings-title">Tampilan &amp; mode</div>
+                            <div class="settings-title">Tampilan &amp; Preferensi</div>
                             <button class="settings-item" id="settingTheme" onclick="toggleThemeFromMenu()">
                                 <span class="settings-icon">🌙</span><span class="settings-label">Tema</span><span class="settings-state" id="settingThemeState">Gelap</span>
                             </button>
@@ -2453,71 +2492,35 @@
                             <button class="settings-item" id="settingProviderBadge" onclick="toggleProviderBadgeFromMenu()">
                                 <span class="settings-icon">🏷️</span><span class="settings-label">Badge Provider</span><span class="settings-state" id="settingProviderBadgeState">Aktif</span>
                             </button>
-                        </div>
-                        <div class="settings-group" id="settingsOrderGroup">
-                            <div class="settings-title">Order Restock</div>
-                            <button class="settings-item" id="settingOrderSortStock" onclick="toggleOrderSortStockFromMenu()">
-                                <span class="settings-icon">📶</span><span class="settings-label">Urut Stok Terkecil</span><span class="settings-state" id="settingOrderSortStockState">Aktif</span>
-                            </button>
                             <button class="settings-item" id="settingOrderBadge" onclick="cycleOrderBadgeModeFromMenu()">
                                 <span class="settings-icon">🏷️</span><span class="settings-label">Mode Badge Restok</span><span class="settings-state" id="settingOrderBadgeState">Dinamis</span>
                             </button>
                             <button class="settings-item" id="settingOrderDemand" onclick="toggleOrderDemandFromMenu()">
                                 <span class="settings-icon">⚡</span><span class="settings-label">Badge Demand Penjualan</span><span class="settings-state" id="settingOrderDemandState">Aktif</span>
                             </button>
-                            <button class="settings-item" id="settingOrderHistory" onclick="toggleOrderHistoryFromMenu()">
-                                <span class="settings-icon">📋</span><span class="settings-label">Riwayat Order</span><span class="settings-state" id="settingOrderHistoryState">Tersembunyi</span>
-                            </button>
-                            <button class="settings-item" id="settingOrderTemplate" onclick="showTemplateModal('order'); closeSettingsMenu()">
-                                <span class="settings-icon">📝</span><span class="settings-label">Template Teks Order</span><span class="settings-state" id="settingOrderTemplateState">Default</span>
-                            </button>
-                        </div>
-                        <div class="settings-group" id="settingsDailyGroup">
-                            <div class="settings-title">Laporan Harian</div>
                             <button class="settings-item" id="settingHideZero" onclick="toggleHideZeroFromMenu()">
                                 <span class="settings-icon">👁️</span><span class="settings-label">Sembunyikan 0 Laku</span><span class="settings-state" id="settingHideZeroState">Aktif</span>
                             </button>
-                            <button class="settings-item" id="settingAudit" onclick="toggleAuditFromMenu()">
-                                <span class="settings-icon">📜</span><span class="settings-label">Riwayat Audit</span><span class="settings-state" id="settingAuditState">Tersembunyi</span>
-                            </button>
-                            <button class="settings-item" id="settingDailyTemplate" onclick="showTemplateModal('daily'); closeSettingsMenu()">
-                                <span class="settings-icon">📝</span><span class="settings-label">Template Teks Rekap</span><span class="settings-state" id="settingDailyTemplateState">Default</span>
-                            </button>
                         </div>
-                        <div class="settings-group" id="settingsMarginGroup">
-                            <div class="settings-title">Margin Voucher</div>
-                            <button class="settings-item" id="settingMarginTemplate" onclick="showTemplateModal('margin'); closeSettingsMenu()">
-                                <span class="settings-icon">📝</span><span class="settings-label">Template Teks Margin</span><span class="settings-state" id="settingMarginTemplateState">Default</span>
+                        <div class="settings-group">
+                            <div class="settings-title">Format Pesan</div>
+                            <button class="settings-item" id="settingTemplateModal" onclick="showTemplateModal(); closeSettingsMenu()">
+                                <span class="settings-icon">📝</span><span class="settings-label">Format Template Pesan</span><span class="settings-state" id="settingTemplateModalState">Default</span>
                             </button>
                         </div>
                         <div class="settings-group">
-                            <div class="settings-title">Navigasi</div>
+                            <div class="settings-title">Sistem &amp; Perangkat</div>
                             <button class="settings-item" onclick="triggerInstallApp(); closeSettingsMenu()">
                                 <span class="settings-icon">📲</span><span class="settings-label">Pasang ke Layar Utama</span><span class="settings-state" id="settingInstallState">Instal →</span>
                             </button>
                             <button class="settings-item" onclick="showShortcutGuideModal(); closeSettingsMenu()">
                                 <span class="settings-icon">💡</span><span class="settings-label">Pintasan Layar Utama</span><span class="settings-state">Tips →</span>
                             </button>
-                            <button class="settings-item" onclick="showDeviceModal(); closeSettingsMenu()">
-                                <span class="settings-icon">📱</span><span class="settings-label">Pilih Perangkat</span><span class="settings-state" id="settingDeviceState">Semua</span>
-                            </button>
                             <button class="settings-item" onclick="showManageDevicesModal(); closeSettingsMenu()">
                                 <span class="settings-icon">⚙️</span><span class="settings-label">Kelola Perangkat</span><span class="settings-state" id="settingManageDeviceState">0 HP</span>
                             </button>
                             <a href="index.html" class="settings-item" style="text-decoration:none">
                                 <span class="settings-icon">📋</span><span class="settings-label">Mode Tabel Ringkas</span><span class="settings-state">Buka →</span>
-                            </a>
-                            <button class="settings-item" onclick="switchTab('margin'); closeSettingsMenu()">
-                                <span class="settings-icon">💹</span><span class="settings-label">Cek Margin Voucher</span><span class="settings-state">Buka Tab →</span>
-                            </button>
-                            <button class="settings-item" onclick="switchTab('produk'); closeSettingsMenu()">
-                                <span class="settings-icon">🛍️</span><span class="settings-label">Stok Produk &amp; Aksesoris</span><span class="settings-state">Buka Tab →</span>
-                            </button>
-                            <button class="settings-item" onclick="switchTab('balance'); closeSettingsMenu()">
-                                <span class="settings-icon">💳</span><span class="settings-label">Pantau Saldo Realtime</span><span class="settings-state">Buka Tab →</span>
-                            </button>
-                            <a href="balance_view.html" class="settings-item" style="text-decoration:none" target="_blank">
-                                <span class="settings-icon">🎨</span><span class="settings-label">Showcase Redesign Saldo</span><span class="settings-state">Buka ↗</span>
                             </a>
                             <button class="settings-item" onclick="lockViewer(); closeSettingsMenu()">
                                 <span class="settings-icon">🔒</span><span class="settings-label">Kunci PIN</span><span class="settings-state" id="settingLockState">–</span>
@@ -2547,6 +2550,9 @@
             </button>
             <button class="tab" id="tabBtnBalance" onclick="switchTab('balance')" title="Pantau saldo realtime aplikasi e-wallet / bank">
                 💳 Saldo <span class="tab-live-pulse" title="Realtime Live"></span>
+            </button>
+            <button class="tab" id="tabBtnFeeRule" onclick="switchTab('feerule')" title="Kelola aturan biaya admin transaksi">
+                ⚖️ Fee Rule <span class="tab-live-pulse" title="Realtime Live"></span>
             </button>
         </div>
     </div>
@@ -3098,6 +3104,198 @@
         </div>
     </div>
 
+    <!-- ==================== TAB 7: FEE RULES (ATURAN BIAYA ADMIN) ==================== -->
+    <div id="tabContentFeeRule" class="container" style="display: none; padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));">
+        <!-- Header Card with Stats -->
+        <div class="header-card">
+            <div class="header-title-row" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                <div class="header-title" style="font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                    <span>⚖️ Aturan Biaya Admin Transaksi</span>
+                    <span id="feeRuleLiveBadge" class="badge-cloud" style="font-size: 11px; padding: 3px 8px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; background: rgba(46, 204, 135, 0.12); color: var(--success); border: 1px solid rgba(46, 204, 135, 0.25);">
+                        <span class="pulse-dot"></span> Cloud Live
+                    </span>
+                </div>
+                <div style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;" id="feeRuleSubtitle">
+                    Sinkronisasi dua arah dengan KSP Check Android
+                </div>
+            </div>
+
+            <div class="stats-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+                <div class="stat-box">
+                    <div class="stat-num primary" id="statFeeRuleTotal">0</div>
+                    <div class="stat-label">Total Fee Rules</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num success" id="statFeeRuleActive">0</div>
+                    <div class="stat-label">Rule Aktif</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num danger" id="statFeeRuleInactive">0</div>
+                    <div class="stat-label">Rule Nonaktif</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num warning" id="statFeeRuleCategories">0</div>
+                    <div class="stat-label">Kategori Layanan</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Card (Search, Actions, Category Chips) -->
+        <div class="controls-card" style="margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 0 12px; height: 38px; flex: 1; min-width: 220px;">
+                    <span>🔍</span>
+                    <input type="text" id="feeRuleSearchInput" placeholder="Cari nama rule atau kategori (Diamond, DANA, Tarik)..." oninput="filterFeeRules()" style="background: transparent; border: none; outline: none; color: var(--text-main); font-size: 12.5px; width: 100%; margin-left: 8px;">
+                    <button type="button" id="btnFeeRuleClearSearch" onclick="clearFeeRuleSearch()" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; display: none; padding: 2px 6px;">✕</button>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-select-action" onclick="openAddFeeRuleModal()" style="color: #fff; background: var(--primary); border-color: var(--primary);">
+                        <span>➕</span> Tambah Rule
+                    </button>
+                    <button type="button" class="btn-select-action" onclick="fetchFeeRulesFromSupabase(true)" title="Segarkan data dari Supabase Cloud">
+                        <span>🔄</span> Refresh
+                    </button>
+                    <button type="button" class="btn-select-action" onclick="exportFeeRulesJson()" title="Salin data aturan ke JSON">
+                        <span>📋</span> Salin JSON
+                    </button>
+                    <button type="button" class="btn-select-action" id="btnFeeRuleToggleView" onclick="toggleFeeRuleViewMode()">
+                        <span id="feeRuleViewModeIcon">🗂️</span> <span id="feeRuleViewModeText">Mode Kartu</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Category Chips -->
+            <div class="category-chips-wrap" id="feeRuleCategoryChips" style="display: flex; overflow-x: auto; scrollbar-width: none; gap: 6px; padding-bottom: 2px; -webkit-overflow-scrolling: touch;">
+                <!-- Populated dynamically via JavaScript -->
+            </div>
+        </div>
+
+        <!-- Rules Display Area (Table & Grid) -->
+        <div class="table-card" id="feeRuleTableContainer" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px var(--shadow-color);">
+            <div class="table-responsive" style="overflow-x: auto; width: 100%;">
+                <table class="fee-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 45px; text-align: center;">Prio</th>
+                            <th>Nama Rule</th>
+                            <th>Kategori</th>
+                            <th>Rentang Nominal</th>
+                            <th>Biaya Admin / Harga Jual</th>
+                            <th style="text-align: center; width: 75px;">Status</th>
+                            <th style="text-align: right; width: 120px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="feeRuleTableBody">
+                        <!-- Populated dynamically via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="feeRuleGridContainer" class="table-card" style="display: none; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; overflow: hidden;">
+            <div class="fee-rules-grid" id="feeRuleGridBody">
+                <!-- Populated dynamically via JavaScript -->
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="balance-empty-state" id="feeRuleEmptyState" style="display: none; text-align: center; padding: 40px 16px;">
+            <div style="font-size: 36px; margin-bottom: 8px;">⚖️</div>
+            <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;" id="feeRuleEmptyTitle">Belum Ada Aturan Fee Rule di Cloud</div>
+            <p style="color: var(--text-muted); font-size: 12px; max-width: 440px; margin: 0 auto 12px auto;" id="feeRuleEmptyMsg">
+                Buka menu <b>Fee Rule</b> di aplikasi kasir HP dan klik tombol <b>☁️ Sync</b> untuk menyinkronkan seluruh aturan biaya admin ke Supabase.
+            </p>
+            <div id="feeRuleSqlGuideBanner" style="display: none; background: rgba(245, 166, 35, 0.1); border: 1px dashed rgba(245, 166, 35, 0.4); border-radius: 10px; padding: 12px; max-width: 480px; margin: 0 auto; text-align: left; font-size: 11.5px; color: var(--text-main);">
+                <div style="font-weight: 700; color: var(--warning); margin-bottom: 4px;">⚠️ Tabel `fee_rules` belum dibuat di Supabase</div>
+                <div>Jalankan script <code>docs/supabase_fee_rules_sync.sql</code> di Supabase Dashboard ➔ SQL Editor ➔ Run.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Form: Add / Edit Fee Rule -->
+    <div class="modal-overlay" id="feeRuleModal" style="display: none;">
+        <div class="modal-card" style="max-width: 480px; width: 100%;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px;">
+                <div style="font-size: 16px; font-weight: 800;" id="feeRuleModalTitle">Tambah Fee Rule Baru</div>
+                <button type="button" class="btn-modal-close" onclick="closeFeeRuleModal()" style="background: transparent; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer;">✕</button>
+            </div>
+            
+            <form id="feeRuleForm" onsubmit="handleSaveFeeRule(event)">
+                <input type="hidden" id="formFeeRuleId">
+                <input type="hidden" id="formFeeRuleDeviceId">
+
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Nama Rule</label>
+                    <input type="text" class="input-modern" id="formFeeRuleName" placeholder="Contoh: DANA 10k-50k atau 50 Diamond" required style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Kategori</label>
+                        <input type="text" class="input-modern" id="formFeeRuleCategory" list="feeCategoryOptions" placeholder="Pilih/Ketik Kategori" required style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                        <datalist id="feeCategoryOptions">
+                            <option value="TARIK_EWALLET">
+                            <option value="TARIK_MBANKING">
+                            <option value="TOPUP_EWALLET">
+                            <option value="TRANSFER_BANK">
+                            <option value="FF">
+                            <option value="ML">
+                            <option value="TARIK_QRIS">
+                            <option value="PulsaTsel">
+                            <option value="Maxim">
+                            <option value="Token">
+                        </datalist>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Prioritas</label>
+                        <input type="number" class="input-modern mono" id="formFeeRulePriority" value="10" min="1" max="999" style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Nominal Minimal (Rp)</label>
+                        <input type="number" class="input-modern mono" id="formFeeRuleMinAmount" placeholder="0" style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Nominal Maksimal (Rp)</label>
+                        <input type="number" class="input-modern mono" id="formFeeRuleMaxAmount" placeholder="0 (Tanpa Batas)" style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Biaya Flat (Rp)</label>
+                        <input type="number" class="input-modern mono" id="formFeeRuleFeeAmount" placeholder="0" style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Biaya Persen (%)</label>
+                        <input type="number" step="0.1" class="input-modern mono" id="formFeeRuleFeePercent" placeholder="0" style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Override Harga Jual Langsung (Rp) <span style="font-weight: normal; color: var(--text-muted);">(Game/Voucher)</span></label>
+                    <input type="number" class="input-modern mono" id="formFeeRuleFixedAmount" placeholder="0 jika menggunakan biaya admin" style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-bottom: 18px;">
+                    <span style="font-size: 13px; font-weight: 700;">Status Rule Aktif</span>
+                    <label class="fee-switch">
+                        <input type="checkbox" id="formFeeRuleIsActive" checked>
+                        <span class="fee-slider"></span>
+                    </label>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn-select-action" onclick="closeFeeRuleModal()">Batal</button>
+                    <button type="submit" class="btn-select-action" style="color: #fff; background: var(--primary); border-color: var(--primary);">Simpan Rule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div id="toast" class="toast"></div>
 
@@ -3240,13 +3438,18 @@
                 <div id="panelOrderTemplate" style="display: flex; flex-direction: column; gap: 12px;">
                     <div>
                         <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-                            Sisipkan Variabel Pesan Utama:
+                            Sisipkan Variabel Template Order:
                         </div>
                         <div style="display: flex; flex-wrap: wrap; gap: 5px;">
                             <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{deviceName}')" title="Nama perangkat HP kasir aktif">📱 {deviceName}</button>
                             <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{date}')" title="Tanggal hari ini">📅 {date}</button>
                             <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{time}')" title="Jam saat ini">⏰ {time}</button>
-                            <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{items}')" title="Daftar rincian item per provider">📦 {items}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertTemplateVar('[ITEMS]...[/ITEMS]')" style="font-weight: 700; color: #10B981; border-color: rgba(16, 185, 129, 0.4);" title="Sisipkan blok perulangan item produk lengkap">📦 [ITEMS]...[/ITEMS]</button>
+                            <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{provider}')" style="font-weight: 600; color: #38BDF8; border-color: rgba(56, 189, 248, 0.4);" title="Nama provider di dalam [ITEMS]">🏢 {provider}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{name}')" title="Nama voucher di dalam [ITEMS]">{name}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{qty}')" title="Kuantitas order di dalam [ITEMS]">{qty}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{cost}')" title="Harga modal (Rp) di dalam [ITEMS]">{cost}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{subtotal}')" title="Subtotal modal di dalam [ITEMS]">{subtotal}</button>
                             <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{totalJenis}')" title="Jumlah jenis produk">🏷️ {totalJenis}</button>
                             <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{totalPcs}')" title="Total fisik pcs">🔢 {totalPcs}</button>
                             <button type="button" class="btn-var-chip" onclick="insertTemplateVar('{totalEstCost}')" title="Estimasi total biaya">💰 {totalEstCost}</button>
@@ -3254,25 +3457,15 @@
                     </div>
 
                     <div>
-                        <label for="orderTemplateTextarea" style="display: block; font-size: 11.5px; font-weight: 700; margin-bottom: 4px; color: var(--text-main);">
-                            Format Pesan Utama Order:
-                        </label>
-                        <textarea id="orderTemplateTextarea" rows="6" oninput="updateOrderTemplatePreview()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 8px 10px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; line-height: 1.45; resize: vertical; outline: none;"></textarea>
-                    </div>
-
-                    <div style="background: rgba(148, 163, 184, 0.05); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 10px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                            <label for="orderItemTemplateInput" style="font-size: 11.5px; font-weight: 700; color: var(--text-main); margin: 0;">
-                                Format Baris Item (di dalam {items}):
+                            <label for="orderTemplateTextarea" style="font-size: 11.5px; font-weight: 700; color: var(--text-main); margin: 0;">
+                                Format Template Pesan Order:
                             </label>
-                            <div style="display: flex; gap: 4px;">
-                                <button type="button" class="btn-var-chip" onclick="insertItemTemplateVar('{name}')" style="padding: 2px 5px; font-size: 10px;">{name}</button>
-                                <button type="button" class="btn-var-chip" onclick="insertItemTemplateVar('{qty}')" style="padding: 2px 5px; font-size: 10px;">{qty}</button>
-                                <button type="button" class="btn-var-chip" onclick="insertItemTemplateVar('{cost}')" style="padding: 2px 5px; font-size: 10px;">{cost}</button>
-                                <button type="button" class="btn-var-chip" onclick="insertItemTemplateVar('{subtotal}')" style="padding: 2px 5px; font-size: 10px;">{subtotal}</button>
-                            </div>
+                            <button type="button" class="btn-var-chip" onclick="pasteToTemplate('orderTemplateTextarea')" style="background: rgba(56, 189, 248, 0.15); color: var(--primary, #38BDF8); border-color: rgba(56, 189, 248, 0.4); font-weight: 700; padding: 3px 9px;" title="Tempel teks template dari clipboard langsung ke sini">
+                                📋 Tempel
+                            </button>
                         </div>
-                        <input type="text" id="orderItemTemplateInput" oninput="updateOrderTemplatePreview()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 6px; padding: 6px 8px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; outline: none;" value="• {name}: *{qty} pcs*">
+                        <textarea id="orderTemplateTextarea" rows="8" oninput="updateOrderTemplatePreview()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 8px 10px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; line-height: 1.45; resize: vertical; outline: none;"></textarea>
                     </div>
 
                     <div>
@@ -3280,7 +3473,7 @@
                             <span style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Preview Hasil Salin Order:</span>
                             <span id="orderTemplatePreviewDevice" style="font-size: 11px; font-weight: 700; color: var(--primary, #38BDF8);">📱 POCO F5</span>
                         </div>
-                        <pre id="orderTemplateLivePreview" style="background: var(--input-bg, #090D16); border: 1px solid var(--card-border, #1E293B); border-radius: 8px; padding: 10px; font-family: monospace, Consolas, sans-serif; font-size: 11px; line-height: 1.4; color: var(--primary, #38BDF8); white-space: pre-wrap; word-break: break-word; max-height: 130px; overflow-y: auto; margin: 0;"></pre>
+                        <pre id="orderTemplateLivePreview" style="background: var(--input-bg, #090D16); border: 1px solid var(--card-border, #1E293B); border-radius: 8px; padding: 10px; font-family: monospace, Consolas, sans-serif; font-size: 11px; line-height: 1.4; color: var(--primary, #38BDF8); white-space: pre-wrap; word-break: break-word; max-height: 140px; overflow-y: auto; margin: 0;"></pre>
                     </div>
                 </div>
 
@@ -3288,13 +3481,23 @@
                 <div id="panelDailyTemplate" style="display: none; flex-direction: column; gap: 12px;">
                     <div>
                         <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-                            Sisipkan Variabel Pesan Utama:
+                            Sisipkan Variabel Template Rekap:
                         </div>
                         <div style="display: flex; flex-wrap: wrap; gap: 5px;">
                             <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{deviceName}')" title="Nama perangkat HP kasir aktif">📱 {deviceName}</button>
                             <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{date}')" title="Tanggal / rentang laporan">📅 {date}</button>
                             <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{shift}')" title="Shift kerja">⏱️ {shift}</button>
-                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{items}')" title="Daftar produk terjual">📦 {items}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('[ITEMS]...[/ITEMS]')" style="font-weight: 700; color: #10B981; border-color: rgba(16, 185, 129, 0.4);" title="Sisipkan blok perulangan item produk lengkap">📦 [ITEMS]...[/ITEMS]</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{provider}')" style="font-weight: 600; color: #38BDF8; border-color: rgba(56, 189, 248, 0.4);" title="Nama provider di dalam [ITEMS]">🏢 {provider}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{name}')" title="Nama voucher di dalam [ITEMS]">{name}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{sold}')" title="Jumlah terjual di dalam [ITEMS]">{sold}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{stokAwal}')" style="color: #10B981; border-color: rgba(16, 185, 129, 0.4);" title="Stok awal (+penambahan jika ada)">{stokAwal}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{penambahan}')" style="color: #38BDF8; border-color: rgba(56, 189, 248, 0.4);" title="Tanda penambahan stok (+X)">{penambahan}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{stokAkhir}')" style="color: #F59E0B; border-color: rgba(245, 158, 11, 0.4);" title="Stok akhir fisik">{stokAkhir}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{price}')" title="Harga jual">{price}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{cost}')" title="Harga modal">{cost}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{rev}')" title="Total omset">{rev}</button>
+                            <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{profit}')" title="Total laba">{profit}</button>
                             <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{totalSold}')" title="Total fisik pcs terjual">🔢 {totalSold}</button>
                             <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{totalAwal}')" title="Total stok awal periode">📥 {totalAwal}</button>
                             <button type="button" class="btn-var-chip" onclick="insertDailyTemplateVar('{totalAkhir}')" title="Total stok akhir / sisa">📤 {totalAkhir}</button>
@@ -3305,27 +3508,15 @@
                     </div>
 
                     <div>
-                        <label for="dailyTemplateTextarea" style="display: block; font-size: 11.5px; font-weight: 700; margin-bottom: 4px; color: var(--text-main);">
-                            Format Pesan Utama Rekap:
-                        </label>
-                        <textarea id="dailyTemplateTextarea" rows="6" oninput="updateDailyTemplatePreview()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 8px 10px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; line-height: 1.45; resize: vertical; outline: none;"></textarea>
-                    </div>
-
-                    <div style="background: rgba(148, 163, 184, 0.05); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 10px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                            <label for="dailyItemTemplateInput" style="font-size: 11.5px; font-weight: 700; color: var(--text-main); margin: 0;">
-                                Format Baris Item (di dalam {items}):
+                            <label for="dailyTemplateTextarea" style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-main); margin: 0;">
+                                Format Template Pesan Rekap:
                             </label>
-                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                                <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{name}')" style="padding: 2px 5px; font-size: 10px;">{name}</button>
-                                <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{sold}')" style="padding: 2px 5px; font-size: 10px;">{sold}</button>
-                                <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{stokAwal}')" style="padding: 2px 5px; font-size: 10px; color: #10B981; border-color: rgba(16, 185, 129, 0.4);" title="Stok awal (+penambahan jika ada)">{stokAwal}</button>
-                                <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{penambahan}')" style="padding: 2px 5px; font-size: 10px; color: #38BDF8; border-color: rgba(56, 189, 248, 0.4);" title="Tanda penambahan stok (+X)">{penambahan}</button>
-                                <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{stokAkhir}')" style="padding: 2px 5px; font-size: 10px; color: #F59E0B; border-color: rgba(245, 158, 11, 0.4);">{stokAkhir}</button>
-                                <button type="button" class="btn-var-chip" onclick="insertDailyItemTemplateVar('{revK}')" style="padding: 2px 5px; font-size: 10px;">{revK}</button>
-                            </div>
+                            <button type="button" class="btn-var-chip" onclick="pasteToTemplate('dailyTemplateTextarea')" style="background: rgba(56, 189, 248, 0.15); color: var(--primary, #38BDF8); border-color: rgba(56, 189, 248, 0.4); font-weight: 700; padding: 3px 9px;" title="Tempel teks template dari clipboard langsung ke sini">
+                                📋 Tempel
+                            </button>
                         </div>
-                        <input type="text" id="dailyItemTemplateInput" oninput="updateDailyTemplatePreview()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 6px; padding: 6px 8px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; outline: none;" value="• {name}: *{sold} pcs* (Awal: {stokAwal} | Sisa: {stokAkhir})">
+                        <textarea id="dailyTemplateTextarea" rows="8" oninput="updateDailyTemplatePreview()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 8px 10px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; line-height: 1.45; resize: vertical; outline: none;"></textarea>
                     </div>
 
                     <!-- Opsi Sisipkan Prompt Audit AI -->
@@ -3355,7 +3546,7 @@
                             <span style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Preview Hasil Salin Rekap:</span>
                             <span id="dailyTemplatePreviewDevice" style="font-size: 11px; font-weight: 700; color: #10B981;">📱 POCO F5</span>
                         </div>
-                        <pre id="dailyTemplateLivePreview" style="background: var(--input-bg, #090D16); border: 1px solid var(--card-border, #1E293B); border-radius: 8px; padding: 10px; font-family: monospace, Consolas, sans-serif; font-size: 11px; line-height: 1.4; color: #10B981; white-space: pre-wrap; word-break: break-word; max-height: 130px; overflow-y: auto; margin: 0;"></pre>
+                        <pre id="dailyTemplateLivePreview" style="background: var(--input-bg, #090D16); border: 1px solid var(--card-border, #1E293B); border-radius: 8px; padding: 10px; font-family: monospace, Consolas, sans-serif; font-size: 11px; line-height: 1.4; color: #10B981; white-space: pre-wrap; word-break: break-word; max-height: 140px; overflow-y: auto; margin: 0;"></pre>
                     </div>
                 </div>
 
@@ -3380,7 +3571,7 @@
 
                     <div>
                         <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-                            Sisipkan Variabel Pesan Utama:
+                            Sisipkan Variabel Template:
                         </div>
                         <div style="display: flex; flex-wrap: wrap; gap: 5px;" id="marginMainChips">
                             <!-- Populated dynamically -->
@@ -3388,22 +3579,15 @@
                     </div>
 
                     <div>
-                        <label for="marginTemplateTextarea" id="lblMarginMainTpl" style="display: block; font-size: 11.5px; font-weight: 700; margin-bottom: 4px; color: var(--text-main);">
-                            Format Pesan Utama:
-                        </label>
-                        <textarea id="marginTemplateTextarea" rows="5" oninput="onMarginTemplateInput()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 8px 10px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; line-height: 1.45; resize: vertical; outline: none;"></textarea>
-                    </div>
-
-                    <div style="background: rgba(148, 163, 184, 0.05); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 10px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                            <label for="marginItemTemplateInput" style="font-size: 11.5px; font-weight: 700; color: var(--text-main); margin: 0;">
-                                Format Baris Item (di dalam {items}):
+                            <label for="marginTemplateTextarea" id="lblMarginMainTpl" style="display: block; font-size: 11.5px; font-weight: 700; margin-bottom: 4px; color: var(--text-main); margin: 0;">
+                                Format Template Margin:
                             </label>
-                            <div style="display: flex; gap: 4px; flex-wrap: wrap;" id="marginItemChips">
-                                <!-- Populated dynamically -->
-                            </div>
+                            <button type="button" class="btn-var-chip" onclick="pasteToTemplate('marginTemplateTextarea')" style="background: rgba(56, 189, 248, 0.15); color: var(--primary, #38BDF8); border-color: rgba(56, 189, 248, 0.4); font-weight: 700; padding: 3px 9px;" title="Tempel teks template dari clipboard langsung ke sini">
+                                📋 Tempel
+                            </button>
                         </div>
-                        <input type="text" id="marginItemTemplateInput" oninput="onMarginTemplateInput()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 6px; padding: 6px 8px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; outline: none;">
+                        <textarea id="marginTemplateTextarea" rows="8" oninput="onMarginTemplateInput()" style="width: 100%; box-sizing: border-box; background: var(--input-bg, #0F172A); color: var(--text-main, #E2E8F0); border: 1px solid var(--card-border, #334155); border-radius: 8px; padding: 8px 10px; font-family: monospace, Consolas, sans-serif; font-size: 11.5px; line-height: 1.45; resize: vertical; outline: none;"></textarea>
                     </div>
 
                     <div>
@@ -3411,7 +3595,7 @@
                             <span style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Preview Hasil Salin Margin:</span>
                             <span id="marginTemplatePreviewBadge" style="font-size: 11px; font-weight: 700; color: #10B981;">✎ Perubahan Harga</span>
                         </div>
-                        <pre id="marginTemplateLivePreview" style="background: var(--input-bg, #090D16); border: 1px solid var(--card-border, #1E293B); border-radius: 8px; padding: 10px; font-family: monospace, Consolas, sans-serif; font-size: 11px; line-height: 1.4; color: #10B981; white-space: pre-wrap; word-break: break-word; max-height: 130px; overflow-y: auto; margin: 0;"></pre>
+                        <pre id="marginTemplateLivePreview" style="background: var(--input-bg, #090D16); border: 1px solid var(--card-border, #1E293B); border-radius: 8px; padding: 10px; font-family: monospace, Consolas, sans-serif; font-size: 11px; line-height: 1.4; color: #10B981; white-space: pre-wrap; word-break: break-word; max-height: 140px; overflow-y: auto; margin: 0;"></pre>
                     </div>
                 </div>
             </div>
@@ -4236,15 +4420,9 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                 : '📶 Urutan produk kembali ke standar Supabase');
         }
 
-        function toggleOrderSortStockFromMenu() {
-            toggleOrderSortStock();
-            closeSettingsMenu();
-        }
-
         function updateOrderSortStockUI() {
             const btn = document.getElementById('btnToggleOrderSort');
             const textEl = document.getElementById('orderSortStockText');
-            const menuState = document.getElementById('settingOrderSortStockState');
 
             if (btn) {
                 btn.classList.toggle('active', orderSortByStockAsc);
@@ -4254,10 +4432,6 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                 btn.title = orderSortByStockAsc
                     ? 'Urutan stok terkecil ke terbesar per provider (Aktif). Klik untuk urutan standar.'
                     : 'Urutan standar Supabase. Klik untuk urutkan dari stok terkecil.';
-            }
-
-            if (menuState) {
-                menuState.innerText = orderSortByStockAsc ? 'Aktif' : 'Standar';
             }
         }
 
@@ -5248,6 +5422,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             if (typeof buildMarginFromVouchers === 'function') buildMarginFromVouchers();
             if (typeof renderBalanceTab === 'function') renderBalanceTab();
             if (typeof renderProdukTab === 'function') renderProdukTab();
+            if (typeof renderFeeRuleTabOnDeviceChange === 'function') renderFeeRuleTabOnDeviceChange();
         }
 
         // 4. Render Dynamic Product List (Tab 1: Order Restock)
@@ -5770,44 +5945,162 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             updateSettingsMenuUI();
         }
 
-        // 7. WhatsApp Text Formatting & Template Manager (Tab 1: Order Restock)
+        // 7. WhatsApp Text Formatting & Template Manager (Unified Single-Template Architecture)
         const DEFAULT_ORDER_TEMPLATE = `*ORDER RESTOCK VOUCHER*
 📱 Perangkat: *{deviceName}*
 📅 Tanggal: {date}
 ---------------------------------
 
-{items}
+[ITEMS]
+*{provider}*
+• {name}: *{qty} pcs*
+[/ITEMS]
 
 ---------------------------------
 Total Produk: *{totalJenis}*
 Total Quantity: *{totalPcs}*
 Estimasi Biaya: *{totalEstCost}*`;
 
-        const DEFAULT_ORDER_ITEM_TEMPLATE = `• {name}: *{qty} pcs*`;
+        const DEFAULT_REKAP_TEMPLATE = `📊 *REKAP LAPORAN STOK HARIAN*
+📱 Perangkat: *{deviceName}*
+📅 Tanggal: {date}
+⏱️ Shift: {shift}
+━━━━━━━━━━━━━━━━━━━━
 
+[ITEMS]
+*{provider}*
+• {name}: *{sold} pcs* (Awal: {stokAwal} | Sisa: {stokAkhir})
+[/ITEMS]
+
+━━━━━━━━━━━━━━━━━━━━
+📦 Total Terjual: *{totalSold}*
+📊 Total Stok: *Awal {totalAwal} ➔ Akhir {totalAkhir}*
+💵 Total Omset: *{totalOmset}*
+📈 Total Keuntungan: *{totalProfit}*`;
+
+        const DEFAULT_REKAP_AI_PROMPT = `Tolong bandingkan data laporan tanggal {date} di atas dengan data laporan tanggal kemarin yang sudah pernah saya kirim. Analisa apakah ada ketidakcocokan antara Sisa Kemarin vs Stok Awal Hari Ini (selisih fisik ganti hari)?`;
+
+        const DEFAULT_MARGIN_CHG_TEMPLATE = `=== Perubahan Harga — {date} ===
+Total: {total} berubah
+
+[ITEMS]
+── {provider} ──
+• {name}: {price} ({diff}) | modal: {cost} | margin: {margin} ({pct})
+[/ITEMS]`;
+
+        const DEFAULT_MARGIN_FILTERED_TEMPLATE = `=== Daftar Harga & Margin ({filter}) — {date} ===
+Total: {total}
+
+[ITEMS]
+── {provider} ──
+• {name}: {price} | modal: {cost} | margin: {margin} ({pct})
+[/ITEMS]`;
+
+        const DEFAULT_MARGIN_ALL_TEMPLATE = `=== Daftar Harga Semua Provider — {date} ===
+Total: {total} ({totalProv})
+
+[ITEMS]
+── {provider} ──
+• {name}: {price} | modal: {cost} | margin: {margin} ({pct})
+[/ITEMS]`;
+
+        // Parser template tunggal cerdas: ekstrak Header, Footer, Provider Header, dan Item Format
+        function parseUnifiedTemplate(rawTpl, defaultProvTpl, defaultItemTpl) {
+            const text = (rawTpl !== undefined && rawTpl !== null) ? String(rawTpl) : '';
+            const match = text.match(/\[items\]([\s\S]*?)\[\/items\]/i);
+            if (match) {
+                const header = text.substring(0, match.index);
+                const footer = text.substring(match.index + match[0].length);
+                const block = match[1];
+                const lines = block.split(/\r?\n/);
+                const provLines = [];
+                const itemLines = [];
+                lines.forEach(l => {
+                    if (/{provider}|{prov}/i.test(l)) {
+                        provLines.push(l);
+                    } else if (l.trim().length > 0 || itemLines.length > 0) {
+                        itemLines.push(l);
+                    }
+                });
+                while (itemLines.length > 0 && !itemLines[0].trim()) itemLines.shift();
+                while (itemLines.length > 0 && !itemLines[itemLines.length - 1].trim()) itemLines.pop();
+
+                const providerTpl = provLines.length > 0 ? provLines.join('\n') : null;
+                const itemTpl = itemLines.length > 0 ? itemLines.join('\n') : (defaultItemTpl || '');
+                return { header, footer, providerTpl, itemTpl, hasUnifiedBlock: true };
+            }
+
+            // Kompatibilitas mundur jika template lama masih menggunakan placeholder {items}
+            if (text.includes('{items}')) {
+                const parts = text.split('{items}');
+                return {
+                    header: parts[0],
+                    footer: parts.slice(1).join('{items}'),
+                    providerTpl: defaultProvTpl,
+                    itemTpl: defaultItemTpl || '',
+                    hasUnifiedBlock: false
+                };
+            }
+
+            return {
+                header: text,
+                footer: '',
+                providerTpl: defaultProvTpl,
+                itemTpl: defaultItemTpl || '',
+                hasUnifiedBlock: false
+            };
+        }
+
+        // Tempel teks template dari clipboard langsung ke textarea tujuan
+        async function pasteToTemplate(targetId) {
+            const el = document.getElementById(targetId);
+            if (!el) return;
+            let pastedText = '';
+            try {
+                if (navigator.clipboard && navigator.clipboard.readText) {
+                    pastedText = await navigator.clipboard.readText();
+                }
+            } catch (e) {
+                console.warn('Clipboard readText failed or permission denied, using fallback prompt', e);
+            }
+            if (!pastedText || !pastedText.trim()) {
+                const fallback = prompt('Tempelkan (Ctrl+V) teks template Anda di sini:');
+                if (fallback !== null) pastedText = fallback;
+            }
+            if (pastedText && pastedText.trim()) {
+                el.value = pastedText;
+                if (targetId === 'orderTemplateTextarea') {
+                    updateOrderTemplatePreview();
+                } else if (targetId === 'dailyTemplateTextarea') {
+                    updateDailyTemplatePreview();
+                } else if (targetId === 'marginTemplateTextarea') {
+                    onMarginTemplateInput();
+                }
+                showToast('📋 Template berhasil ditempel!');
+            }
+        }
+
+        // --- ORDER RESTOCK TEMPLATE GETTERS / SETTERS ---
         function getOrderTemplate() {
             try {
                 const saved = localStorage.getItem('kspcheck_order_template');
-                if (saved && saved.trim()) return saved;
+                if (saved && saved.trim()) {
+                    if (/\[items\][\s\S]*?\[\/items\]/i.test(saved)) return saved;
+                    if (saved.includes('{items}')) {
+                        const legacyItem = localStorage.getItem('kspcheck_order_item_template') || '• {name}: *{qty} pcs*';
+                        return saved.replace('{items}', `[ITEMS]\n*{provider}*\n${legacyItem}\n[/ITEMS]`);
+                    }
+                    return saved;
+                }
             } catch (e) {}
             return DEFAULT_ORDER_TEMPLATE;
         }
 
-        function getOrderItemTemplate() {
-            try {
-                const saved = localStorage.getItem('kspcheck_order_item_template');
-                if (saved && saved.trim()) return saved;
-            } catch (e) {}
-            return DEFAULT_ORDER_ITEM_TEMPLATE;
-        }
-
-        function saveOrderTemplate(mainTemplate, itemTemplate) {
+        function saveOrderTemplate(mainTemplate) {
             try {
                 if (mainTemplate !== undefined) {
                     localStorage.setItem('kspcheck_order_template', mainTemplate);
-                }
-                if (itemTemplate !== undefined) {
-                    localStorage.setItem('kspcheck_order_item_template', itemTemplate);
+                    localStorage.removeItem('kspcheck_order_item_template');
                 }
             } catch (e) {
                 console.error('Failed to save order template to localStorage', e);
@@ -5821,45 +6114,29 @@ Estimasi Biaya: *{totalEstCost}*`;
             } catch (e) {}
         }
 
-        // Template Rekap Laporan Harian
-        const DEFAULT_REKAP_TEMPLATE = `📊 *REKAP LAPORAN STOK HARIAN*
-📱 Perangkat: *{deviceName}*
-📅 Tanggal: {date}
-⏱️ Shift: {shift}
-━━━━━━━━━━━━━━━━━━━━
+        // Legacy helper aliases
+        function getOrderItemTemplate() { return '• {name}: *{qty} pcs*'; }
 
-{items}
-
-━━━━━━━━━━━━━━━━━━━━
-📦 Total Terjual: *{totalSold}*
-📊 Total Stok: *Awal {totalAwal} ➔ Akhir {totalAkhir}*
-💵 Total Omset: *{totalOmset}*
-📈 Total Keuntungan: *{totalProfit}*`;
-
-        const DEFAULT_REKAP_ITEM_TEMPLATE = `• {name}: *{sold} pcs* (Awal: {stokAwal} | Sisa: {stokAkhir})`;
-
-        const DEFAULT_REKAP_AI_PROMPT = `Tolong bandingkan data laporan tanggal {date} di atas dengan data laporan tanggal kemarin yang sudah pernah saya kirim. Analisa apakah ada ketidakcocokan antara Sisa Kemarin vs Stok Awal Hari Ini (selisih fisik ganti hari)?`;
-
+        // --- REKAP LAPORAN TEMPLATE GETTERS / SETTERS ---
         function getRekapTemplate() {
             try {
                 const saved = localStorage.getItem('kspcheck_rekap_template');
-                if (saved && saved.trim()) return saved;
+                if (saved && saved.trim()) {
+                    if (/\[items\][\s\S]*?\[\/items\]/i.test(saved)) return saved;
+                    if (saved.includes('{items}')) {
+                        const legacyItem = localStorage.getItem('kspcheck_rekap_item_template') || '• {name}: *{sold} pcs* (Awal: {stokAwal} | Sisa: {stokAkhir})';
+                        return saved.replace('{items}', `[ITEMS]\n*{provider}*\n${legacyItem}\n[/ITEMS]`);
+                    }
+                    return saved;
+                }
             } catch (e) {}
             return DEFAULT_REKAP_TEMPLATE;
-        }
-
-        function getRekapItemTemplate() {
-            try {
-                const saved = localStorage.getItem('kspcheck_rekap_item_template');
-                if (saved && saved.trim()) return saved;
-            } catch (e) {}
-            return DEFAULT_REKAP_ITEM_TEMPLATE;
         }
 
         function getRekapIncludeAiPrompt() {
             try {
                 const saved = localStorage.getItem('kspcheck_rekap_include_ai');
-                if (saved === null) return true; // Default aktif
+                if (saved === null) return true;
                 return saved === 'true';
             } catch (e) {
                 return true;
@@ -5888,13 +6165,11 @@ Estimasi Biaya: *{totalEstCost}*`;
             } catch (e) {}
         }
 
-        function saveRekapTemplate(mainTemplate, itemTemplate, includeAi, aiPromptText) {
+        function saveRekapTemplate(mainTemplate, includeAi, aiPromptText) {
             try {
                 if (mainTemplate !== undefined) {
                     localStorage.setItem('kspcheck_rekap_template', mainTemplate);
-                }
-                if (itemTemplate !== undefined) {
-                    localStorage.setItem('kspcheck_rekap_item_template', itemTemplate);
+                    localStorage.removeItem('kspcheck_rekap_item_template');
                 }
                 if (includeAi !== undefined) {
                     setRekapIncludeAiPrompt(includeAi);
@@ -5916,28 +6191,10 @@ Estimasi Biaya: *{totalEstCost}*`;
             } catch (e) {}
         }
 
-        // Template Margin Voucher (Perubahan, Salin Filter, Salin Semua)
-        const DEFAULT_MARGIN_CHG_TEMPLATE = `=== Perubahan Harga — {date} ===
-Total: {total} berubah
+        // Legacy helper aliases
+        function getRekapItemTemplate() { return '• {name}: *{sold} pcs* (Awal: {stokAwal} | Sisa: {stokAkhir})'; }
 
-{items}`;
-
-        const DEFAULT_MARGIN_CHG_ITEM_TEMPLATE = `• {name}: {price} ({diff}) | modal: {cost} | margin: {margin} ({pct})`;
-
-        const DEFAULT_MARGIN_FILTERED_TEMPLATE = `=== Daftar Harga & Margin ({filter}) — {date} ===
-Total: {total}
-
-{items}`;
-
-        const DEFAULT_MARGIN_FILTERED_ITEM_TEMPLATE = `• {name}: {price} | modal: {cost} | margin: {margin} ({pct})`;
-
-        const DEFAULT_MARGIN_ALL_TEMPLATE = `=== Daftar Harga Semua Provider — {date} ===
-Total: {total} ({totalProv})
-
-{items}`;
-
-        const DEFAULT_MARGIN_ALL_ITEM_TEMPLATE = `• {name}: {price} | modal: {cost} | margin: {margin} ({pct})`;
-
+        // --- MARGIN VOUCHER TEMPLATE GETTERS / SETTERS ---
         function getDefaultMarginTemplate(subtype) {
             if (subtype === 'chg') return DEFAULT_MARGIN_CHG_TEMPLATE;
             if (subtype === 'filtered') return DEFAULT_MARGIN_FILTERED_TEMPLATE;
@@ -5946,93 +6203,64 @@ Total: {total} ({totalProv})
         }
 
         function getDefaultMarginItemTemplate(subtype) {
-            if (subtype === 'chg') return DEFAULT_MARGIN_CHG_ITEM_TEMPLATE;
-            if (subtype === 'filtered') return DEFAULT_MARGIN_FILTERED_ITEM_TEMPLATE;
-            if (subtype === 'all') return DEFAULT_MARGIN_ALL_ITEM_TEMPLATE;
-            return DEFAULT_MARGIN_FILTERED_ITEM_TEMPLATE;
+            if (subtype === 'chg') return '• {name}: {price} ({diff}) | modal: {cost} | margin: {margin} ({pct})';
+            return '• {name}: {price} | modal: {cost} | margin: {margin} ({pct})';
+        }
+
+        function upgradeSavedMarginTemplate(saved, subtype) {
+            if (!saved) return getDefaultMarginTemplate(subtype);
+            if (/\[items\][\s\S]*?\[\/items\]/i.test(saved)) return saved;
+            if (saved.includes('{items}')) {
+                let itemTpl = '';
+                try {
+                    itemTpl = localStorage.getItem(`kspcheck_margin_${subtype}_item_template`) || '';
+                } catch (e) {}
+                if (!itemTpl) itemTpl = getDefaultMarginItemTemplate(subtype);
+                return saved.replace('{items}', `[ITEMS]\n── {provider} ──\n${itemTpl}\n[/ITEMS]`);
+            }
+            return saved;
         }
 
         function getMarginChgTemplate() {
             try {
                 const s = localStorage.getItem('kspcheck_margin_chg_template');
-                if (s && s.trim()) return s;
+                if (s && s.trim()) return upgradeSavedMarginTemplate(s, 'chg');
             } catch (e) {}
             return DEFAULT_MARGIN_CHG_TEMPLATE;
-        }
-
-        function getMarginChgItemTemplate() {
-            try {
-                const s = localStorage.getItem('kspcheck_margin_chg_item_template');
-                if (s && s.trim()) return s;
-            } catch (e) {}
-            return DEFAULT_MARGIN_CHG_ITEM_TEMPLATE;
         }
 
         function getMarginFilteredTemplate() {
             try {
                 const s = localStorage.getItem('kspcheck_margin_filtered_template');
-                if (s && s.trim()) return s;
+                if (s && s.trim()) return upgradeSavedMarginTemplate(s, 'filtered');
             } catch (e) {}
             return DEFAULT_MARGIN_FILTERED_TEMPLATE;
-        }
-
-        function getMarginFilteredItemTemplate() {
-            try {
-                const s = localStorage.getItem('kspcheck_margin_filtered_item_template');
-                if (s && s.trim()) return s;
-            } catch (e) {}
-            return DEFAULT_MARGIN_FILTERED_ITEM_TEMPLATE;
         }
 
         function getMarginAllTemplate() {
             try {
                 const s = localStorage.getItem('kspcheck_margin_all_template');
-                if (s && s.trim()) return s;
+                if (s && s.trim()) return upgradeSavedMarginTemplate(s, 'all');
             } catch (e) {}
             return DEFAULT_MARGIN_ALL_TEMPLATE;
-        }
-
-        function getMarginAllItemTemplate() {
-            try {
-                const s = localStorage.getItem('kspcheck_margin_all_item_template');
-                if (s && s.trim()) return s;
-            } catch (e) {}
-            return DEFAULT_MARGIN_ALL_ITEM_TEMPLATE;
         }
 
         function saveMarginTemplates(buffers) {
             try {
                 if (!buffers) return;
-                if (buffers.chg) {
-                    if (buffers.chg.main.trim() === DEFAULT_MARGIN_CHG_TEMPLATE.trim() &&
-                        buffers.chg.item.trim() === DEFAULT_MARGIN_CHG_ITEM_TEMPLATE.trim()) {
-                        localStorage.removeItem('kspcheck_margin_chg_template');
-                        localStorage.removeItem('kspcheck_margin_chg_item_template');
-                    } else {
-                        localStorage.setItem('kspcheck_margin_chg_template', buffers.chg.main);
-                        localStorage.setItem('kspcheck_margin_chg_item_template', buffers.chg.item);
+                ['chg', 'filtered', 'all'].forEach(st => {
+                    const key = `kspcheck_margin_${st}_template`;
+                    const itemKey = `kspcheck_margin_${st}_item_template`;
+                    localStorage.removeItem(itemKey);
+                    const val = buffers[st];
+                    if (val !== undefined && val !== null) {
+                        if (val.trim() === getDefaultMarginTemplate(st).trim()) {
+                            localStorage.removeItem(key);
+                        } else {
+                            localStorage.setItem(key, val);
+                        }
                     }
-                }
-                if (buffers.filtered) {
-                    if (buffers.filtered.main.trim() === DEFAULT_MARGIN_FILTERED_TEMPLATE.trim() &&
-                        buffers.filtered.item.trim() === DEFAULT_MARGIN_FILTERED_ITEM_TEMPLATE.trim()) {
-                        localStorage.removeItem('kspcheck_margin_filtered_template');
-                        localStorage.removeItem('kspcheck_margin_filtered_item_template');
-                    } else {
-                        localStorage.setItem('kspcheck_margin_filtered_template', buffers.filtered.main);
-                        localStorage.setItem('kspcheck_margin_filtered_item_template', buffers.filtered.item);
-                    }
-                }
-                if (buffers.all) {
-                    if (buffers.all.main.trim() === DEFAULT_MARGIN_ALL_TEMPLATE.trim() &&
-                        buffers.all.item.trim() === DEFAULT_MARGIN_ALL_ITEM_TEMPLATE.trim()) {
-                        localStorage.removeItem('kspcheck_margin_all_template');
-                        localStorage.removeItem('kspcheck_margin_all_item_template');
-                    } else {
-                        localStorage.setItem('kspcheck_margin_all_template', buffers.all.main);
-                        localStorage.setItem('kspcheck_margin_all_item_template', buffers.all.item);
-                    }
-                }
+                });
             } catch (e) {
                 console.error('Failed to save margin templates to localStorage', e);
             }
@@ -6048,6 +6276,10 @@ Total: {total} ({totalProv})
                 localStorage.removeItem('kspcheck_margin_all_item_template');
             } catch (e) {}
         }
+
+        function getMarginChgItemTemplate() { return getDefaultMarginItemTemplate('chg'); }
+        function getMarginFilteredItemTemplate() { return getDefaultMarginItemTemplate('filtered'); }
+        function getMarginAllItemTemplate() { return getDefaultMarginItemTemplate('all'); }
 
         function getOrderActiveDeviceName(selectedCards) {
             const select = document.getElementById('navDeviceFilter');
@@ -6072,11 +6304,11 @@ Total: {total} ({totalProv})
             return 'Semua Perangkat';
         }
 
-        function generateWaText(overrideMainTpl, overrideItemTpl) {
+        // Generator teks Order Restock (mendukung format pesan & baris bersatu)
+        function generateWaText(overrideTpl) {
             const rawCards = document.querySelectorAll('.product-card.selected');
-            if (rawCards.length === 0 && overrideMainTpl === undefined) return '';
+            if (rawCards.length === 0 && overrideTpl === undefined) return '';
 
-            // Selalu urutkan item sesuai urutan standar Supabase (saat btnToggleOrderSort OFF)
             const selectedCards = Array.from(rawCards).sort((a, b) => {
                 const sA = parseInt(a.getAttribute('data-supabase-index') || '0', 10);
                 const sB = parseInt(b.getAttribute('data-supabase-index') || '0', 10);
@@ -6108,8 +6340,8 @@ Total: {total} ({totalProv})
                 }
             });
 
-            // Jika dipanggil dari preview modal dan belum ada produk yang dipilih, sediakan contoh preview
-            if (providerMap.size === 0 && overrideMainTpl !== undefined) {
+            // Mock preview jika dipanggil dari preview modal dan belum ada produk yang dicentang
+            if (providerMap.size === 0 && overrideTpl !== undefined) {
                 providerMap.set('TELKOMSEL', [
                     { name: 'TELKOMSEL 1.5GB 3HR', qty: 10, cost: 10000, subtotal: 100000 },
                     { name: 'TELKOMSEL 3GB 5HR', qty: 5, cost: 17000, subtotal: 85000 }
@@ -6121,35 +6353,42 @@ Total: {total} ({totalProv})
                 totalEstCost = 275000;
             }
 
-            const itemTemplate = (overrideItemTpl !== undefined) ? overrideItemTpl : getOrderItemTemplate();
-            const mainTemplate = (overrideMainTpl !== undefined) ? overrideMainTpl : getOrderTemplate();
+            const tpl = (overrideTpl !== undefined) ? overrideTpl : getOrderTemplate();
+            const parsed = parseUnifiedTemplate(tpl, '*{provider}*', '• {name}: *{qty} pcs*');
 
             let formattedItems = '';
             const provEntries = Array.from(providerMap.entries());
             provEntries.forEach(([prov, items], pIdx) => {
-                if (pIdx > 0) formattedItems += '\n\n';
-                formattedItems += `*${prov.toUpperCase()}*\n`;
-                items.forEach((item, iIdx) => {
-                    let line = itemTemplate
+                let block = '';
+                if (parsed.providerTpl) {
+                    const pHeader = parsed.providerTpl.replace(/{provider}|{prov}/gi, prov.toUpperCase());
+                    block += pHeader + '\n';
+                }
+                const itemLines = items.map(item => {
+                    return parsed.itemTpl
                         .replace(/{name}/g, item.name)
                         .replace(/{qty}/g, String(item.qty))
                         .replace(/{cost}/g, `Rp ${item.cost.toLocaleString('id-ID')}`)
                         .replace(/{costRaw}/g, String(item.cost))
                         .replace(/{subtotal}/g, `Rp ${item.subtotal.toLocaleString('id-ID')}`)
-                        .replace(/{subtotalRaw}/g, String(item.subtotal));
-                    if (iIdx > 0) formattedItems += '\n';
-                    formattedItems += line;
+                        .replace(/{subtotalRaw}/g, String(item.subtotal))
+                        .replace(/{provider}|{prov}/gi, prov.toUpperCase());
                 });
+                block += itemLines.join('\n');
+
+                if (pIdx > 0) formattedItems += (parsed.providerTpl ? '\n\n' : '\n');
+                formattedItems += block;
             });
 
-            const totalJenisCount = selectedCards.length > 0 ? selectedCards.length : (overrideMainTpl !== undefined ? 3 : 0);
+            const totalJenisCount = selectedCards.length > 0 ? selectedCards.length : (overrideTpl !== undefined ? 3 : 0);
 
-            let text = mainTemplate
+            const baseText = (parsed.header + formattedItems + parsed.footer);
+            let text = baseText
+                .replace(/{items}/g, formattedItems)
                 .replace(/{deviceName}/g, deviceName)
                 .replace(/{device}/g, deviceName)
                 .replace(/{date}/g, dateStr)
                 .replace(/{time}/g, timeStr)
-                .replace(/{items}/g, formattedItems)
                 .replace(/{totalJenis}/g, `${totalJenisCount} jenis`)
                 .replace(/{jenis}/g, String(totalJenisCount))
                 .replace(/{totalPcs}/g, `${totalPcs} pcs`)
@@ -6181,20 +6420,20 @@ Total: {total} ({totalProv})
             recordRestockOrder('whatsapp');
         }
 
-        // Modal Template Handler (Unified for Order, Rekap & Margin)
+        // Subtab & Buffers untuk Template Modal
         let currentTemplateSubtab = 'order';
         let currentMarginSubtype = 'chg'; // 'chg' | 'filtered' | 'all'
         let marginTemplateBuffers = {
-            chg: { main: '', item: '' },
-            filtered: { main: '', item: '' },
-            all: { main: '', item: '' }
+            chg: '',
+            filtered: '',
+            all: ''
         };
 
         function initMarginTemplateBuffers() {
             marginTemplateBuffers = {
-                chg: { main: getMarginChgTemplate(), item: getMarginChgItemTemplate() },
-                filtered: { main: getMarginFilteredTemplate(), item: getMarginFilteredItemTemplate() },
-                all: { main: getMarginAllTemplate(), item: getMarginAllItemTemplate() }
+                chg: getMarginChgTemplate(),
+                filtered: getMarginFilteredTemplate(),
+                all: getMarginAllTemplate()
             };
         }
 
@@ -6220,7 +6459,7 @@ Total: {total} ({totalProv})
             } else if (tab === 'daily') {
                 updateDailyTemplatePreview();
             } else if (tab === 'margin') {
-                if (!marginTemplateBuffers.chg.main) initMarginTemplateBuffers();
+                if (!marginTemplateBuffers.chg) initMarginTemplateBuffers();
                 renderMarginTemplateSubtypeUI();
                 updateMarginTemplatePreview();
             }
@@ -6228,10 +6467,8 @@ Total: {total} ({totalProv})
 
         function switchMarginSubtype(subtype) {
             const textarea = document.getElementById('marginTemplateTextarea');
-            const itemInput = document.getElementById('marginItemTemplateInput');
-            if (textarea && itemInput && marginTemplateBuffers[currentMarginSubtype]) {
-                marginTemplateBuffers[currentMarginSubtype].main = textarea.value;
-                marginTemplateBuffers[currentMarginSubtype].item = itemInput.value;
+            if (textarea && marginTemplateBuffers[currentMarginSubtype] !== undefined) {
+                marginTemplateBuffers[currentMarginSubtype] = textarea.value;
             }
 
             currentMarginSubtype = subtype;
@@ -6260,22 +6497,20 @@ Total: {total} ({totalProv})
                 else lblMain.textContent = 'Format Pesan Salin Semua Provider:';
             }
 
-            const buf = marginTemplateBuffers[currentMarginSubtype] || {
-                main: getDefaultMarginTemplate(currentMarginSubtype),
-                item: getDefaultMarginItemTemplate(currentMarginSubtype)
-            };
+            const tpl = (marginTemplateBuffers && marginTemplateBuffers[currentMarginSubtype])
+                ? marginTemplateBuffers[currentMarginSubtype]
+                : getDefaultMarginTemplate(currentMarginSubtype);
 
             const textarea = document.getElementById('marginTemplateTextarea');
-            const itemInput = document.getElementById('marginItemTemplateInput');
-            if (textarea) textarea.value = buf.main;
-            if (itemInput) itemInput.value = buf.item;
+            if (textarea) textarea.value = tpl;
 
-            // Render main template variable chips
+            // Render daftar chip variabel lengkap untuk panel margin
             const mainChipsContainer = document.getElementById('marginMainChips');
             if (mainChipsContainer) {
                 let chipsHtml = '';
-                const addChip = (v, title, emoji) => {
-                    chipsHtml += `<button type="button" class="btn-var-chip" onclick="insertMarginTemplateVar('${v}')" title="${title}">${emoji ? emoji + ' ' : ''}${v}</button>`;
+                const addChip = (v, title, emoji, customStyle) => {
+                    const styleAttr = customStyle ? ` style="${customStyle}"` : '';
+                    chipsHtml += `<button type="button" class="btn-var-chip"${styleAttr} onclick="insertMarginTemplateVar('${v}')" title="${title}">${emoji ? emoji + ' ' : ''}${v}</button>`;
                 };
                 addChip('{date}', 'Tanggal saat ini', '📅');
                 addChip('{total}', 'Total item', '🔢');
@@ -6285,64 +6520,85 @@ Total: {total} ({totalProv})
                 } else if (currentMarginSubtype === 'all') {
                     addChip('{totalProv}', 'Total jumlah provider', '🏢');
                 }
-                addChip('{items}', 'Rincian daftar item', '📦');
-                mainChipsContainer.innerHTML = chipsHtml;
-            }
-
-            // Render item template variable chips
-            const itemChipsContainer = document.getElementById('marginItemChips');
-            if (itemChipsContainer) {
-                let chipsHtml = '';
-                const addItemChip = (v, title) => {
-                    chipsHtml += `<button type="button" class="btn-var-chip" onclick="insertMarginItemTemplateVar('${v}')" style="padding: 2px 5px; font-size: 10px;" title="${title}">${v}</button>`;
-                };
-                addItemChip('{name}', 'Nama produk voucher');
-                addItemChip('{price}', 'Harga jual (Rp)');
+                addChip('[ITEMS]...[/ITEMS]', 'Sisipkan blok perulangan item produk lengkap', '📦', 'font-weight:700; color:#10B981; border-color:rgba(16,185,129,0.4);');
+                addChip('{provider}', 'Nama provider di dalam [ITEMS]', '🏢', 'font-weight:600; color:#38BDF8; border-color:rgba(56,189,248,0.4);');
+                addChip('{name}', 'Nama produk voucher', '');
+                addChip('{price}', 'Harga jual (Rp)', '');
                 if (currentMarginSubtype === 'chg') {
-                    addItemChip('{diff}', 'Selisih harga');
-                    addItemChip('{oldPrice}', 'Harga lama');
+                    addChip('{diff}', 'Selisih harga', '', 'color:#10B981; border-color:rgba(16,185,129,0.4);');
+                    addChip('{oldPrice}', 'Harga lama', '');
                 }
-                addItemChip('{cost}', 'Harga modal (Rp)');
-                addItemChip('{margin}', 'Nominal margin');
-                addItemChip('{pct}', 'Persen margin (%)');
-                addItemChip('{stock}', 'Stok voucher saat ini');
-                itemChipsContainer.innerHTML = chipsHtml;
+                addChip('{cost}', 'Harga modal (Rp)', '');
+                addChip('{margin}', 'Nominal margin', '');
+                addChip('{pct}', 'Persen margin (%)', '');
+                addChip('{stock}', 'Stok voucher saat ini', '');
+                mainChipsContainer.innerHTML = chipsHtml;
             }
         }
 
         function onMarginTemplateInput() {
             const textarea = document.getElementById('marginTemplateTextarea');
-            const itemInput = document.getElementById('marginItemTemplateInput');
-            if (marginTemplateBuffers[currentMarginSubtype]) {
-                if (textarea) marginTemplateBuffers[currentMarginSubtype].main = textarea.value;
-                if (itemInput) marginTemplateBuffers[currentMarginSubtype].item = itemInput.value;
+            if (marginTemplateBuffers[currentMarginSubtype] !== undefined) {
+                if (textarea) marginTemplateBuffers[currentMarginSubtype] = textarea.value;
             }
             updateMarginTemplatePreview();
+        }
+
+        function insertTemplateVar(variableTag) {
+            const textarea = document.getElementById('orderTemplateTextarea');
+            if (!textarea) return;
+            let insertText = variableTag;
+            if (variableTag === '[ITEMS]...[/ITEMS]') {
+                insertText = `[ITEMS]\n*{provider}*\n• {name}: *{qty} pcs*\n[/ITEMS]`;
+            }
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            textarea.value = text.substring(0, start) + insertText + text.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
+            textarea.focus();
+            updateOrderTemplatePreview();
+        }
+
+        function insertDailyTemplateVar(variableTag) {
+            const textarea = document.getElementById('dailyTemplateTextarea');
+            if (!textarea) return;
+            let insertText = variableTag;
+            if (variableTag === '[ITEMS]...[/ITEMS]') {
+                insertText = `[ITEMS]\n*{provider}*\n• {name}: *{sold} pcs* (Awal: {stokAwal} | Sisa: {stokAkhir})\n[/ITEMS]`;
+            }
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            textarea.value = text.substring(0, start) + insertText + text.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
+            textarea.focus();
+            updateDailyTemplatePreview();
         }
 
         function insertMarginTemplateVar(variableTag) {
             const textarea = document.getElementById('marginTemplateTextarea');
             if (!textarea) return;
+            let insertText = variableTag;
+            if (variableTag === '[ITEMS]...[/ITEMS]') {
+                if (currentMarginSubtype === 'chg') {
+                    insertText = `[ITEMS]\n── {provider} ──\n• {name}: {price} ({diff}) | modal: {cost} | margin: {margin} ({pct})\n[/ITEMS]`;
+                } else {
+                    insertText = `[ITEMS]\n── {provider} ──\n• {name}: {price} | modal: {cost} | margin: {margin} ({pct})\n[/ITEMS]`;
+                }
+            }
             const start = textarea.selectionStart;
             const end = textarea.selectionEnd;
             const text = textarea.value;
-            textarea.value = text.substring(0, start) + variableTag + text.substring(end);
-            textarea.selectionStart = textarea.selectionEnd = start + variableTag.length;
+            textarea.value = text.substring(0, start) + insertText + text.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
             textarea.focus();
             onMarginTemplateInput();
         }
 
-        function insertMarginItemTemplateVar(variableTag) {
-            const input = document.getElementById('marginItemTemplateInput');
-            if (!input) return;
-            const start = input.selectionStart;
-            const end = input.selectionEnd;
-            const text = input.value;
-            input.value = text.substring(0, start) + variableTag + text.substring(end);
-            input.selectionStart = input.selectionEnd = start + variableTag.length;
-            input.focus();
-            onMarginTemplateInput();
-        }
+        function insertItemTemplateVar(variableTag) { insertTemplateVar(variableTag); }
+        function insertDailyItemTemplateVar(variableTag) { insertDailyTemplateVar(variableTag); }
+        function insertMarginItemTemplateVar(variableTag) { insertMarginTemplateVar(variableTag); }
 
         function fmtMarginVal(n) {
             return Math.round(n || 0).toLocaleString('id-ID');
@@ -6358,9 +6614,9 @@ Total: {total} ({totalProv})
             return { val: v, pct: Math.round((v / cost) * 100) };
         }
 
-        function formatMarginItemLine(tpl, it, price, oldPrice) {
+        function formatMarginItemLine(tpl, it, price, oldPrice, provName) {
             const cost = it.c || 0;
-            const diff = oldPrice !== undefined ? price - oldPrice : null;
+            const diff = (oldPrice !== undefined && oldPrice !== null) ? price - oldPrice : null;
             const m = calcItemMargin(price, cost);
             const mVal = m ? m.val : (price - cost);
             const mPct = m ? m.pct : (cost ? Math.round(((price - cost) / cost) * 100) : 0);
@@ -6377,7 +6633,8 @@ Total: {total} ({totalProv})
                 .replace(/{margin}/g, mFormatted)
                 .replace(/{marginRaw}/g, String(mVal))
                 .replace(/{pct}/g, pctFormatted)
-                .replace(/{stock}/g, String(stock));
+                .replace(/{stock}/g, String(stock))
+                .replace(/{provider}|{prov}/gi, provName ? provName.toUpperCase() : '');
 
             if (diff !== null) {
                 const diffFormatted = (diff > 0 ? '+' : '') + fmtMarginVal(diff);
@@ -6396,13 +6653,18 @@ Total: {total} ({totalProv})
             return line;
         }
 
-        function generateMarginText(type, overrideMainTpl, overrideItemTpl) {
+        // Generator teks Margin Voucher (Perubahan, Salin Filter, Salin Semua)
+        function generateMarginText(type, overrideTpl) {
             const now = new Date();
             const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
 
             if (type === 'chg') {
-                const mainTpl = (overrideMainTpl !== undefined) ? overrideMainTpl : getMarginChgTemplate();
-                const itemTpl = (overrideItemTpl !== undefined) ? overrideItemTpl : getMarginChgItemTemplate();
+                const rawTpl = (overrideTpl !== undefined) ? overrideTpl : getMarginChgTemplate();
+                const parsed = parseUnifiedTemplate(
+                    rawTpl,
+                    '── {provider} ──',
+                    '• {name}: {price} ({diff}) | modal: {cost} | margin: {margin} ({pct})'
+                );
 
                 const provList = (typeof marginActive !== 'undefined' && marginActive === MARGIN_ALL) ? (marginProvs || []) : [marginActive || 'ALL'];
                 const changedByProv = new Map();
@@ -6428,8 +6690,8 @@ Total: {total} ({totalProv})
                     });
                 }
 
-                // Fallback mock preview if no overrides exist
-                if (totalChanged === 0 && overrideMainTpl !== undefined) {
+                // Mock preview jika dipanggil dari preview modal dan belum ada perubahan harga
+                if (totalChanged === 0 && overrideTpl !== undefined) {
                     changedByProv.set('TELKOMSEL', [
                         { it: { n: 'TELKOMSEL 3GB 5HR', c: 16500, p: 17500, stock: 12 }, price: 18500, oldPrice: 17500 },
                         { it: { n: 'TELKOMSEL 5GB 7HR', c: 24000, p: 26000, stock: 6 }, price: 27000, oldPrice: 26000 }
@@ -6445,27 +6707,37 @@ Total: {total} ({totalProv})
                 let formattedItems = '';
                 const provEntries = Array.from(changedByProv.entries());
                 provEntries.forEach(([prov, items], pIdx) => {
-                    if (provEntries.length > 1) {
-                        if (pIdx > 0) formattedItems += '\n\n';
-                        formattedItems += `── ${prov} ──\n`;
+                    let block = '';
+                    if (parsed.providerTpl) {
+                        const pHeader = parsed.providerTpl
+                            .replace(/{provider}|{prov}/gi, prov.toUpperCase())
+                            .replace(/{itemCount}|{count}/gi, items.length + ' item');
+                        block += pHeader + '\n';
                     }
-                    items.forEach((entry, iIdx) => {
-                        const line = formatMarginItemLine(itemTpl, entry.it, entry.price, entry.oldPrice);
-                        if (iIdx > 0) formattedItems += '\n';
-                        formattedItems += line;
+                    const itemLines = items.map(entry => {
+                        return formatMarginItemLine(parsed.itemTpl, entry.it, entry.price, entry.oldPrice, prov);
                     });
+                    block += itemLines.join('\n');
+
+                    if (pIdx > 0) formattedItems += (parsed.providerTpl ? '\n\n' : '\n');
+                    formattedItems += block;
                 });
 
-                return mainTpl
+                const baseText = (parsed.header + formattedItems + parsed.footer);
+                return baseText
+                    .replace(/{items}/g, formattedItems)
                     .replace(/{title}/g, 'Perubahan Harga')
                     .replace(/{date}/g, dateStr)
                     .replace(/{total}/g, `${totalChanged} item`)
-                    .replace(/{totalRaw}/g, String(totalChanged))
-                    .replace(/{items}/g, formattedItems);
+                    .replace(/{totalRaw}/g, String(totalChanged));
 
             } else if (type === 'filtered') {
-                const mainTpl = (overrideMainTpl !== undefined) ? overrideMainTpl : getMarginFilteredTemplate();
-                const itemTpl = (overrideItemTpl !== undefined) ? overrideItemTpl : getMarginFilteredItemTemplate();
+                const rawTpl = (overrideTpl !== undefined) ? overrideTpl : getMarginFilteredTemplate();
+                const parsed = parseUnifiedTemplate(
+                    rawTpl,
+                    '── {provider} ──',
+                    '• {name}: {price} | modal: {cost} | margin: {margin} ({pct})'
+                );
 
                 const rows = Array.from(document.querySelectorAll('.margin-item-row')).filter(r => r.style.display !== 'none');
                 const provMap = new Map();
@@ -6484,8 +6756,8 @@ Total: {total} ({totalProv})
                     });
                 }
 
-                // Fallback mock preview if no items visible or called from template modal
-                if (totalItems === 0 && overrideMainTpl !== undefined) {
+                // Mock preview jika dipanggil dari preview modal
+                if (totalItems === 0 && overrideTpl !== undefined) {
                     provMap.set('TELKOMSEL', [
                         { it: { n: 'TELKOMSEL 1.5GB 3HR', c: 10000, p: 12000, stock: 14 }, price: 12000, oldPrice: 12000 },
                         { it: { n: 'TELKOMSEL 3GB 5HR', c: 16500, p: 18500, stock: 8 }, price: 18500, oldPrice: 18500 }
@@ -6517,29 +6789,39 @@ Total: {total} ({totalProv})
                 let formattedItems = '';
                 const provEntries = Array.from(provMap.entries());
                 provEntries.forEach(([prov, items], pIdx) => {
-                    if (provEntries.length > 1) {
-                        if (pIdx > 0) formattedItems += '\n\n';
-                        formattedItems += `── ${prov} (${items.length} item) ──\n`;
+                    let block = '';
+                    if (parsed.providerTpl) {
+                        const pHeader = parsed.providerTpl
+                            .replace(/{provider}|{prov}/gi, prov.toUpperCase())
+                            .replace(/{itemCount}|{count}/gi, items.length + ' item');
+                        block += pHeader + '\n';
                     }
-                    items.forEach((entry, iIdx) => {
-                        const line = formatMarginItemLine(itemTpl, entry.it, entry.price, entry.oldPrice);
-                        if (iIdx > 0) formattedItems += '\n';
-                        formattedItems += line;
+                    const itemLines = items.map(entry => {
+                        return formatMarginItemLine(parsed.itemTpl, entry.it, entry.price, entry.oldPrice, prov);
                     });
+                    block += itemLines.join('\n');
+
+                    if (pIdx > 0) formattedItems += (parsed.providerTpl ? '\n\n' : '\n');
+                    formattedItems += block;
                 });
 
-                return mainTpl
+                const baseText = (parsed.header + formattedItems + parsed.footer);
+                return baseText
+                    .replace(/{items}/g, formattedItems)
                     .replace(/{title}/g, `Daftar Harga & Margin (${filterDesc})`)
                     .replace(/{date}/g, dateStr)
                     .replace(/{filter}/g, filterDesc)
                     .replace(/{total}/g, `${totalItems} item`)
                     .replace(/{totalRaw}/g, String(totalItems))
-                    .replace(/{totalProv}/g, `${provEntries.length} provider`)
-                    .replace(/{items}/g, formattedItems);
+                    .replace(/{totalProv}/g, `${provEntries.length} provider`);
 
             } else if (type === 'all') {
-                const mainTpl = (overrideMainTpl !== undefined) ? overrideMainTpl : getMarginAllTemplate();
-                const itemTpl = (overrideItemTpl !== undefined) ? overrideItemTpl : getMarginAllItemTemplate();
+                const rawTpl = (overrideTpl !== undefined) ? overrideTpl : getMarginAllTemplate();
+                const parsed = parseUnifiedTemplate(
+                    rawTpl,
+                    '── {provider} ──',
+                    '• {name}: {price} | modal: {cost} | margin: {margin} ({pct})'
+                );
 
                 const provMap = new Map();
                 let totalItems = 0;
@@ -6559,8 +6841,8 @@ Total: {total} ({totalProv})
                     });
                 }
 
-                // Fallback mock preview if no items exist or called from template modal
-                if (totalItems === 0 && overrideMainTpl !== undefined) {
+                // Mock preview jika dipanggil dari preview modal
+                if (totalItems === 0 && overrideTpl !== undefined) {
                     provMap.set('TELKOMSEL', [
                         { it: { n: 'TELKOMSEL 1.5GB 3HR', c: 10000, p: 12000, stock: 14 }, price: 12000, oldPrice: 12000 },
                         { it: { n: 'TELKOMSEL 3GB 5HR', c: 16500, p: 18500, stock: 8 }, price: 18500, oldPrice: 18500 }
@@ -6576,22 +6858,30 @@ Total: {total} ({totalProv})
                 let formattedItems = '';
                 const provEntries = Array.from(provMap.entries());
                 provEntries.forEach(([prov, items], pIdx) => {
-                    if (pIdx > 0) formattedItems += '\n\n';
-                    formattedItems += `── ${prov} (${items.length} item) ──\n`;
-                    items.forEach((entry, iIdx) => {
-                        const line = formatMarginItemLine(itemTpl, entry.it, entry.price, entry.oldPrice);
-                        if (iIdx > 0) formattedItems += '\n';
-                        formattedItems += line;
+                    let block = '';
+                    if (parsed.providerTpl) {
+                        const pHeader = parsed.providerTpl
+                            .replace(/{provider}|{prov}/gi, prov.toUpperCase())
+                            .replace(/{itemCount}|{count}/gi, items.length + ' item');
+                        block += pHeader + '\n';
+                    }
+                    const itemLines = items.map(entry => {
+                        return formatMarginItemLine(parsed.itemTpl, entry.it, entry.price, entry.oldPrice, prov);
                     });
+                    block += itemLines.join('\n');
+
+                    if (pIdx > 0) formattedItems += (parsed.providerTpl ? '\n\n' : '\n');
+                    formattedItems += block;
                 });
 
-                return mainTpl
+                const baseText = (parsed.header + formattedItems + parsed.footer);
+                return baseText
+                    .replace(/{items}/g, formattedItems)
                     .replace(/{title}/g, 'Daftar Harga Semua Provider')
                     .replace(/{date}/g, dateStr)
                     .replace(/{total}/g, `${totalItems} item`)
                     .replace(/{totalRaw}/g, String(totalItems))
-                    .replace(/{totalProv}/g, `${provEntries.length} provider`)
-                    .replace(/{items}/g, formattedItems);
+                    .replace(/{totalProv}/g, `${provEntries.length} provider`);
             }
             return '';
         }
@@ -6599,10 +6889,10 @@ Total: {total} ({totalProv})
         function updateMarginTemplatePreview() {
             const previewEl = document.getElementById('marginTemplateLivePreview');
             if (!previewEl) return;
-            const buf = marginTemplateBuffers[currentMarginSubtype];
-            const mainTpl = buf ? buf.main : getDefaultMarginTemplate(currentMarginSubtype);
-            const itemTpl = buf ? buf.item : getDefaultMarginItemTemplate(currentMarginSubtype);
-            const previewText = generateMarginText(currentMarginSubtype, mainTpl, itemTpl);
+            const tpl = (marginTemplateBuffers && marginTemplateBuffers[currentMarginSubtype])
+                ? marginTemplateBuffers[currentMarginSubtype]
+                : getDefaultMarginTemplate(currentMarginSubtype);
+            const previewText = generateMarginText(currentMarginSubtype, tpl);
             previewEl.textContent = previewText || '(Template margin kosong)';
         }
 
@@ -6613,20 +6903,26 @@ Total: {total} ({totalProv})
             initMarginTemplateBuffers();
 
             const orderTextarea = document.getElementById('orderTemplateTextarea');
-            const orderItemInput = document.getElementById('orderItemTemplateInput');
             if (orderTextarea) orderTextarea.value = getOrderTemplate();
-            if (orderItemInput) orderItemInput.value = getOrderItemTemplate();
 
             const dailyTextarea = document.getElementById('dailyTemplateTextarea');
-            const dailyItemInput = document.getElementById('dailyItemTemplateInput');
             const dailyIncludeAi = document.getElementById('dailyIncludeAiPromptCheck');
             const dailyAiPromptTextarea = document.getElementById('dailyAiPromptTextarea');
             if (dailyTextarea) dailyTextarea.value = getRekapTemplate();
-            if (dailyItemInput) dailyItemInput.value = getRekapItemTemplate();
             if (dailyIncludeAi) dailyIncludeAi.checked = getRekapIncludeAiPrompt();
             if (dailyAiPromptTextarea) dailyAiPromptTextarea.value = getRekapAiPromptText();
 
-            switchTemplateSubtab(initialTab || 'order');
+            let targetTab = initialTab;
+            if (!targetTab) {
+                if (typeof currentTab !== 'undefined') {
+                    if (currentTab === 'daily') targetTab = 'daily';
+                    else if (currentTab === 'margin') targetTab = 'margin';
+                    else targetTab = 'order';
+                } else {
+                    targetTab = 'order';
+                }
+            }
+            switchTemplateSubtab(targetTab);
             modal.style.display = 'flex';
         }
 
@@ -6652,87 +6948,24 @@ Total: {total} ({totalProv})
             if (modal) modal.style.display = 'none';
         }
 
-        function insertTemplateVar(variableTag) {
-            const textarea = document.getElementById('orderTemplateTextarea');
-            if (!textarea) return;
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const text = textarea.value;
-            const before = text.substring(0, start);
-            const after = text.substring(end, text.length);
-            textarea.value = before + variableTag + after;
-            textarea.selectionStart = textarea.selectionEnd = start + variableTag.length;
-            textarea.focus();
-            updateOrderTemplatePreview();
-        }
-
-        function insertItemTemplateVar(variableTag) {
-            const input = document.getElementById('orderItemTemplateInput');
-            if (!input) return;
-            const start = input.selectionStart;
-            const end = input.selectionEnd;
-            const text = input.value;
-            const before = text.substring(0, start);
-            const after = text.substring(end, text.length);
-            input.value = before + variableTag + after;
-            input.selectionStart = input.selectionEnd = start + variableTag.length;
-            input.focus();
-            updateOrderTemplatePreview();
-        }
-
-        function insertDailyTemplateVar(variableTag) {
-            const textarea = document.getElementById('dailyTemplateTextarea');
-            if (!textarea) return;
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const text = textarea.value;
-            const before = text.substring(0, start);
-            const after = text.substring(end, text.length);
-            textarea.value = before + variableTag + after;
-            textarea.selectionStart = textarea.selectionEnd = start + variableTag.length;
-            textarea.focus();
-            updateDailyTemplatePreview();
-        }
-
-        function insertDailyItemTemplateVar(variableTag) {
-            const input = document.getElementById('dailyItemTemplateInput');
-            if (!input) return;
-            const start = input.selectionStart;
-            const end = input.selectionEnd;
-            const text = input.value;
-            const before = text.substring(0, start);
-            const after = text.substring(end, text.length);
-            input.value = before + variableTag + after;
-            input.selectionStart = input.selectionEnd = start + variableTag.length;
-            input.focus();
-            updateDailyTemplatePreview();
-        }
-
         function resetCurrentTemplateToDefault() {
             if (currentTemplateSubtab === 'order') {
                 const textarea = document.getElementById('orderTemplateTextarea');
-                const itemInput = document.getElementById('orderItemTemplateInput');
                 if (textarea) textarea.value = DEFAULT_ORDER_TEMPLATE;
-                if (itemInput) itemInput.value = DEFAULT_ORDER_ITEM_TEMPLATE;
                 updateOrderTemplatePreview();
                 showToast('Template order di-reset ke format default');
             } else if (currentTemplateSubtab === 'daily') {
                 const textarea = document.getElementById('dailyTemplateTextarea');
-                const itemInput = document.getElementById('dailyItemTemplateInput');
                 const dailyIncludeAi = document.getElementById('dailyIncludeAiPromptCheck');
                 const dailyAiPromptTextarea = document.getElementById('dailyAiPromptTextarea');
                 if (textarea) textarea.value = DEFAULT_REKAP_TEMPLATE;
-                if (itemInput) itemInput.value = DEFAULT_REKAP_ITEM_TEMPLATE;
                 if (dailyIncludeAi) dailyIncludeAi.checked = true;
                 if (dailyAiPromptTextarea) dailyAiPromptTextarea.value = DEFAULT_REKAP_AI_PROMPT;
                 updateDailyTemplatePreview();
                 showToast('Template rekap di-reset ke format default');
             } else if (currentTemplateSubtab === 'margin') {
-                if (marginTemplateBuffers[currentMarginSubtype]) {
-                    marginTemplateBuffers[currentMarginSubtype] = {
-                        main: getDefaultMarginTemplate(currentMarginSubtype),
-                        item: getDefaultMarginItemTemplate(currentMarginSubtype)
-                    };
+                if (marginTemplateBuffers[currentMarginSubtype] !== undefined) {
+                    marginTemplateBuffers[currentMarginSubtype] = getDefaultMarginTemplate(currentMarginSubtype);
                 }
                 renderMarginTemplateSubtypeUI();
                 updateMarginTemplatePreview();
@@ -6748,41 +6981,34 @@ Total: {total} ({totalProv})
         function saveTemplateFromModal() {
             // 1. Simpan Template Order
             const orderTextarea = document.getElementById('orderTemplateTextarea');
-            const orderItemInput = document.getElementById('orderItemTemplateInput');
             const mainOrderTpl = orderTextarea ? orderTextarea.value : DEFAULT_ORDER_TEMPLATE;
-            const itemOrderTpl = orderItemInput ? orderItemInput.value : DEFAULT_ORDER_ITEM_TEMPLATE;
 
-            if (mainOrderTpl.trim() === DEFAULT_ORDER_TEMPLATE.trim() && itemOrderTpl.trim() === DEFAULT_ORDER_ITEM_TEMPLATE.trim()) {
+            if (mainOrderTpl.trim() === DEFAULT_ORDER_TEMPLATE.trim()) {
                 resetOrderTemplate();
             } else {
-                saveOrderTemplate(mainOrderTpl, itemOrderTpl);
+                saveOrderTemplate(mainOrderTpl);
             }
 
             // 2. Simpan Template Rekap Laporan
             const dailyTextarea = document.getElementById('dailyTemplateTextarea');
-            const dailyItemInput = document.getElementById('dailyItemTemplateInput');
             const dailyIncludeAi = document.getElementById('dailyIncludeAiPromptCheck');
             const dailyAiPromptTextarea = document.getElementById('dailyAiPromptTextarea');
             const mainDailyTpl = dailyTextarea ? dailyTextarea.value : DEFAULT_REKAP_TEMPLATE;
-            const itemDailyTpl = dailyItemInput ? dailyItemInput.value : DEFAULT_REKAP_ITEM_TEMPLATE;
             const includeAi = dailyIncludeAi ? dailyIncludeAi.checked : true;
             const aiPromptText = dailyAiPromptTextarea ? dailyAiPromptTextarea.value : DEFAULT_REKAP_AI_PROMPT;
 
             if (mainDailyTpl.trim() === DEFAULT_REKAP_TEMPLATE.trim() &&
-                itemDailyTpl.trim() === DEFAULT_REKAP_ITEM_TEMPLATE.trim() &&
                 includeAi === true &&
                 aiPromptText.trim() === DEFAULT_REKAP_AI_PROMPT.trim()) {
                 resetRekapTemplate();
             } else {
-                saveRekapTemplate(mainDailyTpl, itemDailyTpl, includeAi, aiPromptText);
+                saveRekapTemplate(mainDailyTpl, includeAi, aiPromptText);
             }
 
-            // 3. Simpan Template Margin (Perubahan, Filter, Semua)
+            // 3. Simpan Template Margin
             const marginTextarea = document.getElementById('marginTemplateTextarea');
-            const marginItemInput = document.getElementById('marginItemTemplateInput');
-            if (marginTextarea && marginItemInput && marginTemplateBuffers[currentMarginSubtype]) {
-                marginTemplateBuffers[currentMarginSubtype].main = marginTextarea.value;
-                marginTemplateBuffers[currentMarginSubtype].item = marginItemInput.value;
+            if (marginTextarea && marginTemplateBuffers[currentMarginSubtype] !== undefined) {
+                marginTemplateBuffers[currentMarginSubtype] = marginTextarea.value;
             }
             saveMarginTemplates(marginTemplateBuffers);
 
@@ -6797,15 +7023,12 @@ Total: {total} ({totalProv})
 
         function updateOrderTemplatePreview() {
             const textarea = document.getElementById('orderTemplateTextarea');
-            const itemInput = document.getElementById('orderItemTemplateInput');
             const previewEl = document.getElementById('orderTemplateLivePreview');
             const previewDevEl = document.getElementById('orderTemplatePreviewDevice');
             if (!previewEl) return;
 
             const mainTpl = textarea ? textarea.value : DEFAULT_ORDER_TEMPLATE;
-            const itemTpl = itemInput ? itemInput.value : DEFAULT_ORDER_ITEM_TEMPLATE;
-
-            const previewText = generateWaText(mainTpl, itemTpl);
+            const previewText = generateWaText(mainTpl);
             previewEl.textContent = previewText || '(Template order kosong)';
 
             if (previewDevEl) {
@@ -6817,7 +7040,6 @@ Total: {total} ({totalProv})
 
         function updateDailyTemplatePreview() {
             const textarea = document.getElementById('dailyTemplateTextarea');
-            const itemInput = document.getElementById('dailyItemTemplateInput');
             const dailyIncludeAi = document.getElementById('dailyIncludeAiPromptCheck');
             const dailyAiPromptTextarea = document.getElementById('dailyAiPromptTextarea');
             const previewEl = document.getElementById('dailyTemplateLivePreview');
@@ -6825,11 +7047,10 @@ Total: {total} ({totalProv})
             if (!previewEl) return;
 
             const mainTpl = textarea ? textarea.value : DEFAULT_REKAP_TEMPLATE;
-            const itemTpl = itemInput ? itemInput.value : DEFAULT_REKAP_ITEM_TEMPLATE;
             const includeAi = dailyIncludeAi ? dailyIncludeAi.checked : getRekapIncludeAiPrompt();
             const aiPromptText = dailyAiPromptTextarea ? dailyAiPromptTextarea.value : getRekapAiPromptText();
 
-            const previewText = generateDailySummaryText(mainTpl, itemTpl, includeAi, aiPromptText);
+            const previewText = generateDailySummaryText(mainTpl, includeAi, aiPromptText);
             previewEl.textContent = previewText || '(Template rekap kosong)';
 
             if (previewDevEl) {
@@ -6838,117 +7059,137 @@ Total: {total} ({totalProv})
             }
         }
 
-        function copyAiInstructionPrompt() {
-            const promptText = `PANDUAN & ATURAN FORMAT TEMPLATE KSP CHECK (UNTUK ASISTEN AI):
+        // --- PANDUAN INSTRUKSI AI TERTARGET KHUSUS SUBTAB AKTIF ---
+        function getOrderAiPrompt() {
+            return `PANDUAN & ATURAN FORMAT TEMPLATE ORDER RESTOCK (KSP CHECK):
 
-Anda adalah asisten AI yang bertugas merancang atau memodifikasi format template pesan teks untuk aplikasi manajemen stok voucher pulsa & konter (KSP Check).
+Anda adalah asisten AI yang bertugas merancang atau memodifikasi format template pesan WhatsApp untuk pemesanan stok voucher (Order Restock) pada aplikasi KSP Check.
 
-Aplikasi ini mendukung 3 kelompok template kustom yang disimpan di browser lokal:
-1. TEMPLATE ORDER RESTOCK (Pemesanan stok voucher baru ke sales/supplier)
-2. TEMPLATE REKAP LAPORAN (Rekap penjualan, pergerakan stok awal/akhir, dan omset harian kasir)
-3. TEMPLATE MARGIN VOUCHER (Pengecekan harga jual, modal, margin nominal & persentase keuntungan)
+PANDUAN STRUKTUR TEMPLATE:
+Template KSP Check menggunakan SATU format teks utuh yang menggabungkan Format Pesan dan Format Baris menggunakan blok [ITEMS]...[/ITEMS].
+- Teks sebelum [ITEMS] adalah bagian Header (pembuka pesan).
+- Teks setelah [/ITEMS] adalah bagian Footer (penutup pesan & ringkasan total).
+- Di dalam blok [ITEMS]...[/ITEMS]:
+  * Baris yang memuat {provider} adalah format header provider (contoh: *{provider}* atau ── {provider} ──).
+    Catatan: Jika Anda TIDAK menyertakan baris {provider}, produk akan dicantumkan secara rata tanpa header provider.
+  * Baris lainnya adalah format untuk setiap produk yang dipesan (contoh: • {name}: *{qty} pcs*).
 
-Gunakan daftar placeholder / variabel berikut ini agar dapat diproses oleh sistem:
+DAFTAR VARIABEL / PLACEHOLDER YANG DAPAT DIGUNAKAN:
+Header / Footer:
+• {deviceName}   : Nama HP kasir / cabang toko aktif (contoh: "POCO F5" atau "Cabang Utama")
+• {date}         : Tanggal saat order dibuat (contoh: "Rabu, 30 September 2026")
+• {time}         : Jam saat order dibuat (contoh: "14:30")
+• {totalJenis}   : Total jenis voucher yang dipesan (contoh: "5 jenis")
+• {totalPcs}     : Total kuantitas barang yang dipesan (contoh: "50 pcs")
+• {totalEstCost} : Total estimasi biaya modal (contoh: "Rp 550.000")
 
-============================================================
-1. TEMPLATE ORDER RESTOCK
-============================================================
-Variabel Pesan Utama:
-• {deviceName}   : Nama HP kasir / cabang aktif (contoh: "POCO F5" atau "Semua Perangkat")
-• {date}         : Tanggal order (contoh: "Rabu, 30 September 2026")
-• {time}         : Jam saat order dibuat (contoh: "11:45")
-• {items}        : Daftar voucher yang dikelompokkan per provider
-• {totalJenis}   : Jumlah jenis produk (contoh: "5 jenis")
-• {totalPcs}     : Total jumlah kuantitas barang (contoh: "50 pcs")
-• {totalEstCost} : Total estimasi biaya modal (contoh: "Rp 500.000")
-
-Variabel Baris Item (di dalam {items}):
+Di dalam blok [ITEMS]...[/ITEMS]:
+• {provider}     : Nama provider/operator (contoh: TELKOMSEL, INDOSAT, AXIS)
 • {name}         : Nama produk voucher
-• {qty}          : Kuantitas yang dipesan
+• {qty}          : Jumlah kuantitas yang dipesan
 • {cost}         : Harga modal per pcs (contoh: "Rp 10.000")
 • {subtotal}     : Total modal item (contoh: "Rp 100.000")
 
-Contoh Format Order:
+============================================================
+CONTOH 1 (Format Standar WhatsApp):
 *ORDER RESTOCK VOUCHER*
 📱 Perangkat: *{deviceName}*
 📅 Tanggal: {date}
 ---------------------------------
 
-{items}
+[ITEMS]
+*{provider}*
+• {name}: *{qty} pcs*
+[/ITEMS]
 
 ---------------------------------
 Total Produk: *{totalJenis}*
 Total Quantity: *{totalPcs}*
 Estimasi Biaya: *{totalEstCost}*
 
-Contoh Baris Item:
-• {name}: *{qty} pcs*
+CONTOH 2 (Gaya Formal ke Sales / Supplier):
+Yth. Sales Supplier Voucher,
+Berikut pesanan restock untuk toko {deviceName} per {date}:
 
-============================================================
-2. TEMPLATE REKAP LAPORAN HARIAN
-============================================================
-Variabel Pesan Utama:
-• {deviceName}   : Nama HP kasir / cabang aktif
-• {date}         : Tanggal / rentang tanggal laporan
-• {shift}        : Shift kerja (contoh: "Semua Shift", "Shift 1 (Pagi)", "Shift 2 (Malam)")
-• {items}        : Daftar produk terjual yang dikelompokkan per provider
-• {totalSold}    : Total produk terjual (contoh: "20 pcs")
-• {totalAwal}    : Total stok awal seluruh produk (otomatis menyertakan (+X) jika ada restok)
-• {totalAwalRaw} : Angka total stok awal murni (contoh: "50 pcs")
-• {totalTambah}  : Total stok masuk/restok seluruh produk (contoh: "(+5 pcs)")
-• {totalAkhir}   : Total stok akhir / sisa fisik seluruh produk (contoh: "30 pcs")
-• {totalOmset}   : Total pendapatan omset kotor (contoh: "Rp 275.000")
-• {totalProfit}  : Total keuntungan laba bersih (contoh: "Rp 35.000")
-• {totalJenis}   : Total jenis produk yang laku
-• {aiPrompt}     : Instruksi audit otomatis untuk AI (opsional; jika tidak diletakkan, prompt akan otomatis disisipkan di baris paling akhir)
+[ITEMS]
+── {provider} ──
+- {name} = {qty} pcs (@ {cost})
+[/ITEMS]
 
-Variabel Baris Item (di dalam {items}):
-• {name}         : Nama produk
-• {sold}         : Jumlah produk terjual
-• {stokAwal}     : Stok awal produk (otomatis menyertakan (+X) jika ada restok/penambahan, misal: "25 (+5)")
-• {stokAwalRaw}  : Angka stok awal murni tanpa tanda penambahan (contoh: "25")
+Total Pesanan: {totalPcs} ({totalJenis})
+Estimasi Nilai Faktur: {totalEstCost}
+Mohon dikirim secepatnya. Terima kasih.
+
+CONTOH 3 (Gaya Ringkas Tanpa Pemisah Provider):
+Order Restock {date}:
+
+[ITEMS]
+• {name}: {qty} pcs
+[/ITEMS]
+
+Total: {totalPcs} pcs
+============================================================
+PETUNJUK PENGGUNAAN:
+Kirimkan prompt ini ke AI dan minta: "Buatkan format template order restock dengan gaya [formal / santai / ringkas / tabel] dengan menyertakan [informasi yang diinginkan] sesuai panduan format di atas."`;
+        }
+
+        function getDailyAiPrompt() {
+            return `PANDUAN & ATURAN FORMAT TEMPLATE REKAP LAPORAN HARIAN (KSP CHECK):
+
+Anda adalah asisten AI yang bertugas merancang atau memodifikasi format template pesan rekap laporan penjualan dan stok harian pada aplikasi KSP Check.
+
+PANDUAN STRUKTUR TEMPLATE:
+Template KSP Check menggunakan SATU format teks utuh yang menggabungkan Format Pesan dan Format Baris menggunakan blok [ITEMS]...[/ITEMS].
+- Teks sebelum [ITEMS] adalah bagian Header (pembuka pesan).
+- Teks setelah [/ITEMS] adalah bagian Footer (penutup pesan, total omset/laba, dan prompt AI).
+- Di dalam blok [ITEMS]...[/ITEMS]:
+  * Baris yang memuat {provider} adalah format header provider (contoh: *{provider}*).
+    Catatan: Jika Anda TIDAK menyertakan baris {provider}, produk akan dicantumkan secara rata tanpa header provider.
+  * Baris lainnya adalah format untuk setiap produk yang terjual/dihitung.
+
+DAFTAR VARIABEL / PLACEHOLDER YANG DAPAT DIGUNAKAN:
+Header / Footer:
+• {deviceName}   : Nama HP kasir / cabang toko aktif (contoh: "POCO F5")
+• {date}         : Tanggal / rentang laporan (contoh: "30 September 2026")
+• {shift}        : Keterangan shift (contoh: "Shift 1 (Pagi)", "Shift 2 (Malam)", "Semua Shift")
+• {totalSold}    : Total fisik voucher terjual (contoh: "25 pcs")
+• {totalAwal}    : Total stok awal (otomatis menyertakan (+X) jika ada penambahan/restok, misal: "60 (+10) pcs")
+• {totalAwalRaw} : Angka total stok awal murni (contoh: "60 pcs")
+• {totalTambah}  : Total stok masuk/restok periode ini (contoh: "(+10 pcs)")
+• {totalAkhir}   : Total stok akhir fisik toko (contoh: "45 pcs")
+• {totalOmset}   : Total pendapatan omset kotor (contoh: "Rp 350.000")
+• {totalProfit}  : Total keuntungan laba bersih (contoh: "Rp 45.000")
+• {totalJenis}   : Total jenis produk yang laku (contoh: "8 jenis")
+• {aiPrompt}     : Posisi penempatan teks audit otomatis untuk AI (opsional)
+
+Di dalam blok [ITEMS]...[/ITEMS]:
+• {provider}     : Nama provider/operator
+• {name}         : Nama produk voucher
+• {sold}         : Jumlah terjual (contoh: "5")
+• {stokAwal}     : Stok awal produk (otomatis menyertakan (+X) jika ada restok, misal: "20 (+5)")
+• {stokAwalRaw}  : Angka stok awal murni (contoh: "20")
 • {penambahan}   : Nilai penambahan saja (contoh: " (+5)" atau kosong jika tidak ada)
 • {tambah}       : Nilai penambahan bertanda plus (contoh: "+5")
 • {masuk}        : Jumlah stok masuk angka murni (contoh: "5" atau "0")
 • {stokAkhir}    : Stok akhir / sisa fisik produk
-• {price}        : Harga jual
-• {cost}         : Harga modal
+• {price}        : Harga jual per pcs
+• {cost}         : Harga modal per pcs
 • {rev}          : Total omset dari produk ini
 • {revK}         : Omset singkat (contoh: "120K")
 • {profit}       : Total laba dari produk ini
 
 ============================================================
-3. TEMPLATE MARGIN VOUCHER
-============================================================
-Mendukung 3 format subtipe teks margin:
-A. TEMPLATE PERUBAHAN HARGA:
-   Menyalin hanya produk yang harganya diubah lewat stepper (+ / -).
-   Variabel Pesan Utama : {date}, {total}, {items}
-   Variabel Baris Item  : {name}, {price}, {diff} (selisih perubahan harga, misal: +1.000), {oldPrice}, {cost}, {margin}, {pct}, {stock}
-
-B. TEMPLATE SALIN TAMPIL (FILTER):
-   Menyalin hanya produk yang sedang tampil di layar sesuai filter chip / pencarian aktif.
-   Variabel Pesan Utama : {date}, {filter} (keterangan filter/pencarian), {total}, {totalProv}, {items}
-   Variabel Baris Item  : {name}, {price}, {cost}, {margin}, {pct}, {stock}
-
-C. TEMPLATE SALIN SEMUA PROVIDER:
-   Menyalin seluruh daftar harga dari semua provider.
-   Variabel Pesan Utama : {date}, {total}, {totalProv}, {items}
-   Variabel Baris Item  : {name}, {price}, {cost}, {margin}, {pct}, {stock}
-
-============================================================
-BEBERAPA CONTOH FORMAT TEMPLATE:
-============================================================
-
---- CONTOH 1: Gaya WhatsApp Elegan & Rinci (Kasir/Owner) ---
-[Format Utama Rekap]:
+CONTOH 1 (Format Standar WhatsApp):
 📊 *REKAP LAPORAN STOK HARIAN*
 📱 Perangkat: *{deviceName}*
 📅 Tanggal: {date}
 ⏱️ Shift: {shift}
 ━━━━━━━━━━━━━━━━━━━━
 
-{items}
+[ITEMS]
+*{provider}*
+• {name}: *{sold} pcs* (Awal: {stokAwal} | Sisa: {stokAkhir})
+[/ITEMS]
 
 ━━━━━━━━━━━━━━━━━━━━
 📦 Total Terjual: *{totalSold}*
@@ -6956,59 +7197,109 @@ BEBERAPA CONTOH FORMAT TEMPLATE:
 💵 Total Omset: *{totalOmset}*
 📈 Total Keuntungan: *{totalProfit}*
 
-[Format Baris Item Rekap]:
-• {name}: *{sold} pcs* (Awal: {stokAwal} | Sisa: {stokAkhir})
+CONTOH 2 (Gaya Tutup Shift Kasir Ringkas):
+*LAPORAN TUTUP SHIFT*
+Kasir: {deviceName} | Shift: {shift} | {date}
 
---- CONTOH 2: Format Salin Perubahan Harga Margin ---
-[Format Utama Margin Perubahan]:
+[ITEMS]
+*{provider}*
+- {name} : Laku {sold} (Sisa {stokAkhir})
+[/ITEMS]
+
+Total Terjual: {totalSold} | Sisa Fisik: {totalAkhir}
+Omset: {totalOmset} | Profit: {totalProfit}
+Alhamdulillah shift selesai.
+============================================================
+PETUNJUK PENGGUNAAN:
+Kirimkan prompt ini ke AI dan minta: "Buatkan format template rekap laporan harian dengan gaya [formal / WhatsApp elegan / kasir ringkas] dengan menyertakan [informasi yang diinginkan] sesuai panduan format di atas."`;
+        }
+
+        function getMarginAiPrompt() {
+            return `PANDUAN & ATURAN FORMAT TEMPLATE MARGIN VOUCHER (KSP CHECK):
+
+Anda adalah asisten AI yang bertugas merancang atau memodifikasi format template pesan untuk daftar harga dan margin voucher pada aplikasi KSP Check.
+
+Aplikasi mendukung 3 subtipe template teks margin:
+1. PERUBAHAN HARGA  : Menyalin item yang harganya diubah di layar lewat stepper (+ / -).
+2. SALIN (FILTER)   : Menyalin seluruh item yang sedang tampil di layar sesuai filter / pencarian aktif.
+3. SALIN SEMUA      : Menyalin seluruh daftar harga dari semua provider.
+
+PANDUAN STRUKTUR TEMPLATE:
+Template KSP Check menggunakan SATU format teks utuh yang menggabungkan Format Pesan dan Format Baris menggunakan blok [ITEMS]...[/ITEMS].
+- Teks sebelum [ITEMS] adalah bagian Header (pembuka pesan).
+- Teks setelah [/ITEMS] adalah bagian Footer (penutup pesan, jika ada).
+- Di dalam blok [ITEMS]...[/ITEMS]:
+  * Baris yang memuat {provider} adalah format header provider (contoh: ── {provider} ── atau *{provider}*).
+    Catatan: Jika Anda TIDAK menyertakan baris {provider}, produk akan dicantumkan secara rata tanpa header provider.
+  * Baris lainnya adalah format untuk setiap item voucher.
+
+DAFTAR VARIABEL / PLACEHOLDER YANG DAPAT DIGUNAKAN:
+Header / Footer:
+• {date}       : Tanggal hari ini
+• {total}      : Total item (contoh: "15 item")
+• {filter}     : Keterangan filter aktif (khusus format Salin Tampil / Filter)
+• {totalProv}  : Jumlah provider (contoh: "5 provider")
+
+Di dalam blok [ITEMS]...[/ITEMS]:
+• {provider}   : Nama provider/operator
+• {name}       : Nama produk voucher
+• {price}      : Harga jual saat ini (contoh: "Rp 15.000")
+• {cost}       : Harga modal (contoh: "Rp 13.000")
+• {margin}     : Nominal margin keuntungan (contoh: "+2.000")
+• {pct}        : Persentase margin keuntungan (contoh: "+15%")
+• {stock}      : Stok voucher saat ini
+• {diff}       : Selisih perubahan harga (khusus format Perubahan Harga, contoh: "+1.000")
+• {oldPrice}   : Harga lama sebelum diubah (khusus format Perubahan Harga)
+
+============================================================
+CONTOH 1 (Format Perubahan Harga):
 === Perubahan Harga — {date} ===
 Total: {total} berubah
 
-{items}
-
-[Format Baris Item]:
+[ITEMS]
+── {provider} ──
 • {name}: {price} ({diff}) | modal: {cost} | margin: {margin} ({pct})
+[/ITEMS]
 
---- CONTOH 3: Format Salin Margin Sesuai Filter ---
-[Format Utama Margin Filter]:
+CONTOH 2 (Format Salin Tampil / Filter):
 === Daftar Harga & Margin ({filter}) — {date} ===
 Total: {total}
 
-{items}
-
-[Format Baris Item]:
+[ITEMS]
+── {provider} ──
 • {name}: {price} | modal: {cost} | margin: {margin} ({pct})
+[/ITEMS]
 
---- CONTOH 4: Format Salin Semua Provider ---
-[Format Utama Margin Semua]:
+CONTOH 3 (Format Salin Semua Provider):
 === Daftar Harga Semua Provider — {date} ===
 Total: {total} ({totalProv})
 
-{items}
-
-[Format Baris Item]:
+[ITEMS]
+── {provider} ──
 • {name}: {price} | modal: {cost} | margin: {margin} ({pct})
-
---- CONTOH 5: Gaya Khusus Sales / Supplier Restock ---
-[Format Utama Order]:
-Halo Sales, mau order restock voucher toko kami:
-Toko: {deviceName}
-Tanggal: {date}
-
-{items}
-
-Total Order: {totalPcs} ({totalJenis})
-Mohon segera dikirim ya. Terima kasih!
-
-[Format Baris Item]:
-• {name} = {qty} pcs
-
+[/ITEMS]
 ============================================================
-PETUNJUK:
-Silakan minta kepada AI:
-"Tolong buatkan format template [Order Restock / Rekap Laporan / Margin Voucher] dengan gaya [santai / formal / tabel / ringkas] dan sertakan [informasi yang Anda inginkan] sesuai daftar variabel di atas."`;
+PETUNJUK PENGGUNAAN:
+Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Perubahan Harga / Salin Filter / Salin Semua] dengan gaya [tabel / ringkas / rapi] sesuai panduan format di atas."`;
+        }
 
-            copyToClipboard(promptText, '✅ Instruksi & contoh format AI berhasil disalin! Tempel di AI (ChatGPT/Claude/Gemini).');
+        function copyAiInstructionPrompt() {
+            let promptText = '';
+            let label = '';
+            if (currentTemplateSubtab === 'order') {
+                promptText = getOrderAiPrompt();
+                label = 'Order Restock';
+            } else if (currentTemplateSubtab === 'daily') {
+                promptText = getDailyAiPrompt();
+                label = 'Rekap Laporan Harian';
+            } else if (currentTemplateSubtab === 'margin') {
+                promptText = getMarginAiPrompt();
+                label = 'Margin Voucher';
+            } else {
+                promptText = getOrderAiPrompt();
+                label = 'Order Restock';
+            }
+            copyToClipboard(promptText, `✅ Instruksi AI ${label} berhasil disalin! Tempel di AI (ChatGPT/Claude/Gemini).`);
         }
 
         // ==================== 7B. RIWAYAT ORDER RESTOCK & PENCOCOKAN BIAYA ====================
@@ -7057,7 +7348,7 @@ Silakan minta kepada AI:
                     const targetDev = it.device_id || order.device_id;
 
                     let matchV = null;
-                    if (pId >= 100) {
+                    if (pId > 0) {
                         matchV = allVouchers.find(v => {
                             const vId = parseInt(v.product_id || v.id || 0, 10);
                             return vId === pId;
@@ -7065,24 +7356,19 @@ Silakan minta kepada AI:
                     }
 
                     if (!matchV) {
-                        // Cari voucher yang cocok dengan perangkat, nama bersih, dan harga modal (agar varian nama kembar tidak tertukar)
+                        const itProv = (it.provider_name || '').toLowerCase().trim();
+                        // Cari voucher yang cocok dengan perangkat, provider, dan nama bersih
                         matchV = allVouchers.find(v => {
                             if (targetDev && targetDev !== 'all' && v.device_id && v.device_id !== targetDev) return false;
-                            if (cleanProdName(v.product_name) !== cleanName) return false;
-                            if (it.cost_price && v.cost_price) {
-                                return Math.abs(parseInt(v.cost_price, 10) - it.cost_price) <= 100;
-                            }
-                            return true;
+                            if (itProv && v.provider_name && v.provider_name.toLowerCase().trim() !== itProv) return false;
+                            return cleanProdName(v.product_name) === cleanName;
                         });
 
                         // Fallback jika tidak cocok perangkat
                         if (!matchV) {
                             matchV = allVouchers.find(v => {
-                                if (cleanProdName(v.product_name) !== cleanName) return false;
-                                if (it.cost_price && v.cost_price) {
-                                    return Math.abs(parseInt(v.cost_price, 10) - it.cost_price) <= 100;
-                                }
-                                return true;
+                                if (itProv && v.provider_name && v.provider_name.toLowerCase().trim() !== itProv) return false;
+                                return cleanProdName(v.product_name) === cleanName;
                             });
                         }
 
@@ -7175,7 +7461,7 @@ Silakan minta kepada AI:
                     const name = c.getAttribute('data-name') || '';
                     const cat = c.getAttribute('data-category') || '';
                     const prov = c.getAttribute('data-provider') || 'Lainnya';
-                    const pId = parseInt(c.getAttribute('data-product-id') || c.getAttribute('data-id') || '0', 10);
+                    const pId = parseInt(c.getAttribute('data-product-id') || '0', 10);
                     const itemDevId = c.getAttribute('data-device-id') || selectedDevice;
 
                     items.push({
@@ -7311,14 +7597,13 @@ Silakan minta kepada AI:
                             const rItem = rep.items.find(ri => {
                                 if (!ri || ri.type !== 'product') return false;
                                 const rPId = parseInt(ri.productId || ri.product_id || 0, 10);
-                                if (itemId >= 100 && rPId >= 100) {
-                                    return rPId === itemId; // WAJIB sama persis jika ID ada
+                                if (itemId > 0 && rPId > 0 && rPId === itemId) {
+                                    return true;
                                 }
                                 const cleanRi = cleanProdName(ri.productName);
                                 if (cleanRi !== cleanItemName) return false;
-                                if (item.cost_price && ri.cost) {
-                                    const parsedCost = parseInt(String(ri.cost).replace(/[^\d]/g, ''), 10) || 0;
-                                    if (parsedCost > 0) return Math.abs(parsedCost - item.cost_price) <= 100;
+                                if (item.provider_name && ri.providerName) {
+                                    if (cleanProdName(item.provider_name) !== cleanProdName(ri.providerName)) return false;
                                 }
                                 return true;
                             });
@@ -7356,7 +7641,7 @@ Silakan minta kepada AI:
 
                                 if (rItem.cost) {
                                     const parsedCost = parseInt(String(rItem.cost).replace(/[^\d]/g, ''), 10) || 0;
-                                    if (parsedCost > 0 && Math.abs(parsedCost - item.cost_price) <= 1000) {
+                                    if (parsedCost > 0) {
                                         latestUnitCost = parsedCost;
                                     }
                                 }
@@ -7366,18 +7651,16 @@ Silakan minta kepada AI:
 
                     // 2. SUMBER PENDUKUNG: AUDIT TRAIL CHANGE_HISTORY DI Supabase (allVouchers)
                     let incomingFromAudit = 0;
+                    const itProv = (item.provider_name || '').toLowerCase().trim();
                     const vMatches = allVouchers.filter(v => {
                         if (targetDev && targetDev !== 'all' && v.device_id && v.device_id !== targetDev) return false;
                         const vId = parseInt(v.product_id || v.id || 0, 10);
-                        if (itemId >= 100 && vId >= 100) {
-                            return vId === itemId; // WAJIB sama persis jika ID ada
+                        if (itemId > 0 && vId > 0 && vId === itemId) {
+                            return true; // WAJIB sama persis jika ID ada
                         }
+                        if (itProv && v.provider_name && v.provider_name.toLowerCase().trim() !== itProv) return false;
                         const cleanVName = cleanProdName(v.product_name);
-                        if (cleanVName !== cleanItemName) return false;
-                        if (item.cost_price && v.cost_price) {
-                            return Math.abs(parseInt(v.cost_price, 10) - item.cost_price) <= 100;
-                        }
-                        return true;
+                        return cleanVName === cleanItemName;
                     });
 
                     vMatches.forEach(v => {
@@ -7390,7 +7673,7 @@ Silakan minta kepada AI:
                                 if (diff > 0 && entryTime >= (orderTime - 600000)) {
                                     incomingFromAudit += diff;
                                     const entryNewCost = parseInt(entry.new_cost_price || 0, 10);
-                                    if (entryNewCost > 0 && Math.abs(entryNewCost - item.cost_price) <= 1000) {
+                                    if (entryNewCost > 0) {
                                         latestUnitCost = entryNewCost;
                                     }
                                 }
@@ -7398,7 +7681,7 @@ Silakan minta kepada AI:
                         }
 
                         const vCost = parseInt(v.cost_price || 0, 10);
-                        if (vCost > 0 && latestUnitCost === item.cost_price && Math.abs(vCost - item.cost_price) <= 1000) {
+                        if (vCost > 0 && latestUnitCost === item.cost_price) {
                             latestUnitCost = vCost;
                         }
                     });
@@ -7462,6 +7745,7 @@ Silakan minta kepada AI:
                     }
                 }
             });
+            saveRestockOrdersToStorage();
         }
 
         let historySelectedDateStr = getLocalDateString(new Date());
@@ -7760,7 +8044,6 @@ Silakan minta kepada AI:
                     const itEstCost = it.cost_price || 0;
                     const itActCost = it.actual_unit_cost || itEstCost;
                     const itSubtotalAct = itRecvQty * itActCost;
-                    const itDevName = it.device_id ? getDeviceName(it.device_id) : '';
 
                     let itStatusTag = '<span style="color:var(--warning); font-weight:700;">⏳ Belum (0)</span>';
                     if (itRecvQty >= itOrderQty) {
@@ -7779,10 +8062,7 @@ Silakan minta kepada AI:
                                     <b>${escapeHtml(itInfo.cleanTitle)}</b>
                                     ${itInfo.badgeHtml}
                                 </div>
-                                <div style="font-size:10px; color:var(--text-muted); display:flex; gap:6px; align-items:center; margin-top:2px;">
-                                    <span>${escapeHtml(it.provider_name || '')}</span>
-                                    ${itDevName ? `<span style="background:rgba(79,142,247,0.15); color:var(--primary); padding:1px 6px; border-radius:4px; font-weight:600;">📱 ${escapeHtml(itDevName)}</span>` : ''}
-                                </div>
+                                ${it.provider_name ? `<div style="font-size:10px; color:var(--text-muted); margin-top:2px;">${escapeHtml(it.provider_name)}</div>` : ''}
                             </td>
                             <td class="center"><b>${itOrderQty}</b> pcs</td>
                             <td class="center"><b style="color:${itRecvQty >= itOrderQty ? 'var(--success)' : (itRecvQty > 0 ? 'var(--primary)' : 'var(--text-muted)')};">${itRecvQty}</b> pcs</td>
@@ -8863,19 +9143,26 @@ Silakan minta kepada AI:
                 dateHeaderStr = dateHeaderStr || 'Hari Ini';
             }
 
-            const itemTemplate = (overrideItemTpl !== undefined) ? overrideItemTpl : getRekapItemTemplate();
-            const mainTemplate = (overrideMainTpl !== undefined) ? overrideMainTpl : getRekapTemplate();
+            const rawTpl = (overrideMainTpl !== undefined) ? overrideMainTpl : getRekapTemplate();
+            const parsed = parseUnifiedTemplate(
+                rawTpl,
+                '*{provider}*',
+                '• {name}: *{sold} pcs* (Awal: {stokAwal} | Sisa: {stokAkhir})'
+            );
 
             let formattedItems = '';
             const provKeys = Object.keys(provGroups);
             provKeys.forEach((prov, pIdx) => {
-                if (pIdx > 0) formattedItems += '\n\n';
-                formattedItems += `*${prov.toUpperCase()}*\n`;
+                let block = '';
+                if (parsed.providerTpl) {
+                    const pHeader = parsed.providerTpl.replace(/{provider}|{prov}/gi, prov.toUpperCase());
+                    block += pHeader + '\n';
+                }
                 const prods = provGroups[prov];
-                prods.forEach((item, iIdx) => {
+                const itemLines = prods.map(item => {
                     const itemAddStr = (item.added && item.added > 0) ? ` (+${item.added})` : '';
                     const itemFullStokAwal = `${item.stokAwal}${itemAddStr}`;
-                    let line = itemTemplate
+                    return parsed.itemTpl
                         .replace(/{name}/g, item.name)
                         .replace(/{sold}/g, String(item.sold))
                         .replace(/{stokAwal}/g, itemFullStokAwal)
@@ -8888,10 +9175,13 @@ Silakan minta kepada AI:
                         .replace(/{cost}/g, `Rp ${item.cost.toLocaleString('id-ID')}`)
                         .replace(/{rev}/g, `Rp ${item.rev.toLocaleString('id-ID')}`)
                         .replace(/{revK}/g, formatK(item.rev))
-                        .replace(/{profit}/g, `Rp ${item.profit.toLocaleString('id-ID')}`);
-                    if (iIdx > 0) formattedItems += '\n';
-                    formattedItems += line;
+                        .replace(/{profit}/g, `Rp ${item.profit.toLocaleString('id-ID')}`)
+                        .replace(/{provider}|{prov}/gi, prov.toUpperCase());
                 });
+                block += itemLines.join('\n');
+
+                if (pIdx > 0) formattedItems += (parsed.providerTpl ? '\n\n' : '\n');
+                formattedItems += block;
             });
 
             let totalJenis = 0;
@@ -8900,12 +9190,13 @@ Silakan minta kepada AI:
             const totalAddStr = (totalAdded > 0) ? ` (+${totalAdded})` : '';
             const fullTotalAwal = `${totalAwal}${totalAddStr}`;
 
-            let text = mainTemplate
+            const baseText = (parsed.header + formattedItems + parsed.footer);
+            let text = baseText
+                .replace(/{items}/g, formattedItems)
                 .replace(/{deviceName}/g, deviceName)
                 .replace(/{device}/g, deviceName)
                 .replace(/{date}/g, dateHeaderStr)
                 .replace(/{shift}/g, shiftStr)
-                .replace(/{items}/g, formattedItems)
                 .replace(/{totalSold}/g, `${totalSold} pcs`)
                 .replace(/{sold}/g, String(totalSold))
                 .replace(/{totalAwal}/g, `${fullTotalAwal} pcs`)
@@ -8920,8 +9211,12 @@ Silakan minta kepada AI:
                 .replace(/{totalJenis}/g, `${totalJenis} jenis`)
                 .replace(/{jenis}/g, String(totalJenis));
 
-            const shouldIncludeAi = (overrideIncludeAiPrompt !== undefined) ? overrideIncludeAiPrompt : getRekapIncludeAiPrompt();
-            const rawAiPrompt = (overrideAiPromptText !== undefined) ? overrideAiPromptText : getRekapAiPromptText();
+            const shouldIncludeAi = (typeof overrideItemTpl === 'boolean')
+                ? overrideItemTpl
+                : ((overrideIncludeAiPrompt !== undefined) ? overrideIncludeAiPrompt : getRekapIncludeAiPrompt());
+            const rawAiPrompt = (typeof overrideItemTpl === 'boolean')
+                ? (overrideIncludeAiPrompt !== undefined ? overrideIncludeAiPrompt : getRekapAiPromptText())
+                : ((overrideAiPromptText !== undefined) ? overrideAiPromptText : getRekapAiPromptText());
             const formattedAiPrompt = (rawAiPrompt || '')
                 .replace(/{date}/g, dateHeaderStr)
                 .replace(/{deviceName}/g, deviceName)
@@ -9365,6 +9660,7 @@ Silakan minta kepada AI:
                 case 'margin': return '💹 Margin Voucher - KSP Check';
                 case 'balance': return '💳 Saldo Realtime - KSP Check';
                 case 'produk': return '🛍️ Stok Produk - KSP Check';
+                case 'feerule': return '⚖️ Fee Rule - KSP Check';
                 case 'order':
                 default:
                     return '🌅 Order Restok - KSP Check';
@@ -9382,6 +9678,7 @@ Silakan minta kepada AI:
                     if (cleanT === 'margin' || cleanT === 'marginvoucher' || cleanT === 'untung') return 'margin';
                     if (cleanT === 'balance' || cleanT === 'saldo' || cleanT === 'ewallet') return 'balance';
                     if (cleanT === 'produk' || cleanT === 'barang') return 'produk';
+                    if (cleanT === 'feerule' || cleanT === 'rule' || cleanT === 'fee') return 'feerule';
                     if (cleanT === 'order') return 'order';
                 }
             } catch (e) {}
@@ -9395,6 +9692,7 @@ Silakan minta kepada AI:
                     if (cleanHash === 'margin' || cleanHash === 'marginvoucher' || cleanHash === 'untung') return 'margin';
                     if (cleanHash === 'balance' || cleanHash === 'saldo' || cleanHash === 'ewallet') return 'balance';
                     if (cleanHash === 'produk' || cleanHash === 'barang') return 'produk';
+                    if (cleanHash === 'feerule' || cleanHash === 'rule' || cleanHash === 'fee') return 'feerule';
                     if (cleanHash === 'order') return 'order';
                     if (cleanHash.includes('tab=')) {
                         const val = cleanHash.split('tab=')[1].split('&')[0];
@@ -9403,6 +9701,7 @@ Silakan minta kepada AI:
                         if (val === 'margin' || val === 'marginvoucher' || val === 'untung') return 'margin';
                         if (val === 'balance' || val === 'saldo' || val === 'ewallet') return 'balance';
                         if (val === 'produk' || val === 'barang') return 'produk';
+                        if (val === 'feerule' || val === 'rule' || val === 'fee') return 'feerule';
                         if (val === 'order') return 'order';
                     }
                 }
@@ -9411,7 +9710,7 @@ Silakan minta kepada AI:
             // Fallback: Jika dibuka dari pintasan PWA tanpa parameter (?tab=...), gunakan tab yang terakhir aktif
             try {
                 const lastTab = localStorage.getItem('kspcheck_last_active_tab');
-                if (lastTab && ['order', 'history', 'daily', 'margin', 'balance', 'produk'].includes(lastTab)) {
+                if (lastTab && ['order', 'history', 'daily', 'margin', 'balance', 'produk', 'feerule'].includes(lastTab)) {
                     return lastTab;
                 }
             } catch (e) {}
@@ -9443,7 +9742,8 @@ Silakan minta kepada AI:
                     'daily': { manifest: 'manifest-daily.json', svg: 'icon-daily.svg', png: 'icon-daily-192.png' },
                     'margin': { manifest: 'manifest-margin.json', svg: 'icon-margin.svg', png: 'icon-margin-192.png' },
                     'balance': { manifest: 'manifest-balance.json', svg: 'icon-balance.svg', png: 'icon-balance-192.png' },
-                    'produk': { manifest: 'manifest-produk.json', svg: 'icon-produk.svg', png: 'icon-produk-192.png' }
+                    'produk': { manifest: 'manifest-produk.json', svg: 'icon-produk.svg', png: 'icon-produk-192.png' },
+                    'feerule': { manifest: 'manifest-order.json', svg: 'icon-order.svg', png: 'icon-order-192.png' }
                 };
 
                 const assets = tabAssets[tab] || tabAssets['order'];
@@ -9490,7 +9790,8 @@ Silakan minta kepada AI:
                 'daily': 'tabBtnDaily',
                 'margin': 'tabBtnMargin',
                 'balance': 'tabBtnBalance',
-                'produk': 'tabBtnProduk'
+                'produk': 'tabBtnProduk',
+                'feerule': 'tabBtnFeeRule'
             };
 
             Object.entries(tabMap).forEach(([key, btnId]) => {
@@ -9504,6 +9805,7 @@ Silakan minta kepada AI:
             const marginPane = document.getElementById('tabContentMargin');
             const balancePane = document.getElementById('tabContentBalance');
             const produkPane = document.getElementById('tabContentProduk');
+            const feeRulePane = document.getElementById('tabContentFeeRule');
             const bottomBar = document.getElementById('bottomBarOrder');
             const bottomDockBalance = document.getElementById('bottomDockBalance');
             const bottomDockProduk = document.getElementById('bottomDockProduk');
@@ -9514,6 +9816,7 @@ Silakan minta kepada AI:
             if (marginPane) marginPane.style.display = (tab === 'margin') ? 'block' : 'none';
             if (balancePane) balancePane.style.display = (tab === 'balance') ? 'block' : 'none';
             if (produkPane) produkPane.style.display = (tab === 'produk') ? 'block' : 'none';
+            if (feeRulePane) feeRulePane.style.display = (tab === 'feerule') ? 'block' : 'none';
             if (bottomBar) bottomBar.style.display = (tab === 'order') ? 'flex' : 'none';
             if (bottomDockBalance) bottomDockBalance.style.display = (tab === 'balance') ? 'flex' : 'none';
             if (bottomDockProduk) bottomDockProduk.style.display = (tab === 'produk') ? 'flex' : 'none';
@@ -9531,6 +9834,8 @@ Silakan minta kepada AI:
                 initBalanceTab();
             } else if (tab === 'produk') {
                 initProdukTab();
+            } else if (tab === 'feerule') {
+                initFeeRuleTab();
             }
 
             if (updateUrl) {
@@ -9670,53 +9975,33 @@ Silakan minta kepada AI:
         function updateSettingsMenuUI() {
             const isLight = document.body.classList.contains('light-theme');
             const providerVisible = !document.body.classList.contains('hide-provider-badge');
-            const orderHistoryVisible = (currentTab === 'history');
-            const audit = document.getElementById('auditTrailSection');
-            const auditVisible = audit && audit.style.display === 'block';
 
             const themeIcon = document.querySelector('#settingTheme .settings-icon');
             if (themeIcon) themeIcon.innerText = isLight ? '☀️' : '🌙';
             updateSettingsState('settingThemeState', isLight ? 'Terang' : 'Gelap', 'on');
 
             updateSettingsState('settingOrderProfitState', orderProfitMode ? 'Aktif' : 'Mati', orderProfitMode ? 'warn' : '');
-            updateSettingsState('settingOrderSortStockState', orderSortByStockAsc ? 'Aktif' : 'Standar', orderSortByStockAsc ? 'on' : '');
             updateSettingsState('settingOrderBadgeState', (orderBadgeMode === 'dynamic') ? 'Dinamis' : ((orderBadgeMode === 'simple') ? 'Sederhana' : 'Mati'), orderBadgeMode !== 'none' ? 'on' : '');
             updateSettingsState('settingOrderDemandState', orderShowDemand ? 'Aktif' : 'Mati', orderShowDemand ? 'on' : '');
             updateSettingsState('settingProviderBadgeState', providerVisible ? 'Aktif' : 'Mati', providerVisible ? 'on' : '');
-            updateSettingsState('settingOrderHistoryState', orderHistoryVisible ? 'Terbuka' : 'Tersembunyi', orderHistoryVisible ? 'on' : '');
-            const hasCustomOrderTemplate = !!(localStorage.getItem('kspcheck_order_template') || localStorage.getItem('kspcheck_order_item_template'));
-            updateSettingsState('settingOrderTemplateState', hasCustomOrderTemplate ? 'Kustom' : 'Default', hasCustomOrderTemplate ? 'on' : '');
-            const hasCustomDailyTemplate = !!(localStorage.getItem('kspcheck_rekap_template') || localStorage.getItem('kspcheck_rekap_item_template'));
-            updateSettingsState('settingDailyTemplateState', hasCustomDailyTemplate ? 'Kustom' : 'Default', hasCustomDailyTemplate ? 'on' : '');
-            const hasCustomMarginTemplate = !!(
-                localStorage.getItem('kspcheck_margin_chg_template') ||
-                localStorage.getItem('kspcheck_margin_chg_item_template') ||
-                localStorage.getItem('kspcheck_margin_filtered_template') ||
-                localStorage.getItem('kspcheck_margin_filtered_item_template') ||
-                localStorage.getItem('kspcheck_margin_all_template') ||
-                localStorage.getItem('kspcheck_margin_all_item_template')
-            );
-            updateSettingsState('settingMarginTemplateState', hasCustomMarginTemplate ? 'Kustom' : 'Default', hasCustomMarginTemplate ? 'on' : '');
             updateSettingsState('settingHideZeroState', dailyHideZeroSell ? 'Aktif' : 'Mati', dailyHideZeroSell ? 'on' : '');
-            updateSettingsState('settingAuditState', auditVisible ? 'Terbuka' : 'Tersembunyi', auditVisible ? 'on' : '');
-            updateSettingsState('settingLockState', REQUIRE_PIN ? 'Aktif' : 'Nonaktif', REQUIRE_PIN ? 'on' : '');
 
-            const currentDevVal = document.getElementById('navDeviceFilter')?.value || 'all';
-            const devSelect = document.getElementById('navDeviceFilter');
-            let devText = 'Semua';
-            if (currentDevVal !== 'all' && devSelect && devSelect.selectedIndex >= 0) {
-                devText = devSelect.options[devSelect.selectedIndex].text.replace('📱 ', '').trim();
-            }
-            updateSettingsState('settingDeviceState', devText, currentDevVal !== 'all' ? 'on' : '');
+            const hasAnyCustomTemplate = !!(
+                localStorage.getItem('kspcheck_order_template') ||
+                localStorage.getItem('kspcheck_order_item_template') ||
+                localStorage.getItem('kspcheck_rekap_template') ||
+                localStorage.getItem('kspcheck_rekap_item_template') ||
+                localStorage.getItem('kspcheck_margin_chg_template') ||
+                localStorage.getItem('kspcheck_margin_filtered_template') ||
+                localStorage.getItem('kspcheck_margin_all_template')
+            );
+            updateSettingsState('settingTemplateModalState', hasAnyCustomTemplate ? 'Kustom' : 'Default', hasAnyCustomTemplate ? 'on' : '');
+
+            updateSettingsState('settingLockState', REQUIRE_PIN ? 'Aktif' : 'Nonaktif', REQUIRE_PIN ? 'on' : '');
 
             const devicesMap = getDiscoveredDevicesMap();
             const devCount = devicesMap.size;
             updateSettingsState('settingManageDeviceState', `${devCount} HP`, devCount > 0 ? 'on' : '');
-
-            const orderGroup = document.getElementById('settingsOrderGroup');
-            const dailyGroup = document.getElementById('settingsDailyGroup');
-            if (orderGroup) orderGroup.style.display = (currentTab === 'order' || currentTab === 'history') ? 'block' : 'none';
-            if (dailyGroup) dailyGroup.style.display = (currentTab === 'daily') ? 'block' : 'none';
         }
 
         function toggleThemeFromMenu() {
@@ -9734,19 +10019,8 @@ Silakan minta kepada AI:
             updateSettingsMenuUI();
         }
 
-        function toggleOrderHistoryFromMenu() {
-            const chip = document.getElementById('chipToggleOrderHistory');
-            toggleOrderHistoryView(chip);
-            updateSettingsMenuUI();
-        }
-
         function toggleHideZeroFromMenu() {
             toggleHideZeroSell();
-            updateSettingsMenuUI();
-        }
-
-        function toggleAuditFromMenu() {
-            toggleAuditView();
             updateSettingsMenuUI();
         }
 
@@ -12922,6 +13196,511 @@ Silakan minta kepada AI:
             }
 
             copyToClipboard(sb, '📋 Rekap stok barang berhasil disalin untuk WhatsApp!');
+        }
+
+        // ==================== TAB 7: FEE RULES (ATURAN BIAYA ADMIN) CONTROLLER ====================
+        let allFeeRules = [];
+        let feeRuleSelectedCategory = 'ALL';
+        let feeRuleViewMode = 'table'; // 'table' or 'grid'
+
+        async function initFeeRuleTab() {
+            if (!allFeeRules || allFeeRules.length === 0) {
+                await fetchFeeRulesFromSupabase();
+            } else {
+                renderFeeRuleCategoryChips();
+                filterFeeRules();
+            }
+        }
+
+        function renderFeeRuleTabOnDeviceChange() {
+            if (currentTab === 'feerule') {
+                renderFeeRuleCategoryChips();
+                filterFeeRules();
+            }
+        }
+
+        async function fetchFeeRulesFromSupabase(forceNotify = false) {
+            if (!supabaseClient) {
+                const empty = document.getElementById('feeRuleEmptyState');
+                if (empty) empty.style.display = 'block';
+                return;
+            }
+
+            try {
+                const sub = document.getElementById('feeRuleSubtitle');
+                if (sub && currentTab === 'feerule') {
+                    sub.textContent = 'Mengambil aturan biaya admin dari Supabase cloud...';
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('fee_rules')
+                    .select('*')
+                    .order('priority', { ascending: true })
+                    .order('category', { ascending: true });
+
+                if (error) {
+                    console.warn('Supabase fetch fee_rules error:', error);
+                    const sqlBanner = document.getElementById('feeRuleSqlGuideBanner');
+                    if (sqlBanner && (error.code === '42P01' || (error.message && error.message.toLowerCase().includes('fee_rules')))) {
+                        sqlBanner.style.display = 'block';
+                        const empty = document.getElementById('feeRuleEmptyState');
+                        if (empty) empty.style.display = 'block';
+                    }
+                    if (forceNotify) showToast('❌ Gagal memuat fee rules: ' + error.message);
+                    return;
+                }
+
+                const sqlBanner = document.getElementById('feeRuleSqlGuideBanner');
+                if (sqlBanner) sqlBanner.style.display = 'none';
+
+                allFeeRules = (data || []).filter(r => !isDeviceDeleted(r.device_id));
+
+                renderFeeRuleCategoryChips();
+                filterFeeRules();
+
+                if (sub) {
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    sub.textContent = `Tersinkron cloud (${allFeeRules.length} aturan • ${timeStr} WIB)`;
+                }
+
+                if (forceNotify) showToast(`✅ Sukses memuat ${allFeeRules.length} fee rules dari cloud!`);
+
+            } catch (err) {
+                console.error('Fetch fee rules exception:', err);
+                if (forceNotify) showToast('❌ Error: ' + err.message);
+            }
+        }
+
+        function renderFeeRuleCategoryChips() {
+            const container = document.getElementById('feeRuleCategoryChips');
+            if (!container) return;
+
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const scopedRules = (selectedDevice === 'all')
+                ? allFeeRules
+                : allFeeRules.filter(r => r.device_id === selectedDevice || r.device_id === 'global');
+
+            const counts = {};
+            scopedRules.forEach(r => {
+                const cat = r.category || 'Umum';
+                counts[cat] = (counts[cat] || 0) + 1;
+            });
+
+            const categories = Object.keys(counts).sort();
+
+            let html = `
+                <div class="chip ${feeRuleSelectedCategory === 'ALL' ? 'active' : ''}" onclick="selectFeeRuleCategory('ALL')">
+                    <span>Semua Kategori</span>
+                    <span class="chip-count">${scopedRules.length}</span>
+                </div>
+            `;
+
+            categories.forEach(cat => {
+                html += `
+                    <div class="chip ${feeRuleSelectedCategory === cat ? 'active' : ''}" onclick="selectFeeRuleCategory('${escapeHtml(cat)}')">
+                        <span>${escapeHtml(cat)}</span>
+                        <span class="chip-count">${counts[cat]}</span>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function selectFeeRuleCategory(cat) {
+            feeRuleSelectedCategory = cat;
+            renderFeeRuleCategoryChips();
+            filterFeeRules();
+        }
+
+        function clearFeeRuleSearch() {
+            const input = document.getElementById('feeRuleSearchInput');
+            if (input) input.value = '';
+            filterFeeRules();
+        }
+
+        function filterFeeRules() {
+            const query = (document.getElementById('feeRuleSearchInput')?.value || '').toLowerCase().trim();
+            const btnClear = document.getElementById('btnFeeRuleClearSearch');
+            if (btnClear) btnClear.style.display = query ? 'block' : 'none';
+
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            let filtered = allFeeRules.filter(r => {
+                const matchDevice = (selectedDevice === 'all') || (r.device_id === selectedDevice) || (r.device_id === 'global');
+                const matchCat = (feeRuleSelectedCategory === 'ALL' || (r.category || 'Umum') === feeRuleSelectedCategory);
+                const matchQuery = !query ||
+                    (r.name && r.name.toLowerCase().includes(query)) ||
+                    (r.category && r.category.toLowerCase().includes(query));
+                return matchDevice && matchCat && matchQuery;
+            });
+
+            filtered.sort((a, b) => {
+                const pa = (a.priority !== undefined && a.priority !== null) ? Number(a.priority) : 10;
+                const pb = (b.priority !== undefined && b.priority !== null) ? Number(b.priority) : 10;
+                if (pa !== pb) return pa - pb;
+                const ca = a.category || '';
+                const cb = b.category || '';
+                if (ca !== cb) return ca.localeCompare(cb);
+                return (Number(a.min_amount) || Number(a.minAmount) || 0) - (Number(b.min_amount) || Number(b.minAmount) || 0);
+            });
+
+            renderFeeRuleTable(filtered);
+            renderFeeRuleGrid(filtered);
+            updateFeeRuleStats(filtered);
+
+            const emptyState = document.getElementById('feeRuleEmptyState');
+            const tableContainer = document.getElementById('feeRuleTableContainer');
+            const gridContainer = document.getElementById('feeRuleGridContainer');
+
+            if (filtered.length === 0) {
+                if (emptyState) emptyState.style.display = 'block';
+                if (tableContainer) tableContainer.style.display = 'none';
+                if (gridContainer) gridContainer.style.display = 'none';
+            } else {
+                if (emptyState) emptyState.style.display = 'none';
+                if (tableContainer) tableContainer.style.display = (feeRuleViewMode === 'table') ? 'block' : 'none';
+                if (gridContainer) gridContainer.style.display = (feeRuleViewMode === 'grid') ? 'block' : 'none';
+            }
+        }
+
+        function getFeeRuleCategoryBadgeClass(category) {
+            const cat = (category || '').toUpperCase();
+            if (cat.includes('TARIK')) return 'cat-tarik';
+            if (cat.includes('TOPUP') || cat.includes('BANK')) return 'cat-topup';
+            if (cat === 'FF' || cat === 'ML' || cat.includes('GAME')) return 'cat-game';
+            if (cat.includes('PULSA') || cat.includes('TOKEN') || cat.includes('MAXIM')) return 'cat-pulsa';
+            if (cat.includes('QRIS')) return 'cat-qris';
+            return 'cat-other';
+        }
+
+        function renderFeeRuleTable(rules) {
+            const tbody = document.getElementById('feeRuleTableBody');
+            if (!tbody) return;
+
+            tbody.innerHTML = rules.map((r) => {
+                const fixedAmt = Number(r.fixed_amount || r.fixedAmount || 0);
+                const minAmt = Number(r.min_amount || r.minAmount || 0);
+                const maxAmt = Number(r.max_amount || r.maxAmount || 0);
+                const feeAmt = Number(r.fee_amount || r.feeAmount || 0);
+                const feePct = Number(r.fee_percent || r.feePercent || 0);
+                const isActive = (r.is_active !== undefined) ? !!r.is_active : (r.isActive !== undefined ? !!r.isActive : true);
+                const priority = (r.priority !== undefined && r.priority !== null) ? r.priority : 10;
+                const rowId = r.id || `${r.device_id}_${r.rule_id}`;
+
+                let rangeText = '-';
+                if (fixedAmt > 0) {
+                    rangeText = '<span style="color: var(--text-muted); font-size: 11px;">Override Harga Jual</span>';
+                } else if (minAmt > 0 || maxAmt > 0) {
+                    rangeText = `<span class="mono" style="font-weight: 600;">${formatRupiah(minAmt)} - ${maxAmt >= 99999999 ? '∞' : formatRupiah(maxAmt)}</span>`;
+                }
+
+                let feeBadge = '';
+                if (fixedAmt > 0) {
+                    feeBadge = `<span class="badge-fixed">Harga Jual: ${formatRupiah(fixedAmt)}</span>`;
+                } else if (feeAmt > 0 && feePct > 0) {
+                    feeBadge = `<span class="badge-fee">${formatRupiah(feeAmt)}</span> <span class="badge-fee-percent">+${feePct}%</span>`;
+                } else if (feeAmt > 0) {
+                    feeBadge = `<span class="badge-fee">${formatRupiah(feeAmt)}</span>`;
+                } else if (feePct > 0) {
+                    feeBadge = `<span class="badge-fee-percent">${feePct}%</span>`;
+                } else {
+                    feeBadge = `<span style="color: var(--text-muted); font-size: 11px;">Gratis / Rp 0</span>`;
+                }
+
+                return `
+                    <tr>
+                        <td style="text-align: center; color: var(--text-muted); font-family: monospace; font-size: 11px;">
+                            ${priority}
+                        </td>
+                        <td>
+                            <div style="font-weight: 700;">${escapeHtml(r.name || 'Rule')}</div>
+                            ${r.device_name ? `<div style="font-size: 10px; color: var(--text-muted);">📱 ${escapeHtml(r.device_name)}</div>` : ''}
+                        </td>
+                        <td>
+                            <span class="cat-badge ${getFeeRuleCategoryBadgeClass(r.category)}">${escapeHtml(r.category || 'Umum')}</span>
+                        </td>
+                        <td>${rangeText}</td>
+                        <td>${feeBadge}</td>
+                        <td style="text-align: center;">
+                            <label class="fee-switch">
+                                <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleFeeRuleActiveWeb('${rowId}', this.checked)">
+                                <span class="fee-slider"></span>
+                            </label>
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <button type="button" class="btn-table-action" onclick="openEditFeeRuleModal('${rowId}')">✏️ Edit</button>
+                            <button type="button" class="btn-table-action danger" onclick="deleteFeeRuleWeb('${rowId}')">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderFeeRuleGrid(rules) {
+            const container = document.getElementById('feeRuleGridBody');
+            if (!container) return;
+
+            container.innerHTML = rules.map(r => {
+                const fixedAmt = Number(r.fixed_amount || r.fixedAmount || 0);
+                const minAmt = Number(r.min_amount || r.minAmount || 0);
+                const maxAmt = Number(r.max_amount || r.maxAmount || 0);
+                const feeAmt = Number(r.fee_amount || r.feeAmount || 0);
+                const feePct = Number(r.fee_percent || r.feePercent || 0);
+                const isActive = (r.is_active !== undefined) ? !!r.is_active : (r.isActive !== undefined ? !!r.isActive : true);
+                const rowId = r.id || `${r.device_id}_${r.rule_id}`;
+
+                let feeDesc = '';
+                if (fixedAmt > 0) {
+                    feeDesc = `<span class="badge-fixed">Harga: ${formatRupiah(fixedAmt)}</span>`;
+                } else {
+                    feeDesc = `<span class="badge-fee">${formatRupiah(feeAmt)}</span> ${feePct > 0 ? '<span class="badge-fee-percent">+' + feePct + '%</span>' : ''}`;
+                }
+
+                return `
+                    <div class="fee-rule-card">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                <span class="cat-badge ${getFeeRuleCategoryBadgeClass(r.category)}">${escapeHtml(r.category || 'Umum')}</span>
+                                <label class="fee-switch">
+                                    <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleFeeRuleActiveWeb('${rowId}', this.checked)">
+                                    <span class="fee-slider"></span>
+                                </label>
+                            </div>
+                            <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px;">${escapeHtml(r.name || 'Rule')}</div>
+                            <div style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 10px;">
+                                ${fixedAmt > 0 ? 'Mode Override Harga Langsung' : formatRupiah(minAmt) + ' - ' + (maxAmt >= 99999999 ? '∞' : formatRupiah(maxAmt))}
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--card-border); padding-top: 10px; margin-top: 6px;">
+                            <div>${feeDesc}</div>
+                            <div style="display: flex; gap: 6px;">
+                                <button type="button" class="btn-table-action" onclick="openEditFeeRuleModal('${rowId}')">✏️</button>
+                                <button type="button" class="btn-table-action danger" onclick="deleteFeeRuleWeb('${rowId}')">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateFeeRuleStats(scopedRules) {
+            let active = 0;
+            const cats = new Set();
+            scopedRules.forEach(r => {
+                const isAct = (r.is_active !== undefined) ? !!r.is_active : (r.isActive !== undefined ? !!r.isActive : true);
+                if (isAct) active++;
+                if (r.category) cats.add(r.category);
+            });
+
+            const statTotal = document.getElementById('statFeeRuleTotal');
+            const statActive = document.getElementById('statFeeRuleActive');
+            const statInactive = document.getElementById('statFeeRuleInactive');
+            const statCats = document.getElementById('statFeeRuleCategories');
+
+            if (statTotal) statTotal.textContent = scopedRules.length;
+            if (statActive) statActive.textContent = active;
+            if (statInactive) statInactive.textContent = scopedRules.length - active;
+            if (statCats) statCats.textContent = cats.size;
+        }
+
+        async function toggleFeeRuleActiveWeb(id, isActive) {
+            const rule = allFeeRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id));
+            if (!rule) return;
+
+            rule.is_active = isActive;
+            rule.isActive = isActive;
+            filterFeeRules();
+
+            if (supabaseClient) {
+                try {
+                    const rowId = rule.id || `${rule.device_id}_${rule.rule_id}`;
+                    const { error } = await supabaseClient
+                        .from('fee_rules')
+                        .update({ is_active: isActive, updated_at: new Date().toISOString() })
+                        .eq('id', rowId);
+
+                    if (error) {
+                        console.warn('Supabase toggle error:', error);
+                        showToast('❌ Gagal update status di cloud: ' + error.message);
+                    } else {
+                        showToast(`Rule "${rule.name}" sekarang ${isActive ? 'AKTIF' : 'NONAKTIF'}`);
+                    }
+                } catch (e) {
+                    showToast('❌ Error toggle status: ' + e.message);
+                }
+            } else {
+                showToast(`Rule "${rule.name}" sekarang ${isActive ? 'AKTIF' : 'NONAKTIF'} (Lokal)`);
+            }
+        }
+
+        function toggleFeeRuleViewMode() {
+            const table = document.getElementById('feeRuleTableContainer');
+            const grid = document.getElementById('feeRuleGridContainer');
+            const text = document.getElementById('feeRuleViewModeText');
+            const icon = document.getElementById('feeRuleViewModeIcon');
+
+            if (feeRuleViewMode === 'table') {
+                feeRuleViewMode = 'grid';
+                if (table) table.style.display = 'none';
+                if (grid) grid.style.display = 'block';
+                if (text) text.textContent = 'Mode Tabel';
+                if (icon) icon.textContent = '📑';
+            } else {
+                feeRuleViewMode = 'table';
+                if (table) table.style.display = 'block';
+                if (grid) grid.style.display = 'none';
+                if (text) text.textContent = 'Mode Kartu';
+                if (icon) icon.textContent = '🗂️';
+            }
+        }
+
+        function openAddFeeRuleModal() {
+            document.getElementById('feeRuleModalTitle').textContent = 'Tambah Fee Rule Baru';
+            document.getElementById('formFeeRuleId').value = '';
+            document.getElementById('formFeeRuleDeviceId').value = document.getElementById('navDeviceFilter')?.value || 'web_dashboard';
+            document.getElementById('feeRuleForm').reset();
+            document.getElementById('formFeeRulePriority').value = '10';
+            document.getElementById('formFeeRuleIsActive').checked = true;
+            document.getElementById('feeRuleModal').style.display = 'flex';
+        }
+
+        function openEditFeeRuleModal(id) {
+            const rule = allFeeRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id));
+            if (!rule) return;
+
+            document.getElementById('feeRuleModalTitle').textContent = 'Edit Fee Rule';
+            document.getElementById('formFeeRuleId').value = rule.id || `${rule.device_id}_${rule.rule_id}`;
+            document.getElementById('formFeeRuleDeviceId').value = rule.device_id || 'web_dashboard';
+            document.getElementById('formFeeRuleName').value = rule.name || '';
+            document.getElementById('formFeeRuleCategory').value = rule.category || 'Umum';
+            document.getElementById('formFeeRulePriority').value = (rule.priority !== undefined && rule.priority !== null) ? rule.priority : 10;
+            document.getElementById('formFeeRuleMinAmount').value = (rule.min_amount || rule.minAmount) ? (rule.min_amount || rule.minAmount) : '';
+            document.getElementById('formFeeRuleMaxAmount').value = (rule.max_amount || rule.maxAmount) ? (rule.max_amount || rule.maxAmount) : '';
+            document.getElementById('formFeeRuleFeeAmount').value = (rule.fee_amount || rule.feeAmount) ? (rule.fee_amount || rule.feeAmount) : '';
+            document.getElementById('formFeeRuleFeePercent').value = (rule.fee_percent || rule.feePercent) ? (rule.fee_percent || rule.feePercent) : '';
+            document.getElementById('formFeeRuleFixedAmount').value = (rule.fixed_amount || rule.fixedAmount) ? (rule.fixed_amount || rule.fixedAmount) : '';
+            document.getElementById('formFeeRuleIsActive').checked = (rule.is_active !== undefined) ? !!rule.is_active : (rule.isActive !== undefined ? !!rule.isActive : true);
+
+            document.getElementById('feeRuleModal').style.display = 'flex';
+        }
+
+        function closeFeeRuleModal() {
+            const modal = document.getElementById('feeRuleModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function handleSaveFeeRule(event) {
+            event.preventDefault();
+            const idVal = document.getElementById('formFeeRuleId').value;
+            const deviceId = document.getElementById('formFeeRuleDeviceId').value || 'web_dashboard';
+            const name = document.getElementById('formFeeRuleName').value.trim();
+            const category = document.getElementById('formFeeRuleCategory').value.trim() || 'Umum';
+            const priority = parseInt(document.getElementById('formFeeRulePriority').value) || 10;
+            const minAmount = parseFloat(document.getElementById('formFeeRuleMinAmount').value) || 0;
+            const maxAmount = parseFloat(document.getElementById('formFeeRuleMaxAmount').value) || 0;
+            const feeAmount = parseFloat(document.getElementById('formFeeRuleFeeAmount').value) || 0;
+            const feePercent = parseFloat(document.getElementById('formFeeRuleFeePercent').value) || 0;
+            const fixedAmount = parseFloat(document.getElementById('formFeeRuleFixedAmount').value) || 0;
+            const isActive = document.getElementById('formFeeRuleIsActive').checked;
+
+            const rowId = idVal || `${deviceId}_${Date.now()}`;
+            const rowData = {
+                id: rowId,
+                device_id: deviceId,
+                device_name: 'Web Dashboard',
+                name: name,
+                category: category,
+                priority: priority,
+                min_amount: minAmount,
+                max_amount: maxAmount,
+                fee_amount: feeAmount,
+                fee_percent: feePercent,
+                fixed_amount: fixedAmount,
+                is_active: isActive,
+                updated_at: new Date().toISOString()
+            };
+
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient.from('fee_rules').upsert(rowData);
+                    if (error) throw error;
+                    showToast(`✅ Rule "${name}" berhasil disimpan ke cloud!`);
+                    await fetchFeeRulesFromSupabase(false);
+                } catch (e) {
+                    console.error('Error saving fee rule to Supabase:', e);
+                    showToast('❌ Gagal simpan ke Supabase: ' + e.message);
+                }
+            } else {
+                const existingIdx = allFeeRules.findIndex(r => (r.id === rowId || `${r.device_id}_${r.rule_id}` === rowId));
+                if (existingIdx >= 0) {
+                    allFeeRules[existingIdx] = { ...allFeeRules[existingIdx], ...rowData };
+                } else {
+                    allFeeRules.unshift(rowData);
+                }
+                renderFeeRuleCategoryChips();
+                filterFeeRules();
+                showToast(`Rule "${name}" disimpan secara lokal.`);
+            }
+
+            closeFeeRuleModal();
+        }
+
+        async function deleteFeeRuleWeb(id) {
+            const rule = allFeeRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id));
+            if (!rule) return;
+
+            if (!confirm(`Hapus aturan "${rule.name}" (${rule.category}) dari Supabase Cloud?`)) {
+                return;
+            }
+
+            if (supabaseClient) {
+                try {
+                    const rowId = rule.id || `${rule.device_id}_${rule.rule_id}`;
+                    const { error } = await supabaseClient.from('fee_rules').delete().eq('id', rowId);
+                    if (error) throw error;
+                    showToast(`🗑️ Rule "${rule.name}" berhasil dihapus dari cloud!`);
+                    await fetchFeeRulesFromSupabase(false);
+                } catch (e) {
+                    showToast('❌ Gagal hapus rule: ' + e.message);
+                }
+            } else {
+                allFeeRules = allFeeRules.filter(r => (r.id !== id && `${r.device_id}_${r.rule_id}` !== id));
+                renderFeeRuleCategoryChips();
+                filterFeeRules();
+                showToast(`Rule "${rule.name}" dihapus.`);
+            }
+        }
+
+        function exportFeeRulesJson() {
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const scopedRules = (selectedDevice === 'all')
+                ? allFeeRules
+                : allFeeRules.filter(r => r.device_id === selectedDevice || r.device_id === 'global');
+
+            const exportData = scopedRules.map(r => ({
+                category: r.category || 'Umum',
+                name: r.name || 'Rule',
+                minAmount: Number(r.min_amount || r.minAmount || 0),
+                maxAmount: Number(r.max_amount || r.maxAmount || 0),
+                feeAmount: Number(r.fee_amount || r.feeAmount || 0),
+                feePercent: Number(r.fee_percent || r.feePercent || 0),
+                fixedAmount: Number(r.fixed_amount || r.fixedAmount || 0),
+                isActive: (r.is_active !== undefined) ? !!r.is_active : (r.isActive !== undefined ? !!r.isActive : true)
+            }));
+
+            const jsonStr = JSON.stringify(exportData, null, 2);
+            navigator.clipboard.writeText(jsonStr).then(() => {
+                showToast('📋 JSON ' + exportData.length + ' rules disalin ke Clipboard!');
+            }).catch(() => {
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'fee_rules_export.json';
+                a.click();
+                showToast('💾 Berkas fee_rules_export.json berhasil diunduh!');
+            });
         }
     </script>
 </body>
