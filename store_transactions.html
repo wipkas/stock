@@ -1610,8 +1610,8 @@
         <div class="modal-card" style="max-width: 440px;">
             <div class="modal-header" style="padding: 14px 18px;">
                 <div>
-                    <h3 class="modal-title" style="font-size: 15.5px; font-weight: 850;">✏️ Usulan Transaksi Kasir</h3>
-                    <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Ajukan angka transaksi shift Anda untuk diverifikasi Admin</p>
+                    <h3 class="modal-title" id="empPropModalTitle" style="font-size: 15.5px; font-weight: 850;">✏️ Usulan Transaksi Kasir</h3>
+                    <p id="empPropModalSubtitle" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Ajukan angka transaksi shift Anda untuk diverifikasi Admin</p>
                 </div>
                 <button type="button" class="btn-cancel" onclick="closeModal('employeeProposalModal')" style="padding: 4px 8px; font-size: 14px;" title="Tutup">&times;</button>
             </div>
@@ -1627,8 +1627,8 @@
                         <button type="button" class="btn-preset" onclick="navigateProposalDate(1)" style="padding: 4px 10px; font-size: 11px;">H+1 &rarr;</button>
                     </div>
 
-                    <!-- Notice Usulan -->
-                    <div style="background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.25); border-radius: 10px; padding: 10px 12px; font-size: 11.5px; color: var(--text-main); line-height: 1.45;">
+                    <!-- Notice Usulan / Input Langsung -->
+                    <div id="empPropNoticeBox" style="background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.25); border-radius: 10px; padding: 10px 12px; font-size: 11.5px; color: var(--text-main); line-height: 1.45;">
                         💡 <b>Informasi Usulan:</b> Nilai yang Anda simpan berstatus <b>Usulan</b> dan menunggu persetujuan (approval) Admin Toko. Data transaksi sebelumnya tidak akan terhapus sampai disetujui.
                     </div>
 
@@ -1640,13 +1640,13 @@
 
                     <!-- Data Aktif Saat Ini -->
                     <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; padding: 0 4px;">
-                        <span style="color: var(--text-muted);">Data Tercatat (Disetujui Admin):</span>
+                        <span id="empPropCurrentTxLabel" style="color: var(--text-muted);">Data Tercatat (Disetujui Admin):</span>
                         <span id="empPropCurrentTx" style="font-weight: 800; color: var(--text-main);">0 tx</span>
                     </div>
 
-                    <!-- Input Nilai Usulan -->
+                    <!-- Input Nilai Transaksi -->
                     <div class="form-group">
-                        <label class="form-label" for="empPropTxInput" style="font-size: 12.5px; font-weight: 800;">
+                        <label id="empPropTxLabel" class="form-label" for="empPropTxInput" style="font-size: 12.5px; font-weight: 800;">
                             Jumlah Transaksi Usulan Anda *
                         </label>
                         <input type="number" 
@@ -1660,8 +1660,8 @@
                                style="font-size: 22px; font-weight: 850; text-align: center; padding: 12px; border-radius: 10px;">
                     </div>
 
-                    <!-- Catatan / Alasan Usulan -->
-                    <div class="form-group">
+                    <!-- Catatan / Alasan Usulan (khusus hari lain) -->
+                    <div class="form-group" id="empPropNoteGroup">
                         <label class="form-label" for="empPropNoteInput" style="font-size: 12px; font-weight: 750;">
                             Catatan / Keterangan Usulan (Opsional)
                         </label>
@@ -1678,7 +1678,7 @@
                 </div>
                 <div class="modal-footer" style="padding: 12px 18px;">
                     <button type="button" class="btn-cancel" onclick="closeModal('employeeProposalModal')" style="padding: 10px 16px;">Batal</button>
-                    <button type="submit" class="btn-action-primary" style="flex: 1; justify-content: center; padding: 10px 16px; font-size: 13px; font-weight: 800;">
+                    <button type="submit" class="btn-action-primary" id="btnSubmitEmpProposal" style="flex: 1; justify-content: center; padding: 10px 16px; font-size: 13px; font-weight: 800;">
                         Kirim Usulan ke Admin ➔
                     </button>
                 </div>
@@ -2569,6 +2569,41 @@
             currentProposalDateKey = targetDate;
             const isToday = (targetDate === todayKey);
 
+            // Dynamic UI elements based on Today vs Other Days
+            const modalTitle = document.getElementById('empPropModalTitle');
+            const modalSubtitle = document.getElementById('empPropModalSubtitle');
+            const noticeBox = document.getElementById('empPropNoticeBox');
+            const curTxLabel = document.getElementById('empPropCurrentTxLabel');
+            const txLabel = document.getElementById('empPropTxLabel');
+            const noteGroup = document.getElementById('empPropNoteGroup');
+            const submitBtn = document.getElementById('btnSubmitEmpProposal');
+
+            if (isToday) {
+                if (modalTitle) modalTitle.innerText = '✏️ Input Transaksi Hari Ini';
+                if (modalSubtitle) modalSubtitle.innerText = 'Catat langsung transaksi shift Anda hari ini';
+                if (noticeBox) {
+                    noticeBox.innerHTML = '💡 <b>Transaksi Hari Ini:</b> Nilai transaksi langsung tersimpan ke sistem toko tanpa perlu approval Admin.';
+                    noticeBox.style.background = 'rgba(16, 185, 129, 0.08)';
+                    noticeBox.style.borderColor = 'rgba(16, 185, 129, 0.25)';
+                }
+                if (curTxLabel) curTxLabel.innerText = 'Data Tersimpan Saat Ini:';
+                if (txLabel) txLabel.innerText = 'Jumlah Transaksi Shift Anda Hari Ini *';
+                if (noteGroup) noteGroup.style.display = 'none';
+                if (submitBtn) submitBtn.innerHTML = '💾 Simpan Transaksi Hari Ini';
+            } else {
+                if (modalTitle) modalTitle.innerText = `✏️ Usulan Transaksi (${formatDateShort(targetDate)})`;
+                if (modalSubtitle) modalSubtitle.innerText = 'Ajukan angka transaksi shift Anda untuk diverifikasi Admin';
+                if (noticeBox) {
+                    noticeBox.innerHTML = `💡 <b>Informasi Usulan:</b> Karena tanggal ${formatDateShort(targetDate)} bukan hari ini, nilai yang Anda simpan berstatus <b>Usulan</b> dan menunggu persetujuan (approval) Admin Toko. Data transaksi sebelumnya tidak akan terhapus sampai disetujui.`;
+                    noticeBox.style.background = 'rgba(79, 142, 247, 0.08)';
+                    noticeBox.style.borderColor = 'rgba(79, 142, 247, 0.25)';
+                }
+                if (curTxLabel) curTxLabel.innerText = 'Data Tercatat (Disetujui Admin):';
+                if (txLabel) txLabel.innerText = 'Jumlah Transaksi Usulan Anda *';
+                if (noteGroup) noteGroup.style.display = 'block';
+                if (submitBtn) submitBtn.innerHTML = 'Kirim Usulan ke Admin ➔';
+            }
+
             // Display elements
             const dateDisp = document.getElementById('empPropDateDisplay');
             const dateRel = document.getElementById('empPropDateRelative');
@@ -2610,10 +2645,10 @@
                 curTxEl.innerText = myRec ? `${curVal} tx (Tercatat)` : 'Belum ada data';
             }
 
-            // Cek apakah ada usulan yang berstatus pending
+            // Cek apakah ada usulan yang berstatus pending (khusus bukan hari ini)
             const pendingProp = (store.tx_proposals || []).find(p => p.date === targetDate && p.emp_id === currentEmployee.id && p.status === 'pending');
 
-            if (pendingProp) {
+            if (!isToday && pendingProp) {
                 if (txInput) txInput.value = pendingProp.proposed_tx;
                 if (noteInput) noteInput.value = pendingProp.note || '';
                 if (pendingNotice) {
@@ -2652,7 +2687,9 @@
             const store = storesData.find(s => s.id === activeStoreId);
             if (!store) return;
 
-            const targetDateKey = currentProposalDateKey || getTodayKey();
+            const todayKey = getTodayKey();
+            const targetDateKey = currentProposalDateKey || todayKey;
+            const isToday = (targetDateKey === todayKey);
             const txInput = document.getElementById('empPropTxInput');
             const noteInput = document.getElementById('empPropNoteInput');
             const txVal = parseInt(txInput.value);
@@ -2662,6 +2699,102 @@
                 return;
             }
 
+            const nowTimeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+            const noteVal = noteInput ? noteInput.value.trim() : '';
+
+            if (isToday) {
+                // ==========================================
+                // TRANSAKSI HARI INI: LANGSUNG TERCATAT
+                // ==========================================
+                if (!store.daily_transactions) store.daily_transactions = {};
+                if (!store.daily_transactions[todayKey]) {
+                    store.daily_transactions[todayKey] = {
+                        date: todayKey,
+                        recorded_time: nowTimeStr,
+                        total: 0,
+                        records: []
+                    };
+                }
+
+                const dayData = store.daily_transactions[todayKey];
+                let rec = (dayData.records || []).find(r => r.emp_id === currentEmployee.id);
+                if (rec) {
+                    rec.tx = txVal;
+                    rec.recorded_at = nowTimeStr + ' (Input Kasir)';
+                    rec.shift_num = currentEmployee.shift_num;
+                    rec.shift_name = currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
+                } else {
+                    if (!dayData.records) dayData.records = [];
+                    dayData.records.push({
+                        emp_id: currentEmployee.id,
+                        emp_name: currentEmployee.name,
+                        shift_num: currentEmployee.shift_num,
+                        shift_name: currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam',
+                        tx: txVal,
+                        recorded_at: nowTimeStr + ' (Input Kasir)'
+                    });
+                }
+
+                // Hitung ulang total harian & bulanan
+                dayData.total = dayData.records.reduce((sum, r) => sum + (r.tx || 0), 0);
+                dayData.recorded_time = nowTimeStr;
+                store.monthly_tx = Object.values(store.daily_transactions).reduce((sum, d) => sum + (d.total || 0), 0);
+
+                // Hapus usulan pending hari ini jika sebelumnya pernah ada
+                if (store.tx_proposals) {
+                    store.tx_proposals = store.tx_proposals.filter(p => !(p.date === todayKey && p.emp_id === currentEmployee.id && p.status === 'pending'));
+                }
+
+                const applyDirectToday = (updatedStore) => {
+                    if (updatedStore) {
+                        const idx = storesData.findIndex(s => s.id === updatedStore.id);
+                        if (idx >= 0) storesData[idx] = updatedStore;
+                    }
+                    saveStoresData();
+                    closeModal('employeeProposalModal');
+                    renderAnalyticsDashboard(store);
+                    renderHistoryTable(store);
+                    if (document.getElementById('dedicatedAnalyticsView') && document.getElementById('dedicatedAnalyticsView').classList.contains('active')) {
+                        applyAnalyticsFilter();
+                    }
+                    showToast(`✅ Transaksi hari ini (${txVal} tx) berhasil disimpan langsung!`, '💾');
+                };
+
+                // Mode cloud: kirim ke Supabase dengan flag direct_today
+                if (window.__kspEmployeeCloud && window.KspSync) {
+                    const submitBtn = e.submitter || document.getElementById('btnSubmitEmpProposal');
+                    if (submitBtn) submitBtn.disabled = true;
+
+                    const payloadToday = {
+                        store_id: store.id,
+                        date: todayKey,
+                        proposed_tx: txVal,
+                        direct_today: true
+                    };
+
+                    KspSync.empSubmitProposal(sessionStorage.getItem('kspcheck_emp_cred') || '', payloadToday)
+                        .then(r => {
+                            if (!r || !r.ok) {
+                                showToast('❌ Gagal menyimpan ke server (' + ((r && r.error) || 'gagal') + '). Silakan login ulang.', '⚠️');
+                                return;
+                            }
+                            applyDirectToday(r.store);
+                        })
+                        .catch(err => {
+                            console.warn('Gagal sync ke cloud, menyimpan secara lokal:', err);
+                            applyDirectToday(null);
+                        })
+                        .finally(() => { if (submitBtn) submitBtn.disabled = false; });
+                    return;
+                }
+
+                applyDirectToday(null);
+                return;
+            }
+
+            // ==========================================
+            // TRANSAKSI HARI LAIN: TETAP SEBAGAI USULAN
+            // ==========================================
             if (!store.tx_proposals) {
                 store.tx_proposals = [];
             }
@@ -2669,10 +2802,7 @@
             const dayData = (store.daily_transactions && store.daily_transactions[targetDateKey]) ? store.daily_transactions[targetDateKey] : null;
             const myRec = (dayData && dayData.records) ? dayData.records.find(r => r.emp_id === currentEmployee.id) : null;
             const curVal = myRec ? myRec.tx : 0;
-
-            const nowTimeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
-            const submittedAt = nowTimeStr + ', ' + formatDateShort(getTodayKey());
-            const noteVal = noteInput ? noteInput.value.trim() : '';
+            const submittedAt = nowTimeStr + ', ' + formatDateShort(todayKey);
 
             const existingProp = store.tx_proposals.find(p => p.date === targetDateKey && p.emp_id === currentEmployee.id && p.status === 'pending');
 
@@ -2693,7 +2823,7 @@
                     status: 'pending'
                 };
 
-            const applyLocal = (saved) => {
+            const applyProposalLocal = (saved) => {
                 const finalProp = saved || payload;
                 const idx = store.tx_proposals.findIndex(p => p.id === finalProp.id);
                 if (idx >= 0) {
@@ -2714,7 +2844,7 @@
 
             // Mode cloud: usulan dikirim ke server (admin menerimanya & meng-approve nanti).
             if (window.__kspEmployeeCloud && window.KspSync) {
-                const submitBtn = e.submitter || null;
+                const submitBtn = e.submitter || document.getElementById('btnSubmitEmpProposal');
                 if (submitBtn) submitBtn.disabled = true;
                 KspSync.empSubmitProposal(sessionStorage.getItem('kspcheck_emp_cred') || '', payload)
                     .then(r => {
@@ -2722,7 +2852,7 @@
                             showToast('❌ Usulan ditolak server (' + ((r && r.error) || 'gagal') + '). Silakan login ulang.', '⚠️');
                             return;
                         }
-                        applyLocal(r.proposal);
+                        applyProposalLocal(r.proposal);
                     })
                     .catch(err => {
                         showToast('❌ Usulan belum terkirim, periksa koneksi lalu coba lagi. (' + (err.message || 'offline') + ')', '⚠️');
@@ -2731,7 +2861,7 @@
                 return;
             }
 
-            applyLocal(null);
+            applyProposalLocal(null);
         }
 
         function approveProposal(propId) {
@@ -3123,7 +3253,7 @@
                 if (subEl) subEl.innerText = `Tren & Performa Transaksi Kasir (${currentEmployee.name}) • ${getTodayDisplay()}`;
                 if (btnDedicatedRoll) btnDedicatedRoll.style.display = 'none';
                 if (btnDedicatedDaily) {
-                    btnDedicatedDaily.innerHTML = '<span>✏️</span> Usulkan Transaksi Hari Ini';
+                    btnDedicatedDaily.innerHTML = '<span>✏️</span> Input Transaksi Hari Ini';
                     btnDedicatedDaily.onclick = () => openEmployeeProposalModal(getTodayKey());
                 }
             } else {
@@ -3210,7 +3340,7 @@
                 if (topAppTitle) topAppTitle.innerText = `Transaksi Kasir - ${currentEmployee.name}`;
                 if (topAppSubtitle) topAppSubtitle.innerText = `Catat & Usulkan Transaksi Anda di ${store.name}`;
                 if (btnOpenDailyModal) {
-                    btnOpenDailyModal.innerHTML = '<span>✏️</span> Usulkan Transaksi Hari Ini';
+                    btnOpenDailyModal.innerHTML = '<span>✏️</span> Input Transaksi Hari Ini';
                     btnOpenDailyModal.onclick = () => openEmployeeProposalModal(todayKey);
                 }
             } else {
@@ -3269,32 +3399,35 @@
             if (currentAuthRole === 'employee' && currentEmployee) {
                 // === MODE KARYAWAN: HANYA TAMPILKAN TRANSAKSI KARYAWAN AKTIF ===
                 if (kpiLbl1) kpiLbl1.innerText = 'TRANSAKSI ANDA HARI INI';
-                if (kpiLbl2) kpiLbl2.innerText = 'STATUS USULAN HARI INI';
+                if (kpiLbl2) kpiLbl2.innerText = 'STATUS TRANSAKSI HARI INI';
                 if (kpiLbl3) kpiLbl3.innerText = 'SHIFT ANDA HARI INI';
 
                 const myRec = records.find(r => r.emp_id === currentEmployee.id);
                 const curVal = myRec ? myRec.tx : 0;
                 const pendingProp = (store.tx_proposals || []).find(p => p.date === todayKey && p.emp_id === currentEmployee.id && p.status === 'pending');
 
-                // KPI 1: Transaksi Anda yang tercatat disetujui
+                // KPI 1: Transaksi Anda yang tersimpan di sistem
                 kpiTotalEl.innerText = `${curVal.toLocaleString('id-ID')} tx`;
                 if (myRec) {
-                    kpiStatusEl.innerText = `🟢 Tercatat disetujui (${myRec.recorded_at || 'Hari ini'})`;
+                    kpiStatusEl.innerText = `🟢 Tercatat langsung (${myRec.recorded_at || 'Hari ini'})`;
                     kpiStatusEl.style.color = 'var(--success)';
-                    recordedTimeEl.innerText = `Disetujui Admin: ${myRec.recorded_at || 'Hari ini'}`;
+                    recordedTimeEl.innerText = `Tercatat: ${myRec.recorded_at || 'Hari ini'}`;
                 } else {
                     kpiStatusEl.innerText = '⏳ Belum tercatat hari ini';
                     kpiStatusEl.style.color = 'var(--warning)';
-                    recordedTimeEl.innerText = 'Status: Belum ada data disetujui hari ini';
+                    recordedTimeEl.innerText = 'Status: Belum input transaksi hari ini';
                 }
 
-                // KPI 2: Status Usulan Anda Hari Ini
-                if (pendingProp) {
+                // KPI 2: Status Transaksi Anda Hari Ini
+                if (myRec && myRec.tx !== undefined && myRec.tx !== null) {
+                    kpiMorningEl.innerHTML = `<span style="font-size: 18px; color: var(--success); font-weight: 850;">🟢 ${curVal} tx</span>`;
+                    kpiMorningPicEl.innerHTML = `<span style="color: var(--success); font-weight: 750;">Tersimpan Langsung</span>`;
+                } else if (pendingProp) {
                     kpiMorningEl.innerHTML = `<span style="font-size: 18px; color: var(--warning); font-weight: 850;">🟡 ${pendingProp.proposed_tx} tx</span>`;
                     kpiMorningPicEl.innerHTML = `<span style="color: var(--warning); font-weight: 750;">Menunggu Approval (${pendingProp.submitted_at || '-'})</span>`;
                 } else {
-                    kpiMorningEl.innerHTML = `<span style="font-size: 15px; color: var(--text-muted); font-weight: 750;">Tidak Ada Usulan</span>`;
-                    kpiMorningPicEl.innerHTML = `<span style="color: var(--text-muted);">Data aktif tersinkronisasi</span>`;
+                    kpiMorningEl.innerHTML = `<span style="font-size: 15px; color: var(--warning); font-weight: 750;">Belum Diisi</span>`;
+                    kpiMorningPicEl.innerHTML = `<span style="color: var(--warning);">Klik tombol untuk mengisi</span>`;
                 }
 
                 // KPI 3: Shift Petugas
@@ -3317,7 +3450,7 @@
                                 <span class="badge-status" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 10.5px;">Akun Anda</span>
                             </div>
                             <div style="text-align: right;">
-                                <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Data Disetujui Admin</div>
+                                <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Transaksi Tersimpan</div>
                                 <span class="tx-val-badge" style="font-size: 16px;">${curVal} tx</span>
                             </div>
                         </div>
@@ -3345,10 +3478,10 @@
                 bHtml += `
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--card-border); flex-wrap: wrap; gap: 8px;">
                             <div style="font-size: 11px; color: var(--text-muted);">
-                                ${myRec ? `✓ Tercatat di sistem: ${escapeHtml(myRec.recorded_at || 'Hari ini')}` : '⏳ Belum ada data disetujui untuk hari ini'}
+                                ${myRec ? `✓ Tercatat di sistem: ${escapeHtml(myRec.recorded_at || 'Hari ini')}` : '⏳ Belum input transaksi untuk hari ini'}
                             </div>
                             <button type="button" class="btn-action-primary" onclick="openEmployeeProposalModal('${todayKey}')" style="padding: 8px 16px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-                                <span>✏️</span> <span>${pendingProp ? 'Ubah Usulan Transaksi Hari Ini' : 'Usulkan / Input Transaksi Hari Ini'}</span>
+                                <span>✏️</span> <span>${myRec ? 'Edit Transaksi Hari Ini' : 'Input Transaksi Hari Ini'}</span>
                             </button>
                         </div>
                     </div>
@@ -4301,7 +4434,9 @@
                 }
 
                 let html = '';
+                const todayKey = getTodayKey();
                 dateKeys.forEach(dateKey => {
+                    const isTodayRow = (dateKey === todayKey);
                     const dayData = (store && store.daily_transactions && store.daily_transactions[dateKey]) ? store.daily_transactions[dateKey] : null;
                     const records = (dayData && dayData.records) ? dayData.records : [];
                     const myRec = records.find(r => r.emp_id === currentEmployee.id);
@@ -4325,7 +4460,13 @@
                     const rejProp = (store && store.tx_proposals || []).find(p => p.date === dateKey && p.emp_id === currentEmployee.id && p.status === 'rejected');
 
                     let propStatusHtml = '';
-                    if (pendingProp) {
+                    if (isTodayRow) {
+                        if (myRec && myRec.tx !== undefined && myRec.tx !== null) {
+                            propStatusHtml = `<span class="badge-status" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-weight: 800;">🟢 Tercatat Langsung</span>`;
+                        } else {
+                            propStatusHtml = `<span style="color: var(--warning); font-size: 11px;">⏳ Belum Input</span>`;
+                        }
+                    } else if (pendingProp) {
                         propStatusHtml = `<span class="badge-status badge-proposal-pending">🟡 Menunggu Approval (${pendingProp.proposed_tx} tx)</span>`;
                     } else if (appProp) {
                         propStatusHtml = `<span class="badge-status badge-proposal-approved">🟢 Disetujui (${appProp.proposed_tx} tx)</span>`;
@@ -4335,15 +4476,18 @@
                         propStatusHtml = `<span style="color: var(--text-muted); font-size: 11px;">-</span>`;
                     }
 
+                    const actionBtnLabel = isTodayRow ? 'Input' : 'Usulkan';
+                    const rowTooltip = isTodayRow ? `Input / Edit transaksi hari ini (${dateKey})` : `Usulkan / Edit transaksi ${dateKey}`;
+
                     html += `
-                        <tr class="clickable-history-row" onclick="openEmployeeProposalModal('${dateKey}')" title="Klik baris untuk usulkan / ubah transaksi ${dateKey}">
+                        <tr class="clickable-history-row" onclick="openEmployeeProposalModal('${dateKey}')" title="${rowTooltip}">
                             <td><b>${escapeHtml(dateKey)}</b> <span style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(dateKey)})</span></td>
                             <td><span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span></td>
                             <td>${approvedHtml}</td>
                             <td>${propStatusHtml}</td>
                             <td style="text-align: right;">
-                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openEmployeeProposalModal('${dateKey}')" title="Usulkan / Edit transaksi ${dateKey}">
-                                    <span>✏️</span> <span>Usulkan</span>
+                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openEmployeeProposalModal('${dateKey}')" title="${rowTooltip}">
+                                    <span>✏️</span> <span>${actionBtnLabel}</span>
                                 </button>
                             </td>
                         </tr>
@@ -4449,7 +4593,9 @@
                 }
 
                 let html = '';
+                const todayKey = getTodayKey();
                 list.forEach(item => {
+                    const isTodayRow = (item.date === todayKey);
                     const dayData = (store.daily_transactions && store.daily_transactions[item.date]) ? store.daily_transactions[item.date] : null;
                     const records = (dayData && dayData.records) ? dayData.records : [];
                     const myRec = records.find(r => r.emp_id === currentEmployee.id);
@@ -4473,7 +4619,13 @@
                     const rejProp = (store.tx_proposals || []).find(p => p.date === item.date && p.emp_id === currentEmployee.id && p.status === 'rejected');
 
                     let propStatusHtml = '';
-                    if (pendingProp) {
+                    if (isTodayRow) {
+                        if (myRec && myRec.tx !== undefined && myRec.tx !== null) {
+                            propStatusHtml = `<span class="badge-status" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-weight: 800;">🟢 Tercatat Langsung</span>`;
+                        } else {
+                            propStatusHtml = `<span style="color: var(--warning); font-size: 11px;">⏳ Belum Input</span>`;
+                        }
+                    } else if (pendingProp) {
                         propStatusHtml = `<span class="badge-status badge-proposal-pending">🟡 Usulan: ${pendingProp.proposed_tx} tx</span>`;
                     } else if (appProp) {
                         propStatusHtml = `<span class="badge-status badge-proposal-approved">🟢 Disetujui</span>`;
@@ -4483,15 +4635,18 @@
                         propStatusHtml = `<span style="color: var(--text-muted); font-size: 11px;">-</span>`;
                     }
 
+                    const actionBtnLabel = isTodayRow ? 'Input' : 'Usulkan';
+                    const rowTooltip = isTodayRow ? `Input / Edit transaksi hari ini (${item.date})` : `Usulkan transaksi ${item.date}`;
+
                     html += `
-                        <tr class="clickable-history-row" onclick="openEmployeeProposalModal('${item.date}')" title="Klik baris untuk usulkan transaksi ${item.date}">
+                        <tr class="clickable-history-row" onclick="openEmployeeProposalModal('${item.date}')" title="${rowTooltip}">
                             <td><b>${escapeHtml(item.date)}</b> <span style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(item.date)})</span></td>
                             <td><span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span></td>
                             <td>${approvedHtml}</td>
                             <td>${propStatusHtml}</td>
                             <td style="text-align: right;">
-                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openEmployeeProposalModal('${item.date}')" title="Usulkan transaksi ${item.date}">
-                                    <span>✏️</span> <span>Usulkan</span>
+                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openEmployeeProposalModal('${item.date}')" title="${rowTooltip}">
+                                    <span>✏️</span> <span>${actionBtnLabel}</span>
                                 </button>
                             </td>
                         </tr>
