@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -88,14 +88,6 @@
             border-bottom: 1px solid var(--card-border);
             margin-bottom: 16px;
             gap: 10px;
-        }
-
-        .brand-box {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            color: inherit;
         }
 
         .btn-nav-action {
@@ -269,20 +261,42 @@
             50% { opacity: 0.6; }
         }
 
+        /* Clickable Stat Row (Buka Transaksi & Analisa) */
         .store-stat-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 12px;
-            border-radius: 10px;
+            padding: 10px 14px;
+            border-radius: 12px;
             background: var(--chip-bg);
             border: 1px solid var(--card-border);
             margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .store-stat-row:hover {
+            border-color: var(--primary);
+            background: rgba(79, 142, 247, 0.1);
+            transform: scale(1.01);
+        }
+
+        .store-stat-row:active {
+            transform: scale(0.98);
         }
 
         .stat-label {
-            font-size: 11px;
+            font-size: 11.5px;
             color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-val-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .stat-val {
@@ -290,6 +304,99 @@
             font-weight: 800;
             color: var(--primary);
         }
+
+        .stat-arrow {
+            font-size: 11px;
+            color: var(--primary);
+            background: rgba(79, 142, 247, 0.2);
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: 750;
+        }
+
+        /* Shift Schedule Box with Roll Button */
+        .shift-roster-box {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .shift-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .shift-col.right {
+            text-align: right;
+            align-items: flex-end;
+        }
+
+        .shift-tag {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 3px;
+        }
+
+        .shift-tag.morning { color: #F59E0B; }
+        .shift-tag.night { color: #10B981; }
+
+        .emp-name-badge {
+            font-size: 12.5px;
+            font-weight: 750;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .btn-roll-shift {
+            background: var(--chip-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            border-radius: 10px;
+            padding: 8px 10px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+        }
+
+        .btn-roll-shift .roll-icon {
+            font-size: 14px;
+            line-height: 1;
+            display: inline-block;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-roll-shift:hover {
+            border-color: var(--primary);
+            background: var(--primary-glow);
+            color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .btn-roll-shift:hover .roll-icon { transform: rotate(180deg); }
+        .btn-roll-shift:active { transform: scale(0.95); }
 
 
 
@@ -782,19 +889,9 @@
         <header class="top-bar">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <a href="index.html" class="btn-nav-action" title="Kembali ke Menu Utama">🏠</a>
-                <div class="brand-box">
-                    <span style="font-size: 20px;">🏢</span>
-                    <div>
-                        <h1 class="top-title">Kelola Toko &amp; Shift</h1>
-                        <p style="font-size: 11px; color: var(--text-muted);">Manajemen Multi-Cabang &amp; Karyawan</p>
-                    </div>
-                </div>
             </div>
 
             <div class="top-actions">
-                <a href="store_transactions.html" id="topBtnTransactions" class="btn-primary" style="background: var(--chip-bg); border: 1px solid var(--card-border); color: var(--text-main); text-decoration: none;">
-                    <span>📊</span> Transaksi &amp; Shift
-                </a>
                 <button class="btn-primary" onclick="openAddStoreModal()">
                     <span>➕</span> Tambah Cabang
                 </button>
@@ -936,7 +1033,7 @@
                 </div>
 
                 <!-- 7. Transaksi & Analisa Shift Kasir -->
-                <a id="linkTransaksiAnalisa" href="store_transactions.html" class="feature-card" style="--feature-accent: #3B82F6;">
+                <a id="linkTransaksiAnalisa" href="store_transactions.html?from=manager" class="feature-card" style="--feature-accent: #3B82F6;">
                     <div>
                         <div class="feature-card-top">
                             <div class="feature-icon">📊</div>
@@ -1199,8 +1296,7 @@
             loadStoresData();
 
             // Check if PIN already saved in localStorage (Same key as interactive_stock.html)
-            const savedPin = localStorage.getItem('kspcheck_viewer_pin');
-            if (savedPin) {
+            const savedPin = localStorage.getItem('kspcheck_viewer_pin'); if (savedPin) {
                 unlockWithPin(savedPin);
             } else {
                 document.getElementById('pinModal').style.display = 'flex';
@@ -1250,6 +1346,7 @@
 
                 // PIN Valid! Remember PIN
                 localStorage.setItem('kspcheck_viewer_pin', pin);
+                sessionStorage.setItem('kspcheck_auth_mode', 'admin');
 
                 // Initialize Supabase Client
                 supabaseClient = supabase.createClient(config.supabase_url, config.supabase_anon_key);
@@ -1267,11 +1364,6 @@
                 const targetStoreId = (storeParam && storesData.some(s => s.id === storeParam))
                     ? storeParam
                     : (savedStoreId && storesData.some(s => s.id === savedStoreId) ? savedStoreId : (storesData[0] ? storesData[0].id : ''));
-
-                const topBtnTx = document.getElementById('topBtnTransactions');
-                if (targetStoreId && topBtnTx) {
-                    topBtnTx.href = `store_transactions.html?store=${encodeURIComponent(targetStoreId)}`;
-                }
 
                 if (storeParam && storesData.some(s => s.id === storeParam)) {
                     selectStore(storeParam);
@@ -1291,6 +1383,7 @@
         }
 
         function lockStoreManager() {
+            sessionStorage.removeItem('kspcheck_auth_mode');
             localStorage.removeItem('kspcheck_viewer_pin');
             document.getElementById('pinInput').value = '';
             document.getElementById('pinModal').style.display = 'flex';
@@ -1390,6 +1483,9 @@
                     badgeHtml = `<span class="badge-status badge-active">🟢 Shift ${status.currentShift.shift_num} Aktif</span>`;
                 }
 
+                const empS1 = (store.employees || []).filter(e => e.shift_num === 1).map(e => e.name).join(', ') || '(Kosong)';
+                const empS2 = (store.employees || []).filter(e => e.shift_num === 2).map(e => e.name).join(', ') || '(Kosong)';
+
                 html += `
                 <div class="store-card" onclick="selectStore('${store.id}')">
                     <div>
@@ -1399,11 +1495,28 @@
                         </div>
                         <h3 class="store-name">${escapeHtml(store.name)}</h3>
                         
-                        <div class="store-stat-row" onclick="event.stopPropagation(); window.location.href='store_transactions.html?store=' + encodeURIComponent('${store.id}');" style="cursor: pointer;" title="Klik untuk buka Transaksi &amp; Analisa Cabang">
-                            <span class="stat-label">Transaksi per Bulan:</span>
-                            <span class="stat-val" style="color: var(--primary); font-weight: 800;">${monthlyTx} tx &rarr;</span>
+                        <div class="store-stat-row" onclick="openStoreTransactions(event, '${store.id}')" title="Klik untuk buka Transaksi &amp; Analisa Cabang">
+                            <span class="stat-label"><span>📊</span> Transaksi per Bulan:</span>
+                            <div class="stat-val-wrap">
+                                <span class="stat-val">${monthlyTx} tx</span>
+                                <span class="stat-arrow">Analisa &rarr;</span>
+                            </div>
                         </div>
 
+                        <div class="shift-roster-box" onclick="event.stopPropagation();">
+                            <div class="shift-col">
+                                <div class="shift-tag morning">🌅 Shift 1 Pagi</div>
+                                <div class="emp-name-badge" title="${escapeHtml(empS1)}">👤 ${escapeHtml(empS1)}</div>
+                            </div>
+                            <button type="button" class="btn-roll-shift" onclick="rollStoreShifts(event, '${store.id}')" title="Tukar Shift Karyawan (Pagi ⇄ Malam)">
+                                <span class="roll-icon">⇄</span>
+                                <span>Roll Shift</span>
+                            </button>
+                            <div class="shift-col right">
+                                <div class="shift-tag night">🌙 Shift 2 Malam</div>
+                                <div class="emp-name-badge" title="${escapeHtml(empS2)}">👤 ${escapeHtml(empS2)}</div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="store-card-footer">
@@ -1416,6 +1529,30 @@
             container.innerHTML = html;
         }
 
+        // Buka halaman Transaksi & Analisa cabang
+        function openStoreTransactions(e, storeId) {
+            if (e) e.stopPropagation();
+            window.location.href = 'store_transactions.html?store=' + encodeURIComponent(storeId) + '&from=manager';
+        }
+
+        // Roll Shift: tukar Shift 1 (Pagi) <-> Shift 2 (Malam) seluruh karyawan cabang
+        function rollStoreShifts(e, storeId) {
+            if (e) e.stopPropagation();
+            const store = storesData.find(s => s.id === storeId);
+            if (!store || !store.employees || store.employees.length < 2) {
+                showToast('⚠️ Minimal harus ada 2 karyawan untuk melakukan roll shift.', '⚠️');
+                return;
+            }
+            const swapped = [];
+            store.employees.forEach(emp => {
+                emp.shift_num = (emp.shift_num === 1) ? 2 : 1;
+                swapped.push(`${emp.name} ➔ Shift ${emp.shift_num}`);
+            });
+            saveStoresData();
+            renderStoresGrid();
+            showToast(`🔄 Shift ${store.name} berhasil di-roll! (${swapped.join(', ')})`, '🔄');
+        }
+
         // 6. View Sub-Dashboard When a Store is Clicked
         function selectStore(storeId) {
             const store = storesData.find(s => s.id === storeId);
@@ -1423,9 +1560,6 @@
 
             activeStoreId = storeId;
             localStorage.setItem('kspcheck_active_store_id', store.id);
-
-            const topBtnTx = document.getElementById('topBtnTransactions');
-            if (topBtnTx) topBtnTx.href = `store_transactions.html?store=${encodeURIComponent(store.id)}`;
 
             try {
                 const currentUrl = new URL(window.location.href);
@@ -1454,7 +1588,7 @@
 
             // Transaksi & Analisa link update
             const tLink = document.getElementById('linkTransaksiAnalisa');
-            if (tLink) tLink.href = `store_transactions.html?store=${encodeURIComponent(store.id)}`;
+            if (tLink) tLink.href = `store_transactions.html?store=${encodeURIComponent(store.id)}&from=manager`;
 
             // Transition status alert banner
             const status = getShiftStatus(store);
@@ -1492,11 +1626,6 @@
             } catch(e) {}
 
             const savedStoreId = localStorage.getItem('kspcheck_active_store_id') || (storesData[0] ? storesData[0].id : '');
-            const topBtnTx = document.getElementById('topBtnTransactions');
-            if (topBtnTx && savedStoreId) {
-                topBtnTx.href = `store_transactions.html?store=${encodeURIComponent(savedStoreId)}`;
-            }
-
             document.getElementById('storeDetailView').classList.remove('active');
             document.getElementById('storesListView').style.display = 'block';
             renderStoresGrid();

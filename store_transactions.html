@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -1134,77 +1134,202 @@
             transform: translateX(-50%) translateY(0);
             opacity: 1;
         }
+
+        /* Employee Login Card Styles (Same as karyawan.html) */
+        .login-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 26px 20px;
+            box-shadow: 0 12px 30px var(--shadow-color);
+            margin: 30px auto;
+            max-width: 420px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+
+        .login-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%);
+            color: #FFFFFF;
+            font-size: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px auto;
+            box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+        }
+
+        /* Proposal Badges */
+        .badge-proposal-pending {
+            background: rgba(245, 158, 11, 0.15) !important;
+            color: var(--warning) !important;
+            border: 1px solid rgba(245, 158, 11, 0.35) !important;
+        }
+
+        .badge-proposal-approved {
+            background: rgba(16, 185, 129, 0.12) !important;
+            color: var(--success) !important;
+            border: 1px solid rgba(16, 185, 129, 0.25) !important;
+        }
+
+        .badge-proposal-rejected {
+            background: rgba(239, 68, 68, 0.12) !important;
+            color: var(--danger) !important;
+            border: 1px solid rgba(239, 68, 68, 0.25) !important;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- TOP BAR -->
-        <header class="top-bar">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <button type="button" class="btn-nav-action" onclick="backToStoreManager()" title="Kembali ke Manajemen Toko">🏬</button>
-                <div>
-                    <div style="font-size: 16.5px; font-weight: 850; display: flex; align-items: center; gap: 8px;">
-                        <span>📊</span> Transaksi &amp; Shift Kasir
-                    </div>
-                    <div style="font-size: 11px; color: var(--text-muted);">Pencatatan Transaksi Harian, Rotasi Shift &amp; Analisa Performa</div>
-                </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <!-- Pilihan Cabang Cepat -->
-                <div style="display: flex; align-items: center; gap: 6px; background: var(--input-bg); border: 1px solid var(--card-border); padding: 4px 8px; border-radius: 10px;">
-                    <span style="font-size: 12px;">🏬</span>
-                    <select id="quickStoreSelector" onchange="switchActiveStore(this.value)" style="border: none; background: transparent; font-size: 12px; font-weight: 800; color: var(--text-main); cursor: pointer; outline: none;" title="Pilih Cabang">
-                        <!-- Diisi via JS -->
-                    </select>
-                </div>
-                <button type="button" class="btn-preset" onclick="backToStoreManager()" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; font-size: 11.5px; font-weight: 750;">
-                    <span>🏬</span> Kelola Cabang
-                </button>
-                <button class="btn-nav-action" id="themeToggleBtn" onclick="toggleTheme()" title="Ubah Tema">🌙</button>
-            </div>
-        </header>
 
-        <!-- HALAMAN DETAIL TRANSAKSI CABANG (LANGSUNG BUKA CABANG TERPILIH) -->
-        <section id="storeAnalyticsView" class="analytics-view active">
-            <!-- Header Analisa -->
-            <div class="analytics-header-card">
-                <div>
-                    <button type="button" class="btn-back-stores" onclick="backToStoreManager()">
-                        &larr; Kembali ke Kelola Cabang
-                    </button>
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
-                        <h2 id="anStoreTitle" style="font-size: 18px; font-weight: 850; margin: 0;">KSP Check - Cabang Utama</h2>
-                        <span class="badge-status" id="anRotationBadge" onclick="openRotationRuleModal(activeStoreId)" style="cursor: pointer; font-size: 11px; padding: 3px 8px; background: rgba(79, 142, 247, 0.12); color: var(--primary); border: 1px solid rgba(79, 142, 247, 0.3);" title="Klik untuk atur jadwal rotasi shift otomatis (Tukar manual selalu bisa kapan saja)">
-                            🔄 Rotasi: Otomatis Tiap Senin (+ Manual Bebas) ⚙️
-                        </span>
+        <!-- VIEW 0: FORM LOGIN KARYAWAN (KETIKA AKSES LANGSUNG KE store_transactions.html) -->
+        <section id="empLoginOverlay" class="login-card" style="display: none;">
+            <div class="login-header">
+                <div class="login-avatar">⚡</div>
+                <h1 style="font-size: 20px; font-weight: 800; margin-bottom: 6px;">Login Transaksi Kasir</h1>
+                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.45;">
+                    Masukkan Password / PIN unik Anda.<br>Cabang &amp; data transaksi Anda terdeteksi otomatis.
+                </p>
+            </div>
+
+            <form onsubmit="handleEmployeeLogin(event)">
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label class="form-label" for="loginPasswordInput" style="text-align: center; display: block; margin-bottom: 8px;">
+                        Password / PIN Karyawan
+                    </label>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <input type="password" 
+                               id="loginPasswordInput" 
+                               class="form-input" 
+                               inputmode="numeric" 
+                               autocomplete="current-password"
+                               placeholder="Ketik PIN..." 
+                               style="font-size: 22px; letter-spacing: 5px; text-align: center; font-weight: 800; padding: 14px 44px 14px 14px; width: 100%;" 
+                               required>
+                        <button type="button" 
+                                id="btnTogglePass" 
+                                onclick="togglePasswordVisibility()" 
+                                style="position: absolute; right: 10px; background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); padding: 6px;" 
+                                title="Lihat PIN">👁️</button>
                     </div>
-                    <p id="anDateSubtitle" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Analisa Transaksi Karyawan • Hari Ini</p>
+                    <div id="loginError" style="color: var(--danger); font-size: 12px; margin-top: 8px; text-align: center; font-weight: 600; display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); padding: 8px 12px; border-radius: 8px;"></div>
+                </div>
+
+                <button type="submit" class="btn-action-primary" style="font-size: 14.5px; padding: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border-radius: 12px;">
+                    <span>Masuk ke Transaksi</span> ➜
+                </button>
+            </form>
+
+            <div style="margin-top: 20px; padding-top: 14px; border-top: 1px dashed var(--card-border); text-align: center;">
+                <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.45;">
+                    Pengelola atau Admin Toko? <a href="store_manager.html" style="color: var(--primary); font-weight: 750; text-decoration: none;">Buka Manajemen Toko 🏢</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN APP WRAPPER (AKAN MUNCUL SETELAH LOGIN ATAU JIKA DIBUKA DARI STORE_MANAGER) -->
+        <div id="mainAppContainer">
+            <!-- TOP BAR -->
+            <header class="top-bar">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button type="button" id="topNavBackBtn" class="btn-nav-action" onclick="handleTopNavBack()" title="Kembali">🏬</button>
+                    <div>
+                        <div style="font-size: 16.5px; font-weight: 850; display: flex; align-items: center; gap: 8px;">
+                            <span>📊</span> <span id="topAppTitle">Transaksi &amp; Shift Kasir</span>
+                        </div>
+                        <div id="topAppSubtitle" style="font-size: 11px; color: var(--text-muted);">Pencatatan Transaksi Harian, Rotasi Shift &amp; Analisa Performa</div>
+                    </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <button type="button" class="btn-preset" onclick="rollActiveStoreShifts()" style="padding: 8px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;" title="Tukar Shift Karyawan Sekarang (Pagi ⇄ Malam)">
-                        <span>⇄</span> Roll Shift
+                    <!-- Mode Admin: Pilihan Cabang Cepat -->
+                    <div id="adminStoreSelectorWrap" style="display: flex; align-items: center; gap: 6px; background: var(--input-bg); border: 1px solid var(--card-border); padding: 4px 8px; border-radius: 10px;">
+                        <span style="font-size: 12px;">🏬</span>
+                        <select id="quickStoreSelector" onchange="switchActiveStore(this.value)" style="border: none; background: transparent; font-size: 12px; font-weight: 800; color: var(--text-main); cursor: pointer; outline: none;" title="Pilih Cabang">
+                            <!-- Diisi via JS -->
+                        </select>
+                    </div>
+
+                    <!-- Mode Employee: Badge Cabang & Akun Kasir -->
+                    <div id="employeeBadgeWrap" style="display: none; align-items: center; gap: 6px;">
+                        <span class="badge-status" id="badgeEmployeeStore" style="background: var(--chip-bg); color: var(--text-main); font-weight: 750; font-size: 11px; padding: 5px 10px; border: 1px solid var(--card-border);">🏬 Cabang</span>
+                        <span class="badge-status" id="badgeEmployeeUser" style="background: rgba(14, 165, 233, 0.15); color: #0EA5E9; font-weight: 800; font-size: 11px; padding: 5px 10px; border: 1px solid rgba(14, 165, 233, 0.3);">👤 Kasir</span>
+                    </div>
+
+                    <!-- Tombol Kelola Cabang (Admin) -->
+                    <button type="button" id="btnAdminManageStores" class="btn-preset" onclick="backToStoreManager()" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; font-size: 11.5px; font-weight: 750;">
+                        <span>🏬</span> Kelola Cabang
                     </button>
-                    <button type="button" class="btn-action-primary" onclick="openDailyTxModal(activeStoreId, true)">
-                        <span>✏️</span> Set / Edit Transaksi Hari Ini
+
+                    <!-- Tombol Keluar (Employee) -->
+                    <button type="button" id="btnEmployeeLogout" class="btn-preset" onclick="logoutEmployee()" style="display: none; align-items: center; gap: 5px; padding: 6px 12px; font-size: 11.5px; font-weight: 750; color: var(--danger);" title="Keluar dari Akun Karyawan">
+                        <span>🚪</span> Keluar
                     </button>
+
+                    <button class="btn-nav-action" id="themeToggleBtn" onclick="toggleTheme()" title="Ubah Tema">🌙</button>
                 </div>
-            </div>
+            </header>
+
+            <!-- HALAMAN DETAIL TRANSAKSI CABANG (LANGSUNG BUKA CABANG TERPILIH) -->
+            <section id="storeAnalyticsView" class="analytics-view active">
+                <!-- Header Analisa -->
+                <div class="analytics-header-card">
+                    <div>
+                        <button type="button" id="btnHeaderBackStores" class="btn-back-stores" onclick="handleTopNavBack()">
+                            &larr; Kembali ke Kelola Cabang
+                        </button>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+                            <h2 id="anStoreTitle" style="font-size: 18px; font-weight: 850; margin: 0;">KSP Check - Cabang Utama</h2>
+                            <span class="badge-status" id="anRotationBadge" onclick="openRotationRuleModal(activeStoreId)" style="cursor: pointer; font-size: 11px; padding: 3px 8px; background: rgba(79, 142, 247, 0.12); color: var(--primary); border: 1px solid rgba(79, 142, 247, 0.3);" title="Klik untuk atur jadwal rotasi shift otomatis (Tukar manual selalu bisa kapan saja)">
+                                🔄 Rotasi: Otomatis Tiap Senin (+ Manual Bebas) ⚙️
+                            </span>
+                        </div>
+                        <p id="anDateSubtitle" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Analisa Transaksi Karyawan • Hari Ini</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" id="btnRollShifts" class="btn-preset" onclick="rollActiveStoreShifts()" style="padding: 8px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;" title="Tukar Shift Karyawan Sekarang (Pagi ⇄ Malam)">
+                            <span>⇄</span> Roll Shift
+                        </button>
+                        <button type="button" id="btnOpenDailyModal" class="btn-action-primary" onclick="openDailyTxModal(activeStoreId, true)">
+                            <span>✏️</span> Set / Edit Transaksi Hari Ini
+                        </button>
+                    </div>
+                </div>
+
+                <!-- BANNER USULAN KARYAWAN MENUNGGU APPROVAL (HANYA MUNCUL DI MODE ADMIN JIKA ADA USULAN) -->
+                <div id="adminProposalsBanner" class="card-box" style="display: none; border: 1.5px solid var(--warning); background: rgba(245, 158, 11, 0.08); margin-bottom: 16px;">
+                    <div class="card-box-title" style="color: var(--warning); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 18px;">🔔</span>
+                            <span style="font-weight: 850;">Usulan Transaksi Karyawan Menunggu Persetujuan</span>
+                        </div>
+                        <span class="badge-status" id="badgePendingProposalsCount" style="background: var(--warning); color: #000; font-weight: 800; font-size: 11px; padding: 3px 8px;">0 Menunggu</span>
+                    </div>
+                    <div id="adminProposalsList" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                        <!-- Diisi via renderAdminProposals() -->
+                    </div>
+                </div>
 
             <!-- KPI Row -->
             <div class="kpi-row">
                 <div class="kpi-card">
-                    <div class="kpi-label">TOTAL TRANSAKSI HARI INI</div>
+                    <div class="kpi-label" id="kpiLabel1">TOTAL TRANSAKSI HARI INI</div>
                     <div class="kpi-value" id="kpiTodayTx">0 tx</div>
                     <div class="kpi-sub" id="kpiTxStatus">Belum diset hari ini</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">SHIFT PAGI (PIC 1)</div>
+                    <div class="kpi-label" id="kpiLabel2">SHIFT PAGI (PIC 1)</div>
                     <div class="kpi-value" id="kpiMorningTx" style="color: #F59E0B;">0 tx</div>
                     <div class="kpi-sub" id="kpiMorningPic">PIC: -</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">SHIFT MALAM (PIC 2)</div>
+                    <div class="kpi-label" id="kpiLabel3">SHIFT MALAM (PIC 2)</div>
                     <div class="kpi-value" id="kpiNightTx" style="color: #10B981;">0 tx</div>
                     <div class="kpi-sub" id="kpiNightPic">PIC: -</div>
                 </div>
@@ -1213,7 +1338,7 @@
             <!-- Breakdown Transaksi Karyawan Hari Ini -->
             <div class="card-box">
                 <div class="card-box-title">
-                    <span>👥 Transaksi Berdasarkan Petugas Shift Hari Ini</span>
+                    <span id="empBreakdownTitle">👥 Transaksi Berdasarkan Petugas Shift Hari Ini</span>
                     <span id="badgeRecordedTime" style="font-size: 11px; color: var(--text-muted); font-weight: 600;"></span>
                 </div>
                 <div id="empBreakdownContainer">
@@ -1226,7 +1351,7 @@
                 <div class="card-box-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span>📜</span>
-                        <span>Riwayat Transaksi Harian Cabang</span>
+                        <span id="historyTableTitle">Riwayat Transaksi Harian Cabang</span>
                         <span class="badge-status" style="font-size: 10px; padding: 2px 7px;">💡 Klik item untuk edit</span>
                     </div>
                     <!-- TOMBOL ANALISA DI UJUNG CARD-BOX-TITLE HISTORY -->
@@ -1237,7 +1362,7 @@
                 </div>
                 <div style="overflow-x: auto;">
                     <table class="history-table">
-                        <thead>
+                        <thead id="historyTableHeader">
                             <tr>
                                 <th>Tanggal</th>
                                 <th>Petugas Shift 1 (Pagi)</th>
@@ -1267,10 +1392,10 @@
                     <p id="dedicatedStoreSubtitle" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Filter Rentang Tanggal, Perbandingan Kasir &amp; Tren Shift</p>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <button type="button" class="btn-preset" onclick="rollActiveStoreShifts()" style="padding: 8px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;" title="Tukar Shift Karyawan Sekarang (Pagi ⇄ Malam)">
+                    <button type="button" id="btnDedicatedRollShifts" class="btn-preset" onclick="rollActiveStoreShifts()" style="padding: 8px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;" title="Tukar Shift Karyawan Sekarang (Pagi ⇄ Malam)">
                         <span>⇄</span> Roll Shift
                     </button>
-                    <button type="button" class="btn-action-primary" onclick="openDailyTxModal(activeStoreId, true)" style="padding: 8px 14px; font-size: 12px;">
+                    <button type="button" id="btnDedicatedOpenDailyModal" class="btn-action-primary" onclick="openDailyTxModal(activeStoreId, true)" style="padding: 8px 14px; font-size: 12px;">
                         <span>✏️</span> Set / Edit Transaksi Hari Ini
                     </button>
                 </div>
@@ -1409,7 +1534,7 @@
                 </div>
                 <div style="overflow-x: auto;">
                     <table class="history-table">
-                        <thead>
+                        <thead id="filteredAnalyticsTableHeader">
                             <tr>
                                 <th>Tanggal</th>
                                 <th>Petugas Shift 1 (Pagi)</th>
@@ -1425,7 +1550,8 @@
             </div>
         </section>
 
-    </div>
+        </div> <!-- /#mainAppContainer -->
+    </div> <!-- /.container -->
 
     <!-- MODAL DIALOG: SET TRANSAKSI HARIAN KARYAWAN -->
     <div id="dailyTxModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'dailyTxModal')">
@@ -1472,6 +1598,87 @@
                 <div class="modal-footer" style="padding: 12px 18px;">
                     <button type="button" class="btn-cancel" onclick="closeModal('dailyTxModal')" style="padding: 10px 16px;">Batal</button>
                     <button type="submit" class="btn-action-primary" id="btnSaveDailyTx" style="flex: 1; justify-content: center; padding: 10px 16px; font-size: 13px; font-weight: 800;">💾 Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DIALOG: USULAN TRANSAKSI KARYAWAN -->
+    <div id="employeeProposalModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'employeeProposalModal')">
+        <div class="modal-card" style="max-width: 440px;">
+            <div class="modal-header" style="padding: 14px 18px;">
+                <div>
+                    <h3 class="modal-title" style="font-size: 15.5px; font-weight: 850;">✏️ Usulan Transaksi Kasir</h3>
+                    <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Ajukan angka transaksi shift Anda untuk diverifikasi Admin</p>
+                </div>
+                <button type="button" class="btn-cancel" onclick="closeModal('employeeProposalModal')" style="padding: 4px 8px; font-size: 14px;" title="Tutup">&times;</button>
+            </div>
+            <form onsubmit="submitEmployeeProposal(event)">
+                <div class="modal-body" style="padding: 16px 18px; gap: 14px;">
+                    <!-- Navigasi Tanggal Usulan -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: var(--input-bg); border: 1px solid var(--card-border); padding: 8px 12px; border-radius: 12px;">
+                        <button type="button" class="btn-preset" onclick="navigateProposalDate(-1)" style="padding: 4px 10px; font-size: 11px;">&larr; H-1</button>
+                        <div style="text-align: center;">
+                            <div id="empPropDateDisplay" style="font-size: 13px; font-weight: 850; color: var(--text-main);">-</div>
+                            <div id="empPropDateRelative" style="font-size: 10px; color: var(--primary); font-weight: 700;">Hari Ini</div>
+                        </div>
+                        <button type="button" class="btn-preset" onclick="navigateProposalDate(1)" style="padding: 4px 10px; font-size: 11px;">H+1 &rarr;</button>
+                    </div>
+
+                    <!-- Notice Usulan -->
+                    <div style="background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.25); border-radius: 10px; padding: 10px 12px; font-size: 11.5px; color: var(--text-main); line-height: 1.45;">
+                        💡 <b>Informasi Usulan:</b> Nilai yang Anda simpan berstatus <b>Usulan</b> dan menunggu persetujuan (approval) Admin Toko. Data transaksi sebelumnya tidak akan terhapus sampai disetujui.
+                    </div>
+
+                    <!-- Identitas Kasir -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px;">
+                        <span id="empPropEmpName" style="font-size: 13px; font-weight: 800;">👤 -</span>
+                        <span id="empPropShiftBadge" class="shift-pill s1">Shift 1 Pagi</span>
+                    </div>
+
+                    <!-- Data Aktif Saat Ini -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; padding: 0 4px;">
+                        <span style="color: var(--text-muted);">Data Tercatat (Disetujui Admin):</span>
+                        <span id="empPropCurrentTx" style="font-weight: 800; color: var(--text-main);">0 tx</span>
+                    </div>
+
+                    <!-- Input Nilai Usulan -->
+                    <div class="form-group">
+                        <label class="form-label" for="empPropTxInput" style="font-size: 12.5px; font-weight: 800;">
+                            Jumlah Transaksi Usulan Anda *
+                        </label>
+                        <input type="number" 
+                               id="empPropTxInput" 
+                               class="form-input" 
+                               inputmode="numeric" 
+                               pattern="[0-9]*" 
+                               min="0" 
+                               required 
+                               placeholder="0" 
+                               style="font-size: 22px; font-weight: 850; text-align: center; padding: 12px; border-radius: 10px;">
+                    </div>
+
+                    <!-- Catatan / Alasan Usulan -->
+                    <div class="form-group">
+                        <label class="form-label" for="empPropNoteInput" style="font-size: 12px; font-weight: 750;">
+                            Catatan / Keterangan Usulan (Opsional)
+                        </label>
+                        <textarea id="empPropNoteInput" 
+                                  class="form-input" 
+                                  rows="2" 
+                                  placeholder="Contoh: Koreksi selisih nota closing shift" 
+                                  style="font-size: 12px; border-radius: 10px; resize: vertical;"></textarea>
+                    </div>
+
+                    <div id="empPropPendingNotice" style="display: none; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 8px 10px; font-size: 11px; color: var(--warning); line-height: 1.4;">
+                        ⚠️ Anda sudah memiliki usulan tertunda pada tanggal ini. Menyimpan akan memperbarui nilai usulan Anda.
+                    </div>
+                </div>
+                <div class="modal-footer" style="padding: 12px 18px;">
+                    <button type="button" class="btn-cancel" onclick="closeModal('employeeProposalModal')" style="padding: 10px 16px;">Batal</button>
+                    <button type="submit" class="btn-action-primary" style="flex: 1; justify-content: center; padding: 10px 16px; font-size: 13px; font-weight: 800;">
+                        Kirim Usulan ke Admin ➔
+                    </button>
                 </div>
             </form>
         </div>
@@ -1731,6 +1938,9 @@
 
         let storesData = [];
         let activeStoreId = null;
+        let currentAuthRole = 'employee'; // 'admin' | 'employee'
+        let currentEmployee = null; // { id, name, password, shift_num, storeId, storeName }
+        let currentProposalDateKey = null;
 
         // State Filter & Chart (Default: Bulan Ini)
         const initNow = new Date();
@@ -1840,22 +2050,66 @@
             }
         }
 
-        // Inisialisasi DOM & Handle Active Store Langsung
+        // ==========================================
+        // 2. OTENTIKASI: ADMIN VS KARYAWAN
+        // ==========================================
+
         document.addEventListener('DOMContentLoaded', () => {
             applySavedTheme();
             loadStoresData();
+            processAutomaticRotations();
 
             const urlParams = new URLSearchParams(window.location.search);
             let storeParam = urlParams.get('store');
             const viewParam = urlParams.get('view');
+            // Cek apakah dibuka dari store_manager.html (Mode Admin) atau Mode Bypass
+                                                if (fromParam === 'manager' || sessionStorage.getItem('kspcheck_auth_mode') === 'admin') {
+                currentAuthRole = 'admin';
+                sessionStorage.setItem('kspcheck_auth_mode', 'admin');
+            } else {
+                currentAuthRole = 'employee';
+            }
 
-            // 1. Tentukan toko yang aktif: URL param > localStorage > toko pertama
-            if (!storeParam || !storesData.some(s => s.id === storeParam)) {
-                const savedStoreId = localStorage.getItem('kspcheck_active_store_id');
-                if (savedStoreId && storesData.some(s => s.id === savedStoreId)) {
-                    storeParam = savedStoreId;
-                } else if (storesData.length > 0) {
-                    storeParam = storesData[0].id;
+            if (currentAuthRole === 'employee') {
+                // Periksa sesi karyawan yang tersimpan di sessionStorage
+                const empRaw = sessionStorage.getItem('kspcheck_active_emp');
+                let foundEmp = null;
+                if (empRaw) {
+                    try {
+                        const parsed = JSON.parse(empRaw);
+                        for (const st of storesData) {
+                            if (st.id === parsed.storeId) {
+                                const e = (st.employees || []).find(x => x.id === parsed.empId);
+                                if (e) {
+                                    foundEmp = { ...e, storeId: st.id, storeName: st.name };
+                                    storeParam = st.id;
+                                    break;
+                                }
+                            }
+                        }
+                    } catch(e) {}
+                }
+
+                if (!foundEmp) {
+                    // Tampilkan form login karyawan
+                    showEmployeeLoginOverlay();
+                    return;
+                }
+                currentEmployee = foundEmp;
+                activeStoreId = foundEmp.storeId;
+            }
+
+            hideEmployeeLoginOverlay();
+
+            // Tentukan toko yang aktif untuk Admin: URL param > localStorage > toko pertama
+            if (currentAuthRole === 'admin') {
+                if (!storeParam || !storesData.some(s => s.id === storeParam)) {
+                    const savedStoreId = localStorage.getItem('kspcheck_active_store_id');
+                    if (savedStoreId && storesData.some(s => s.id === savedStoreId)) {
+                        storeParam = savedStoreId;
+                    } else if (storesData.length > 0) {
+                        storeParam = storesData[0].id;
+                    }
                 }
             }
 
@@ -1878,6 +2132,408 @@
                 `;
             }
         });
+
+        function showEmployeeLoginOverlay() {
+            const overlay = document.getElementById('empLoginOverlay');
+            const mainApp = document.getElementById('mainAppContainer');
+            if (overlay) overlay.style.display = 'block';
+            if (mainApp) mainApp.style.display = 'none';
+
+            setTimeout(() => {
+                const passInput = document.getElementById('loginPasswordInput');
+                if (passInput) {
+                    passInput.focus();
+                    if (passInput.select) passInput.select();
+                }
+            }, 100);
+        }
+
+        function hideEmployeeLoginOverlay() {
+            const overlay = document.getElementById('empLoginOverlay');
+            const mainApp = document.getElementById('mainAppContainer');
+            if (overlay) overlay.style.display = 'none';
+            if (mainApp) mainApp.style.display = 'block';
+        }
+
+        function togglePasswordVisibility() {
+            const input = document.getElementById('loginPasswordInput');
+            const btn = document.getElementById('btnTogglePass');
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (btn) btn.innerText = '🙈';
+            } else {
+                input.type = 'password';
+                if (btn) btn.innerText = '👁️';
+            }
+            input.focus();
+        }
+
+        function handleEmployeeLogin(e) {
+            e.preventDefault();
+            const pass = document.getElementById('loginPasswordInput').value.trim();
+            const errBox = document.getElementById('loginError');
+
+            if (!pass) {
+                if (errBox) {
+                    errBox.innerText = 'Silakan ketik Password / PIN Anda!';
+                    errBox.style.display = 'block';
+                }
+                return;
+            }
+
+            // Cari karyawan di seluruh cabang berdasarkan password unik
+            let match = null;
+            for (const store of storesData) {
+                const emp = (store.employees || []).find(x => String(x.password).trim() === pass);
+                if (emp) {
+                    match = { store, employee: emp };
+                    break;
+                }
+            }
+
+            if (!match) {
+                if (errBox) {
+                    errBox.innerText = '❌ Password PIN tidak terdaftar! Periksa kembali atau tanyakan Admin Toko.';
+                    errBox.style.display = 'block';
+                }
+                const input = document.getElementById('loginPasswordInput');
+                if (input) {
+                    input.focus();
+                    if (input.select) input.select();
+                }
+                return;
+            }
+
+            if (errBox) errBox.style.display = 'none';
+            currentAuthRole = 'employee';
+            currentEmployee = {
+                ...match.employee,
+                storeId: match.store.id,
+                storeName: match.store.name
+            };
+            activeStoreId = match.store.id;
+
+            // Simpan sesi karyawan aktif
+            sessionStorage.setItem('kspcheck_active_emp', JSON.stringify({
+                storeId: match.store.id,
+                empId: match.employee.id
+            }));
+
+            hideEmployeeLoginOverlay();
+            openStoreAnalytics(null, activeStoreId);
+            showToast(`👋 Selamat datang, ${currentEmployee.name}!`, '👤');
+        }
+
+        function logoutEmployee() {
+            sessionStorage.removeItem('kspcheck_active_emp');
+            currentEmployee = null;
+            currentAuthRole = 'employee';
+            const passInput = document.getElementById('loginPasswordInput');
+            if (passInput) passInput.value = '';
+            const errBox = document.getElementById('loginError');
+            if (errBox) errBox.style.display = 'none';
+            showEmployeeLoginOverlay();
+            showToast('🚪 Berhasil keluar dari akun kasir.', '👋');
+        }
+
+        function handleTopNavBack() {
+            if (currentAuthRole === 'employee') {
+                backToEmployeePortal();
+            } else {
+                backToStoreManager();
+            }
+        }
+
+        function backToEmployeePortal() {
+            window.location.href = 'karyawan.html';
+        }
+
+        function backToStoreManager() {
+            const storeParam = activeStoreId ? `?store=${encodeURIComponent(activeStoreId)}&from=manager` : '?from=manager';
+            window.location.href = `store_manager.html${storeParam}`;
+        }
+
+        // ==========================================
+        // 3. SISTEM USULAN TRANSAKSI (PROPOSALS)
+        // ==========================================
+
+        function renderAdminProposals(store) {
+            const banner = document.getElementById('adminProposalsBanner');
+            const listCont = document.getElementById('adminProposalsList');
+            const badgeCount = document.getElementById('badgePendingProposalsCount');
+            if (!banner || !listCont) return;
+
+            if (currentAuthRole !== 'admin') {
+                banner.style.display = 'none';
+                return;
+            }
+
+            const pending = (store.tx_proposals || []).filter(p => p.status === 'pending');
+            if (pending.length === 0) {
+                banner.style.display = 'none';
+                return;
+            }
+
+            banner.style.display = 'block';
+            if (badgeCount) badgeCount.innerText = `${pending.length} Menunggu Persetujuan`;
+
+            let html = '';
+            pending.forEach(prop => {
+                const diff = prop.proposed_tx - (prop.current_tx || 0);
+                const diffText = diff > 0 ? `+${diff} tx` : `${diff} tx`;
+                const diffColor = diff >= 0 ? 'var(--success)' : 'var(--danger)';
+
+                html += `
+                    <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                        <div style="min-width: 220px; flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="font-weight: 850; font-size: 13.5px; color: var(--text-main);">📅 ${escapeHtml(prop.date)} (${formatDateShort(prop.date)})</span>
+                                <span class="badge-status" style="font-size: 10.5px; background: rgba(79, 142, 247, 0.15); color: var(--primary);">👤 ${escapeHtml(prop.emp_name)} (${escapeHtml(prop.shift_name)})</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12.5px;">
+                                <span>Data Tercatat: <b>${prop.current_tx || 0} tx</b></span>
+                                <span>➔</span>
+                                <span>Usulan Baru: <b style="color: var(--warning); font-size: 14px;">${prop.proposed_tx} tx</b> (<span style="color: ${diffColor}; font-weight: 800;">${diffText}</span>)</span>
+                            </div>
+                            ${prop.note ? `<div style="font-size: 11px; color: var(--text-main); margin-top: 4px; font-style: italic;">Catatan: "${escapeHtml(prop.note)}"</div>` : ''}
+                            <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">Diajukan: ${escapeHtml(prop.submitted_at || '-')}</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button type="button" class="btn-preset" onclick="rejectProposal('${prop.id}')" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.4); padding: 7px 12px; font-size: 12px; font-weight: 750;" title="Tolak Usulan Ini">
+                                ❌ Tolak
+                            </button>
+                            <button type="button" class="btn-action-primary" onclick="approveProposal('${prop.id}')" style="background: var(--success); padding: 7px 14px; font-size: 12px; font-weight: 750;" title="Setujui dan Terapkan Nilai Usulan">
+                                ✅ Setujui (Approve)
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listCont.innerHTML = html;
+        }
+
+        function openEmployeeProposalModal(targetDateKey = null) {
+            if (!currentEmployee || !activeStoreId) return;
+            const store = storesData.find(s => s.id === activeStoreId);
+            if (!store) return;
+
+            const todayKey = getTodayKey();
+            const targetDate = targetDateKey || todayKey;
+            currentProposalDateKey = targetDate;
+            const isToday = (targetDate === todayKey);
+
+            // Display elements
+            const dateDisp = document.getElementById('empPropDateDisplay');
+            const dateRel = document.getElementById('empPropDateRelative');
+            const empNameEl = document.getElementById('empPropEmpName');
+            const shiftBadgeEl = document.getElementById('empPropShiftBadge');
+            const curTxEl = document.getElementById('empPropCurrentTx');
+            const txInput = document.getElementById('empPropTxInput');
+            const noteInput = document.getElementById('empPropNoteInput');
+            const pendingNotice = document.getElementById('empPropPendingNotice');
+
+            if (dateDisp) dateDisp.innerText = formatFullDate(targetDate);
+            if (dateRel) {
+                if (isToday) {
+                    dateRel.innerText = 'Hari Ini';
+                    dateRel.style.color = 'var(--primary)';
+                } else {
+                    const diffDays = Math.round((new Date(targetDate) - new Date(todayKey)) / (1000 * 60 * 60 * 24));
+                    let relText = `${Math.abs(diffDays)} Hari Lalu`;
+                    if (diffDays === -1) relText = 'Kemarin';
+                    else if (diffDays === 1) relText = 'Besok';
+                    else if (diffDays > 1) relText = `${diffDays} Hari Depan`;
+                    dateRel.innerText = relText;
+                    dateRel.style.color = 'var(--warning)';
+                }
+            }
+
+            if (empNameEl) empNameEl.innerText = `👤 ${currentEmployee.name}`;
+            const sName = currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
+            const sClass = currentEmployee.shift_num === 1 ? 's1' : 's2';
+            if (shiftBadgeEl) {
+                shiftBadgeEl.className = `shift-pill ${sClass}`;
+                shiftBadgeEl.innerText = sName;
+            }
+
+            const dayData = (store.daily_transactions && store.daily_transactions[targetDate]) ? store.daily_transactions[targetDate] : null;
+            const myRec = (dayData && dayData.records) ? dayData.records.find(r => r.emp_id === currentEmployee.id) : null;
+            const curVal = myRec ? myRec.tx : 0;
+            if (curTxEl) {
+                curTxEl.innerText = myRec ? `${curVal} tx (Tercatat)` : 'Belum ada data';
+            }
+
+            // Cek apakah ada usulan yang berstatus pending
+            const pendingProp = (store.tx_proposals || []).find(p => p.date === targetDate && p.emp_id === currentEmployee.id && p.status === 'pending');
+
+            if (pendingProp) {
+                if (txInput) txInput.value = pendingProp.proposed_tx;
+                if (noteInput) noteInput.value = pendingProp.note || '';
+                if (pendingNotice) {
+                    pendingNotice.style.display = 'block';
+                    pendingNotice.innerHTML = `⚠️ Anda sudah memiliki usulan tertunda sebesar <b>${pendingProp.proposed_tx} tx</b> (diajukan: ${pendingProp.submitted_at || '-'}). Menyimpan formulir ini akan memperbarui usulan Anda.`;
+                }
+            } else {
+                if (txInput) txInput.value = (curVal > 0) ? curVal : '';
+                if (noteInput) noteInput.value = '';
+                if (pendingNotice) pendingNotice.style.display = 'none';
+            }
+
+            openModal('employeeProposalModal');
+            setTimeout(() => {
+                if (txInput) {
+                    txInput.focus();
+                    if (txInput.select) txInput.select();
+                }
+            }, 100);
+        }
+
+        function navigateProposalDate(delta) {
+            const cur = currentProposalDateKey || getTodayKey();
+            const d = new Date(cur);
+            d.setDate(d.getDate() + delta);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const newDateKey = `${y}-${m}-${day}`;
+            openEmployeeProposalModal(newDateKey);
+        }
+
+        function submitEmployeeProposal(e) {
+            e.preventDefault();
+            if (!currentEmployee || !activeStoreId) return;
+            const store = storesData.find(s => s.id === activeStoreId);
+            if (!store) return;
+
+            const targetDateKey = currentProposalDateKey || getTodayKey();
+            const txInput = document.getElementById('empPropTxInput');
+            const noteInput = document.getElementById('empPropNoteInput');
+            const txVal = parseInt(txInput.value);
+
+            if (isNaN(txVal) || txVal < 0) {
+                showToast('⚠️ Masukkan angka transaksi yang valid!', '⚠️');
+                return;
+            }
+
+            if (!store.tx_proposals) {
+                store.tx_proposals = [];
+            }
+
+            const dayData = (store.daily_transactions && store.daily_transactions[targetDateKey]) ? store.daily_transactions[targetDateKey] : null;
+            const myRec = (dayData && dayData.records) ? dayData.records.find(r => r.emp_id === currentEmployee.id) : null;
+            const curVal = myRec ? myRec.tx : 0;
+
+            const nowTimeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+
+            let existingProp = store.tx_proposals.find(p => p.date === targetDateKey && p.emp_id === currentEmployee.id && p.status === 'pending');
+
+            if (existingProp) {
+                existingProp.proposed_tx = txVal;
+                existingProp.note = noteInput ? noteInput.value.trim() : '';
+                existingProp.submitted_at = nowTimeStr + ', ' + formatDateShort(getTodayKey());
+            } else {
+                const newProp = {
+                    id: 'prop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                    store_id: store.id,
+                    date: targetDateKey,
+                    emp_id: currentEmployee.id,
+                    emp_name: currentEmployee.name,
+                    shift_num: currentEmployee.shift_num,
+                    shift_name: currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam',
+                    current_tx: curVal,
+                    proposed_tx: txVal,
+                    note: noteInput ? noteInput.value.trim() : '',
+                    submitted_at: nowTimeStr + ', ' + formatDateShort(getTodayKey()),
+                    status: 'pending'
+                };
+                store.tx_proposals.push(newProp);
+            }
+
+            saveStoresData();
+            closeModal('employeeProposalModal');
+            renderAnalyticsDashboard(store);
+            renderHistoryTable(store);
+            if (document.getElementById('dedicatedAnalyticsView') && document.getElementById('dedicatedAnalyticsView').classList.contains('active')) {
+                applyAnalyticsFilter();
+            }
+            showToast(`✅ Usulan transaksi (${txVal} tx) berhasil disimpan sebagai usulan menunggu approval admin!`, '📤');
+        }
+
+        function approveProposal(propId) {
+            const store = storesData.find(s => s.id === activeStoreId);
+            if (!store || !store.tx_proposals) return;
+
+            const prop = store.tx_proposals.find(p => p.id === propId);
+            if (!prop) return;
+
+            if (!store.daily_transactions) store.daily_transactions = {};
+            if (!store.daily_transactions[prop.date]) {
+                store.daily_transactions[prop.date] = {
+                    date: prop.date,
+                    recorded_time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB',
+                    total: 0,
+                    records: []
+                };
+            }
+
+            const dayData = store.daily_transactions[prop.date];
+            const nowTimeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+
+            let rec = dayData.records.find(r => r.emp_id === prop.emp_id);
+            if (rec) {
+                rec.tx = prop.proposed_tx;
+                rec.recorded_at = nowTimeStr + ' (Disetujui Admin)';
+            } else {
+                dayData.records.push({
+                    emp_id: prop.emp_id,
+                    emp_name: prop.emp_name,
+                    shift_num: prop.shift_num,
+                    shift_name: prop.shift_name,
+                    tx: prop.proposed_tx,
+                    recorded_at: nowTimeStr + ' (Disetujui Admin)'
+                });
+            }
+
+            // Hitung ulang total harian
+            dayData.total = dayData.records.reduce((sum, r) => sum + (r.tx || 0), 0);
+            dayData.recorded_time = nowTimeStr;
+
+            // Hitung ulang akumulasi bulanan
+            store.monthly_tx = Object.values(store.daily_transactions).reduce((sum, d) => sum + (d.total || 0), 0);
+
+            // Update status usulan
+            prop.status = 'approved';
+            prop.approved_at = nowTimeStr;
+
+            saveStoresData();
+            renderAnalyticsDashboard(store);
+            renderHistoryTable(store);
+            if (document.getElementById('dedicatedAnalyticsView') && document.getElementById('dedicatedAnalyticsView').classList.contains('active')) {
+                applyAnalyticsFilter();
+            }
+            showToast(`✅ Usulan ${prop.emp_name} (${prop.proposed_tx} tx) disetujui & diterapkan!`, '🎉');
+        }
+
+        function rejectProposal(propId) {
+            const store = storesData.find(s => s.id === activeStoreId);
+            if (!store || !store.tx_proposals) return;
+
+            const prop = store.tx_proposals.find(p => p.id === propId);
+            if (!prop) return;
+
+            prop.status = 'rejected';
+            prop.rejected_at = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+
+            saveStoresData();
+            renderAnalyticsDashboard(store);
+            renderHistoryTable(store);
+            if (document.getElementById('dedicatedAnalyticsView') && document.getElementById('dedicatedAnalyticsView').classList.contains('active')) {
+                applyAnalyticsFilter();
+            }
+            showToast(`❌ Usulan ${prop.emp_name} ditolak. Data lama tetap utuh.`, 'ℹ️');
+        }
 
         // Dropdown Pilihan Cabang di Top Bar
         function updateStoreSwitcherDropdown() {
@@ -1933,11 +2589,6 @@
             }
 
             showToast(`🔄 Shift ${store.name} berhasil di-roll! (${swappedPairs.join(', ')})`, '🔄');
-        }
-
-        function backToStoreManager() {
-            const storeParam = activeStoreId ? `?store=${encodeURIComponent(activeStoreId)}` : '';
-            window.location.href = `store_manager.html${storeParam}`;
         }
 
         // Alias untuk kompatibilitas
@@ -2165,13 +2816,15 @@
             renderHistoryTable(store);
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            const todayKey = getTodayKey();
-            const unsetEmployees = getUnsetEmployees(store, todayKey);
+            if (currentAuthRole === 'admin') {
+                const todayKey = getTodayKey();
+                const unsetEmployees = getUnsetEmployees(store, todayKey);
 
-            if (unsetEmployees.length > 0) {
-                setTimeout(() => {
-                    openDailyTxModal(storeId, false);
-                }, 300);
+                if (unsetEmployees.length > 0) {
+                    setTimeout(() => {
+                        openDailyTxModal(storeId, false);
+                    }, 300);
+                }
             }
         }
 
@@ -2189,8 +2842,26 @@
 
             const titleEl = document.getElementById('dedicatedStoreTitle');
             const subEl = document.getElementById('dedicatedStoreSubtitle');
-            if (titleEl) titleEl.innerText = `📊 Analisa & Grafik - ${store.name}`;
-            if (subEl) subEl.innerText = `Filter Rentang Tanggal, Perbandingan Kasir & Tren Shift • ${getTodayDisplay()}`;
+            const btnDedicatedRoll = document.getElementById('btnDedicatedRollShifts');
+            const btnDedicatedDaily = document.getElementById('btnDedicatedOpenDailyModal');
+
+            if (currentAuthRole === 'employee' && currentEmployee) {
+                if (titleEl) titleEl.innerText = `📊 Analisa & Riwayat Transaksi - ${store.name}`;
+                if (subEl) subEl.innerText = `Tren & Performa Transaksi Kasir (${currentEmployee.name}) • ${getTodayDisplay()}`;
+                if (btnDedicatedRoll) btnDedicatedRoll.style.display = 'none';
+                if (btnDedicatedDaily) {
+                    btnDedicatedDaily.innerHTML = '<span>✏️</span> Usulkan Transaksi Hari Ini';
+                    btnDedicatedDaily.onclick = () => openEmployeeProposalModal(getTodayKey());
+                }
+            } else {
+                if (titleEl) titleEl.innerText = `📊 Analisa & Grafik - ${store.name}`;
+                if (subEl) subEl.innerText = `Filter Rentang Tanggal, Perbandingan Kasir & Tren Shift • ${getTodayDisplay()}`;
+                if (btnDedicatedRoll) btnDedicatedRoll.style.display = 'inline-flex';
+                if (btnDedicatedDaily) {
+                    btnDedicatedDaily.innerHTML = '<span>✏️</span> Set / Edit Transaksi Hari Ini';
+                    btnDedicatedDaily.onclick = () => openDailyTxModal(store.id, true);
+                }
+            }
 
             initFilterControls(store);
             applyAnalyticsFilter();
@@ -2239,6 +2910,67 @@
             const records = (todayData && todayData.records) ? todayData.records : [];
             const unsetEmployees = getUnsetEmployees(store, todayKey);
 
+            // Sync Top Bar UI Elements based on Role
+            const adminSwitcher = document.getElementById('adminStoreSelectorWrap');
+            const empBadgeWrap = document.getElementById('employeeBadgeWrap');
+            const badgeEmpStore = document.getElementById('badgeEmployeeStore');
+            const badgeEmpUser = document.getElementById('badgeEmployeeUser');
+            const btnAdminManage = document.getElementById('btnAdminManageStores');
+            const btnEmpLogout = document.getElementById('btnEmployeeLogout');
+            const btnRollShifts = document.getElementById('btnRollShifts');
+            const btnOpenDailyModal = document.getElementById('btnOpenDailyModal');
+            const btnHeaderBackStores = document.getElementById('btnHeaderBackStores');
+            const topNavBackBtn = document.getElementById('topNavBackBtn');
+            const topAppTitle = document.getElementById('topAppTitle');
+            const topAppSubtitle = document.getElementById('topAppSubtitle');
+
+            if (currentAuthRole === 'employee' && currentEmployee) {
+                if (adminSwitcher) adminSwitcher.style.display = 'none';
+                if (empBadgeWrap) empBadgeWrap.style.display = 'flex';
+                if (badgeEmpStore) badgeEmpStore.innerText = `🏬 ${store.name}`;
+                if (badgeEmpUser) badgeEmpUser.innerText = `👤 ${currentEmployee.name}`;
+                if (btnAdminManage) btnAdminManage.style.display = 'none';
+                if (btnEmpLogout) btnEmpLogout.style.display = 'inline-flex';
+                if (btnRollShifts) btnRollShifts.style.display = 'none';
+                if (btnHeaderBackStores) btnHeaderBackStores.innerHTML = '&larr; Kembali ke Portal Karyawan';
+                if (topNavBackBtn) topNavBackBtn.title = 'Kembali ke Portal Karyawan';
+                if (topAppTitle) topAppTitle.innerText = `Transaksi Kasir - ${currentEmployee.name}`;
+                if (topAppSubtitle) topAppSubtitle.innerText = `Catat & Usulkan Transaksi Anda di ${store.name}`;
+                if (btnOpenDailyModal) {
+                    btnOpenDailyModal.innerHTML = '<span>✏️</span> Usulkan Transaksi Hari Ini';
+                    btnOpenDailyModal.onclick = () => openEmployeeProposalModal(todayKey);
+                }
+            } else {
+                if (adminSwitcher) adminSwitcher.style.display = 'flex';
+                if (empBadgeWrap) empBadgeWrap.style.display = 'none';
+                if (btnAdminManage) btnAdminManage.style.display = 'inline-flex';
+                if (btnEmpLogout) btnEmpLogout.style.display = 'none';
+                if (btnRollShifts) btnRollShifts.style.display = 'inline-flex';
+                if (btnHeaderBackStores) btnHeaderBackStores.innerHTML = '&larr; Kembali ke Kelola Cabang';
+                if (topNavBackBtn) topNavBackBtn.title = 'Kembali ke Kelola Cabang';
+                if (topAppTitle) topAppTitle.innerText = 'Transaksi & Shift Kasir';
+                if (topAppSubtitle) topAppSubtitle.innerText = 'Pencatatan Transaksi Harian, Rotasi Shift & Analisa Performa';
+                if (btnOpenDailyModal) {
+                    btnOpenDailyModal.innerHTML = '<span>✏️</span> Set / Edit Transaksi Hari Ini';
+                    btnOpenDailyModal.onclick = () => openDailyTxModal(store.id, true);
+                }
+            }
+
+            // Banner Usulan Menunggu Approval Admin
+            renderAdminProposals(store);
+
+            const anSubEl = document.getElementById('anDateSubtitle');
+            if (anSubEl) {
+                if (currentAuthRole === 'employee') {
+                    anSubEl.innerText = `Transaksi Anda & Rekap Shift • ${getTodayDisplay()}`;
+                } else {
+                    anSubEl.innerText = `Operasional Harian & Rekap Shift • ${getTodayDisplay()}`;
+                }
+            }
+
+            const kpiLbl1 = document.getElementById('kpiLabel1');
+            const kpiLbl2 = document.getElementById('kpiLabel2');
+            const kpiLbl3 = document.getElementById('kpiLabel3');
             const kpiTotalEl = document.getElementById('kpiTodayTx');
             const kpiStatusEl = document.getElementById('kpiTxStatus');
             const kpiMorningEl = document.getElementById('kpiMorningTx');
@@ -2246,117 +2978,218 @@
             const kpiNightEl = document.getElementById('kpiNightTx');
             const kpiNightPicEl = document.getElementById('kpiNightPic');
             const breakdownCont = document.getElementById('empBreakdownContainer');
+            const breakdownTitle = document.getElementById('empBreakdownTitle');
             const recordedTimeEl = document.getElementById('badgeRecordedTime');
             const rotBadge = document.getElementById('anRotationBadge');
 
             if (rotBadge) {
-                const label = getRotationBadgeLabel(store);
-                rotBadge.innerHTML = `🔄 Rotasi: <b>${escapeHtml(label)}</b> <span style="font-size:9.5px; opacity:0.85;">(+ Manual Bebas)</span> ⚙️`;
-                rotBadge.title = "Klik untuk atur jadwal rotasi otomatis (Tukar manual selalu bisa kapan saja)";
+                if (currentAuthRole === 'employee') {
+                    rotBadge.style.display = 'none';
+                } else {
+                    rotBadge.style.display = 'inline-block';
+                    const label = getRotationBadgeLabel(store);
+                    rotBadge.innerHTML = `🔄 Rotasi: <b>${escapeHtml(label)}</b> <span style="font-size:9.5px; opacity:0.85;">(+ Manual Bebas)</span> ⚙️`;
+                    rotBadge.title = "Klik untuk atur jadwal rotasi otomatis (Tukar manual selalu bisa kapan saja)";
+                }
             }
 
-            const empS1 = (store.employees || []).find(e => e.shift_num === 1);
-            const empS2 = (store.employees || []).find(e => e.shift_num === 2);
-            const mRec = records.find(r => r.shift_num === 1);
-            const nRec = records.find(r => r.shift_num === 2);
+            if (currentAuthRole === 'employee' && currentEmployee) {
+                // === MODE KARYAWAN: HANYA TAMPILKAN TRANSAKSI KARYAWAN AKTIF ===
+                if (kpiLbl1) kpiLbl1.innerText = 'TRANSAKSI ANDA HARI INI';
+                if (kpiLbl2) kpiLbl2.innerText = 'STATUS USULAN HARI INI';
+                if (kpiLbl3) kpiLbl3.innerText = 'SHIFT ANDA HARI INI';
 
-            // KPI Total Transaksi
-            const totalTx = todayData ? (todayData.total || 0) : 0;
-            kpiTotalEl.innerText = totalTx.toLocaleString('id-ID') + ' tx';
+                const myRec = records.find(r => r.emp_id === currentEmployee.id);
+                const curVal = myRec ? myRec.tx : 0;
+                const pendingProp = (store.tx_proposals || []).find(p => p.date === todayKey && p.emp_id === currentEmployee.id && p.status === 'pending');
 
-            // Status KPI & Recorded Time
-            if (records.length === 0) {
-                kpiStatusEl.innerText = '⚠️ Belum diset hari ini';
-                kpiStatusEl.style.color = 'var(--warning)';
-                recordedTimeEl.innerText = 'Status: Belum input transaksi hari ini';
-            } else if (unsetEmployees.length > 0) {
-                kpiStatusEl.innerText = `🟡 Sebagian tercatat (${records.length}/${store.employees.length} kasir)`;
-                kpiStatusEl.style.color = 'var(--warning)';
-                recordedTimeEl.innerText = `Terakhir update: ${todayData.recorded_time || '-'} (Ada shift berjalan)`;
-            } else {
-                kpiStatusEl.innerText = `🟢 Lengkap • ${todayData.recorded_time || 'Hari ini'}`;
-                kpiStatusEl.style.color = 'var(--success)';
-                recordedTimeEl.innerText = `Terakhir update: ${todayData.recorded_time || '-'}`;
-            }
+                // KPI 1: Transaksi Anda yang tercatat disetujui
+                kpiTotalEl.innerText = `${curVal.toLocaleString('id-ID')} tx`;
+                if (myRec) {
+                    kpiStatusEl.innerText = `🟢 Tercatat disetujui (${myRec.recorded_at || 'Hari ini'})`;
+                    kpiStatusEl.style.color = 'var(--success)';
+                    recordedTimeEl.innerText = `Disetujui Admin: ${myRec.recorded_at || 'Hari ini'}`;
+                } else {
+                    kpiStatusEl.innerText = '⏳ Belum tercatat hari ini';
+                    kpiStatusEl.style.color = 'var(--warning)';
+                    recordedTimeEl.innerText = 'Status: Belum ada data disetujui hari ini';
+                }
 
-            // Shift 1 KPI
-            if (mRec) {
-                kpiMorningEl.innerHTML = `<span>${mRec.tx} tx</span>`;
-                kpiMorningEl.style.color = '#F59E0B';
-                kpiMorningPicEl.innerHTML = `PIC: <b>${escapeHtml(mRec.emp_name)}</b> <span style="color:var(--success); font-weight:750;">✓ Tercatat</span>`;
-            } else {
-                kpiMorningEl.innerHTML = `<span style="font-size: 15px; color: var(--text-muted); font-weight: 750;">⏳ Belum di-set</span>`;
-                kpiMorningPicEl.innerText = `PIC: ${empS1 ? empS1.name : '-'} (Shift berjalan)`;
-            }
+                // KPI 2: Status Usulan Anda Hari Ini
+                if (pendingProp) {
+                    kpiMorningEl.innerHTML = `<span style="font-size: 18px; color: var(--warning); font-weight: 850;">🟡 ${pendingProp.proposed_tx} tx</span>`;
+                    kpiMorningPicEl.innerHTML = `<span style="color: var(--warning); font-weight: 750;">Menunggu Approval (${pendingProp.submitted_at || '-'})</span>`;
+                } else {
+                    kpiMorningEl.innerHTML = `<span style="font-size: 15px; color: var(--text-muted); font-weight: 750;">Tidak Ada Usulan</span>`;
+                    kpiMorningPicEl.innerHTML = `<span style="color: var(--text-muted);">Data aktif tersinkronisasi</span>`;
+                }
 
-            // Shift 2 KPI
-            if (nRec) {
-                kpiNightEl.innerHTML = `<span>${nRec.tx} tx</span>`;
-                kpiNightEl.style.color = 'var(--primary)';
-                kpiNightPicEl.innerHTML = `PIC: <b>${escapeHtml(nRec.emp_name)}</b> <span style="color:var(--success); font-weight:750;">✓ Tercatat</span>`;
-            } else {
-                kpiNightEl.innerHTML = `<span style="font-size: 15px; color: var(--text-muted); font-weight: 750;">⏳ Belum di-set</span>`;
-                kpiNightPicEl.innerText = `PIC: ${empS2 ? empS2.name : '-'} (Shift berjalan)`;
-            }
+                // KPI 3: Shift Petugas
+                const myShiftNum = myRec ? myRec.shift_num : currentEmployee.shift_num;
+                const myShiftName = myShiftNum === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
+                kpiNightEl.innerHTML = `<span style="font-size: 18px; color: var(--primary); font-weight: 850;">${escapeHtml(myShiftName)}</span>`;
+                kpiNightPicEl.innerHTML = `Petugas: <b>${escapeHtml(currentEmployee.name)}</b> (Aktif)`;
 
-            // Breakdown Per Karyawan
-            if (!store.employees || store.employees.length === 0) {
-                breakdownCont.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted);">Belum ada karyawan terdaftar di cabang ini.</div>`;
-            } else {
-                let bHtml = '';
-                store.employees.forEach(emp => {
-                    const shiftName = emp.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
-                    const shiftClass = emp.shift_num === 1 ? 's1' : 's2';
-                    const rec = records.find(r => r.emp_id === emp.id);
+                // Breakdown: Hanya tampilkan Karyawan login saat ini
+                if (breakdownTitle) breakdownTitle.innerText = '👤 Rekap Transaksi Anda Hari Ini';
 
-                    if (rec) {
-                        const pct = totalTx > 0 ? Math.round((rec.tx / totalTx) * 100) : 0;
-                        bHtml += `
-                            <div class="emp-tx-item">
-                                <div class="emp-tx-header">
-                                    <div class="emp-name-tag">
-                                        <span>👤</span>
-                                        <span>${escapeHtml(emp.name)}</span>
-                                        <span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <span class="tx-val-badge">${rec.tx} tx</span>
-                                        <span style="font-size: 11px; color: var(--text-muted);"> (${pct}%)</span>
-                                    </div>
-                                </div>
-                                <div class="progress-bar-bg">
-                                    <div class="progress-bar-fill" style="width: ${pct}%;"></div>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 10.5px; color: var(--text-muted);">
-                                    <span>Tercatat: ${escapeHtml(rec.recorded_at || 'Hari ini')}</span>
-                                    <button type="button" onclick="openDailyTxModal('${store.id}', true)" style="background: none; border: none; color: var(--primary); font-size: 11px; font-weight: 750; cursor: pointer; text-decoration: underline;">✏️ Edit</button>
-                                </div>
+                const shiftClass = myShiftNum === 1 ? 's1' : 's2';
+                let bHtml = `
+                    <div class="emp-tx-item" style="border: 1.5px solid var(--primary); background: rgba(79, 142, 247, 0.04); padding: 16px; border-radius: 14px;">
+                        <div class="emp-tx-header" style="margin-bottom: 10px;">
+                            <div class="emp-name-tag">
+                                <span style="font-size: 20px;">👤</span>
+                                <span style="font-size: 15px; font-weight: 850;">${escapeHtml(currentEmployee.name)}</span>
+                                <span class="shift-pill ${shiftClass}">${escapeHtml(myShiftName)}</span>
+                                <span class="badge-status" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 10.5px;">Akun Anda</span>
                             </div>
-                        `;
-                    } else {
-                        bHtml += `
-                            <div class="emp-tx-item" style="border: 1px dashed var(--card-border); opacity: 0.9;">
-                                <div class="emp-tx-header">
-                                    <div class="emp-name-tag">
-                                        <span>👤</span>
-                                        <span>${escapeHtml(emp.name)}</span>
-                                        <span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span style="font-size: 11px; color: var(--warning); font-weight: 700;">⏳ Belum di-set</span>
-                                        <button type="button" class="btn-save-single" onclick="openDailyTxModal('${store.id}', false)">
-                                             + Input Transaksi
-                                        </button>
-                                    </div>
-                                </div>
-                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
-                                    Shift masih berjalan atau menunggu input rekap kasir.
-                                </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Data Disetujui Admin</div>
+                                <span class="tx-val-badge" style="font-size: 16px;">${curVal} tx</span>
                             </div>
-                        `;
-                    }
-                });
+                        </div>
+                `;
+
+                if (pendingProp) {
+                    const diff = pendingProp.proposed_tx - curVal;
+                    const diffText = diff > 0 ? `+${diff} tx` : `${diff} tx`;
+                    const diffColor = diff >= 0 ? 'var(--success)' : 'var(--danger)';
+                    bHtml += `
+                        <div style="background: rgba(245, 158, 11, 0.1); border: 1.5px solid var(--warning); border-radius: 12px; padding: 12px 14px; margin-top: 10px; margin-bottom: 12px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-size: 16px;">🟡</span>
+                                    <span style="font-weight: 850; font-size: 12.5px; color: var(--warning);">Usulan Anda Menunggu Persetujuan Admin</span>
+                                </div>
+                                <span class="badge-status" style="background: var(--warning); color: #000; font-weight: 800; font-size: 11px;">${pendingProp.proposed_tx} tx (<span style="color:${diffColor};">${diffText}</span>)</span>
+                            </div>
+                            ${pendingProp.note ? `<div style="font-size: 11px; color: var(--text-main); margin-top: 5px; font-style: italic;">Catatan: "${escapeHtml(pendingProp.note)}"</div>` : ''}
+                            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px;">Diajukan: ${escapeHtml(pendingProp.submitted_at || '-')}</div>
+                        </div>
+                    `;
+                }
+
+                bHtml += `
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--card-border); flex-wrap: wrap; gap: 8px;">
+                            <div style="font-size: 11px; color: var(--text-muted);">
+                                ${myRec ? `✓ Tercatat di sistem: ${escapeHtml(myRec.recorded_at || 'Hari ini')}` : '⏳ Belum ada data disetujui untuk hari ini'}
+                            </div>
+                            <button type="button" class="btn-action-primary" onclick="openEmployeeProposalModal('${todayKey}')" style="padding: 8px 16px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                                <span>✏️</span> <span>${pendingProp ? 'Ubah Usulan Transaksi Hari Ini' : 'Usulkan / Input Transaksi Hari Ini'}</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
                 breakdownCont.innerHTML = bHtml;
+
+            } else {
+                // === MODE ADMIN: TAMPILKAN SELURUH REKAP CABANG & KARYAWAN ===
+                if (kpiLbl1) kpiLbl1.innerText = 'TOTAL TRANSAKSI HARI INI';
+                if (kpiLbl2) kpiLbl2.innerText = 'SHIFT PAGI (PIC 1)';
+                if (kpiLbl3) kpiLbl3.innerText = 'SHIFT MALAM (PIC 2)';
+                if (breakdownTitle) breakdownTitle.innerText = '👥 Transaksi Berdasarkan Petugas Shift Hari Ini';
+
+                const empS1 = (store.employees || []).find(e => e.shift_num === 1);
+                const empS2 = (store.employees || []).find(e => e.shift_num === 2);
+                const mRec = records.find(r => r.shift_num === 1);
+                const nRec = records.find(r => r.shift_num === 2);
+
+                const totalTx = todayData ? (todayData.total || 0) : 0;
+                kpiTotalEl.innerText = totalTx.toLocaleString('id-ID') + ' tx';
+
+                if (records.length === 0) {
+                    kpiStatusEl.innerText = '⚠️ Belum diset hari ini';
+                    kpiStatusEl.style.color = 'var(--warning)';
+                    recordedTimeEl.innerText = 'Status: Belum input transaksi hari ini';
+                } else if (unsetEmployees.length > 0) {
+                    kpiStatusEl.innerText = `🟡 Sebagian tercatat (${records.length}/${store.employees.length} kasir)`;
+                    kpiStatusEl.style.color = 'var(--warning)';
+                    recordedTimeEl.innerText = `Terakhir update: ${todayData.recorded_time || '-'} (Ada shift berjalan)`;
+                } else {
+                    kpiStatusEl.innerText = `🟢 Lengkap • ${todayData.recorded_time || 'Hari ini'}`;
+                    kpiStatusEl.style.color = 'var(--success)';
+                    recordedTimeEl.innerText = `Terakhir update: ${todayData.recorded_time || '-'}`;
+                }
+
+                if (mRec) {
+                    kpiMorningEl.innerHTML = `<span>${mRec.tx} tx</span>`;
+                    kpiMorningEl.style.color = '#F59E0B';
+                    kpiMorningPicEl.innerHTML = `PIC: <b>${escapeHtml(mRec.emp_name)}</b> <span style="color:var(--success); font-weight:750;">✓ Tercatat</span>`;
+                } else {
+                    kpiMorningEl.innerHTML = `<span style="font-size: 15px; color: var(--text-muted); font-weight: 750;">⏳ Belum di-set</span>`;
+                    kpiMorningPicEl.innerText = `PIC: ${empS1 ? empS1.name : '-'} (Shift berjalan)`;
+                }
+
+                if (nRec) {
+                    kpiNightEl.innerHTML = `<span>${nRec.tx} tx</span>`;
+                    kpiNightEl.style.color = 'var(--primary)';
+                    kpiNightPicEl.innerHTML = `PIC: <b>${escapeHtml(nRec.emp_name)}</b> <span style="color:var(--success); font-weight:750;">✓ Tercatat</span>`;
+                } else {
+                    kpiNightEl.innerHTML = `<span style="font-size: 15px; color: var(--text-muted); font-weight: 750;">⏳ Belum di-set</span>`;
+                    kpiNightPicEl.innerText = `PIC: ${empS2 ? empS2.name : '-'} (Shift berjalan)`;
+                }
+
+                if (!store.employees || store.employees.length === 0) {
+                    breakdownCont.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted);">Belum ada karyawan terdaftar di cabang ini.</div>`;
+                } else {
+                    let bHtml = '';
+                    store.employees.forEach(emp => {
+                        const shiftName = emp.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
+                        const shiftClass = emp.shift_num === 1 ? 's1' : 's2';
+                        const rec = records.find(r => r.emp_id === emp.id);
+                        const empProp = (store.tx_proposals || []).find(p => p.date === todayKey && p.emp_id === emp.id && p.status === 'pending');
+
+                        if (rec) {
+                            const pct = totalTx > 0 ? Math.round((rec.tx / totalTx) * 100) : 0;
+                            bHtml += `
+                                <div class="emp-tx-item">
+                                    <div class="emp-tx-header">
+                                        <div class="emp-name-tag">
+                                            <span>👤</span>
+                                            <span>${escapeHtml(emp.name)}</span>
+                                            <span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span>
+                                            ${empProp ? `<span class="badge-status badge-proposal-pending" style="font-size: 10px;">🟡 Usulan: ${empProp.proposed_tx} tx</span>` : ''}
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <span class="tx-val-badge">${rec.tx} tx</span>
+                                            <span style="font-size: 11px; color: var(--text-muted);"> (${pct}%)</span>
+                                        </div>
+                                    </div>
+                                    <div class="progress-bar-bg">
+                                        <div class="progress-bar-fill" style="width: ${pct}%;"></div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 10.5px; color: var(--text-muted);">
+                                        <span>Tercatat: ${escapeHtml(rec.recorded_at || 'Hari ini')}</span>
+                                        <button type="button" onclick="openDailyTxModal('${store.id}', true)" style="background: none; border: none; color: var(--primary); font-size: 11px; font-weight: 750; cursor: pointer; text-decoration: underline;">✏️ Edit</button>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            bHtml += `
+                                <div class="emp-tx-item" style="border: 1px dashed var(--card-border); opacity: 0.9;">
+                                    <div class="emp-tx-header">
+                                        <div class="emp-name-tag">
+                                            <span>👤</span>
+                                            <span>${escapeHtml(emp.name)}</span>
+                                            <span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span>
+                                            ${empProp ? `<span class="badge-status badge-proposal-pending" style="font-size: 10px;">🟡 Usulan: ${empProp.proposed_tx} tx</span>` : ''}
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="font-size: 11px; color: var(--warning); font-weight: 700;">⏳ Belum di-set</span>
+                                            <button type="button" class="btn-save-single" onclick="openDailyTxModal('${store.id}', false)">
+                                                 + Input Transaksi
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                                        Shift masih berjalan atau menunggu input rekap kasir.
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                    breakdownCont.innerHTML = bHtml;
+                }
             }
 
             // Render Riwayat Operasional Toko
@@ -2381,13 +3214,20 @@
             if (shiftSel) shiftSel.value = currentFilter.shift;
 
             if (empSel) {
-                let empOpts = '<option value="all">Semua Kasir</option>';
-                (store.employees || []).forEach(emp => {
-                    const shiftName = emp.shift_num === 1 ? 'Pagi' : 'Malam';
-                    const isSelected = currentFilter.employeeId === emp.id ? 'selected' : '';
-                    empOpts += `<option value="${emp.id}" ${isSelected}>${escapeHtml(emp.name)} (${shiftName})</option>`;
-                });
-                empSel.innerHTML = empOpts;
+                if (currentAuthRole === 'employee' && currentEmployee) {
+                    empSel.innerHTML = `<option value="${currentEmployee.id}" selected>👤 ${escapeHtml(currentEmployee.name)} (Akun Anda)</option>`;
+                    empSel.disabled = true;
+                    currentFilter.employeeId = currentEmployee.id;
+                } else {
+                    empSel.disabled = false;
+                    let empOpts = '<option value="all">Semua Kasir</option>';
+                    (store.employees || []).forEach(emp => {
+                        const shiftName = emp.shift_num === 1 ? 'Pagi' : 'Malam';
+                        const isSelected = currentFilter.employeeId === emp.id ? 'selected' : '';
+                        empOpts += `<option value="${emp.id}" ${isSelected}>${escapeHtml(emp.name)} (${shiftName})</option>`;
+                    });
+                    empSel.innerHTML = empOpts;
+                }
             }
 
             updatePresetButtonsHighlight();
@@ -3131,57 +3971,161 @@
 
         function renderHistoryTable(store) {
             const tbody = document.getElementById('historyTableBody');
+            const thead = document.getElementById('historyTableHeader');
+            const titleEl = document.getElementById('historyTableTitle');
             if (!tbody) return;
 
-            if (!store || !store.daily_transactions || Object.keys(store.daily_transactions).length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 18px;">Belum ada riwayat transaksi tercatat di cabang ini.</td></tr>`;
-                return;
-            }
+            if (currentAuthRole === 'employee' && currentEmployee) {
+                // === TABEL MODE KARYAWAN ===
+                if (titleEl) titleEl.innerText = 'Riwayat Transaksi Saya';
+                if (thead) {
+                    thead.innerHTML = `
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Shift Anda</th>
+                            <th>Data Disetujui Admin</th>
+                            <th>Status Usulan Anda</th>
+                            <th style="text-align: right;">Aksi</th>
+                        </tr>
+                    `;
+                }
 
-            const dateKeys = Object.keys(store.daily_transactions).sort().reverse();
-            let html = '';
+                const dateSet = new Set();
+                if (store && store.daily_transactions) {
+                    Object.keys(store.daily_transactions).forEach(k => dateSet.add(k));
+                }
+                if (store && store.tx_proposals) {
+                    store.tx_proposals.filter(p => p.emp_id === currentEmployee.id).forEach(p => dateSet.add(p.date));
+                }
 
-            dateKeys.forEach(dateKey => {
-                const dayData = store.daily_transactions[dateKey];
-                const records = (dayData && dayData.records) ? dayData.records : [];
-                const s1Rec = records.find(r => r.shift_num === 1);
-                const s2Rec = records.find(r => r.shift_num === 2);
+                const dateKeys = Array.from(dateSet).sort().reverse();
 
-                const s1Text = s1Rec 
-                    ? `<b>${escapeHtml(s1Rec.emp_name)}</b> (${s1Rec.tx} tx)` 
-                    : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>';
+                if (dateKeys.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 18px;">Belum ada riwayat transaksi Anda di cabang ini.</td></tr>`;
+                    return;
+                }
 
-                const s2Text = s2Rec 
-                    ? `<b>${escapeHtml(s2Rec.emp_name)}</b> (${s2Rec.tx} tx)` 
-                    : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>';
+                let html = '';
+                dateKeys.forEach(dateKey => {
+                    const dayData = (store.daily_transactions && store.daily_transactions[dateKey]) ? store.daily_transactions[dateKey] : null;
+                    const records = (dayData && dayData.records) ? dayData.records : [];
+                    const myRec = records.find(r => r.emp_id === currentEmployee.id);
 
-                const totalVal = dayData.total || 0;
-                const totalHighlight = totalVal > 0 
-                    ? `<b style="color: var(--primary); font-size: 13px;">${totalVal} tx</b>` 
-                    : `<span style="color: var(--text-muted); font-size: 12px;">0 tx</span>`;
+                    const shiftNum = myRec ? myRec.shift_num : currentEmployee.shift_num;
+                    const shiftName = myRec ? (myRec.shift_name || (myRec.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam')) : (currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam');
+                    const shiftClass = shiftNum === 1 ? 's1' : 's2';
 
-                html += `
-                    <tr class="clickable-history-row" onclick="openDailyTxModal('${store.id}', true, '${dateKey}')" title="Klik baris untuk edit transaksi ${dateKey}">
-                        <td><b>${escapeHtml(dateKey)}</b> <span style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(dateKey)})</span></td>
-                        <td>${s1Text}</td>
-                        <td>${s2Text}</td>
-                        <td>
-                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                                <span>${totalHighlight}</span>
-                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openDailyTxModal('${store.id}', true, '${dateKey}')" title="Edit transaksi ${dateKey}">
-                                    <span>✏️</span> <span>Edit</span>
+                    let approvedHtml = '';
+                    if (myRec && myRec.tx !== undefined && myRec.tx !== null) {
+                        approvedHtml = `<b style="color: var(--primary); font-size: 13.5px;">${myRec.tx} tx</b>`;
+                        if (myRec.recorded_at) {
+                            approvedHtml += `<div style="font-size: 10px; color: var(--text-muted);">${escapeHtml(myRec.recorded_at)}</div>`;
+                        }
+                    } else {
+                        approvedHtml = `<span style="color: var(--text-muted); font-size: 11.5px;">Belum tercatat (0 tx)</span>`;
+                    }
+
+                    const pendingProp = (store.tx_proposals || []).find(p => p.date === dateKey && p.emp_id === currentEmployee.id && p.status === 'pending');
+                    const appProp = (store.tx_proposals || []).find(p => p.date === dateKey && p.emp_id === currentEmployee.id && p.status === 'approved');
+                    const rejProp = (store.tx_proposals || []).find(p => p.date === dateKey && p.emp_id === currentEmployee.id && p.status === 'rejected');
+
+                    let propStatusHtml = '';
+                    if (pendingProp) {
+                        propStatusHtml = `<span class="badge-status badge-proposal-pending">🟡 Menunggu Approval (${pendingProp.proposed_tx} tx)</span>`;
+                    } else if (appProp) {
+                        propStatusHtml = `<span class="badge-status badge-proposal-approved">🟢 Disetujui (${appProp.proposed_tx} tx)</span>`;
+                    } else if (rejProp) {
+                        propStatusHtml = `<span class="badge-status badge-proposal-rejected">❌ Ditolak</span>`;
+                    } else {
+                        propStatusHtml = `<span style="color: var(--text-muted); font-size: 11px;">-</span>`;
+                    }
+
+                    html += `
+                        <tr class="clickable-history-row" onclick="openEmployeeProposalModal('${dateKey}')" title="Klik baris untuk usulkan / ubah transaksi ${dateKey}">
+                            <td><b>${escapeHtml(dateKey)}</b> <span style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(dateKey)})</span></td>
+                            <td><span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span></td>
+                            <td>${approvedHtml}</td>
+                            <td>${propStatusHtml}</td>
+                            <td style="text-align: right;">
+                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openEmployeeProposalModal('${dateKey}')" title="Usulkan / Edit transaksi ${dateKey}">
+                                    <span>✏️</span> <span>Usulkan</span>
                                 </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            });
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
 
-            tbody.innerHTML = html;
+            } else {
+                // === TABEL MODE ADMIN ===
+                if (titleEl) titleEl.innerText = 'Riwayat Transaksi Harian Cabang';
+                if (thead) {
+                    thead.innerHTML = `
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Petugas Shift 1 (Pagi)</th>
+                            <th>Petugas Shift 2 (Malam)</th>
+                            <th>Total Toko</th>
+                        </tr>
+                    `;
+                }
+
+                if (!store || !store.daily_transactions || Object.keys(store.daily_transactions).length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 18px;">Belum ada riwayat transaksi tercatat di cabang ini.</td></tr>`;
+                    return;
+                }
+
+                const dateKeys = Object.keys(store.daily_transactions).sort().reverse();
+                let html = '';
+
+                dateKeys.forEach(dateKey => {
+                    const dayData = store.daily_transactions[dateKey];
+                    const records = (dayData && dayData.records) ? dayData.records : [];
+                    const s1Rec = records.find(r => r.shift_num === 1);
+                    const s2Rec = records.find(r => r.shift_num === 2);
+
+                    const s1Text = s1Rec 
+                        ? `<b>${escapeHtml(s1Rec.emp_name)}</b> (${s1Rec.tx} tx)` 
+                        : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>';
+
+                    const s2Text = s2Rec 
+                        ? `<b>${escapeHtml(s2Rec.emp_name)}</b> (${s2Rec.tx} tx)` 
+                        : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>';
+
+                    const totalVal = dayData.total || 0;
+                    const totalHighlight = totalVal > 0 
+                        ? `<b style="color: var(--primary); font-size: 13px;">${totalVal} tx</b>` 
+                        : `<span style="color: var(--text-muted); font-size: 12px;">0 tx</span>`;
+
+                    const pendingOnDate = (store.tx_proposals || []).filter(p => p.date === dateKey && p.status === 'pending');
+
+                    html += `
+                        <tr class="clickable-history-row" onclick="openDailyTxModal('${store.id}', true, '${dateKey}')" title="Klik baris untuk edit transaksi ${dateKey}">
+                            <td>
+                                <b>${escapeHtml(dateKey)}</b> <span style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(dateKey)})</span>
+                                ${pendingOnDate.length > 0 ? `<span class="badge-status badge-proposal-pending" style="font-size:9.5px; margin-left:4px;">🟡 ${pendingOnDate.length} Usulan</span>` : ''}
+                            </td>
+                            <td>${s1Text}</td>
+                            <td>${s2Text}</td>
+                            <td>
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                    <span>${totalHighlight}</span>
+                                    <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openDailyTxModal('${store.id}', true, '${dateKey}')" title="Edit transaksi ${dateKey}">
+                                        <span>✏️</span> <span>Edit</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tbody.innerHTML = html;
+            }
         }
 
         function renderFilteredHistoryTable(store, agg) {
             const tbody = document.getElementById('filteredAnalyticsTableBody');
+            const thead = document.getElementById('filteredAnalyticsTableHeader');
             const badgeCount = document.getElementById('badgeFilteredTableCount');
             if (!tbody) return;
 
@@ -3191,43 +4135,130 @@
                 badgeCount.innerText = `${list.length} Hari (${agg.overallTotalTx.toLocaleString('id-ID')} tx)`;
             }
 
-            if (list.length === 0 || (agg.overallTotalTx === 0 && list.every(item => !item.hasData))) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 18px;">Tidak ada riwayat transaksi pada rentang filter ini.</td></tr>`;
-                return;
-            }
+            if (currentAuthRole === 'employee' && currentEmployee) {
+                if (thead) {
+                    thead.innerHTML = `
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Shift Anda</th>
+                            <th>Data Disetujui Admin</th>
+                            <th>Status Usulan Anda</th>
+                            <th style="text-align: right;">Aksi</th>
+                        </tr>
+                    `;
+                }
 
-            let html = '';
-            list.forEach(item => {
-                const s1Text = item.shift1Tx > 0 
-                    ? `<b>${escapeHtml(item.shift1Emp || 'Shift 1')}</b> (${item.shift1Tx} tx)` 
-                    : (item.hasData ? '<span style="color:var(--text-muted); font-size:11px;">0 tx / libur</span>' : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>');
+                if (list.length === 0 || (agg.overallTotalTx === 0 && list.every(item => !item.hasData))) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 18px;">Tidak ada riwayat transaksi pada rentang filter ini.</td></tr>`;
+                    return;
+                }
 
-                const s2Text = item.shift2Tx > 0 
-                    ? `<b>${escapeHtml(item.shift2Emp || 'Shift 2')}</b> (${item.shift2Tx} tx)` 
-                    : (item.hasData ? '<span style="color:var(--text-muted); font-size:11px;">0 tx / libur</span>' : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>');
+                let html = '';
+                list.forEach(item => {
+                    const dayData = (store.daily_transactions && store.daily_transactions[item.date]) ? store.daily_transactions[item.date] : null;
+                    const records = (dayData && dayData.records) ? dayData.records : [];
+                    const myRec = records.find(r => r.emp_id === currentEmployee.id);
 
-                const totalHighlight = item.total > 0 
-                    ? `<b style="color: var(--primary); font-size: 13px;">${item.total} tx</b>` 
-                    : `<span style="color: var(--text-muted); font-size: 12px;">0 tx</span>`;
+                    const shiftNum = myRec ? myRec.shift_num : currentEmployee.shift_num;
+                    const shiftName = myRec ? (myRec.shift_name || (myRec.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam')) : (currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam');
+                    const shiftClass = shiftNum === 1 ? 's1' : 's2';
 
-                html += `
-                    <tr class="clickable-history-row" onclick="openDailyTxModal('${store.id}', true, '${item.date}')" title="Klik baris untuk edit transaksi ${item.date}">
-                        <td><b>${escapeHtml(item.date)}</b> <span style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(item.date)})</span></td>
-                        <td>${s1Text}</td>
-                        <td>${s2Text}</td>
-                        <td>
-                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                                <span>${totalHighlight}</span>
-                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openDailyTxModal('${store.id}', true, '${item.date}')" title="Edit transaksi ${item.date}">
-                                    <span>✏️</span> <span>Edit</span>
+                    let approvedHtml = '';
+                    if (myRec && myRec.tx !== undefined && myRec.tx !== null) {
+                        approvedHtml = `<b style="color: var(--primary); font-size: 13.5px;">${myRec.tx} tx</b>`;
+                        if (myRec.recorded_at) {
+                            approvedHtml += `<div style="font-size: 10px; color: var(--text-muted);">${escapeHtml(myRec.recorded_at)}</div>`;
+                        }
+                    } else {
+                        approvedHtml = `<span style="color: var(--text-muted); font-size: 11.5px;">- (0 tx)</span>`;
+                    }
+
+                    const pendingProp = (store.tx_proposals || []).find(p => p.date === item.date && p.emp_id === currentEmployee.id && p.status === 'pending');
+                    const appProp = (store.tx_proposals || []).find(p => p.date === item.date && p.emp_id === currentEmployee.id && p.status === 'approved');
+                    const rejProp = (store.tx_proposals || []).find(p => p.date === item.date && p.emp_id === currentEmployee.id && p.status === 'rejected');
+
+                    let propStatusHtml = '';
+                    if (pendingProp) {
+                        propStatusHtml = `<span class="badge-status badge-proposal-pending">🟡 Usulan: ${pendingProp.proposed_tx} tx</span>`;
+                    } else if (appProp) {
+                        propStatusHtml = `<span class="badge-status badge-proposal-approved">🟢 Disetujui</span>`;
+                    } else if (rejProp) {
+                        propStatusHtml = `<span class="badge-status badge-proposal-rejected">❌ Ditolak</span>`;
+                    } else {
+                        propStatusHtml = `<span style="color: var(--text-muted); font-size: 11px;">-</span>`;
+                    }
+
+                    html += `
+                        <tr class="clickable-history-row" onclick="openEmployeeProposalModal('${item.date}')" title="Klik baris untuk usulkan transaksi ${item.date}">
+                            <td><b>${escapeHtml(item.date)}</b> <span style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(item.date)})</span></td>
+                            <td><span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span></td>
+                            <td>${approvedHtml}</td>
+                            <td>${propStatusHtml}</td>
+                            <td style="text-align: right;">
+                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openEmployeeProposalModal('${item.date}')" title="Usulkan transaksi ${item.date}">
+                                    <span>✏️</span> <span>Usulkan</span>
                                 </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            });
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
 
-            tbody.innerHTML = html;
+            } else {
+                if (thead) {
+                    thead.innerHTML = `
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Petugas Shift 1 (Pagi)</th>
+                            <th>Petugas Shift 2 (Malam)</th>
+                            <th>Total Toko</th>
+                        </tr>
+                    `;
+                }
+
+                if (list.length === 0 || (agg.overallTotalTx === 0 && list.every(item => !item.hasData))) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 18px;">Tidak ada riwayat transaksi pada rentang filter ini.</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                list.forEach(item => {
+                    const s1Text = item.shift1Tx > 0 
+                        ? `<b>${escapeHtml(item.shift1Emp || 'Shift 1')}</b> (${item.shift1Tx} tx)` 
+                        : (item.hasData ? '<span style="color:var(--text-muted); font-size:11px;">0 tx / libur</span>' : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>');
+
+                    const s2Text = item.shift2Tx > 0 
+                        ? `<b>${escapeHtml(item.shift2Emp || 'Shift 2')}</b> (${item.shift2Tx} tx)` 
+                        : (item.hasData ? '<span style="color:var(--text-muted); font-size:11px;">0 tx / libur</span>' : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>');
+
+                    const totalHighlight = item.total > 0 
+                        ? `<b style="color: var(--primary); font-size: 13px;">${item.total} tx</b>` 
+                        : `<span style="color: var(--text-muted); font-size: 12px;">0 tx</span>`;
+
+                    const pendingOnDate = (store.tx_proposals || []).filter(p => p.date === item.date && p.status === 'pending');
+
+                    html += `
+                        <tr class="clickable-history-row" onclick="openDailyTxModal('${store.id}', true, '${item.date}')" title="Klik baris untuk edit transaksi ${item.date}">
+                            <td>
+                                <b>${escapeHtml(item.date)}</b> <span style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(item.date)})</span>
+                                ${pendingOnDate.length > 0 ? `<span class="badge-status badge-proposal-pending" style="font-size:9.5px; margin-left:4px;">🟡 ${pendingOnDate.length} Usulan</span>` : ''}
+                            </td>
+                            <td>${s1Text}</td>
+                            <td>${s2Text}</td>
+                            <td>
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                    <span>${totalHighlight}</span>
+                                    <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openDailyTxModal('${store.id}', true, '${item.date}')" title="Edit transaksi ${item.date}">
+                                        <span>✏️</span> <span>Edit</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tbody.innerHTML = html;
+            }
         }
 
         // ==========================================
@@ -3255,6 +4286,10 @@
         }
 
         function openDailyTxModal(storeId, isManualEdit = false, targetDateKey = null) {
+            if (currentAuthRole === 'employee') {
+                openEmployeeProposalModal(targetDateKey || getTodayKey());
+                return;
+            }
             if (storeId) activeStoreId = storeId;
             else storeId = activeStoreId || (storesData[0] ? storesData[0].id : null);
 
