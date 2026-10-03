@@ -15,6 +15,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="KSP Check">
 
+    <!-- Supabase JS, KspSync, & CryptoJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="ksp_sync_config.js"></script>
+    <script src="ksp_sync.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+
     <style>
         :root {
             --bg-color: #0F1117;
@@ -24,6 +30,7 @@
             --primary: #4F8EF7;
             --primary-hover: #3B7ADF;
             --primary-glow: rgba(79, 142, 247, 0.15);
+            --danger: #EF4444;
             --text-main: #FFFFFF;
             --text-muted: #8A92A6;
             --chip-bg: #222736;
@@ -39,6 +46,7 @@
             --primary: #2B6CB0;
             --primary-hover: #2C5282;
             --primary-glow: rgba(43, 108, 176, 0.12);
+            --danger: #DC2626;
             --text-main: #2D3748;
             --text-muted: #718096;
             --chip-bg: #EFE8DC;
@@ -438,12 +446,135 @@
             .menu-card-title {
                 font-size: 11px;
             }
+        /* PIN Gate Modal */
+        #pinModal {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            background: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .pin-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            max-width: 380px;
+            width: 100%;
+            padding: 30px 24px;
+            text-align: center;
+            box-shadow: 0 15px 35px var(--shadow-color);
+            margin: auto;
+        }
+
+        .pin-icon {
+            width: 54px;
+            height: 54px;
+            border-radius: 16px;
+            background: var(--primary-glow);
+            color: var(--primary);
+            font-size: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px auto;
+            box-shadow: 0 4px 14px rgba(79, 142, 247, 0.25);
+        }
+
+        .pin-input {
+            width: 100%;
+            background: var(--card-hover, var(--chip-bg));
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            font-size: 22px;
+            letter-spacing: 5px;
+            font-weight: 800;
+            text-align: center;
+            padding: 12px 42px 12px 14px;
+            border-radius: 12px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .pin-input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-pin-submit {
+            background: var(--primary);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 12px;
+            padding: 13px;
+            font-size: 14px;
+            font-weight: 750;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.15s, transform 0.1s;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-pin-submit:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-pin-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <!-- PIN SECURITY GATE -->
+    <div id="pinModal">
+        <div class="pin-card">
+            <div class="pin-icon">🔒</div>
+            <h2 style="font-size: 19px; font-weight: 800; margin-bottom: 6px;">Akses KSP Check</h2>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.45;">
+                Masukkan PIN Admin Toko atau Password Karyawan Anda untuk membuka sistem.
+            </p>
+
+            <form onsubmit="handlePinSubmit(event)">
+                <div style="position: relative; display: flex; align-items: center; margin-bottom: 12px;">
+                    <input type="password" 
+                           id="pinInput" 
+                           class="pin-input" 
+                           placeholder="PIN / Password..." 
+                           autocomplete="current-password" 
+                           autofocus 
+                           required>
+                    <button type="button" 
+                            id="btnTogglePin" 
+                            onclick="togglePinVisibility()" 
+                            style="position: absolute; right: 10px; background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); padding: 6px;" 
+                            title="Lihat PIN">👁️</button>
+                </div>
+                <div id="pinError" style="color: var(--danger); font-size: 12px; margin-bottom: 12px; display: none; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 12px; border-radius: 10px; line-height: 1.45; font-weight: 600;"></div>
+                <button type="submit" id="btnUnlock" class="btn-pin-submit">
+                    <span>Buka KSP Check</span> ➜
+                </button>
+            </form>
+
+            <div style="margin-top: 18px; padding-top: 12px; border-top: 1px dashed var(--card-border); font-size: 11.5px; color: var(--text-muted); line-height: 1.45;">
+                💡 <b>Karyawan / Kasir:</b> Masukkan password Anda untuk langsung diarahkan ke <b>Portal Karyawan</b>.
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div class="container" id="mainApp" style="display: none;">
         <!-- TOP BAR -->
         <header class="top-bar">
             <div class="brand-box" onclick="openInfoModal()" role="button" tabindex="0" title="Sentuh untuk melihat info modul">
@@ -459,6 +590,7 @@
 
             <div class="top-actions">
                 <button class="btn-action" id="themeToggleBtn" onclick="toggleTheme()" title="Ubah Tema">🌙</button>
+                <button class="btn-action" onclick="lockApp()" title="Kunci / Logout">🔒</button>
                 <a href="interactive_stock.html" class="btn-action" title="Buka Aplikasi Lengkap">📱</a>
             </div>
         </header>
@@ -651,6 +783,8 @@
     </div>
 
     <script>
+        let supabaseClient = null;
+
         // 1. Theme Management
         function applySavedTheme() {
             const savedTheme = localStorage.getItem('kspcheck_theme');
@@ -698,9 +832,194 @@
             if (e.key === 'Escape') closeInfoModal();
         });
 
+        // 3. PIN Security Gate & Authentication
+        function togglePinVisibility() {
+            const input = document.getElementById('pinInput');
+            const btn = document.getElementById('btnTogglePin');
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (btn) btn.innerText = '🙈';
+            } else {
+                input.type = 'password';
+                if (btn) btn.innerText = '👁️';
+            }
+            input.focus();
+        }
+
+        async function verifyAdminPin(pin) {
+            try {
+                const res = await fetch('./config.enc?t=' + Date.now());
+                if (!res.ok) return null;
+                const base64Encrypted = await res.text();
+
+                const combined = CryptoJS.enc.Base64.parse(base64Encrypted.trim());
+                const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4), 16);
+                const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4), combined.sigBytes - 16);
+                const cipherParams = CryptoJS.lib.CipherParams.create({ ciphertext: ciphertext });
+
+                const key = CryptoJS.SHA256(pin);
+                const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
+                    iv: iv,
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+
+                const decryptedJson = decrypted.toString(CryptoJS.enc.Utf8);
+                if (!decryptedJson) return null;
+
+                const config = JSON.parse(decryptedJson);
+                if (!config.supabase_url || !config.supabase_anon_key) return null;
+                return config;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function checkEmployeePassword(pass) {
+            // 1. Coba verifikasi lewat Supabase Cloud RPC ksp_emp_login
+            if (window.KspSync && typeof window.KspSync.empLogin === 'function') {
+                try {
+                    const r = await window.KspSync.empLogin(pass);
+                    if (r && r.ok && r.store && r.employee) {
+                        return { store: r.store, employee: r.employee };
+                    }
+                } catch (e) {
+                    console.warn('[Index] Cloud check warning:', e);
+                }
+            }
+
+            // 2. Fallback: Cek data toko lokal di localStorage
+            try {
+                const raw = localStorage.getItem('kspcheck_stores_data');
+                if (raw) {
+                    const stores = JSON.parse(raw);
+                    for (const s of stores) {
+                        const emp = (s.employees || []).find(x => (x.status === 'active' || !x.status) && String(x.password).trim() === pass);
+                        if (emp) {
+                            return { store: s, employee: emp };
+                        }
+                    }
+                }
+            } catch (e) {}
+
+            return null;
+        }
+
+        async function handlePinSubmit(e) {
+            e.preventDefault();
+            const pin = document.getElementById('pinInput').value.trim();
+            const errBox = document.getElementById('pinError');
+            const btn = document.getElementById('btnUnlock');
+
+            if (!pin) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span>Memeriksa...</span>';
+            if (errBox) errBox.style.display = 'none';
+
+            // Langkah 1: Cek apakah Admin PIN
+            const adminConfig = await verifyAdminPin(pin);
+            if (adminConfig) {
+                localStorage.setItem('kspcheck_viewer_pin', pin);
+                sessionStorage.setItem('kspcheck_auth_mode', 'admin');
+                if (window.supabase) {
+                    supabaseClient = supabase.createClient(adminConfig.supabase_url, adminConfig.supabase_anon_key);
+                }
+                document.getElementById('pinModal').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<span>Buka KSP Check</span> ➜';
+                return;
+            }
+
+            // Langkah 2: Cek apakah Password Karyawan
+            const empMatch = await checkEmployeePassword(pin);
+            if (empMatch) {
+                btn.innerHTML = `<span>Membuka Portal ${escapeHtml(empMatch.employee.name)}...</span> ➜`;
+                sessionStorage.setItem('kspcheck_emp_cred', pin);
+                sessionStorage.setItem('kspcheck_active_emp', JSON.stringify({
+                    storeId: empMatch.store.id,
+                    empId: empMatch.employee.id
+                }));
+                sessionStorage.setItem('kspcheck_auth_mode', 'employee');
+
+                // Redirect langsung ke portal karyawan!
+                window.location.replace('karyawan.html');
+                return;
+            }
+
+            // Langkah 3: Password / PIN salah
+            btn.disabled = false;
+            btn.innerHTML = '<span>Buka KSP Check</span> ➜';
+            if (errBox) {
+                errBox.innerText = '❌ Password PIN salah! Periksa kembali atau tanyakan Admin Toko.';
+                errBox.style.display = 'block';
+            }
+            const input = document.getElementById('pinInput');
+            if (input) {
+                input.focus();
+                input.select();
+            }
+        }
+
+        function lockApp() {
+            sessionStorage.removeItem('kspcheck_auth_mode');
+            sessionStorage.removeItem('kspcheck_emp_cred');
+            sessionStorage.removeItem('kspcheck_active_emp');
+            localStorage.removeItem('kspcheck_viewer_pin');
+            document.getElementById('pinInput').value = '';
+            const errBox = document.getElementById('pinError');
+            if (errBox) errBox.style.display = 'none';
+            document.getElementById('pinModal').style.display = 'flex';
+            document.getElementById('mainApp').style.display = 'none';
+            setTimeout(() => {
+                const input = document.getElementById('pinInput');
+                if (input) input.focus();
+            }, 100);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
+
         // Initialize on load
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             applySavedTheme();
+
+            // 1. Jika sesi aktif adalah karyawan, langsung arahkan ke karyawan.html
+            const authMode = sessionStorage.getItem('kspcheck_auth_mode');
+            const empSession = sessionStorage.getItem('kspcheck_active_emp');
+            if (authMode === 'employee' || (empSession && !localStorage.getItem('kspcheck_viewer_pin'))) {
+                window.location.replace('karyawan.html');
+                return;
+            }
+
+            // 2. Cek apakah ada PIN Admin tersimpan
+            const savedPin = localStorage.getItem('kspcheck_viewer_pin');
+            if (savedPin) {
+                const config = await verifyAdminPin(savedPin);
+                if (config) {
+                    sessionStorage.setItem('kspcheck_auth_mode', 'admin');
+                    if (window.supabase) {
+                        supabaseClient = supabase.createClient(config.supabase_url, config.supabase_anon_key);
+                    }
+                    document.getElementById('pinModal').style.display = 'none';
+                    document.getElementById('mainApp').style.display = 'block';
+                    return;
+                }
+            }
+
+            // 3. Tampilkan PIN modal
+            document.getElementById('pinModal').style.display = 'flex';
+            document.getElementById('mainApp').style.display = 'none';
+            setTimeout(() => {
+                const input = document.getElementById('pinInput');
+                if (input) input.focus();
+            }, 120);
         });
     </script>
 </body>

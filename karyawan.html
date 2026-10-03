@@ -543,11 +543,10 @@
                         <input type="password" 
                                id="loginPasswordInput" 
                                class="form-input" 
-                               inputmode="numeric" 
                                autocomplete="current-password"
                                autofocus 
-                               placeholder="Ketik PIN..." 
-                               style="font-size: 22px; letter-spacing: 5px; text-align: center; font-weight: 800; padding: 14px 44px 14px 14px; width: 100%;" 
+                               placeholder="Ketik PIN / Password..." 
+                               style="font-size: 20px; text-align: center; font-weight: 800; padding: 14px 44px 14px 14px; width: 100%;" 
                                required>
                         <button type="button" 
                                 id="btnTogglePass" 
@@ -905,6 +904,7 @@
                 storeId: currentStore.id,
                 empId: currentEmployee.id
             }));
+            sessionStorage.setItem('kspcheck_auth_mode', 'employee');
 
             activateDashboard();
         }
@@ -937,6 +937,7 @@
         function logoutEmployee() {
             sessionStorage.removeItem('kspcheck_active_emp');
             sessionStorage.removeItem('kspcheck_emp_cred');
+            sessionStorage.removeItem('kspcheck_auth_mode');
             currentStore = null;
             currentEmployee = null;
             const input = document.getElementById('loginPasswordInput');
