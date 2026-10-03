@@ -179,6 +179,50 @@
             });
     }
 
+    function adminTransferEmployee(empId, toStoreId, newShift, reason) {
+        if (!enabled() || !adminPin()) return Promise.resolve({ skipped: true });
+        setStatus('busy', '☁️ Memproses mutasi cabang di cloud…');
+        return rpc('ksp_admin_transfer_employee', {
+            p_pin: adminPin(),
+            p_emp_id: empId,
+            p_to_store_id: toStoreId,
+            p_new_shift: newShift || 1,
+            p_reason: reason || 'Mutasi penugasan cabang'
+        }).then(function (r) {
+            if (!r || !r.ok) throw new Error(r && r.error === 'unauthorized' ? 'PIN admin ditolak server' : 'Gagal mutasi karyawan');
+            setStatus('ok', '☁️ Mutasi cabang berhasil');
+            return r;
+        }).catch(function (err) {
+            console.warn('[KspSync] transfer gagal:', err);
+            setStatus('err', '⚠️ Cloud transfer: ' + (err.message || 'gagal'));
+            throw err;
+        });
+    }
+
+    function adminDeactivateEmployee(empId, status, reason) {
+        if (!enabled() || !adminPin()) return Promise.resolve({ skipped: true });
+        setStatus('busy', '☁️ Memperbarui status karyawan di cloud…');
+        return rpc('ksp_admin_deactivate_employee', {
+            p_pin: adminPin(),
+            p_emp_id: empId,
+            p_status: status || 'inactive',
+            p_reason: reason || 'Resign / Pensiun'
+        }).then(function (r) {
+            if (!r || !r.ok) throw new Error(r && r.error === 'unauthorized' ? 'PIN admin ditolak server' : 'Gagal mengubah status');
+            setStatus('ok', '☁️ Status karyawan tersimpan di cloud');
+            return r;
+        }).catch(function (err) {
+            console.warn('[KspSync] deactivate gagal:', err);
+            setStatus('err', '⚠️ Cloud status: ' + (err.message || 'gagal'));
+            throw err;
+        });
+    }
+
+    function adminGetAllEmployees() {
+        if (!enabled() || !adminPin()) return Promise.resolve({ skipped: true });
+        return rpc('ksp_admin_get_all_employees', { p_pin: adminPin() });
+    }
+
     // ---------- KARYAWAN ----------
     function empLogin(password) {
         if (!enabled()) return Promise.reject(new Error('Sinkronisasi cloud tidak dikonfigurasi'));
@@ -188,6 +232,21 @@
     function empSubmitProposal(password, proposal) {
         if (!enabled()) return Promise.reject(new Error('Sinkronisasi cloud tidak dikonfigurasi'));
         return rpc('ksp_emp_submit_proposal', { p_password: password, p_proposal: proposal });
+    }
+
+    function empUpdateProfile(password, profileData) {
+        if (!enabled()) return Promise.reject(new Error('Sinkronisasi cloud tidak dikonfigurasi'));
+        setStatus('busy', '⏳ Menyimpan profil karyawan ke cloud...');
+        return rpc('ksp_emp_update_profile', {
+            p_password: password,
+            p_phone: profileData.phone || null,
+            p_address: profileData.address || null,
+            p_photo: profileData.photo || null
+        }).then(function (r) {
+            if (!r || !r.ok) throw new Error(r && r.error === 'invalid_password' ? 'Password karyawan tidak cocok' : 'Gagal memperbarui profil');
+            setStatus('ok', '✓ Profil karyawan berhasil diperbarui di cloud');
+            return r;
+        });
     }
 
     // ---------- INIT ----------
@@ -228,8 +287,12 @@
         adminPull: adminPull,
         adminPush: adminPush,
         adminDeleteStore: adminDeleteStore,
+        adminTransferEmployee: adminTransferEmployee,
+        adminDeactivateEmployee: adminDeactivateEmployee,
+        adminGetAllEmployees: adminGetAllEmployees,
         empLogin: empLogin,
         empSubmitProposal: empSubmitProposal,
+        empUpdateProfile: empUpdateProfile,
         setStatus: setStatus
     };
 })();

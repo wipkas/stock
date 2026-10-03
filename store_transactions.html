@@ -2424,7 +2424,7 @@
             }
             if (!match && !cloudRejected) {
                 for (const store of storesData) {
-                    const emp = (store.employees || []).find(x => String(x.password).trim() === pass);
+                    const emp = (store.employees || []).find(x => (x.status === 'active' || !x.status) && String(x.password).trim() === pass);
                     if (emp) {
                         match = { store, employee: emp };
                         break;
@@ -2972,13 +2972,14 @@
         function rollActiveStoreShifts() {
             if (!activeStoreId) return;
             const store = storesData.find(s => s.id === activeStoreId);
-            if (!store || !store.employees || store.employees.length < 2) {
-                showToast('⚠️ Minimal harus ada 2 karyawan untuk melakukan roll shift.', '⚠️');
+            const activeEmps = (store?.employees || []).filter(e => e.status === 'active' || !e.status);
+            if (!store || activeEmps.length < 2) {
+                showToast('⚠️ Minimal harus ada 2 karyawan aktif untuk melakukan roll shift.', '⚠️');
                 return;
             }
 
             let swappedPairs = [];
-            store.employees.forEach(emp => {
+            activeEmps.forEach(emp => {
                 const oldShift = emp.shift_num;
                 const newShift = (oldShift === 1) ? 2 : 1;
                 emp.shift_num = newShift;
@@ -3121,8 +3122,9 @@
 
         function swapModalEmployeesToday() {
             const store = storesData.find(s => s.id === activeStoreId);
-            if (!store || !store.employees || store.employees.length < 2) {
-                showToast('⚠️ Minimal harus ada 2 karyawan untuk menukar shift.', '⚠️');
+            const activeEmps = (store?.employees || []).filter(e => e.status === 'active' || !e.status);
+            if (!store || activeEmps.length < 2) {
+                showToast('⚠️ Minimal harus ada 2 karyawan aktif untuk menukar shift.', '⚠️');
                 return;
             }
 
@@ -3139,7 +3141,7 @@
 
             // Update shift_num di employees (jika hari ini)
             if (isToday) {
-                store.employees.forEach(emp => {
+                activeEmps.forEach(emp => {
                     const oldShift = emp.shift_num;
                     const newShift = (oldShift === 1) ? 2 : 1;
                     emp.shift_num = newShift;
@@ -3159,7 +3161,7 @@
                     }
                 });
             } else if (!isToday) {
-                store.employees.forEach(emp => {
+                activeEmps.forEach(emp => {
                     const oldShift = emp.shift_num;
                     const newShift = (oldShift === 1) ? 2 : 1;
                     emp.shift_num = newShift;
@@ -3291,13 +3293,19 @@
             backToStoreManager();
         }
 
+        function getActiveEmployees(store) {
+            if (!store || !store.employees) return [];
+            return store.employees.filter(emp => emp.status === 'active' || !emp.status);
+        }
+
         function getUnsetEmployees(store, dateKey) {
             if (!store || !store.employees) return [];
+            const activeEmps = getActiveEmployees(store);
             const dateData = store.daily_transactions ? store.daily_transactions[dateKey] : null;
             if (!dateData || !dateData.records) {
-                return [...store.employees];
+                return [...activeEmps];
             }
-            return store.employees.filter(emp => !dateData.records.some(r => r.emp_id === emp.id));
+            return activeEmps.filter(emp => !dateData.records.some(r => r.emp_id === emp.id));
         }
 
         function getSetRecords(store, dateKey) {
@@ -3495,8 +3503,9 @@
                 if (kpiLbl3) kpiLbl3.innerText = 'SHIFT MALAM (PIC 2)';
                 if (breakdownTitle) breakdownTitle.innerText = '👥 Transaksi Berdasarkan Petugas Shift Hari Ini';
 
-                const empS1 = (store.employees || []).find(e => e.shift_num === 1);
-                const empS2 = (store.employees || []).find(e => e.shift_num === 2);
+                const activeEmps = getActiveEmployees(store);
+                const empS1 = activeEmps.find(e => e.shift_num === 1);
+                const empS2 = activeEmps.find(e => e.shift_num === 2);
                 const mRec = records.find(r => r.shift_num === 1);
                 const nRec = records.find(r => r.shift_num === 2);
 
@@ -3508,7 +3517,7 @@
                     kpiStatusEl.style.color = 'var(--warning)';
                     recordedTimeEl.innerText = 'Status: Belum input transaksi hari ini';
                 } else if (unsetEmployees.length > 0) {
-                    kpiStatusEl.innerText = `🟡 Sebagian tercatat (${records.length}/${store.employees.length} kasir)`;
+                    kpiStatusEl.innerText = `🟡 Sebagian tercatat (${records.length}/${activeEmps.length} kasir)`;
                     kpiStatusEl.style.color = 'var(--warning)';
                     recordedTimeEl.innerText = `Terakhir update: ${todayData.recorded_time || '-'} (Ada shift berjalan)`;
                 } else {
@@ -3535,11 +3544,25 @@
                     kpiNightPicEl.innerText = `PIC: ${empS2 ? empS2.name : '-'} (Shift berjalan)`;
                 }
 
-                if (!store.employees || store.employees.length === 0) {
-                    breakdownCont.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted);">Belum ada karyawan terdaftar di cabang ini.</div>`;
+                if (activeEmps.length === 0 && records.length === 0) {
+                    breakdownCont.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted);">Belum ada karyawan aktif terdaftar di cabang ini.</div>`;
                 } else {
                     let bHtml = '';
-                    store.employees.forEach(emp => {
+                    const displayedEmps = [...activeEmps];
+                    // Masukkan kasir pengganti/inval jika ada transaksi hari ini
+                    records.forEach(r => {
+                        if (!displayedEmps.some(e => e.id === r.emp_id)) {
+                            displayedEmps.push({
+                                id: r.emp_id,
+                                name: r.emp_name,
+                                shift_num: r.shift_num,
+                                role: 'inval',
+                                status: 'active'
+                            });
+                        }
+                    });
+
+                    displayedEmps.forEach(emp => {
                         const shiftName = emp.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
                         const shiftClass = emp.shift_num === 1 ? 's1' : 's2';
                         const rec = records.find(r => r.emp_id === emp.id);
@@ -3628,9 +3651,11 @@
                     empSel.disabled = false;
                     let empOpts = '<option value="all">Semua Kasir</option>';
                     (store.employees || []).forEach(emp => {
+                        const isResigned = (emp.status === 'resigned' || emp.status === 'inactive');
+                        const statusNote = isResigned ? ' [Nonaktif]' : (emp.role === 'inval' ? ' [Inval]' : '');
                         const shiftName = emp.shift_num === 1 ? 'Pagi' : 'Malam';
                         const isSelected = currentFilter.employeeId === emp.id ? 'selected' : '';
-                        empOpts += `<option value="${emp.id}" ${isSelected}>${escapeHtml(emp.name)} (${shiftName})</option>`;
+                        empOpts += `<option value="${emp.id}" ${isSelected}>${escapeHtml(emp.name)}${statusNote} (${shiftName})</option>`;
                     });
                     empSel.innerHTML = empOpts;
                 }
@@ -4753,8 +4778,9 @@
 
             const unsetEmployees = getUnsetEmployees(store, targetDate);
             const setRecords = getSetRecords(store, targetDate);
+            const activeEmps = getActiveEmployees(store);
             const runningShift = isToday ? getCurrentRunningShift(store) : null;
-            const runningEmp = runningShift ? (store.employees || []).find(e => e.shift_num === runningShift.shift_num) : null;
+            const runningEmp = runningShift ? activeEmps.find(e => e.shift_num === runningShift.shift_num) : null;
 
             // 1. Tampilkan Label & Tanggal
             const headerLabelEl = document.getElementById('modalHeaderLabel');
@@ -4845,7 +4871,19 @@
             fieldsCont.innerHTML = '';
 
             let html = '';
-            const employeesToRender = (!isToday || isManualEdit) ? (store.employees || []) : unsetEmployees;
+            let employeesToRender = (!isToday || isManualEdit) ? [...activeEmps] : unsetEmployees;
+            // Sertakan kasir dari setRecords jika ada (misal kasir inval atau riwayat kasir sebelumnya)
+            setRecords.forEach(r => {
+                if (!employeesToRender.some(e => e.id === r.emp_id)) {
+                    employeesToRender.push({
+                        id: r.emp_id,
+                        name: r.emp_name,
+                        shift_num: r.shift_num,
+                        role: 'inval',
+                        status: 'active'
+                    });
+                }
+            });
 
             if (isToday && !isManualEdit && employeesToRender.length === 0 && setRecords.length > 0) {
                 html += `
@@ -4860,13 +4898,15 @@
                     const shiftClass = empShiftNum === 1 ? 's1' : 's2';
                     const prefillVal = (existingRecord && existingRecord.tx !== undefined && existingRecord.tx !== null) ? existingRecord.tx : '';
                     const isRunning = isToday && runningShift && runningShift.shift_num === empShiftNum;
+                    const isInval = (emp.role === 'inval' || String(emp.id).startsWith('inval_'));
 
                     html += `
-                    <div class="form-group" style="${isRunning ? 'background: rgba(79, 142, 247, 0.05); padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(79, 142, 247, 0.25);' : ''}">
+                    <div class="form-group" style="${isRunning ? 'background: rgba(79, 142, 247, 0.05); padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(79, 142, 247, 0.25);' : (isInval ? 'background: rgba(245, 158, 11, 0.05); padding: 10px 12px; border-radius: 12px; border: 1px dashed rgba(245, 158, 11, 0.3);' : '')}">
                         <label class="form-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                             <span style="font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px;">
                                 <span>👤 ${escapeHtml(emp.name)}</span>
                                 ${isRunning ? '<span style="font-size: 9.5px; color: var(--primary); font-weight: 800; background: rgba(79, 142, 247, 0.15); padding: 2px 6px; border-radius: 6px;">SEDANG BERTUGAS</span>' : ''}
+                                ${isInval ? '<span style="font-size: 9.5px; color: #f59e0b; font-weight: 800; background: rgba(245, 158, 11, 0.15); padding: 2px 6px; border-radius: 6px;">INVAL PENGGANTI</span>' : ''}
                             </span>
                             <span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span>
                         </label>
@@ -4895,6 +4935,15 @@
                 }
             }
 
+            // Opsi tombol Tambah Kasir Inval / Pengganti
+            html += `
+            <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
+                <button type="button" onclick="promptAddInvalToDailyModal('${storeId}')" style="background: rgba(14, 165, 233, 0.08); border: 1px dashed rgba(14, 165, 233, 0.4); color: #0ea5e9; font-size: 11.5px; font-weight: 750; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                    <span>👤+</span> <span>Tambah Kasir Pengganti (Inval)</span>
+                </button>
+            </div>
+            `;
+
             fieldsCont.innerHTML = html;
             openModal('dailyTxModal');
 
@@ -4913,6 +4962,57 @@
                     if (targetInput.select) targetInput.select();
                 }
             }, 120);
+        }
+
+        function promptAddInvalToDailyModal(storeId) {
+            const store = storesData.find(s => s.id === storeId);
+            if (!store) return;
+
+            const name = prompt('Masukkan nama kasir pengganti (inval / backup):');
+            if (!name || !name.trim()) return;
+
+            const shiftStr = prompt('Kasir pengganti ini bertugas di shift berapa? (Ketik 1 atau 2 atau 3):', '1');
+            const shiftNum = parseInt(shiftStr) || 1;
+            const shiftName = shiftNum === 1 ? 'Shift 1 Pagi' : (shiftNum === 2 ? 'Shift 2 Malam' : `Shift ${shiftNum}`);
+            const shiftClass = shiftNum === 1 ? 's1' : 's2';
+            const cleanName = name.trim();
+            const tempId = 'inval_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 4);
+
+            const fieldsCont = document.getElementById('dailyTxFormFields');
+            if (!fieldsCont) return;
+
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'form-group';
+            rowDiv.style.cssText = 'background: rgba(245, 158, 11, 0.06); padding: 10px 12px; border-radius: 12px; border: 1px dashed rgba(245, 158, 11, 0.35); margin-top: 8px;';
+            rowDiv.innerHTML = `
+                <label class="form-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+                        <span>👤 ${escapeHtml(cleanName)}</span>
+                        <span style="font-size: 9.5px; color: #f59e0b; font-weight: 800; background: rgba(245, 158, 11, 0.15); padding: 2px 6px; border-radius: 6px;">KASIR INVAL</span>
+                    </span>
+                    <span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span>
+                </label>
+                <input type="number" 
+                       inputmode="numeric" 
+                       pattern="[0-9]*" 
+                       class="form-input emp-tx-input" 
+                       id="input_emp_${tempId}"
+                       data-empid="${tempId}" 
+                       data-empname="${escapeHtml(cleanName)}" 
+                       data-shiftnum="${shiftNum}" 
+                       data-shiftname="${escapeHtml(shiftName)}" 
+                       placeholder="0" 
+                       value="" 
+                       min="0"
+                       style="font-size: 20px; font-weight: 800; text-align: center; padding: 12px 14px; border-radius: 10px;">
+            `;
+
+            fieldsCont.appendChild(rowDiv);
+            const newInp = rowDiv.querySelector('input');
+            if (newInp) {
+                newInp.focus();
+                try { newInp.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+            }
         }
 
         function handleSaveDailyTx(e) {

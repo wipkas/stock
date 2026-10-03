@@ -834,6 +834,125 @@
             z-index: 1100;
         }
 
+        /* Master Employees Badges & Buttons */
+        .emp-role-select {
+            flex: 0 0 102px;
+            padding: 5px 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-role-inval {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+        }
+        .badge-role-kasir {
+            background: rgba(14, 165, 233, 0.15);
+            color: #0ea5e9;
+            border: 1px solid rgba(14, 165, 233, 0.35);
+        }
+        .badge-status-resigned {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+        }
+        .badge-status-inactive {
+            background: rgba(148, 163, 184, 0.15);
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+        }
+
+        .btn-emp-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 5px 8px;
+            border-radius: 7px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-main);
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+        .btn-emp-action:hover {
+            border-color: var(--primary);
+            background: rgba(79, 142, 247, 0.15);
+        }
+        .btn-emp-action.btn-transfer {
+            color: #0ea5e9;
+            border-color: rgba(14, 165, 233, 0.35);
+            background: rgba(14, 165, 233, 0.08);
+        }
+        .btn-emp-action.btn-transfer:hover {
+            background: rgba(14, 165, 233, 0.2);
+        }
+        .btn-emp-action.btn-deactivate {
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.35);
+            background: rgba(239, 68, 68, 0.08);
+        }
+        .btn-emp-action.btn-deactivate:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+        .btn-emp-action.btn-rehire {
+            color: #10b981;
+            border-color: rgba(16, 185, 129, 0.35);
+            background: rgba(16, 185, 129, 0.08);
+        }
+        .btn-emp-action.btn-rehire:hover {
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        /* Master Employee Tab Buttons & Table */
+        .tab-btn-master {
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 750;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .tab-btn-master.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab-btn-master:hover:not(.active) {
+            color: var(--text-main);
+        }
+
+        .emp-master-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 12px;
+        }
+        .emp-master-table th {
+            background: var(--input-bg);
+            padding: 10px 12px;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-align: left;
+            border-bottom: 2px solid var(--card-border);
+            white-space: nowrap;
+        }
+        .emp-master-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--card-border);
+            vertical-align: middle;
+        }
+        .emp-master-table tr:hover td {
+            background: rgba(79, 142, 247, 0.04);
+        }
+
         /* PIN Gate Modal */
         #pinModal {
             position: fixed;
@@ -920,6 +1039,9 @@
             </div>
 
             <div class="top-actions">
+                <button class="btn-primary" onclick="openMasterEmployeesModal()" style="background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.4); color: #0ea5e9;">
+                    <span>👥</span> Master Karyawan
+                </button>
                 <button class="btn-primary" onclick="openAddStoreModal()">
                     <span>➕</span> Tambah Cabang
                 </button>
@@ -985,14 +1107,14 @@
                     </div>
                 </div>
 
-                <!-- 2. Kelola Karyawan & Password -->
-                <div class="feature-card" style="--feature-accent: #10B981;" onclick="openManageEmployeesModal()">
+                <!-- 2. Kelola Karyawan & Mutasi Cabang -->
+                <div class="feature-card" style="--feature-accent: #10B981;" onclick="openMasterEmployeesModal(activeStoreId)">
                     <div>
                         <div class="feature-card-top">
                             <div class="feature-icon">👥</div>
-                            <div class="feature-title">Karyawan &amp; Password</div>
+                            <div class="feature-title">Karyawan &amp; Mutasi Cabang</div>
                         </div>
-                        <p class="feature-desc" id="featureEmpSummary">Daftar nama karyawan bertugas, password akses mandiri, dan penugasan shift.</p>
+                        <p class="feature-desc" id="featureEmpSummary">Daftar kasir aktif, mutasi rolling cabang, kasir inval, dan status keaktifan.</p>
                     </div>
                     <div class="feature-action">
                         <span>Kelola Personel</span>
@@ -1277,6 +1399,260 @@
         </div>
     </div>
 
+    <!-- MODAL 4: MUTASI / PINDAH CABANG KARYAWAN -->
+    <div id="transferEmpModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'transferEmpModal')">
+        <div class="modal-card" style="max-width: 440px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">🔄 Mutasi Cabang Karyawan</h3>
+                    <p class="modal-subtitle">Pindahkan karyawan ke cabang lain &amp; tentukan shift baru</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('transferEmpModal')">&times;</button>
+            </div>
+            <form onsubmit="handleTransferEmpSubmit(event)">
+                <input type="hidden" id="transferEmpId">
+                <input type="hidden" id="transferFromStoreId">
+                <div class="modal-body">
+                    <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); padding: 12px; border-radius: 12px; margin-bottom: 14px;">
+                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: #0ea5e9;">Karyawan Terpilih</div>
+                        <div id="transferEmpNameDisplay" style="font-size: 15px; font-weight: 800; color: var(--text-main); margin-top: 2px;">-</div>
+                        <div id="transferEmpFromDisplay" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Asal Cabang: -</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="transferToStoreSelect">Pindah ke Cabang Tujuan *</label>
+                        <select id="transferToStoreSelect" class="form-select" required onchange="updateTransferShiftOptions()">
+                            <!-- Dynamic store options -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="transferNewShiftSelect">Shift di Cabang Baru *</label>
+                        <select id="transferNewShiftSelect" class="form-select" required>
+                            <option value="1">Shift 1</option>
+                            <option value="2">Shift 2</option>
+                            <option value="3">Shift 3</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="transferReasonInput">Alasan Mutasi / Rolling</label>
+                        <input type="text" id="transferReasonInput" class="form-input" placeholder="Misal: Rolling bulanan, penugasan baru..." value="Rolling shift bulanan">
+                    </div>
+
+                    <div class="form-hint" style="line-height: 1.45;">
+                        💡 <b>Catatan:</b> Riwayat transaksi harian yang pernah dicatat oleh karyawan ini di cabang asal akan tetap aman di cabang asal. PIN login karyawan ini tetap sama dan otomatis aktif di cabang baru.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('transferEmpModal')">Batal</button>
+                    <button type="submit" id="btnSubmitTransfer" class="btn-primary">Proses Mutasi Cabang</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 5: NONAKTIFKAN / RESIGN KARYAWAN -->
+    <div id="deactivateEmpModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'deactivateEmpModal')">
+        <div class="modal-card" style="max-width: 440px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">🚪 Nonaktifkan / Resign Karyawan</h3>
+                    <p class="modal-subtitle">Cabut akses PIN login &amp; arsipkan data karyawan</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('deactivateEmpModal')">&times;</button>
+            </div>
+            <form onsubmit="handleDeactivateEmpSubmit(event)">
+                <input type="hidden" id="deactivateEmpId">
+                <input type="hidden" id="deactivateStoreId">
+                <div class="modal-body">
+                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 12px; border-radius: 12px; margin-bottom: 14px;">
+                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: #ef4444;">Karyawan</div>
+                        <div id="deactivateEmpNameDisplay" style="font-size: 15px; font-weight: 800; color: var(--text-main); margin-top: 2px;">-</div>
+                        <div id="deactivateStoreNameDisplay" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Cabang: -</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="deactivateStatusSelect">Status Baru *</label>
+                        <select id="deactivateStatusSelect" class="form-select" required>
+                            <option value="resigned">Resign / Pensiun (Tidak bekerja lagi)</option>
+                            <option value="inactive">Nonaktif Sementara (Cuti panjang / dinonaktifkan)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="deactivateReasonInput">Alasan *</label>
+                        <input type="text" id="deactivateReasonInput" class="form-input" placeholder="Misal: Mengundurkan diri, pindah domisili..." required value="Resign">
+                    </div>
+
+                    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); padding: 10px 12px; border-radius: 10px; font-size: 11.5px; line-height: 1.45; color: var(--text-main);">
+                        ⚠️ <b>Keamanan Login:</b> Password / PIN login karyawan ini akan <b>langsung dicabut</b> di Cloud Supabase sehingga karyawan tidak bisa lagi masuk portal. Semua rekap transaksi masa lalu tetap utuh. Karyawan ini dapat diaktifkan kembali sewaktu-waktu.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('deactivateEmpModal')">Batal</button>
+                    <button type="submit" id="btnSubmitDeactivate" class="btn-danger">Konfirmasi Nonaktifkan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 6: RE-HIRE / AKTIFKAN KEMBALI KARYAWAN -->
+    <div id="rehireEmpModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'rehireEmpModal')">
+        <div class="modal-card" style="max-width: 430px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">♻️ Aktifkan Kembali Karyawan</h3>
+                    <p class="modal-subtitle">Tugaskan kembali ke cabang &amp; atur PIN login baru</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('rehireEmpModal')">&times;</button>
+            </div>
+            <form onsubmit="handleRehireEmpSubmit(event)">
+                <input type="hidden" id="rehireEmpId">
+                <div class="modal-body">
+                    <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 12px; border-radius: 12px; margin-bottom: 14px;">
+                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: #10b981;">Karyawan</div>
+                        <div id="rehireEmpNameDisplay" style="font-size: 15px; font-weight: 800; color: var(--text-main); margin-top: 2px;">-</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="rehireStoreSelect">Penugasan Cabang *</label>
+                        <select id="rehireStoreSelect" class="form-select" required onchange="updateRehireShiftOptions()">
+                            <!-- Dynamic store options -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="rehireShiftSelect">Shift Bertugas *</label>
+                        <select id="rehireShiftSelect" class="form-select" required>
+                            <option value="1">Shift 1</option>
+                            <option value="2">Shift 2</option>
+                            <option value="3">Shift 3</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="rehireRoleSelect">Role / Peran *</label>
+                        <select id="rehireRoleSelect" class="form-select" required>
+                            <option value="kasir">Kasir Tetap</option>
+                            <option value="inval">Kasir Inval (Pengganti)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="rehirePinInput">Password / PIN Baru *</label>
+                        <input type="password" id="rehirePinInput" class="form-input" placeholder="Masukkan PIN baru" required autocomplete="off">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('rehireEmpModal')">Batal</button>
+                    <button type="submit" id="btnSubmitRehire" class="btn-primary">Aktifkan Karyawan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 7: MASTER DATA KARYAWAN & RIWAYAT MUTASI -->
+    <div id="masterEmployeesModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'masterEmployeesModal')">
+        <div class="modal-card" style="max-width: 980px; width: 95vw; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">👥 Master Karyawan &amp; Log Mutasi</h3>
+                    <p class="modal-subtitle">Kelola seluruh kasir cabang, mutasi rotasi, dan riwayat penugasan</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('masterEmployeesModal')">&times;</button>
+            </div>
+
+            <!-- Tab Nav -->
+            <div style="display: flex; gap: 8px; padding: 0 20px; border-bottom: 1px solid var(--card-border); background: var(--bg-color);">
+                <button type="button" id="tabBtnAllEmployees" class="tab-btn-master active" onclick="switchMasterEmpTab('list')">
+                    📋 Daftar Karyawan (<span id="totalEmpCountBadge">0</span>)
+                </button>
+                <button type="button" id="tabBtnMutationLog" class="tab-btn-master" onclick="switchMasterEmpTab('mutations')">
+                    📜 Log Riwayat Mutasi
+                </button>
+            </div>
+
+            <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 18px 20px;">
+                <!-- TAB 1: LIST KARYAWAN -->
+                <div id="tabMasterEmpList">
+                    <!-- Filter Bar -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                            <input type="text" id="searchMasterEmp" placeholder="🔍 Cari nama karyawan..." oninput="filterMasterEmployeesTable()" class="form-input" style="width: 180px; padding: 6px 10px; font-size: 12px;">
+                            <select id="filterMasterEmpStore" class="form-select" onchange="filterMasterEmployeesTable()" style="width: 170px; padding: 6px 10px; font-size: 12px;">
+                                <option value="all">Semua Cabang</option>
+                            </select>
+                            <select id="filterMasterEmpStatus" class="form-select" onchange="filterMasterEmployeesTable()" style="width: 150px; padding: 6px 10px; font-size: 12px;">
+                                <option value="all">Semua Status</option>
+                                <option value="active" selected>Aktif Saja</option>
+                                <option value="inval">Kasir Inval</option>
+                                <option value="resigned">Resign / Nonaktif</option>
+                            </select>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-muted);">
+                            Total: <b id="filteredEmpCount" style="color: var(--primary);">0</b> Karyawan
+                        </div>
+                    </div>
+
+                    <!-- Table Container -->
+                    <div style="overflow-x: auto; border: 1px solid var(--card-border); border-radius: 12px;">
+                        <table class="emp-master-table">
+                            <thead>
+                                <tr>
+                                    <th>Karyawan</th>
+                                    <th>Kontak &amp; Alamat</th>
+                                    <th>Cabang Toko</th>
+                                    <th>Shift</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>PIN Login</th>
+                                    <th style="text-align: right;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="masterEmpTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 2: LOG MUTASI -->
+                <div id="tabMasterEmpMutations" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div style="font-size: 12.5px; color: var(--text-muted);">
+                            Catatan riwayat pergeseran atau mutasi cabang karyawan yang tercatat di Supabase Cloud:
+                        </div>
+                        <button type="button" class="btn-primary" onclick="loadMutationLogsFromCloud()" style="padding: 4px 10px; font-size: 11px;">
+                            🔄 Muat Ulang Log
+                        </button>
+                    </div>
+                    <div style="overflow-x: auto; border: 1px solid var(--card-border); border-radius: 12px;">
+                        <table class="emp-master-table">
+                            <thead>
+                                <tr>
+                                    <th>Waktu Mutasi</th>
+                                    <th>Nama Karyawan</th>
+                                    <th>Cabang Asal</th>
+                                    <th>Cabang Tujuan</th>
+                                    <th>Shift Baru</th>
+                                    <th>Alasan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mutationLogTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="justify-content: flex-end;">
+                <button type="button" class="btn-secondary" onclick="closeModal('masterEmployeesModal')">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <!-- APP SCRIPT LOGIC -->
     <script>
         let supabaseClient = null;
@@ -1459,6 +1835,9 @@
 
         function saveStoresData() {
             localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesData));
+            if (window.KspSync && typeof window.KspSync.adminPush === 'function') {
+                window.KspSync.adminPush().catch(e => console.warn('[KspSync] Auto adminPush error:', e));
+            }
         }
 
         // 4. Live Clock & Shift Transition Calculation
@@ -1568,8 +1947,8 @@
                     badgeHtml = `<span class="badge-status badge-active">🟢 Shift ${status.currentShift.shift_num} Aktif</span>`;
                 }
 
-                const empS1 = (store.employees || []).filter(e => e.shift_num === 1).map(e => e.name).join(', ') || '(Kosong)';
-                const empS2 = (store.employees || []).filter(e => e.shift_num === 2).map(e => e.name).join(', ') || '(Kosong)';
+                const empS1 = (store.employees || []).filter(e => (e.status === 'active' || !e.status) && e.shift_num === 1).map(e => e.name).join(', ') || '(Kosong)';
+                const empS2 = (store.employees || []).filter(e => (e.status === 'active' || !e.status) && e.shift_num === 2).map(e => e.name).join(', ') || '(Kosong)';
 
                 html += `
                 <div class="store-card" onclick="selectStore('${store.id}')">
@@ -1620,16 +1999,17 @@
             window.location.href = 'store_transactions.html?store=' + encodeURIComponent(storeId) + '&from=manager';
         }
 
-        // Roll Shift: tukar Shift 1 (Pagi) <-> Shift 2 (Malam) seluruh karyawan cabang
+        // Roll Shift: tukar Shift 1 (Pagi) <-> Shift 2 (Malam) karyawan aktif di cabang
         function rollStoreShifts(e, storeId) {
             if (e) e.stopPropagation();
             const store = storesData.find(s => s.id === storeId);
-            if (!store || !store.employees || store.employees.length < 2) {
-                showToast('⚠️ Minimal harus ada 2 karyawan untuk melakukan roll shift.', '⚠️');
+            const activeEmps = (store?.employees || []).filter(e => e.status === 'active' || !e.status);
+            if (!store || activeEmps.length < 2) {
+                showToast('⚠️ Minimal harus ada 2 karyawan aktif untuk melakukan roll shift.', '⚠️');
                 return;
             }
             const swapped = [];
-            store.employees.forEach(emp => {
+            activeEmps.forEach(emp => {
                 emp.shift_num = (emp.shift_num === 1) ? 2 : 1;
                 swapped.push(`${emp.name} ➔ Shift ${emp.shift_num}`);
             });
@@ -1772,7 +2152,7 @@
             const empCont = document.getElementById('empListContainer');
             empCont.innerHTML = '';
             (store.employees || []).forEach(emp => {
-                addEmployeeRow(emp.name, emp.password, emp.shift_num, emp.id);
+                addEmployeeRow(emp.name, emp.password, emp.shift_num, emp.id, emp.role || 'kasir', emp.status || 'active', emp.phone || '', emp.address || '', emp.photo || '');
             });
 
             openModal('storeFormModal');
@@ -1785,7 +2165,7 @@
             document.getElementById('shift3Row').style.display = (count >= 3) ? 'flex' : 'none';
         }
 
-        function addEmployeeRow(name = '', pass = '', shift = 1, id = '') {
+        function addEmployeeRow(name = '', pass = '', shift = 1, id = '', role = 'kasir', status = 'active', phone = '', address = '', photo = '') {
             const cont = document.getElementById('empListContainer');
             const rowId = 'empRow_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
             const div = document.createElement('div');
@@ -1793,22 +2173,67 @@
             div.id = rowId;
             if (id) div.dataset.empId = id;
             div.dataset.empPass = pass ? String(pass).trim() : '';
+            div.dataset.empRole = role || 'kasir';
+            div.dataset.empStatus = status || 'active';
+            div.dataset.empPhone = phone ? String(phone).trim() : '';
+            div.dataset.empAddress = address ? String(address).trim() : '';
+            div.dataset.empPhoto = photo || '';
 
+            const isResigned = (status === 'resigned' || status === 'inactive');
             const hasPass = Boolean(pass && String(pass).trim().length > 0);
             const btnClass = hasPass ? 'btn-emp-pass has-pass' : 'btn-emp-pass no-pass';
             const btnLabel = hasPass ? '🔑 PIN Tersedia' : '🔑 Set PIN';
+            const currentStoreId = document.getElementById('formStoreId')?.value || '';
 
-            div.innerHTML = `
-                <input type="text" class="emp-name-input" placeholder="Nama Karyawan" value="${escapeHtml(name)}" required>
-                <select class="form-select emp-shift-select">
-                    <option value="1" ${shift == 1 ? 'selected' : ''}>Shift 1</option>
-                    <option value="2" ${shift == 2 ? 'selected' : ''}>Shift 2</option>
-                    <option value="3" ${shift == 3 ? 'selected' : ''}>Shift 3</option>
-                </select>
-                <button type="button" class="${btnClass}" onclick="openEmpPasswordModal('${rowId}')" title="Klik untuk atur Password / PIN">${btnLabel}</button>
-                <button type="button" class="btn-del-emp" onclick="document.getElementById('${rowId}').remove()" title="Hapus Karyawan">&times;</button>
-            `;
+            if (isResigned) {
+                const statusBadge = status === 'resigned' 
+                    ? '<span class="badge-status badge-status-resigned">🔴 Resign</span>' 
+                    : '<span class="badge-status badge-status-inactive">🟡 Nonaktif</span>';
+                div.style.opacity = '0.75';
+                div.style.background = 'rgba(239, 68, 68, 0.04)';
+                div.innerHTML = `
+                    <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;">
+                        ${statusBadge}
+                        <input type="text" class="emp-name-input" value="${escapeHtml(name)}" readonly style="text-decoration: line-through; opacity: 0.8;">
+                    </div>
+                    <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; white-space: nowrap;">Shift ${shift}</span>
+                    <button type="button" class="btn-emp-action btn-rehire" onclick="openRehireEmpModal('${id}', '${escapeHtml(name)}', '${currentStoreId}')" title="Aktifkan Kembali / Re-hire">♻️ Aktifkan</button>
+                    <button type="button" class="btn-del-emp" onclick="confirmDeleteEmpRow('${rowId}')" title="Hapus Karyawan">&times;</button>
+                `;
+            } else {
+                div.innerHTML = `
+                    <input type="text" class="emp-name-input" placeholder="Nama Karyawan" value="${escapeHtml(name)}" required>
+                    <select class="form-select emp-role-select" title="Role Penugasan">
+                        <option value="kasir" ${role === 'kasir' ? 'selected' : ''}>Kasir Tetap</option>
+                        <option value="inval" ${role === 'inval' ? 'selected' : ''}>Kasir Inval</option>
+                    </select>
+                    <select class="form-select emp-shift-select" title="Shift Roster">
+                        <option value="1" ${shift == 1 ? 'selected' : ''}>Shift 1</option>
+                        <option value="2" ${shift == 2 ? 'selected' : ''}>Shift 2</option>
+                        <option value="3" ${shift == 3 ? 'selected' : ''}>Shift 3</option>
+                    </select>
+                    <button type="button" class="${btnClass}" onclick="openEmpPasswordModal('${rowId}')" title="Klik untuk atur Password / PIN">${btnLabel}</button>
+                    ${id ? `
+                        <button type="button" class="btn-emp-action btn-transfer" onclick="openTransferEmpModal('${id}', '${escapeHtml(name)}', document.getElementById('formStoreId').value)" title="Mutasi / Pindah Cabang">🔄 Mutasi</button>
+                        <button type="button" class="btn-emp-action btn-deactivate" onclick="openDeactivateEmpModal('${id}', '${escapeHtml(name)}', document.getElementById('formStoreId').value)" title="Nonaktifkan / Resign">🚪 Resign</button>
+                    ` : ''}
+                    <button type="button" class="btn-del-emp" onclick="confirmDeleteEmpRow('${rowId}')" title="Hapus Karyawan">&times;</button>
+                `;
+            }
             cont.appendChild(div);
+        }
+
+        function confirmDeleteEmpRow(rowId) {
+            const row = document.getElementById(rowId);
+            if (!row) return;
+            const empId = row.dataset.empId;
+            const empName = row.querySelector('.emp-name-input')?.value.trim() || 'karyawan ini';
+            if (empId) {
+                if (!confirm(`⚠️ Karyawan "${empName}" sudah terdaftar di sistem.\n\nJika karyawan sudah tidak bekerja, disarankan menggunakan tombol "🚪 Resign" agar riwayat transaksi masa lalu tetap aman dan tercatat.\n\nApakah Anda tetap ingin menghapus baris karyawan ini?`)) {
+                    return;
+                }
+            }
+            row.remove();
         }
 
         // Dedicated Employee Password Modal Logic
@@ -1884,7 +2309,7 @@
             const currentStoreId = document.getElementById('formStoreId').value;
             for (const otherStore of storesData) {
                 if (otherStore.id === currentStoreId) continue;
-                const conflict = (otherStore.employees || []).find(o => String(o.password).trim() === newPass);
+                const conflict = (otherStore.employees || []).find(o => (o.status === 'active' || !o.status) && String(o.password).trim() === newPass);
                 if (conflict) {
                     errBox.innerText = `⚠️ PIN "${newPass}" sudah dipakai oleh ${conflict.name} di ${otherStore.name}.`;
                     errBox.style.display = 'block';
@@ -1923,6 +2348,9 @@
             }
 
             // Gather employees & validate uniqueness
+            const existingIdx = storesData.findIndex(s => s.id === storeId);
+            const existingStore = existingIdx >= 0 ? storesData[existingIdx] : null;
+
             const employees = [];
             const rows = document.querySelectorAll('#empListContainer .emp-item-row');
             const seenInStore = new Set();
@@ -1931,32 +2359,37 @@
                 const empName = row.querySelector('.emp-name-input')?.value.trim();
                 const empPass = (row.dataset.empPass || '').trim();
                 const empShift = parseInt(row.querySelector('.emp-shift-select')?.value) || 1;
+                const empRole = row.querySelector('.emp-role-select')?.value || row.dataset.empRole || 'kasir';
+                const empStatus = row.dataset.empStatus || 'active';
                 const existingEmpId = row.dataset.empId;
+                const existingObj = (existingStore?.employees || []).find(e => e.id === existingEmpId);
 
                 if (!empName) {
                     alert('⚠️ Nama setiap karyawan wajib diisi!');
                     return;
                 }
 
-                if (!empPass) {
-                    alert(`⚠️ Password PIN untuk karyawan "${empName}" belum diatur! Silakan klik tombol "🔑 Set PIN".`);
-                    return;
-                }
-
-                // Check intra-store duplicate
-                if (seenInStore.has(empPass)) {
-                    alert(`⚠️ Password PIN "${empPass}" digunakan lebih dari satu karyawan di cabang ini. Setiap karyawan wajib memiliki PIN yang berbeda!`);
-                    return;
-                }
-                seenInStore.add(empPass);
-
-                // Check conflict with other branches
-                for (const otherStore of storesData) {
-                    if (otherStore.id === storeId) continue;
-                    const conflict = (otherStore.employees || []).find(o => String(o.password).trim() === empPass);
-                    if (conflict) {
-                        alert(`⚠️ Password PIN "${empPass}" sudah dipakai oleh karyawan "${conflict.name}" di cabang "${otherStore.name}".\n\nMohon buat PIN yang unik agar sistem dapat mengenali cabang dan nama karyawan secara otomatis saat login.`);
+                if (empStatus === 'active') {
+                    if (!empPass) {
+                        alert(`⚠️ Password PIN untuk karyawan "${empName}" belum diatur! Silakan klik tombol "🔑 Set PIN".`);
                         return;
+                    }
+
+                    // Check intra-store duplicate
+                    if (seenInStore.has(empPass)) {
+                        alert(`⚠️ Password PIN "${empPass}" digunakan lebih dari satu karyawan di cabang ini. Setiap karyawan wajib memiliki PIN yang berbeda!`);
+                        return;
+                    }
+                    seenInStore.add(empPass);
+
+                    // Check conflict with other branches
+                    for (const otherStore of storesData) {
+                        if (otherStore.id === storeId) continue;
+                        const conflict = (otherStore.employees || []).find(o => (o.status === 'active' || !o.status) && String(o.password).trim() === empPass);
+                        if (conflict) {
+                            alert(`⚠️ Password PIN "${empPass}" sudah dipakai oleh karyawan "${conflict.name}" di cabang "${otherStore.name}".\n\nMohon buat PIN yang unik agar sistem dapat mengenali cabang dan nama karyawan secara otomatis saat login.`);
+                            return;
+                        }
                     }
                 }
 
@@ -1964,12 +2397,15 @@
                     id: existingEmpId || ('emp_' + Math.random().toString(36).substr(2, 6)),
                     name: empName,
                     password: empPass,
-                    shift_num: empShift
+                    shift_num: empShift,
+                    role: empRole,
+                    status: empStatus,
+                    phone: row.dataset.empPhone || existingObj?.phone || null,
+                    address: row.dataset.empAddress || existingObj?.address || null,
+                    photo: row.dataset.empPhoto || existingObj?.photo || null
                 });
             }
 
-            const existingIdx = storesData.findIndex(s => s.id === storeId);
-            const existingStore = existingIdx >= 0 ? storesData[existingIdx] : null;
             const currentMonthlyTx = existingStore ? calculateStoreMonthlyTx(existingStore) : 0;
 
             const newStore = {
@@ -1997,6 +2433,561 @@
             } else {
                 renderStoresGrid();
             }
+        }
+
+        // ==========================================
+        // MASTER EMPLOYEES & MUTATION MANAGEMENT
+        // ==========================================
+
+        let activeMasterEmpTab = 'list';
+
+        function openMasterEmployeesModal(filterStoreId = null) {
+            // Populate filter stores dropdown
+            const filterStoreSelect = document.getElementById('filterMasterEmpStore');
+            if (filterStoreSelect) {
+                filterStoreSelect.innerHTML = '<option value="all">Semua Cabang</option>';
+                storesData.forEach(st => {
+                    const opt = document.createElement('option');
+                    opt.value = st.id;
+                    opt.textContent = st.name;
+                    if (filterStoreId && st.id === filterStoreId) opt.selected = true;
+                    filterStoreSelect.appendChild(opt);
+                });
+            }
+
+            switchMasterEmpTab('list');
+            filterMasterEmployeesTable();
+            openModal('masterEmployeesModal');
+        }
+
+        function switchMasterEmpTab(tabName) {
+            activeMasterEmpTab = tabName;
+            const tabList = document.getElementById('tabMasterEmpList');
+            const tabMut = document.getElementById('tabMasterEmpMutations');
+            const btnList = document.getElementById('tabBtnAllEmployees');
+            const btnMut = document.getElementById('tabBtnMutationLog');
+
+            if (tabName === 'list') {
+                if (tabList) tabList.style.display = 'block';
+                if (tabMut) tabMut.style.display = 'none';
+                if (btnList) btnList.classList.add('active');
+                if (btnMut) btnMut.classList.remove('active');
+                filterMasterEmployeesTable();
+            } else {
+                if (tabList) tabList.style.display = 'none';
+                if (tabMut) tabMut.style.display = 'block';
+                if (btnList) btnList.classList.remove('active');
+                if (btnMut) btnMut.classList.add('active');
+                loadMutationLogsFromCloud();
+            }
+        }
+
+        function getAllEmployeesFlat() {
+            const list = [];
+            storesData.forEach(store => {
+                (store.employees || []).forEach(emp => {
+                    list.push({
+                        ...emp,
+                        store_id: store.id,
+                        store_name: store.name
+                    });
+                });
+            });
+            return list;
+        }
+
+        function filterMasterEmployeesTable() {
+            const tbody = document.getElementById('masterEmpTableBody');
+            if (!tbody) return;
+
+            const searchQuery = (document.getElementById('searchMasterEmp')?.value || '').toLowerCase().trim();
+            const storeFilter = document.getElementById('filterMasterEmpStore')?.value || 'all';
+            const statusFilter = document.getElementById('filterMasterEmpStatus')?.value || 'active';
+
+            const allEmps = getAllEmployeesFlat();
+            const countBadge = document.getElementById('totalEmpCountBadge');
+            if (countBadge) countBadge.innerText = allEmps.length;
+
+            const filtered = allEmps.filter(emp => {
+                if (storeFilter !== 'all' && emp.store_id !== storeFilter) return false;
+                const empStatus = emp.status || 'active';
+                const empRole = emp.role || 'kasir';
+
+                if (statusFilter === 'active' && empStatus !== 'active') return false;
+                if (statusFilter === 'inval' && (empRole !== 'inval' || empStatus !== 'active')) return false;
+                if (statusFilter === 'resigned' && empStatus === 'active') return false;
+
+                if (searchQuery) {
+                    const matchName = (emp.name || '').toLowerCase().includes(searchQuery);
+                    const matchStore = (emp.store_name || '').toLowerCase().includes(searchQuery);
+                    if (!matchName && !matchStore) return false;
+                }
+                return true;
+            });
+
+            const countEl = document.getElementById('filteredEmpCount');
+            if (countEl) countEl.innerText = filtered.length;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 28px; color: var(--text-muted);">
+                            Tidak ada karyawan yang sesuai kriteria pencarian/filter.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(emp => {
+                const empStatus = emp.status || 'active';
+                const empRole = emp.role || 'kasir';
+                const isActive = (empStatus === 'active');
+                const hasPass = Boolean(emp.password && String(emp.password).trim().length > 0);
+
+                let photoHtml = '';
+                if (emp.photo) {
+                    photoHtml = `<img src="${emp.photo}" alt="${escapeHtml(emp.name)}" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">`;
+                } else {
+                    photoHtml = `<div style="width: 34px; height: 34px; border-radius: 50%; background: var(--input-bg); border: 1px solid var(--card-border); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; user-select: none;">👤</div>`;
+                }
+
+                let contactHtml = '';
+                if (emp.phone) {
+                    const cleanPhone = String(emp.phone).replace(/\D/g, '').replace(/^0/, '62');
+                    contactHtml += `<a href="https://wa.me/${cleanPhone}" target="_blank" style="color: #10B981; font-weight: 700; font-size: 11.5px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Chat via WhatsApp"><span>📱</span> ${escapeHtml(emp.phone)}</a>`;
+                }
+                if (emp.address) {
+                    contactHtml += `<div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px; max-width: 190px; white-space: normal; line-height: 1.3;" title="${escapeHtml(emp.address)}">📍 ${escapeHtml(emp.address)}</div>`;
+                }
+                if (!contactHtml) {
+                    contactHtml = '<span style="color: var(--text-muted); font-size: 11px;">-</span>';
+                }
+
+                let statusBadge = '<span class="badge-status badge-active">🟢 Aktif</span>';
+                if (empStatus === 'resigned') statusBadge = '<span class="badge-status badge-status-resigned">🔴 Resign</span>';
+                else if (empStatus === 'inactive') statusBadge = '<span class="badge-status badge-status-inactive">🟡 Nonaktif</span>';
+
+                let roleBadge = (empRole === 'inval')
+                    ? '<span class="badge-status badge-role-inval">Inval Pengganti</span>'
+                    : '<span class="badge-status badge-role-kasir">Kasir Tetap</span>';
+
+                let passBadge = hasPass 
+                    ? '<span style="color: var(--success); font-weight: 750; font-size: 11px;">🔑 Terpasang</span>'
+                    : '<span style="color: var(--warning); font-weight: 750; font-size: 11px;">⚠️ Belum ada</span>';
+
+                let actionHtml = '';
+                if (isActive) {
+                    actionHtml = `
+                        <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                            <button type="button" class="btn-emp-action btn-transfer" onclick="openTransferEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${emp.store_id}')" title="Mutasi ke Cabang Lain">🔄 Pindah</button>
+                            <button type="button" class="btn-emp-action btn-deactivate" onclick="openDeactivateEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${emp.store_id}')" title="Nonaktifkan / Resign">🚪 Resign</button>
+                        </div>
+                    `;
+                } else {
+                    actionHtml = `
+                        <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                            <button type="button" class="btn-emp-action btn-rehire" onclick="openRehireEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${emp.store_id}')" title="Aktifkan Kembali / Re-hire">♻️ Aktifkan</button>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                ${photoHtml}
+                                <div>
+                                    <div style="font-weight: 800; color: var(--text-main); font-size: 13px;">${escapeHtml(emp.name)}</div>
+                                    <div style="font-size: 10.5px; color: var(--text-muted); font-family: monospace;">${escapeHtml(emp.id)}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${contactHtml}</td>
+                        <td>
+                            <div style="font-weight: 700; color: var(--text-main);">${escapeHtml(emp.store_name)}</div>
+                        </td>
+                        <td>
+                            <span class="badge-status" style="background: var(--input-bg); border: 1px solid var(--card-border); font-size: 11px;">Shift ${emp.shift_num}</span>
+                        </td>
+                        <td>${roleBadge}</td>
+                        <td>${statusBadge}</td>
+                        <td>${passBadge}</td>
+                        <td>${actionHtml}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        async function loadMutationLogsFromCloud() {
+            const tbody = document.getElementById('mutationLogTableBody');
+            if (!tbody) return;
+
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 24px; color: var(--text-muted);">
+                        ⏳ Memuat riwayat mutasi dari cloud...
+                    </td>
+                </tr>
+            `;
+
+            let logs = [];
+            if (window.KspSync && typeof window.KspSync.adminGetAllEmployees === 'function') {
+                try {
+                    const res = await window.KspSync.adminGetAllEmployees();
+                    if (res && res.transfers) {
+                        logs = res.transfers;
+                    }
+                } catch (e) {
+                    console.warn('[StoreManager] Gagal mengambil log mutasi:', e);
+                }
+            }
+
+            if (!logs || logs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 28px; color: var(--text-muted);">
+                            Belum ada catatan mutasi cabang karyawan.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            logs.forEach(item => {
+                const dateStr = item.transfer_date ? new Date(item.transfer_date).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-';
+                const fromStore = storesData.find(s => s.id === item.from_store_id)?.name || item.from_store_id || '-';
+                const toStore = storesData.find(s => s.id === item.to_store_id)?.name || item.to_store_id || '-';
+
+                html += `
+                    <tr>
+                        <td style="white-space: nowrap; color: var(--text-muted); font-size: 11.5px;">${dateStr}</td>
+                        <td style="font-weight: 800; color: var(--text-main);">${escapeHtml(item.emp_name || item.emp_id)}</td>
+                        <td style="color: var(--text-muted);">${escapeHtml(fromStore)}</td>
+                        <td style="font-weight: 700; color: #0ea5e9;">➔ ${escapeHtml(toStore)}</td>
+                        <td><span class="badge-status" style="background: var(--input-bg); border: 1px solid var(--card-border);">Shift ${item.new_shift_num || 1}</span></td>
+                        <td style="font-size: 11.5px; color: var(--text-muted);">${escapeHtml(item.reason || '-')}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // ==========================================
+        // MODAL MUTASI CABANG LOGIC
+        // ==========================================
+
+        function openTransferEmpModal(empId, empName, fromStoreId) {
+            document.getElementById('transferEmpId').value = empId;
+            document.getElementById('transferFromStoreId').value = fromStoreId;
+
+            const fromStore = storesData.find(s => s.id === fromStoreId);
+            document.getElementById('transferEmpNameDisplay').innerText = empName;
+            document.getElementById('transferEmpFromDisplay').innerText = `Asal: ${fromStore ? fromStore.name : fromStoreId}`;
+
+            const toSelect = document.getElementById('transferToStoreSelect');
+            toSelect.innerHTML = '';
+            storesData.forEach(st => {
+                if (st.id === fromStoreId) return; // Cabang tujuan tidak boleh sama dengan asal
+                const opt = document.createElement('option');
+                opt.value = st.id;
+                opt.textContent = st.name;
+                toSelect.appendChild(opt);
+            });
+
+            if (toSelect.options.length === 0) {
+                alert('⚠️ Anda hanya memiliki 1 cabang toko. Tambah cabang baru terlebih dahulu untuk melakukan mutasi/rolling karyawan.');
+                return;
+            }
+
+            updateTransferShiftOptions();
+            openModal('transferEmpModal');
+        }
+
+        function updateTransferShiftOptions() {
+            const targetStoreId = document.getElementById('transferToStoreSelect').value;
+            const targetStore = storesData.find(s => s.id === targetStoreId);
+            const shiftCount = targetStore ? (targetStore.shift_count || targetStore.shifts?.length || 2) : 2;
+
+            const shiftSelect = document.getElementById('transferNewShiftSelect');
+            shiftSelect.innerHTML = '';
+            for (let i = 1; i <= shiftCount; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = `Shift ${i}`;
+                shiftSelect.appendChild(opt);
+            }
+        }
+
+        async function handleTransferEmpSubmit(e) {
+            e.preventDefault();
+            const empId = document.getElementById('transferEmpId').value;
+            const fromStoreId = document.getElementById('transferFromStoreId').value;
+            const toStoreId = document.getElementById('transferToStoreSelect').value;
+            const newShift = parseInt(document.getElementById('transferNewShiftSelect').value) || 1;
+            const reason = document.getElementById('transferReasonInput').value.trim() || 'Mutasi / Rolling Shift';
+
+            if (!toStoreId || toStoreId === fromStoreId) {
+                alert('⚠️ Pilih cabang tujuan yang berbeda dari cabang asal!');
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitTransfer');
+            const origText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = '⏳ Memproses...';
+
+            let cloudErr = null;
+            if (window.KspSync && typeof window.KspSync.adminTransferEmployee === 'function') {
+                try {
+                    const res = await window.KspSync.adminTransferEmployee(empId, toStoreId, newShift, reason);
+                    if (res && res.error) cloudErr = res.error;
+                } catch (err) {
+                    cloudErr = err;
+                    console.warn('[StoreManager] Transfer employee cloud warning:', err);
+                }
+            }
+
+            // Update state lokal
+            const fromStore = storesData.find(s => s.id === fromStoreId);
+            const toStore = storesData.find(s => s.id === toStoreId);
+
+            if (fromStore && toStore) {
+                const empIdx = (fromStore.employees || []).findIndex(e => e.id === empId);
+                if (empIdx >= 0) {
+                    const [empObj] = fromStore.employees.splice(empIdx, 1);
+                    empObj.shift_num = newShift;
+                    if (!toStore.employees) toStore.employees = [];
+                    // Hapus jika ada duplikat di tujuan
+                    toStore.employees = toStore.employees.filter(e => e.id !== empId);
+                    toStore.employees.push(empObj);
+                    saveStoresData();
+                }
+            }
+
+            btn.disabled = false;
+            btn.innerText = origText;
+            closeModal('transferEmpModal');
+
+            // Refresh tampilan modal cabang jika sedang terbuka
+            const formModal = document.getElementById('storeFormModal');
+            if (formModal && formModal.classList.contains('open')) {
+                const curEditId = document.getElementById('formStoreId').value;
+                const updatedStore = storesData.find(s => s.id === curEditId);
+                if (updatedStore) {
+                    const empCont = document.getElementById('empListContainer');
+                    empCont.innerHTML = '';
+                    (updatedStore.employees || []).forEach(emp => {
+                        addEmployeeRow(emp.name, emp.password, emp.shift_num, emp.id, emp.role || 'kasir', emp.status || 'active', emp.phone || '', emp.address || '', emp.photo || '');
+                    });
+                }
+            }
+
+            filterMasterEmployeesTable();
+            renderStoresGrid();
+
+            const targetName = toStore ? toStore.name : 'cabang baru';
+            showToast(`Karyawan berhasil dimutasi ke ${targetName} (Shift ${newShift})`, '🔄');
+        }
+
+        // ==========================================
+        // MODAL DEACTIVATE / RESIGN LOGIC
+        // ==========================================
+
+        function openDeactivateEmpModal(empId, empName, storeId) {
+            document.getElementById('deactivateEmpId').value = empId;
+            document.getElementById('deactivateStoreId').value = storeId;
+
+            const store = storesData.find(s => s.id === storeId);
+            document.getElementById('deactivateEmpNameDisplay').innerText = empName;
+            document.getElementById('deactivateStoreNameDisplay').innerText = `Cabang: ${store ? store.name : storeId}`;
+            openModal('deactivateEmpModal');
+        }
+
+        async function handleDeactivateEmpSubmit(e) {
+            e.preventDefault();
+            const empId = document.getElementById('deactivateEmpId').value;
+            const storeId = document.getElementById('deactivateStoreId').value;
+            const status = document.getElementById('deactivateStatusSelect').value;
+            const reason = document.getElementById('deactivateReasonInput').value.trim() || 'Resign';
+
+            const btn = document.getElementById('btnSubmitDeactivate');
+            const origText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = '⏳ Memproses...';
+
+            let cloudErr = null;
+            if (window.KspSync && typeof window.KspSync.adminDeactivateEmployee === 'function') {
+                try {
+                    const res = await window.KspSync.adminDeactivateEmployee(empId, status, reason);
+                    if (res && res.error) cloudErr = res.error;
+                } catch (err) {
+                    cloudErr = err;
+                    console.warn('[StoreManager] Deactivate employee cloud warning:', err);
+                }
+            }
+
+            // Update lokal
+            const store = storesData.find(s => s.id === storeId);
+            let empName = 'Karyawan';
+            if (store) {
+                const emp = (store.employees || []).find(e => e.id === empId);
+                if (emp) {
+                    empName = emp.name;
+                    emp.status = status;
+                    emp.password = ''; // Cabut PIN
+                    emp.resigned_at = new Date().toISOString();
+                    saveStoresData();
+                }
+            }
+
+            btn.disabled = false;
+            btn.innerText = origText;
+            closeModal('deactivateEmpModal');
+
+            // Refresh modal form jika buka
+            const formModal = document.getElementById('storeFormModal');
+            if (formModal && formModal.classList.contains('open')) {
+                const curEditId = document.getElementById('formStoreId').value;
+                const updatedStore = storesData.find(s => s.id === curEditId);
+                if (updatedStore) {
+                    const empCont = document.getElementById('empListContainer');
+                    empCont.innerHTML = '';
+                    (updatedStore.employees || []).forEach(emp => {
+                        addEmployeeRow(emp.name, emp.password, emp.shift_num, emp.id, emp.role || 'kasir', emp.status || 'active', emp.phone || '', emp.address || '', emp.photo || '');
+                    });
+                }
+            }
+
+            filterMasterEmployeesTable();
+            renderStoresGrid();
+
+            showToast(`${empName} telah dinonaktifkan (${status})`, '🚪');
+        }
+
+        // ==========================================
+        // MODAL RE-HIRE / AKTIFKAN KEMBALI LOGIC
+        // ==========================================
+
+        function openRehireEmpModal(empId, empName, currentStoreId) {
+            document.getElementById('rehireEmpId').value = empId;
+            document.getElementById('rehireEmpNameDisplay').innerText = empName;
+            document.getElementById('rehirePinInput').value = '';
+
+            const storeSelect = document.getElementById('rehireStoreSelect');
+            storeSelect.innerHTML = '';
+            storesData.forEach(st => {
+                const opt = document.createElement('option');
+                opt.value = st.id;
+                opt.textContent = st.name;
+                if (st.id === currentStoreId) opt.selected = true;
+                storeSelect.appendChild(opt);
+            });
+
+            updateRehireShiftOptions();
+            openModal('rehireEmpModal');
+        }
+
+        function updateRehireShiftOptions() {
+            const targetStoreId = document.getElementById('rehireStoreSelect').value;
+            const targetStore = storesData.find(s => s.id === targetStoreId);
+            const shiftCount = targetStore ? (targetStore.shift_count || targetStore.shifts?.length || 2) : 2;
+
+            const shiftSelect = document.getElementById('rehireShiftSelect');
+            shiftSelect.innerHTML = '';
+            for (let i = 1; i <= shiftCount; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = `Shift ${i}`;
+                shiftSelect.appendChild(opt);
+            }
+        }
+
+        async function handleRehireEmpSubmit(e) {
+            e.preventDefault();
+            const empId = document.getElementById('rehireEmpId').value;
+            const targetStoreId = document.getElementById('rehireStoreSelect').value;
+            const newShift = parseInt(document.getElementById('rehireShiftSelect').value) || 1;
+            const role = document.getElementById('rehireRoleSelect').value || 'kasir';
+            const newPin = document.getElementById('rehirePinInput').value.trim();
+
+            if (!newPin) {
+                alert('⚠️ PIN Password baru wajib diisi untuk mengaktifkan karyawan!');
+                return;
+            }
+
+            // Check duplicate PIN
+            for (const store of storesData) {
+                const conflict = (store.employees || []).find(o => o.id !== empId && (o.status === 'active' || !o.status) && String(o.password).trim() === newPin);
+                if (conflict) {
+                    alert(`⚠️ Password PIN "${newPin}" sudah dipakai oleh karyawan "${conflict.name}" di cabang "${store.name}". Buat PIN yang berbeda!`);
+                    return;
+                }
+            }
+
+            const btn = document.getElementById('btnSubmitRehire');
+            const origText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = '⏳ Mengaktifkan...';
+
+            // Temukan karyawan dari seluruh cabang
+            let foundEmp = null;
+            let originStore = null;
+            for (const st of storesData) {
+                const eIdx = (st.employees || []).findIndex(e => e.id === empId);
+                if (eIdx >= 0) {
+                    originStore = st;
+                    foundEmp = st.employees[eIdx];
+                    break;
+                }
+            }
+
+            if (foundEmp) {
+                foundEmp.status = 'active';
+                foundEmp.role = role;
+                foundEmp.shift_num = newShift;
+                foundEmp.password = newPin;
+                foundEmp.resigned_at = null;
+
+                // Jika pindah cabang
+                if (originStore && originStore.id !== targetStoreId) {
+                    originStore.employees = originStore.employees.filter(e => e.id !== empId);
+                    const destStore = storesData.find(s => s.id === targetStoreId);
+                    if (destStore) {
+                        if (!destStore.employees) destStore.employees = [];
+                        destStore.employees.push(foundEmp);
+                    }
+                }
+                saveStoresData();
+            }
+
+            btn.disabled = false;
+            btn.innerText = origText;
+            closeModal('rehireEmpModal');
+
+            // Refresh modal form jika buka
+            const formModal = document.getElementById('storeFormModal');
+            if (formModal && formModal.classList.contains('open')) {
+                const curEditId = document.getElementById('formStoreId').value;
+                const updatedStore = storesData.find(s => s.id === curEditId);
+                if (updatedStore) {
+                    const empCont = document.getElementById('empListContainer');
+                    empCont.innerHTML = '';
+                    (updatedStore.employees || []).forEach(emp => {
+                        addEmployeeRow(emp.name, emp.password, emp.shift_num, emp.id, emp.role || 'kasir', emp.status || 'active', emp.phone || '', emp.address || '', emp.photo || '');
+                    });
+                }
+            }
+
+            filterMasterEmployeesTable();
+            renderStoresGrid();
+
+            showToast(`Karyawan ${foundEmp ? foundEmp.name : ''} berhasil diaktifkan kembali!`, '✅');
         }
 
         async function handleDeleteStore() {
