@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -2029,6 +2029,28 @@
             return String(str).replace(/[&<>"']/g, m => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             }[m]));
+        }
+
+        function showToast(text, icon = '🔄') {
+            let toast = document.getElementById('toastNotice');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toastNotice';
+                toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1e293b;color:#f8fafc;padding:12px 18px;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.35);z-index:99999;transition:all .3s;opacity:0;transform:translateY(12px);border:1px solid rgba(255,255,255,0.1);pointer-events:none;';
+                toast.innerHTML = `<span id="toastIcon" style="font-size:16px;"></span><span id="toastText"></span>`;
+                document.body.appendChild(toast);
+            }
+            const iconEl = toast.querySelector('#toastIcon');
+            const textEl = toast.querySelector('#toastText');
+            if (iconEl) iconEl.innerText = icon;
+            if (textEl) textEl.innerText = text;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+            clearTimeout(window.__toastTimeout);
+            window.__toastTimeout = setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(12px)';
+            }, 3000);
         }
     </script>
 </body>

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -1961,6 +1961,87 @@
         let activeRotationStoreId = null;
         let trendChartInstance = null;
         let empContributionChartInstance = null;
+
+        // ==========================================
+        // 0. HELPER FORMAT TANGGAL & ROTASI
+        // ==========================================
+
+        // Format tanggal hari ini: 'YYYY-MM-DD'
+        function getTodayKey() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        let currentModalDateKey = getTodayKey();
+
+        function getTodayDisplay() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date().toLocaleDateString('id-ID', options);
+        }
+
+        function formatFullDate(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-').map(Number);
+            const d = new Date(parts[0], parts[1] - 1, parts[2]);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return d.toLocaleDateString('id-ID', options);
+        }
+
+        // Shift tanggal sebanyak offset hari (+1 atau -1)
+        function shiftDateKey(dateStr, daysOffset) {
+            if (!dateStr) dateStr = getTodayKey();
+            const parts = dateStr.split('-').map(Number);
+            const d = new Date(parts[0], parts[1] - 1, parts[2] + daysOffset);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        // Navigasi prev/next tanggal di Quick Input Transaksi Karyawan (< tanggal >)
+        function navigateModalDate(offset) {
+            const storeId = activeStoreId || (storesData[0] ? storesData[0].id : null);
+            const store = storesData.find(s => s.id === storeId);
+            if (!store) return;
+
+            const baseDate = currentModalDateKey || getTodayKey();
+            const newDateKey = shiftDateKey(baseDate, offset);
+            openDailyTxModal(store.id, true, newDateKey);
+        }
+
+        function navigateModalDateToToday() {
+            const storeId = activeStoreId || (storesData[0] ? storesData[0].id : null);
+            const store = storesData.find(s => s.id === storeId);
+            if (!store) return;
+
+            openDailyTxModal(store.id, true, getTodayKey());
+        }
+
+        // Label badge jadwal rotasi shift otomatis
+        function getRotationBadgeLabel(store) {
+            if (!store) return 'Manual Saja';
+            const cfg = store.rotation_config;
+            if (!cfg) {
+                if (store.rotation_rule === 'weekly_monday') return 'Otomatis: Tiap Senin';
+                if (store.rotation_rule === 'manual' || store.rotation_rule === 'disabled') return 'Manual Saja';
+                return 'Otomatis Aktif';
+            }
+
+            if (cfg.type === 'weekly') {
+                const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                const dayName = (cfg.day_of_week !== undefined && dayNames[cfg.day_of_week]) ? dayNames[cfg.day_of_week] : 'Senin';
+                return `Otomatis: Tiap ${dayName}`;
+            } else if (cfg.type === 'interval') {
+                return `Otomatis: Tiap ${cfg.interval_days} Hari`;
+            } else if (cfg.type === 'monthly') {
+                return `Otomatis: Tiap Awal Bulan`;
+            } else {
+                return `Manual Saja`;
+            }
+        }
 
         // ==========================================
         // 1. LOCALSTORAGE & INISIALISASI
