@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Prototype - Shift Roll & Analisa Cabang</title>
+    <title>KSP Check - Transaksi &amp; Shift Kasir</title>
 
     <!-- Chart.js CDN for Analytics Graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,6 +12,7 @@
         :root {
             --bg-color: #0F1117;
             --card-bg: #181C27;
+            --card-inner: #141722;
             --card-border: #262B3D;
             --card-hover: #1E2436;
             --primary: #4F8EF7;
@@ -26,6 +27,26 @@
             --input-bg: #11141F;
             --shadow-color: rgba(0, 0, 0, 0.4);
             --modal-backdrop: rgba(0, 0, 0, 0.75);
+        }
+
+        body.light-theme {
+            --bg-color: #F8F5EE;
+            --card-bg: #FFFFFF;
+            --card-inner: #F3EFE7;
+            --card-border: #E8E1D5;
+            --card-hover: #F2EFE8;
+            --primary: #2B6CB0;
+            --primary-hover: #2C5282;
+            --primary-glow: rgba(43, 108, 176, 0.12);
+            --success: #059669;
+            --warning: #D97706;
+            --danger: #DC2626;
+            --text-main: #2D3748;
+            --text-muted: #718096;
+            --chip-bg: #EFE8DC;
+            --input-bg: #FAF8F5;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --modal-backdrop: rgba(0, 0, 0, 0.5);
         }
 
         * {
@@ -43,6 +64,7 @@
             display: flex;
             flex-direction: column;
             padding-bottom: 40px;
+            transition: background-color 0.25s ease, color 0.25s ease;
         }
 
         .container {
@@ -60,6 +82,7 @@
             padding: 8px 0 16px 0;
             border-bottom: 1px solid var(--card-border);
             margin-bottom: 16px;
+            gap: 10px;
         }
 
         .btn-nav-action {
@@ -76,25 +99,12 @@
             cursor: pointer;
             text-decoration: none;
             transition: all 0.15s ease;
+            flex-shrink: 0;
         }
 
         .btn-nav-action:hover {
             border-color: var(--primary);
             background: var(--chip-bg);
-        }
-
-        /* Prototype Notice */
-        .proto-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(79, 142, 247, 0.15);
-            border: 1px solid rgba(79, 142, 247, 0.35);
-            color: var(--primary);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 750;
         }
 
         /* Card Grid */
@@ -745,27 +755,6 @@
             border-color: var(--primary);
         }
 
-        .already-set-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 12px;
-            background: rgba(16, 185, 129, 0.08);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            border-radius: 8px;
-            font-size: 11.5px;
-        }
-
-        .unset-emp-card {
-            background: var(--card-inner);
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
         /* Filter & Chart Components */
         .filter-panel {
             background: var(--card-inner);
@@ -927,6 +916,10 @@
             border: 1px solid var(--card-border);
         }
 
+        body.light-theme .chart-control-group {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
         .chart-control-group .btn-preset {
             padding: 4px 8px;
             font-size: 11px;
@@ -1056,6 +1049,10 @@
                 border-radius: 10px;
             }
 
+            body.light-theme .filter-kpi-bar {
+                background: rgba(0, 0, 0, 0.04);
+            }
+
             .filter-kpi-item .lbl {
                 font-size: 9.5px;
             }
@@ -1145,39 +1142,36 @@
         <!-- TOP BAR -->
         <header class="top-bar">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <a href="store_manager.html" class="btn-nav-action" title="Kembali ke Manajemen Toko">🏬</a>
+                <button type="button" class="btn-nav-action" onclick="backToStoreManager()" title="Kembali ke Manajemen Toko">🏬</button>
                 <div>
                     <div style="font-size: 16.5px; font-weight: 850; display: flex; align-items: center; gap: 8px;">
-                        <span>🏢</span> Prototype Shift &amp; Analisa
+                        <span>📊</span> Transaksi &amp; Shift Kasir
                     </div>
-                    <div style="font-size: 11px; color: var(--text-muted);">Uji Coba Fitur Roll Shift &amp; Input Transaksi PIC</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Pencatatan Transaksi Harian, Rotasi Shift &amp; Analisa Performa</div>
                 </div>
             </div>
-            <div class="proto-badge">⚡ Interactive Prototype</div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <!-- Pilihan Cabang Cepat -->
+                <div style="display: flex; align-items: center; gap: 6px; background: var(--input-bg); border: 1px solid var(--card-border); padding: 4px 8px; border-radius: 10px;">
+                    <span style="font-size: 12px;">🏬</span>
+                    <select id="quickStoreSelector" onchange="switchActiveStore(this.value)" style="border: none; background: transparent; font-size: 12px; font-weight: 800; color: var(--text-main); cursor: pointer; outline: none;" title="Pilih Cabang">
+                        <!-- Diisi via JS -->
+                    </select>
+                </div>
+                <button type="button" class="btn-preset" onclick="backToStoreManager()" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; font-size: 11.5px; font-weight: 750;">
+                    <span>🏬</span> Kelola Cabang
+                </button>
+                <button class="btn-nav-action" id="themeToggleBtn" onclick="toggleTheme()" title="Ubah Tema">🌙</button>
+            </div>
         </header>
 
-        <!-- VIEW 1: DAFTAR CABANG TOKO DENGAN SHIFT ROSTER & ROLL SHIFT -->
-        <main id="storesListView">
-            <div style="margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <h2 style="font-size: 15px; font-weight: 800;">Cabang Toko</h2>
-                    <p style="font-size: 11.5px; color: var(--text-muted);">Klik baris <b>Transaksi per Bulan</b> untuk membuka Analisa Cabang</p>
-                </div>
-            </div>
-
-            <!-- GRID CABANG -->
-            <div class="store-grid" id="storesGridContainer">
-                <!-- Diisi via JavaScript -->
-            </div>
-        </main>
-
-        <!-- VIEW 2: HALAMAN ANALISA CABANG -->
-        <section id="storeAnalyticsView" class="analytics-view">
+        <!-- HALAMAN DETAIL TRANSAKSI CABANG (LANGSUNG BUKA CABANG TERPILIH) -->
+        <section id="storeAnalyticsView" class="analytics-view active">
             <!-- Header Analisa -->
             <div class="analytics-header-card">
                 <div>
-                    <button class="btn-back-stores" onclick="backToStoresList()">
-                        &larr; Kembali ke Daftar Toko
+                    <button type="button" class="btn-back-stores" onclick="backToStoreManager()">
+                        &larr; Kembali ke Kelola Cabang
                     </button>
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
                         <h2 id="anStoreTitle" style="font-size: 18px; font-weight: 850; margin: 0;">KSP Check - Cabang Utama</h2>
@@ -1187,8 +1181,11 @@
                     </div>
                     <p id="anDateSubtitle" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Analisa Transaksi Karyawan • Hari Ini</p>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <button class="btn-action-primary" onclick="openDailyTxModal(activeStoreId, true)">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-preset" onclick="rollActiveStoreShifts()" style="padding: 8px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;" title="Tukar Shift Karyawan Sekarang (Pagi ⇄ Malam)">
+                        <span>⇄</span> Roll Shift
+                    </button>
+                    <button type="button" class="btn-action-primary" onclick="openDailyTxModal(activeStoreId, true)">
                         <span>✏️</span> Set / Edit Transaksi Hari Ini
                     </button>
                 </div>
@@ -1261,16 +1258,19 @@
             <!-- Header Analisa Khusus -->
             <div class="analytics-header-card">
                 <div>
-                    <button class="btn-back-stores" onclick="backToStoreDetail()">
-                        &larr; Kembali ke Detail Cabang
+                    <button type="button" class="btn-back-stores" onclick="backToStoreDetail()">
+                        &larr; Kembali ke Detail Transaksi
                     </button>
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
                         <h2 id="dedicatedStoreTitle" style="font-size: 18px; font-weight: 850; margin: 0;">📊 Analisa &amp; Grafik Transaksi</h2>
                     </div>
                     <p id="dedicatedStoreSubtitle" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Filter Rentang Tanggal, Perbandingan Kasir &amp; Tren Shift</p>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <button class="btn-action-primary" onclick="openDailyTxModal(activeStoreId, true)" style="padding: 8px 14px; font-size: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-preset" onclick="rollActiveStoreShifts()" style="padding: 8px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;" title="Tukar Shift Karyawan Sekarang (Pagi ⇄ Malam)">
+                        <span>⇄</span> Roll Shift
+                    </button>
+                    <button type="button" class="btn-action-primary" onclick="openDailyTxModal(activeStoreId, true)" style="padding: 8px 14px; font-size: 12px;">
                         <span>✏️</span> Set / Edit Transaksi Hari Ini
                     </button>
                 </div>
@@ -1601,8 +1601,8 @@
     </div>
 
     <script>
-        // DATASET PROTOTYPE
-        let storesData = [
+        // DATASET DEFAULT TOKO & TRANSAKSI
+        const DEFAULT_STORES = [
             {
                 id: 'store_pusat',
                 name: 'KSP Check - Cabang Utama',
@@ -1729,6 +1729,7 @@
             }
         ];
 
+        let storesData = [];
         let activeStoreId = null;
 
         // State Filter & Chart (Default: Bulan Ini)
@@ -1749,171 +1750,174 @@
         let trendChartInstance = null;
         let empContributionChartInstance = null;
 
-        // Inisialisasi
+        // ==========================================
+        // 1. LOCALSTORAGE & INISIALISASI
+        // ==========================================
+
+        function loadStoresData() {
+            const raw = localStorage.getItem('kspcheck_stores_data');
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        storesData = parsed;
+                        // Pastikan tiap toko memiliki rotation_config dan daily_transactions jika sebelumnya belum ada
+                        storesData.forEach(store => {
+                            const defMatch = DEFAULT_STORES.find(d => d.id === store.id);
+                            if (!store.daily_transactions || Object.keys(store.daily_transactions).length === 0) {
+                                if (defMatch && defMatch.daily_transactions) {
+                                    store.daily_transactions = JSON.parse(JSON.stringify(defMatch.daily_transactions));
+                                } else {
+                                    store.daily_transactions = {};
+                                }
+                            }
+                            if (!store.rotation_config) {
+                                if (defMatch && defMatch.rotation_config) {
+                                    store.rotation_config = { ...defMatch.rotation_config };
+                                } else {
+                                    store.rotation_config = { type: 'weekly', day_of_week: 1, interval_days: 7, execution_time: '00:00' };
+                                }
+                            }
+                            if (!store.rotation_rule) {
+                                store.rotation_rule = (defMatch && defMatch.rotation_rule) ? defMatch.rotation_rule : 'weekly_monday';
+                            }
+                        });
+                    } else {
+                        storesData = JSON.parse(JSON.stringify(DEFAULT_STORES));
+                        saveStoresData();
+                    }
+                } catch(e) {
+                    console.error('Error parsing stores data:', e);
+                    storesData = JSON.parse(JSON.stringify(DEFAULT_STORES));
+                    saveStoresData();
+                }
+            } else {
+                storesData = JSON.parse(JSON.stringify(DEFAULT_STORES));
+                saveStoresData();
+            }
+        }
+
+        function saveStoresData() {
+            try {
+                localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesData));
+            } catch(e) {
+                console.error('Error saving stores data:', e);
+            }
+        }
+
+        // Tema Gelap / Terang
+        function applySavedTheme() {
+            const savedTheme = localStorage.getItem('kspcheck_theme');
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+                if (themeBtn) themeBtn.innerText = '☀️';
+            } else {
+                document.body.classList.remove('light-theme');
+                if (themeBtn) themeBtn.innerText = '🌙';
+            }
+        }
+
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light-theme');
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (isLight) {
+                localStorage.setItem('kspcheck_theme', 'light');
+                if (themeBtn) themeBtn.innerText = '☀️';
+            } else {
+                localStorage.setItem('kspcheck_theme', 'dark');
+                if (themeBtn) themeBtn.innerText = '🌙';
+            }
+
+            // Refresh charts theme if active
+            if (activeStoreId && document.getElementById('dedicatedAnalyticsView').classList.contains('active')) {
+                const store = storesData.find(s => s.id === activeStoreId);
+                if (store) {
+                    const agg = aggregateFilteredTransactions(store, currentFilter);
+                    renderTrendChart(agg);
+                    renderEmpContributionChart(agg);
+                }
+            }
+        }
+
+        // Inisialisasi DOM & Handle Active Store Langsung
         document.addEventListener('DOMContentLoaded', () => {
-            renderStoresGrid();
+            applySavedTheme();
+            loadStoresData();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            let storeParam = urlParams.get('store');
+            const viewParam = urlParams.get('view');
+
+            // 1. Tentukan toko yang aktif: URL param > localStorage > toko pertama
+            if (!storeParam || !storesData.some(s => s.id === storeParam)) {
+                const savedStoreId = localStorage.getItem('kspcheck_active_store_id');
+                if (savedStoreId && storesData.some(s => s.id === savedStoreId)) {
+                    storeParam = savedStoreId;
+                } else if (storesData.length > 0) {
+                    storeParam = storesData[0].id;
+                }
+            }
+
+            if (storeParam && storesData.length > 0) {
+                activeStoreId = storeParam;
+                localStorage.setItem('kspcheck_active_store_id', activeStoreId);
+                updateStoreSwitcherDropdown();
+                openStoreAnalytics(null, activeStoreId);
+                if (viewParam === 'analytics') {
+                    openDedicatedAnalyticsView();
+                }
+            } else {
+                document.body.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:80vh; text-align:center; padding:20px; font-family:sans-serif; color:var(--text-main);">
+                        <div style="font-size:48px; margin-bottom:12px;">🏬</div>
+                        <h2 style="font-size:18px; margin-bottom:8px;">Belum Ada Cabang Toko</h2>
+                        <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Silakan buat cabang toko terlebih dahulu di halaman Kelola Cabang.</p>
+                        <a href="store_manager.html" style="background:#4F8EF7; color:#fff; text-decoration:none; padding:10px 18px; border-radius:10px; font-weight:750; font-size:13px;">Buka Kelola Cabang &rarr;</a>
+                    </div>
+                `;
+            }
         });
 
-        // Format tanggal hari ini: 'YYYY-MM-DD'
-        function getTodayKey() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        let currentModalDateKey = getTodayKey();
-
-        function getTodayDisplay() {
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            return new Date().toLocaleDateString('id-ID', options);
-        }
-
-        function formatFullDate(dateStr) {
-            if (!dateStr) return '';
-            const parts = dateStr.split('-').map(Number);
-            const d = new Date(parts[0], parts[1] - 1, parts[2]);
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            return d.toLocaleDateString('id-ID', options);
-        }
-
-        // Shift tanggal sebanyak offset hari (+1 atau -1)
-        function shiftDateKey(dateStr, daysOffset) {
-            if (!dateStr) dateStr = getTodayKey();
-            const parts = dateStr.split('-').map(Number);
-            const d = new Date(parts[0], parts[1] - 1, parts[2] + daysOffset);
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${y}-${m}-${day}`;
-        }
-
-        // Navigasi prev/next tanggal di Quick Input Transaksi Karyawan (< tanggal >)
-        function navigateModalDate(offset) {
-            const storeId = activeStoreId || (storesData[0] ? storesData[0].id : null);
-            const store = storesData.find(s => s.id === storeId);
-            if (!store) return;
-
-            const baseDate = currentModalDateKey || getTodayKey();
-            const newDateKey = shiftDateKey(baseDate, offset);
-            openDailyTxModal(store.id, true, newDateKey);
-        }
-
-        function navigateModalDateToToday() {
-            const storeId = activeStoreId || (storesData[0] ? storesData[0].id : null);
-            const store = storesData.find(s => s.id === storeId);
-            if (!store) return;
-
-            openDailyTxModal(store.id, true, getTodayKey());
-        }
-
-        // Label badge jadwal rotasi shift otomatis
-        function getRotationBadgeLabel(store) {
-            if (!store) return 'Manual Saja';
-            const cfg = store.rotation_config;
-            if (!cfg) {
-                if (store.rotation_rule === 'weekly_monday') return 'Otomatis: Tiap Senin';
-                if (store.rotation_rule === 'manual' || store.rotation_rule === 'disabled') return 'Manual Saja';
-                return 'Otomatis Aktif';
-            }
-
-            if (cfg.type === 'weekly') {
-                const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-                const dayName = (cfg.day_of_week !== undefined && dayNames[cfg.day_of_week]) ? dayNames[cfg.day_of_week] : 'Senin';
-                return `Otomatis: Tiap ${dayName}`;
-            } else if (cfg.type === 'interval') {
-                return `Otomatis: Tiap ${cfg.interval_days} Hari`;
-            } else if (cfg.type === 'monthly') {
-                return `Otomatis: Tiap Awal Bulan`;
-            } else {
-                return `Manual Saja`;
-            }
-        }
-
-        // 1. RENDER STORE CARDS (DENGAN SHIFT BOX & ROLL SHIFT)
-        function renderStoresGrid() {
-            const container = document.getElementById('storesGridContainer');
-            if (!container) return;
+        // Dropdown Pilihan Cabang di Top Bar
+        function updateStoreSwitcherDropdown() {
+            const sel = document.getElementById('quickStoreSelector');
+            if (!sel) return;
 
             let html = '';
             storesData.forEach(store => {
-                const monthlyTx = (store.monthly_tx || 0).toLocaleString('id-ID');
-
-                // Karyawan Shift 1 (Pagi) & Shift 2 (Malam)
-                const empS1 = (store.employees || []).filter(e => e.shift_num === 1).map(e => e.name).join(', ') || '(Kosong)';
-                const empS2 = (store.employees || []).filter(e => e.shift_num === 2).map(e => e.name).join(', ') || '(Kosong)';
-                const rotLabel = getRotationBadgeLabel(store);
-
-                html += `
-                <div class="store-card" onclick="alert('ℹ️ Ini prototype. Silakan klik baris Transaksi per Bulan untuk melihat Analisa Cabang, atau tombol Roll Shift untuk menukar shift.');">
-                    <div>
-                        <!-- Header Kartu -->
-                        <div class="store-card-header">
-                            <div class="store-card-icon">🏬</div>
-                            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                                <span class="badge-status">🟢 2 Shift</span>
-                                <span class="badge-status" onclick="event.stopPropagation(); openRotationRuleModal('${store.id}')" style="cursor: pointer; background: rgba(79, 142, 247, 0.12); color: var(--primary); border: 1px solid rgba(79, 142, 247, 0.3);" title="Klik untuk atur jadwal rotasi otomatis (Tukar manual selalu bisa kapan saja)">
-                                    🔄 ${escapeHtml(rotLabel)} ⚙️
-                                </span>
-                            </div>
-                        </div>
-                        <h3 class="store-name">${escapeHtml(store.name)}</h3>
-                        
-                        <!-- Baris Stat: Klik untuk Buka Halaman Analisa -->
-                        <div class="store-stat-row" onclick="openStoreAnalytics(event, '${store.id}')" title="Klik untuk membuka Analisa Cabang">
-                            <span class="stat-label">
-                                <span>📊</span> Transaksi per Bulan:
-                            </span>
-                            <div class="stat-val-wrap">
-                                <span class="stat-val">${monthlyTx} tx</span>
-                                <span class="stat-arrow">Analisa &rarr;</span>
-                            </div>
-                        </div>
-
-                        <!-- KOTAK JADWAL SHIFT & ROLL SHIFT -->
-                        <div class="shift-roster-box" onclick="event.stopPropagation();">
-                            <!-- Kolom Shift Pagi -->
-                            <div class="shift-col">
-                                <div class="shift-tag morning">🌅 Shift 1 Pagi</div>
-                                <div class="emp-name-badge" title="${escapeHtml(empS1)}">👤 ${escapeHtml(empS1)}</div>
-                            </div>
-
-                            <!-- Tombol Roll Shift (Tukar Karyawan) -->
-                            <button type="button" class="btn-roll-shift" onclick="rollStoreShifts(event, '${store.id}')" title="Tukar Shift Karyawan (Pagi ⇄ Malam)">
-                                <span class="roll-icon">⇄</span>
-                                <span>Roll Shift</span>
-                            </button>
-
-                            <!-- Kolom Shift Malam -->
-                            <div class="shift-col right">
-                                <div class="shift-tag night">🌙 Shift 2 Malam</div>
-                                <div class="emp-name-badge" title="${escapeHtml(empS2)}">👤 ${escapeHtml(empS2)}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="store-card-footer">
-                        <span>Pemberitahuan Toleransi 30m</span>
-                        <span style="color: var(--primary);">Buka Toko &rarr;</span>
-                    </div>
-                </div>`;
+                const isSelected = (store.id === activeStoreId) ? 'selected' : '';
+                html += `<option value="${store.id}" ${isSelected}>${escapeHtml(store.name)}</option>`;
             });
-
-            container.innerHTML = html;
+            sel.innerHTML = html;
         }
 
-        // 2. LOGIKA ROLL SHIFT (TUKAR SHIFT PAGI ⇄ MALAM)
-        function rollStoreShifts(e, storeId) {
-            if (e) e.stopPropagation(); // Mencegah klik kartu
+        function switchActiveStore(newStoreId) {
+            if (!newStoreId || newStoreId === activeStoreId) return;
+            const targetStore = storesData.find(s => s.id === newStoreId);
+            if (!targetStore) return;
 
-            const store = storesData.find(s => s.id === storeId);
+            activeStoreId = newStoreId;
+            localStorage.setItem('kspcheck_active_store_id', activeStoreId);
+            updateStoreSwitcherDropdown();
+
+            const isDedicatedActive = document.getElementById('dedicatedAnalyticsView') && document.getElementById('dedicatedAnalyticsView').classList.contains('active');
+            if (isDedicatedActive) {
+                openDedicatedAnalyticsView();
+            } else {
+                openStoreAnalytics(null, activeStoreId);
+            }
+            showToast(`🏬 Beralih ke ${targetStore.name}`, '🏬');
+        }
+
+        function rollActiveStoreShifts() {
+            if (!activeStoreId) return;
+            const store = storesData.find(s => s.id === activeStoreId);
             if (!store || !store.employees || store.employees.length < 2) {
                 showToast('⚠️ Minimal harus ada 2 karyawan untuk melakukan roll shift.', '⚠️');
                 return;
             }
 
-            // Tukar shift karyawan: Shift 1 <-> Shift 2
             let swappedPairs = [];
             store.employees.forEach(emp => {
                 const oldShift = emp.shift_num;
@@ -1922,13 +1926,29 @@
                 swappedPairs.push(`${emp.name} ➔ Shift ${newShift}`);
             });
 
-            renderStoresGrid();
+            saveStoresData();
+            renderAnalyticsDashboard(store);
+            if (document.getElementById('dedicatedAnalyticsView') && document.getElementById('dedicatedAnalyticsView').classList.contains('active')) {
+                applyAnalyticsFilter();
+            }
 
-            // Beri notifikasi toast yang jelas
             showToast(`🔄 Shift ${store.name} berhasil di-roll! (${swappedPairs.join(', ')})`, '🔄');
         }
 
-        // 2b. LOGIKA PENGATURAN JADWAL ROTASI SHIFT OTOMATIS (MANUAL SELALU AKTIF)
+        function backToStoreManager() {
+            const storeParam = activeStoreId ? `?store=${encodeURIComponent(activeStoreId)}` : '';
+            window.location.href = `store_manager.html${storeParam}`;
+        }
+
+        // Alias untuk kompatibilitas
+        function rollStoreShifts(e, storeId) {
+            if (e) e.stopPropagation();
+            if (storeId && storeId !== activeStoreId) {
+                switchActiveStore(storeId);
+            }
+            rollActiveStoreShifts();
+        }
+
         function toggleRotFields() {
             const isWeekly = document.getElementById('rotTypeWeekly') && document.getElementById('rotTypeWeekly').checked;
             const isInterval = document.getElementById('rotTypeInterval') && document.getElementById('rotTypeInterval').checked;
@@ -2035,8 +2055,8 @@
                 store.rotation_rule = 'disabled';
             }
 
+            saveStoresData();
             closeModal('rotationRuleModal');
-            renderStoresGrid();
             if (activeStoreId === store.id) {
                 renderAnalyticsDashboard(store);
             }
@@ -2045,7 +2065,6 @@
             showToast(`✅ Jadwal rotasi ${store.name} diperbarui: ${label} (Tukar manual tetap aktif kapan saja).`, '🔄');
         }
 
-        // 2c. LOGIKA TUKAR PETUGAS HARI INI (DI DALAM DIALOG INPUT TRANSAKSI)
         function swapModalEmployeesToday() {
             const store = storesData.find(s => s.id === activeStoreId);
             if (!store || !store.employees || store.employees.length < 2) {
@@ -2094,6 +2113,8 @@
                 });
             }
 
+            saveStoresData();
+
             // Buka ulang modal dalam mode manual edit untuk me-refresh urutan dan badge shift
             openDailyTxModal(store.id, true, targetDate);
 
@@ -2107,22 +2128,34 @@
 
             renderAnalyticsDashboard(store);
             renderHistoryTable(store);
-            renderStoresGrid();
 
             showToast(`🔄 Shift tanggal ${formatDateShort(targetDate)} berhasil ditukar! (${swappedPairs.join(', ')})`, '🔄');
         }
 
-        // 3. NAVIGASI HALAMAN & ANALISA CABANG
+        // ==========================================
+        // 5. NAVIGASI HALAMAN & ANALISA CABANG
+        // ==========================================
+
         function openStoreAnalytics(e, storeId) {
-            if (e) e.stopPropagation(); // Mencegah klik kartu utama
+            if (e) e.stopPropagation();
 
             const store = storesData.find(s => s.id === storeId);
             if (!store) return;
 
             activeStoreId = storeId;
-            document.getElementById('storesListView').style.display = 'none';
+            localStorage.setItem('kspcheck_active_store_id', activeStoreId);
+            updateStoreSwitcherDropdown();
+
+            const listV = document.getElementById('storesListView');
+            if (listV) listV.style.display = 'none';
+
             document.getElementById('dedicatedAnalyticsView').classList.remove('active');
             document.getElementById('storeAnalyticsView').classList.add('active');
+
+            // Update URL query parameter
+            try {
+                window.history.replaceState({}, '', `?store=${encodeURIComponent(storeId)}`);
+            } catch(e) {}
 
             // Set Title & Date
             document.getElementById('anStoreTitle').innerText = store.name;
@@ -2132,27 +2165,27 @@
             renderHistoryTable(store);
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            // LOGIKA PERSYARATAN USER:
-            // "saat pertama kali buka akan muncul dialog set transaksi dari masing masing karyawan, muncul hanya jika belum set transaksi per karyawan hari itu"
-            // "dan saat berikutnya hanya akan muncul yang belum di set"
             const todayKey = getTodayKey();
             const unsetEmployees = getUnsetEmployees(store, todayKey);
 
             if (unsetEmployees.length > 0) {
-                // Masih ada karyawan yang belum di-set hari ini! Otomatis buka dialog input hanya untuk yang belum di-set
                 setTimeout(() => {
                     openDailyTxModal(storeId, false);
                 }, 300);
             }
         }
 
-        // Buka Halaman Analisa Khusus (Grafik, Filter Tanggal, Perbandingan Kasir/Shift)
         function openDedicatedAnalyticsView() {
             const store = storesData.find(s => s.id === activeStoreId);
             if (!store) return;
 
             document.getElementById('storeAnalyticsView').classList.remove('active');
             document.getElementById('dedicatedAnalyticsView').classList.add('active');
+
+            // Update URL query parameter
+            try {
+                window.history.replaceState({}, '', `?store=${encodeURIComponent(activeStoreId)}&view=analytics`);
+            } catch(e) {}
 
             const titleEl = document.getElementById('dedicatedStoreTitle');
             const subEl = document.getElementById('dedicatedStoreSubtitle');
@@ -2164,7 +2197,6 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Kembali dari Halaman Analisa Khusus ke Detail Cabang
         function backToStoreDetail() {
             const store = storesData.find(s => s.id === activeStoreId);
             if (!store) return;
@@ -2172,22 +2204,19 @@
             document.getElementById('dedicatedAnalyticsView').classList.remove('active');
             document.getElementById('storeAnalyticsView').classList.add('active');
 
+            try {
+                window.history.replaceState({}, '', `?store=${encodeURIComponent(activeStoreId)}`);
+            } catch(e) {}
+
             renderAnalyticsDashboard(store);
             renderHistoryTable(store);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Kembali ke Daftar Seluruh Toko
         function backToStoresList() {
-            activeStoreId = null;
-            document.getElementById('storeAnalyticsView').classList.remove('active');
-            document.getElementById('dedicatedAnalyticsView').classList.remove('active');
-            document.getElementById('storesListView').style.display = 'block';
-            renderStoresGrid();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            backToStoreManager();
         }
 
-        // Helper: Karyawan yang BELUM diset pada tanggal tertentu
         function getUnsetEmployees(store, dateKey) {
             if (!store || !store.employees) return [];
             const dateData = store.daily_transactions ? store.daily_transactions[dateKey] : null;
@@ -2197,7 +2226,6 @@
             return store.employees.filter(emp => !dateData.records.some(r => r.emp_id === emp.id));
         }
 
-        // Helper: Record transaksi yang SUDAH diset pada tanggal tertentu
         function getSetRecords(store, dateKey) {
             if (!store || !store.daily_transactions) return [];
             const dateData = store.daily_transactions[dateKey];
@@ -2205,7 +2233,6 @@
             return dateData.records;
         }
 
-        // 4. RENDER DASHBOARD ANALISA
         function renderAnalyticsDashboard(store) {
             const todayKey = getTodayKey();
             const todayData = store.daily_transactions ? store.daily_transactions[todayKey] : null;
@@ -2272,7 +2299,7 @@
                 kpiNightPicEl.innerText = `PIC: ${empS2 ? empS2.name : '-'} (Shift berjalan)`;
             }
 
-            // Breakdown Per Karyawan (Tampilkan Semua Karyawan Toko)
+            // Breakdown Per Karyawan
             if (!store.employees || store.employees.length === 0) {
                 breakdownCont.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted);">Belum ada karyawan terdaftar di cabang ini.</div>`;
             } else {
@@ -2307,7 +2334,6 @@
                             </div>
                         `;
                     } else {
-                        // Belum diset
                         bHtml += `
                             <div class="emp-tx-item" style="border: 1px dashed var(--card-border); opacity: 0.9;">
                                 <div class="emp-tx-header">
@@ -2319,7 +2345,7 @@
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <span style="font-size: 11px; color: var(--warning); font-weight: 700;">⏳ Belum di-set</span>
                                         <button type="button" class="btn-save-single" onclick="openDailyTxModal('${store.id}', false)">
-                                            + Input Transaksi
+                                             + Input Transaksi
                                         </button>
                                     </div>
                                 </div>
@@ -2341,7 +2367,7 @@
         }
 
         // ==========================================
-        // 4. LOGIKA FILTER PERIODE & GRAFIK (CHART.JS)
+        // 6. FILTER PERIODE & GRAFIK (CHART.JS)
         // ==========================================
 
         function initFilterControls(store) {
@@ -2522,7 +2548,6 @@
         }
 
         function aggregateFilteredTransactions(store, filter) {
-            // Urutkan tanggal dari startDate ke endDate
             let cur = new Date(filter.startDate + 'T00:00:00');
             let end = new Date(filter.endDate + 'T00:00:00');
             if (cur > end) {
@@ -2675,7 +2700,6 @@
             if (shiftSel) currentFilter.shift = shiftSel.value;
             if (empSel) currentFilter.employeeId = empSel.value;
 
-            // Validasi tanggal
             if (new Date(currentFilter.startDate) > new Date(currentFilter.endDate)) {
                 const tmp = currentFilter.startDate;
                 currentFilter.startDate = currentFilter.endDate;
@@ -2719,11 +2743,11 @@
                 return;
             }
 
-            // Mobile-Friendly dynamic horizontal scroll jika tanggal > 7 hari
             const scrollContainer = document.getElementById('trendChartScrollContainer');
             const innerWrap = document.getElementById('trendChartInner');
             const scrollHint = document.getElementById('mobileScrollHint');
             const isMobile = window.innerWidth <= 640;
+            const isLight = document.body.classList.contains('light-theme');
 
             if (innerWrap) {
                 if (isMobile && agg.dateList.length > 7) {
@@ -2748,7 +2772,6 @@
                 trendChartInstance = null;
             }
 
-            // Daftarkan positioner tooltip khusus agar badge tooltip melayang di atas titik tanpa terpotong
             if (typeof Chart !== 'undefined' && Chart.Tooltip && Chart.Tooltip.positioners) {
                 if (!Chart.Tooltip.positioners.abovePoint) {
                     Chart.Tooltip.positioners.abovePoint = function(items, eventPosition) {
@@ -2764,7 +2787,6 @@
             const isLine = trendChartType === 'line';
 
             if (chartDimension === 'employee') {
-                // DIMENSI PER KARYAWAN: Bandingkan performa riil kasir dari hari ke hari
                 const palette = [
                     { border: '#4F8EF7', bg: 'rgba(79, 142, 247, 0.85)', fill: 'rgba(79, 142, 247, 0.12)' },
                     { border: '#10B981', bg: 'rgba(16, 185, 129, 0.85)', fill: 'rgba(16, 185, 129, 0.12)' },
@@ -2805,22 +2827,21 @@
                         label: 'Total Toko',
                         data: agg.totalSeries,
                         backgroundColor: 'rgba(148, 163, 184, 0.08)',
-                        borderColor: '#94A3B8',
+                        borderColor: isLight ? '#64748B' : '#94A3B8',
                         borderWidth: 2,
                         borderDash: [4, 4],
                         tension: 0.35,
                         fill: false,
-                        pointBackgroundColor: '#94A3B8',
+                        pointBackgroundColor: isLight ? '#64748B' : '#94A3B8',
                         pointRadius: isMobile ? 2 : 2.5,
                         pointHoverRadius: isMobile ? 4.5 : 5.5,
-                        pointHoverBackgroundColor: '#94A3B8',
+                        pointHoverBackgroundColor: isLight ? '#64748B' : '#94A3B8',
                         pointHoverBorderColor: '#FFFFFF',
                         pointHoverBorderWidth: 2,
                         pointHitRadius: 16
                     });
                 }
             } else {
-                // DIMENSI PER SHIFT: Bandingkan Shift 1 Pagi vs Shift 2 Malam
                 if (currentFilter.shift === '1') {
                     datasets.push({
                         label: 'Shift 1 Pagi',
@@ -2910,6 +2931,9 @@
                 }
             }
 
+            const tickColor = isLight ? '#718096' : '#94A3B8';
+            const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)';
+
             trendChartInstance = new Chart(ctx, {
                 type: trendChartType,
                 data: {
@@ -2936,7 +2960,7 @@
                         legend: {
                             position: 'top',
                             labels: {
-                                color: '#94A3B8',
+                                color: tickColor,
                                 font: { size: isMobile ? 10 : 11, weight: '600' },
                                 boxWidth: isMobile ? 10 : 12,
                                 padding: isMobile ? 6 : 8
@@ -2947,10 +2971,10 @@
                             yAlign: 'bottom',
                             caretPadding: isMobile ? 8 : 14,
                             caretSize: 6,
-                            backgroundColor: '#1E293B',
-                            titleColor: '#F8FAFC',
-                            bodyColor: '#CBD5E1',
-                            borderColor: 'rgba(255, 255, 255, 0.12)',
+                            backgroundColor: isLight ? '#2D3748' : '#1E293B',
+                            titleColor: '#FFFFFF',
+                            bodyColor: '#E2E8F0',
+                            borderColor: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255, 255, 255, 0.12)',
                             borderWidth: 1,
                             padding: isMobile ? 8 : 10,
                             boxPadding: 4,
@@ -2974,11 +2998,11 @@
                     scales: {
                         x: {
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.04)',
+                                color: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255, 255, 255, 0.04)',
                                 drawBorder: false
                             },
                             ticks: {
-                                color: '#94A3B8',
+                                color: tickColor,
                                 font: { size: isMobile ? 9 : 10 },
                                 maxRotation: 45,
                                 autoSkip: !isMobile || agg.dateList.length <= 7,
@@ -2989,11 +3013,11 @@
                             beginAtZero: true,
                             grace: '18%',
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.06)',
+                                color: gridColor,
                                 drawBorder: false
                             },
                             ticks: {
-                                color: '#94A3B8',
+                                color: tickColor,
                                 font: { size: isMobile ? 9 : 10 },
                                 precision: 0
                             }
@@ -3017,6 +3041,8 @@
 
             const badge = document.getElementById('badgeEmpCount');
             const isMobile = window.innerWidth <= 640;
+            const isLight = document.body.classList.contains('light-theme');
+            const tickColor = isLight ? '#718096' : '#94A3B8';
 
             let labels = [];
             let dataVals = [];
@@ -3044,7 +3070,7 @@
                     datasets: [{
                         data: dataVals,
                         backgroundColor: bgColors,
-                        borderColor: '#1E293B',
+                        borderColor: isLight ? '#FFFFFF' : '#1E293B',
                         borderWidth: 2,
                         hoverOffset: 4
                     }]
@@ -3056,17 +3082,17 @@
                         legend: {
                             position: 'bottom',
                             labels: {
-                                color: '#94A3B8',
+                                color: tickColor,
                                 font: { size: isMobile ? 10 : 11, weight: '600' },
                                 boxWidth: isMobile ? 10 : 12,
                                 padding: isMobile ? 6 : 8
                             }
                         },
                         tooltip: {
-                            backgroundColor: '#1E293B',
-                            titleColor: '#F8FAFC',
-                            bodyColor: '#CBD5E1',
-                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            backgroundColor: isLight ? '#2D3748' : '#1E293B',
+                            titleColor: '#FFFFFF',
+                            bodyColor: '#E2E8F0',
+                            borderColor: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255, 255, 255, 0.1)',
                             borderWidth: 1,
                             padding: isMobile ? 8 : 10,
                             titleFont: { size: isMobile ? 11 : 12 },
@@ -3088,7 +3114,6 @@
             });
         }
 
-        // Listener rotasi dan resize layar untuk penyesuaian chart mobile otomatis
         window.addEventListener('resize', () => {
             if (activeStoreId && document.getElementById('dedicatedAnalyticsView') && document.getElementById('dedicatedAnalyticsView').classList.contains('active')) {
                 const store = storesData.find(s => s.id === activeStoreId);
@@ -3100,7 +3125,10 @@
             }
         });
 
-        // 4c. RENDER TABEL RIWAYAT OPERASIONAL TOKO (DI DETAIL CABANG)
+        // ==========================================
+        // 7. RENDER TABEL RIWAYAT
+        // ==========================================
+
         function renderHistoryTable(store) {
             const tbody = document.getElementById('historyTableBody');
             if (!tbody) return;
@@ -3152,7 +3180,6 @@
             tbody.innerHTML = html;
         }
 
-        // 4d. RENDER TABEL RIWAYAT TERFILTER (DI HALAMAN ANALISA KHUSUS)
         function renderFilteredHistoryTable(store, agg) {
             const tbody = document.getElementById('filteredAnalyticsTableBody');
             const badgeCount = document.getElementById('badgeFilteredTableCount');
@@ -3203,7 +3230,10 @@
             tbody.innerHTML = html;
         }
 
-        // Helper: Deteksi Shift yang sedang berjalan saat ini berdasarkan jam lokal
+        // ==========================================
+        // 8. MODAL INPUT TRANSAKSI HARIAN
+        // ==========================================
+
         function getCurrentRunningShift(store) {
             if (!store || !store.shifts || store.shifts.length === 0) return null;
             const now = new Date();
@@ -3216,7 +3246,6 @@
                 let endMin = endH * 60 + endM;
 
                 if (endMin < startMin) {
-                    // Shift lintas tengah malam (misal 23:00 - 07:00)
                     if (nowMin >= startMin || nowMin < endMin) return s;
                 } else {
                     if (nowMin >= startMin && nowMin < endMin) return s;
@@ -3225,7 +3254,6 @@
             return store.shifts[0];
         }
 
-        // 5. MODAL INPUT TRANSAKSI HARIAN (SUPER SIMPLE)
         function openDailyTxModal(storeId, isManualEdit = false, targetDateKey = null) {
             if (storeId) activeStoreId = storeId;
             else storeId = activeStoreId || (storesData[0] ? storesData[0].id : null);
@@ -3249,52 +3277,59 @@
                 if (isToday) {
                     headerLabelEl.innerHTML = `Hari Ini`;
                 } else {
-                    const yesterdayKey = shiftDateKey(todayKey, -1);
-                    const tomorrowKey = shiftDateKey(todayKey, 1);
-                    let labelText = 'Edit Transaksi Tanggal';
-                    if (targetDate === yesterdayKey) labelText = 'Kemarin';
-                    else if (targetDate === tomorrowKey) labelText = 'Besok';
+                    const diffDays = Math.round((new Date(targetDate) - new Date(todayKey)) / (1000 * 60 * 60 * 24));
+                    let relText = `${Math.abs(diffDays)} Hari Lalu`;
+                    if (diffDays === -1) relText = 'Kemarin';
+                    else if (diffDays === 1) relText = 'Besok';
+                    else if (diffDays > 1) relText = `${diffDays} Hari Depan`;
 
-                    headerLabelEl.innerHTML = `<span>${labelText}</span> <button type="button" onclick="navigateModalDateToToday()" style="background: none; border: none; color: var(--primary); font-size: 9.5px; font-weight: 800; cursor: pointer; text-decoration: underline; padding: 0 0 0 4px;" title="Kembali ke Hari Ini">➔ Hari Ini</button>`;
+                    headerLabelEl.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <span>${relText}</span>
+                            <span style="opacity: 0.5;">•</span>
+                            <button type="button" onclick="navigateModalDateToToday()" style="background: none; border: none; color: var(--primary); font-size: 10px; font-weight: 800; cursor: pointer; text-decoration: underline; text-transform: uppercase;">➔ Hari Ini</button>
+                        </div>
+                    `;
                 }
             }
 
-            const modalDateEl = document.getElementById('modalDateDisplay');
-            if (modalDateEl) {
-                modalDateEl.innerText = isToday ? getTodayDisplay() : formatFullDate(targetDate);
+            const modalDateDisplay = document.getElementById('modalDateDisplay');
+            if (modalDateDisplay) {
+                modalDateDisplay.innerText = formatFullDate(targetDate);
+                modalDateDisplay.title = `${targetDate} (${formatFullDate(targetDate)})`;
             }
 
-            const swapLabelEl = document.getElementById('modalSwapLabel');
-            if (swapLabelEl) {
-                swapLabelEl.innerText = isToday ? 'Ada kesepakatan tukar shift hari ini?' : 'Tukar shift petugas pada tanggal ini?';
+            const swapLabel = document.getElementById('modalSwapLabel');
+            const swapBtnText = document.getElementById('modalSwapBtnText');
+            if (swapLabel && swapBtnText) {
+                if (isToday) {
+                    swapLabel.innerText = 'Ada kesepakatan tukar shift hari ini?';
+                    swapBtnText.innerText = 'Tukar Petugas Hari Ini';
+                } else {
+                    swapLabel.innerText = `Tukar posisi shift pada tanggal ${formatDateShort(targetDate)}?`;
+                    swapBtnText.innerText = 'Tukar Petugas Tanggal Ini';
+                }
             }
 
-            const swapBtnTextEl = document.getElementById('modalSwapBtnText');
-            if (swapBtnTextEl) {
-                swapBtnTextEl.innerText = isToday ? 'Tukar Petugas Hari Ini' : 'Tukar Shift Petugas';
-            }
-
-            // 2. Tampilkan Shift yang Sedang Berjalan (Hari ini) atau Info Edit Tanggal Terpilih
+            // 2. Info Shift Sedang Berjalan (Hanya jika Hari Ini)
             const shiftBox = document.getElementById('modalRunningShiftBox');
             if (shiftBox) {
                 if (isToday) {
-                    if (runningShift) {
-                        const shiftClass = runningShift.shift_num === 1 ? 'morning' : 'night';
-                        const empName = runningEmp ? runningEmp.name : 'Belum ditentukan';
+                    if (runningShift && runningEmp) {
                         shiftBox.innerHTML = `
                             <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <span style="font-size: 18px;">⏰</span>
                                     <div>
-                                        <div style="font-size: 10.5px; font-weight: 750; color: var(--text-muted); text-transform: uppercase;">Shift Berjalan Saat Ini</div>
-                                        <div style="font-size: 13px; font-weight: 850; color: var(--text-main);">
-                                            ${escapeHtml(runningShift.name)} <span style="font-size: 11px; color: var(--primary); font-weight: 700;">(${runningShift.start} - ${runningShift.end})</span>
+                                        <div style="font-size: 10.5px; font-weight: 750; color: var(--primary); text-transform: uppercase;">Shift Sedang Berjalan</div>
+                                        <div style="font-size: 12.5px; font-weight: 850; color: var(--text-main);">
+                                            ${escapeHtml(runningShift.name)}: <b>${escapeHtml(runningEmp.name)}</b>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="shift-tag ${shiftClass}" style="margin: 0; font-size: 11px; padding: 4px 8px;">
-                                    👤 ${escapeHtml(empName)}
-                                </div>
+                                <span class="badge-status" style="margin: 0; font-size: 10.5px; padding: 4px 8px; background: rgba(16, 185, 129, 0.15); color: var(--success);">
+                                    🟢 Aktif Sekarang
+                                </span>
                             </div>
                         `;
                     } else {
@@ -3325,7 +3360,6 @@
             fieldsCont.innerHTML = '';
 
             let html = '';
-            // Tampilkan hanya karyawan yang belum di-set (atau semua jika manual edit / edit tanggal lampau)
             const employeesToRender = (!isToday || isManualEdit) ? (store.employees || []) : unsetEmployees;
 
             if (isToday && !isManualEdit && employeesToRender.length === 0 && setRecords.length > 0) {
@@ -3367,7 +3401,6 @@
                     </div>`;
                 });
 
-                // Catatan ringkas 1 baris jika ada yang sudah di-set sebelumnya pada mode otomatis hari ini
                 if (isToday && !isManualEdit && setRecords.length > 0) {
                     html += `
                     <div style="margin-top: 2px; padding: 6px 10px; background: rgba(16, 185, 129, 0.06); border-radius: 8px; font-size: 11px; color: var(--success); display: flex; justify-content: space-between; align-items: center;">
@@ -3380,14 +3413,12 @@
             fieldsCont.innerHTML = html;
             openModal('dailyTxModal');
 
-            // 4. FOKUS LANGSUNG & MUNCULKAN KEYBOARD DI INPUT YANG BELUM DI-SET
+            // 4. Autofocus input pertama
             setTimeout(() => {
                 let targetInput = null;
-                // Prioritaskan input karyawan yang shift-nya sedang berjalan (jika hari ini)
                 if (isToday && runningShift) {
                     targetInput = document.querySelector(`#dailyTxFormFields .emp-tx-input[data-shiftnum="${runningShift.shift_num}"]`);
                 }
-                // Jika tidak ada atau sudah diset atau mode edit lampau, ambil input pertama yang kosong atau input pertama
                 if (!targetInput) {
                     const allInputs = Array.from(document.querySelectorAll('#dailyTxFormFields .emp-tx-input'));
                     targetInput = allInputs.find(inp => inp.value === '') || allInputs[0];
@@ -3399,7 +3430,6 @@
             }, 120);
         }
 
-        // SIMPAN TRANSAKSI (HANYA SATU TOMBOL SIMPAN)
         function handleSaveDailyTx(e) {
             e.preventDefault();
             const store = storesData.find(s => s.id === activeStoreId);
@@ -3464,10 +3494,10 @@
             const totalAllDays = Object.values(store.daily_transactions).reduce((sum, d) => sum + (d.total || 0), 0);
             store.monthly_tx = totalAllDays;
 
+            saveStoresData();
             closeModal('dailyTxModal');
             renderAnalyticsDashboard(store);
             renderHistoryTable(store);
-            renderStoresGrid();
             if (document.getElementById('dedicatedAnalyticsView') && document.getElementById('dedicatedAnalyticsView').classList.contains('active')) {
                 applyAnalyticsFilter();
             }
@@ -3484,7 +3514,10 @@
             }
         }
 
-        // UTILITY HELPERS
+        // ==========================================
+        // 9. UTILITY HELPERS
+        // ==========================================
+
         function openModal(id) {
             const el = document.getElementById(id);
             if (el) el.classList.add('open');

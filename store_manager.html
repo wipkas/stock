@@ -792,6 +792,9 @@
             </div>
 
             <div class="top-actions">
+                <a href="store_transactions.html" id="topBtnTransactions" class="btn-primary" style="background: var(--chip-bg); border: 1px solid var(--card-border); color: var(--text-main); text-decoration: none;">
+                    <span>📊</span> Transaksi &amp; Shift
+                </a>
                 <button class="btn-primary" onclick="openAddStoreModal()">
                     <span>➕</span> Tambah Cabang
                 </button>
@@ -931,6 +934,21 @@
                         <span>&rarr;</span>
                     </div>
                 </div>
+
+                <!-- 7. Transaksi & Analisa Shift Kasir -->
+                <a id="linkTransaksiAnalisa" href="store_transactions.html" class="feature-card" style="--feature-accent: #3B82F6;">
+                    <div>
+                        <div class="feature-card-top">
+                            <div class="feature-icon">📊</div>
+                            <div class="feature-title">Transaksi &amp; Analisa Shift</div>
+                        </div>
+                        <p class="feature-desc">Input transaksi harian kasir, kelola rotasi shift berkala/tukar manual, dan grafik tren performa.</p>
+                    </div>
+                    <div class="feature-action">
+                        <span>Buka Transaksi &amp; Analisa</span>
+                        <span>&rarr;</span>
+                    </div>
+                </a>
 
             </div>
         </section>
@@ -1242,6 +1260,23 @@
 
                 renderStoresGrid();
 
+                // Check URL parameter ?store= or localStorage
+                const urlParams = new URLSearchParams(window.location.search);
+                const storeParam = urlParams.get('store');
+                const savedStoreId = localStorage.getItem('kspcheck_active_store_id');
+                const targetStoreId = (storeParam && storesData.some(s => s.id === storeParam))
+                    ? storeParam
+                    : (savedStoreId && storesData.some(s => s.id === savedStoreId) ? savedStoreId : (storesData[0] ? storesData[0].id : ''));
+
+                const topBtnTx = document.getElementById('topBtnTransactions');
+                if (targetStoreId && topBtnTx) {
+                    topBtnTx.href = `store_transactions.html?store=${encodeURIComponent(targetStoreId)}`;
+                }
+
+                if (storeParam && storesData.some(s => s.id === storeParam)) {
+                    selectStore(storeParam);
+                }
+
             } catch (err) {
                 console.error(err);
                 if (errBox) {
@@ -1364,9 +1399,9 @@
                         </div>
                         <h3 class="store-name">${escapeHtml(store.name)}</h3>
                         
-                        <div class="store-stat-row">
+                        <div class="store-stat-row" onclick="event.stopPropagation(); window.location.href='store_transactions.html?store=' + encodeURIComponent('${store.id}');" style="cursor: pointer;" title="Klik untuk buka Transaksi &amp; Analisa Cabang">
                             <span class="stat-label">Transaksi per Bulan:</span>
-                            <span class="stat-val">${monthlyTx} tx</span>
+                            <span class="stat-val" style="color: var(--primary); font-weight: 800;">${monthlyTx} tx &rarr;</span>
                         </div>
 
                     </div>
@@ -1387,6 +1422,19 @@
             if (!store) return;
 
             activeStoreId = storeId;
+            localStorage.setItem('kspcheck_active_store_id', store.id);
+
+            const topBtnTx = document.getElementById('topBtnTransactions');
+            if (topBtnTx) topBtnTx.href = `store_transactions.html?store=${encodeURIComponent(store.id)}`;
+
+            try {
+                const currentUrl = new URL(window.location.href);
+                if (currentUrl.searchParams.get('store') !== store.id) {
+                    currentUrl.searchParams.set('store', store.id);
+                    window.history.replaceState({}, '', currentUrl.toString());
+                }
+            } catch(e) {}
+
             document.getElementById('storesListView').style.display = 'none';
             const detailView = document.getElementById('storeDetailView');
             detailView.classList.add('active');
@@ -1403,6 +1451,10 @@
             // Portal link update
             const pLink = document.getElementById('linkPortalKaryawan');
             if (pLink) pLink.href = 'karyawan.html';
+
+            // Transaksi & Analisa link update
+            const tLink = document.getElementById('linkTransaksiAnalisa');
+            if (tLink) tLink.href = `store_transactions.html?store=${encodeURIComponent(store.id)}`;
 
             // Transition status alert banner
             const status = getShiftStatus(store);
@@ -1431,6 +1483,20 @@
 
         function backToStoresList() {
             activeStoreId = null;
+            try {
+                const currentUrl = new URL(window.location.href);
+                if (currentUrl.searchParams.has('store')) {
+                    currentUrl.searchParams.delete('store');
+                    window.history.replaceState({}, '', currentUrl.pathname + (currentUrl.search ? currentUrl.search : ''));
+                }
+            } catch(e) {}
+
+            const savedStoreId = localStorage.getItem('kspcheck_active_store_id') || (storesData[0] ? storesData[0].id : '');
+            const topBtnTx = document.getElementById('topBtnTransactions');
+            if (topBtnTx && savedStoreId) {
+                topBtnTx.href = `store_transactions.html?store=${encodeURIComponent(savedStoreId)}`;
+            }
+
             document.getElementById('storeDetailView').classList.remove('active');
             document.getElementById('storesListView').style.display = 'block';
             renderStoresGrid();
