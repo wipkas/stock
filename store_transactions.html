@@ -2063,7 +2063,7 @@
             let storeParam = urlParams.get('store');
             const viewParam = urlParams.get('view');
             // Cek apakah dibuka dari store_manager.html (Mode Admin) atau Mode Bypass
-                                                if (fromParam === 'manager' || sessionStorage.getItem('kspcheck_auth_mode') === 'admin') {
+                                                            if (fromParam === 'manager' || sessionStorage.getItem('kspcheck_auth_mode') === 'admin') {
                 currentAuthRole = 'admin';
                 sessionStorage.setItem('kspcheck_auth_mode', 'admin');
             } else {
