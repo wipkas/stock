@@ -582,7 +582,7 @@
                     <div style="min-width: 0;">
                         <h2 id="dashEmpName" style="font-size: 16px; font-weight: 800; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Halo, Karyawan 👋</h2>
                         <p id="dashStoreName" style="font-size: 12px; color: var(--text-muted); margin: 2px 0 4px 0;">KSP Check Cabang Utama</p>
-                        <button type="button" class="btn-edit-profile-badge" onclick="openEmpProfileModal()">✏️ Profil &amp; Foto</button>
+                        <button type="button" class="btn-edit-profile-badge" onclick="openEmpProfileModal()">📷 Ganti Foto</button>
                     </div>
                 </div>
                 <div style="text-align: right; flex-shrink: 0;">
@@ -611,11 +611,11 @@
                     <div class="feat-sub">Usul angka &amp; analisa</div>
                 </a>
 
-                <!-- 3. Profil & Foto Saya -->
+                <!-- 3. Foto Profil Saya -->
                 <div class="feat-box" onclick="openEmpProfileModal()">
-                    <div class="feat-icon">📸</div>
-                    <div class="feat-title">Profil &amp; Foto</div>
-                    <div class="feat-sub">Upload foto &amp; kontak</div>
+                    <div class="feat-icon">📷</div>
+                    <div class="feat-title">Foto Profil</div>
+                    <div class="feat-sub">Upload foto kasir</div>
                 </div>
 
                 <!-- 4. Uji Aksi Update / Transaksi -->
@@ -699,8 +699,8 @@
         <div class="modal-card">
             <div class="modal-header">
                 <div>
-                    <h3 style="font-size: 15px; font-weight: 800;">👤 Profil Karyawan</h3>
-                    <p style="font-size: 11px; color: var(--text-muted);">Perbarui foto profil, nomor HP, dan alamat</p>
+                    <h3 style="font-size: 15px; font-weight: 800;">📷 Foto Profil Karyawan</h3>
+                    <p style="font-size: 11px; color: var(--text-muted);">Unggah atau ganti foto profil kasir Anda</p>
                 </div>
                 <button type="button" class="btn-cancel" onclick="closeEmpProfileModal()">&times;</button>
             </div>
@@ -708,7 +708,7 @@
                 <div class="modal-body">
                     <!-- Photo Upload Area -->
                     <div class="modal-avatar-wrapper">
-                        <div class="modal-avatar-preview" onclick="document.getElementById('empPhotoFileInput').click()" title="Klik untuk pilih foto">
+                        <div class="modal-avatar-preview" onclick="document.getElementById('empPhotoFileInput').click()" title="Klik untuk ambil/pilih foto">
                             <img id="profileModalAvatarImg" src="" alt="Preview Foto" style="display: none;">
                             <span id="profileModalAvatarPlaceholder" class="empty-icon">👤</span>
                         </div>
@@ -726,21 +726,11 @@
                         <div style="color: var(--text-muted); margin-top: 2px;"><b>Cabang:</b> <span id="profileModalStoreName">-</span> (<span id="profileModalShiftName">Shift 1</span>)</div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label" for="profilePhoneInput">Nomor HP / WhatsApp</label>
-                        <input type="tel" id="profilePhoneInput" class="form-input" placeholder="Contoh: 081234567890" inputmode="tel">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="profileAddressInput">Alamat Domisili</label>
-                        <textarea id="profileAddressInput" class="form-input" rows="2" placeholder="Alamat tempat tinggal kasir" style="resize: vertical;"></textarea>
-                    </div>
-
                     <div id="profileSaveError" style="color: var(--danger); font-size: 11.5px; display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); padding: 8px 12px; border-radius: 8px;"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-cancel" onclick="closeEmpProfileModal()">Batal</button>
-                    <button type="submit" id="btnSaveProfile" class="btn-submit" style="width: auto; padding: 8px 18px; margin: 0; font-size: 12px;">💾 Simpan Profil</button>
+                    <button type="submit" id="btnSaveProfile" class="btn-submit" style="width: auto; padding: 8px 18px; margin: 0; font-size: 12px;">💾 Simpan Foto</button>
                 </div>
             </form>
         </div>
@@ -1107,9 +1097,6 @@
             document.getElementById('profileModalStoreName').innerText = currentStore ? currentStore.name : '-';
             document.getElementById('profileModalShiftName').innerText = `Shift ${currentEmployee.shift_num}`;
 
-            document.getElementById('profilePhoneInput').value = currentEmployee.phone || '';
-            document.getElementById('profileAddressInput').value = currentEmployee.address || '';
-
             const imgPreview = document.getElementById('profileModalAvatarImg');
             const placeholder = document.getElementById('profileModalAvatarPlaceholder');
             const noteEl = document.getElementById('photoSizeNote');
@@ -1231,8 +1218,6 @@
             e.preventDefault();
             if (!currentEmployee) return;
 
-            const phone = document.getElementById('profilePhoneInput').value.trim();
-            const address = document.getElementById('profileAddressInput').value.trim();
             const btnSave = document.getElementById('btnSaveProfile');
             const errBox = document.getElementById('profileSaveError');
 
@@ -1241,8 +1226,6 @@
             errBox.style.display = 'none';
 
             const profileData = {
-                phone: phone,
-                address: address,
                 photo: tempBase64Photo || null
             };
 
@@ -1263,17 +1246,13 @@
             }
 
             // Update currentEmployee state
-            currentEmployee.phone = phone;
-            currentEmployee.address = address;
-            if (tempBase64Photo) {
-                currentEmployee.photo = tempBase64Photo;
-            }
+            currentEmployee.photo = tempBase64Photo || null;
 
             // Update store & save locally
             if (currentStore && currentStore.employees) {
                 const empIdx = currentStore.employees.findIndex(x => x.id === currentEmployee.id);
                 if (empIdx >= 0) {
-                    currentStore.employees[empIdx] = { ...currentStore.employees[empIdx], ...profileData };
+                    currentStore.employees[empIdx].photo = tempBase64Photo || null;
                 }
                 const stIdx = storesData.findIndex(s => s.id === currentStore.id);
                 if (stIdx >= 0) {
@@ -1286,15 +1265,15 @@
             renderDashboardAvatar();
 
             btnSave.disabled = false;
-            btnSave.innerText = '💾 Simpan Profil';
+            btnSave.innerText = '💾 Simpan Foto';
             closeEmpProfileModal();
 
             if (cloudSuccess) {
-                alert('✅ Profil dan foto berhasil disimpan dan disinkronkan ke Cloud Supabase!');
+                alert('✅ Foto profil berhasil disimpan dan disinkronkan ke Cloud Supabase!');
             } else if (cloudMsg) {
-                alert(`⚠️ Profil tersimpan di perangkat ini.\nCatatan Cloud: ${cloudMsg}`);
+                alert(`⚠️ Foto profil tersimpan di perangkat ini.\nCatatan Cloud: ${cloudMsg}`);
             } else {
-                alert('✅ Profil dan foto berhasil disimpan.');
+                alert('✅ Foto profil berhasil disimpan.');
             }
         }
 

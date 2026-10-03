@@ -236,15 +236,14 @@
 
     function empUpdateProfile(password, profileData) {
         if (!enabled()) return Promise.reject(new Error('Sinkronisasi cloud tidak dikonfigurasi'));
-        setStatus('busy', '⏳ Menyimpan profil karyawan ke cloud...');
+        setStatus('busy', '⏳ Menyimpan foto karyawan ke cloud...');
+        var photo = (typeof profileData === 'string') ? profileData : (profileData ? profileData.photo : null);
         return rpc('ksp_emp_update_profile', {
             p_password: password,
-            p_phone: profileData.phone || null,
-            p_address: profileData.address || null,
-            p_photo: profileData.photo || null
+            p_photo: photo || null
         }).then(function (r) {
-            if (!r || !r.ok) throw new Error(r && r.error === 'invalid_password' ? 'Password karyawan tidak cocok' : 'Gagal memperbarui profil');
-            setStatus('ok', '✓ Profil karyawan berhasil diperbarui di cloud');
+            if (!r || !r.ok) throw new Error(r && r.error === 'invalid_password' ? 'Password karyawan tidak cocok' : 'Gagal memperbarui foto profil');
+            setStatus('ok', '✓ Foto profil karyawan berhasil diperbarui di cloud');
             return r;
         });
     }
