@@ -1035,6 +1035,87 @@
             transform: scale(0.98);
         }
 
+        /* Top Menu Dropdown */
+        .top-menu-wrapper {
+            position: relative;
+        }
+
+        .top-menu-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 220px;
+            max-width: calc(100vw - 24px);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            box-shadow: 0 14px 36px var(--shadow-color);
+            padding: 6px;
+            display: none;
+            z-index: 500;
+            animation: topMenuDropIn 0.16s ease-out;
+        }
+
+        .top-menu-dropdown.open {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        @keyframes topMenuDropIn {
+            from { opacity: 0; transform: translateY(-5px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .top-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: background 0.15s ease, transform 0.1s ease;
+            user-select: none;
+        }
+
+        .top-menu-item:hover {
+            background: var(--chip-bg);
+        }
+
+        .top-menu-item:active {
+            transform: scale(0.98);
+        }
+
+        .top-menu-icon {
+            font-size: 17px;
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .top-menu-label {
+            font-size: 12.5px;
+            font-weight: 750;
+            color: var(--text-main);
+            line-height: 1.25;
+        }
+
+        .top-menu-sub {
+            font-size: 10.5px;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .top-menu-danger:hover {
+            background: rgba(239, 68, 68, 0.12) !important;
+        }
+
+        .top-menu-danger .top-menu-label {
+            color: #ef4444;
+        }
+
         /* ===== UX Tahap 1: toast, fokus, scroll lock ===== */
         body.modal-open {
             overflow: hidden;
@@ -1283,11 +1364,35 @@
                 <button class="btn-primary" onclick="openMasterEmployeesModal()" style="background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.4); color: #0ea5e9;">
                     <span>👥</span> Master Karyawan
                 </button>
-                <button class="btn-primary" onclick="openManageStoresModal()">
-                    <span>🏢</span> Atur Cabang
-                </button>
-                <button class="btn-nav-action" id="themeToggleBtn" onclick="toggleTheme()" title="Ubah Tema">🌙</button>
-                <button class="btn-nav-action" onclick="lockStoreManager()" title="Kunci / Logout">🔒</button>
+                <div class="top-menu-wrapper" id="topMenuWrapper">
+                    <button class="btn-nav-action" id="btnTopMenu" onclick="toggleTopMenu(event)" title="Menu &amp; Pengaturan" aria-label="Menu dan Pengaturan" aria-expanded="false" style="font-size: 16px;">
+                        ⚙️
+                    </button>
+                    <div class="top-menu-dropdown" id="topMenuDropdown" role="menu">
+                        <div class="top-menu-item" role="menuitem" tabindex="0" onclick="closeTopMenu(); openManageStoresModal();">
+                            <span class="top-menu-icon">🏢</span>
+                            <div style="flex: 1;">
+                                <div class="top-menu-label">Atur Cabang</div>
+                                <div class="top-menu-sub">Kelola toko &amp; shift</div>
+                            </div>
+                        </div>
+                        <div class="top-menu-item" role="menuitem" tabindex="0" onclick="toggleTheme();">
+                            <span class="top-menu-icon" id="menuThemeIcon">🌙</span>
+                            <div style="flex: 1;">
+                                <div class="top-menu-label">Tema Tampilan</div>
+                                <div class="top-menu-sub" id="menuThemeState">Gelap</div>
+                            </div>
+                        </div>
+                        <div style="border-top: 1px solid var(--card-border); margin: 4px 0;"></div>
+                        <div class="top-menu-item top-menu-danger" role="menuitem" tabindex="0" onclick="closeTopMenu(); lockStoreManager();">
+                            <span class="top-menu-icon">🔒</span>
+                            <div style="flex: 1;">
+                                <div class="top-menu-label">Kunci / Logout</div>
+                                <div class="top-menu-sub">Keluar dari sesi admin</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -3596,7 +3701,7 @@
             }
         }
 
-        // Theme management
+        // Theme management & Top Menu
         function applySavedTheme() {
             const savedTheme = localStorage.getItem('kspcheck_theme');
             const themeBtn = document.getElementById('themeToggleBtn');
@@ -3607,6 +3712,7 @@
                 document.body.classList.remove('light-theme');
                 if (themeBtn) themeBtn.innerText = '🌙';
             }
+            updateTopMenuThemeDisplay();
         }
 
         function toggleTheme() {
@@ -3619,7 +3725,40 @@
                 localStorage.setItem('kspcheck_theme', 'dark');
                 if (themeBtn) themeBtn.innerText = '🌙';
             }
+            updateTopMenuThemeDisplay();
         }
+
+        function updateTopMenuThemeDisplay() {
+            const icon = document.getElementById('menuThemeIcon');
+            const state = document.getElementById('menuThemeState');
+            const isLight = document.body.classList.contains('light-theme');
+            if (icon) icon.innerText = isLight ? '☀️' : '🌙';
+            if (state) state.innerText = isLight ? 'Terang' : 'Gelap';
+        }
+
+        function toggleTopMenu(e) {
+            if (e) e.stopPropagation();
+            const dd = document.getElementById('topMenuDropdown');
+            const btn = document.getElementById('btnTopMenu');
+            if (!dd) return;
+            const isOpen = dd.classList.toggle('open');
+            if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            updateTopMenuThemeDisplay();
+        }
+
+        function closeTopMenu() {
+            const dd = document.getElementById('topMenuDropdown');
+            const btn = document.getElementById('btnTopMenu');
+            if (dd) dd.classList.remove('open');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+
+        document.addEventListener('click', (e) => {
+            const wrap = document.getElementById('topMenuWrapper');
+            if (wrap && !wrap.contains(e.target)) {
+                closeTopMenu();
+            }
+        });
 
         function escapeHtml(str) {
             if (!str) return '';
@@ -3787,9 +3926,14 @@
             }
         });
 
-        // Escape menutup modal paling atas yang terbuka
+        // Escape menutup menu atau modal paling atas yang terbuka
         document.addEventListener('keydown', (ev) => {
             if (ev.key !== 'Escape') return;
+            const dd = document.getElementById('topMenuDropdown');
+            if (dd && dd.classList.contains('open')) {
+                closeTopMenu();
+                return;
+            }
             if (document.getElementById('uiConfirmModal')) return;
             const open = Array.from(document.querySelectorAll('.modal-backdrop.open'));
             if (!open.length) return;
