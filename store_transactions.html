@@ -391,39 +391,6 @@
             background: var(--primary-hover);
         }
 
-        /* Metrics Row */
-        .kpi-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .kpi-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 14px;
-            padding: 14px 16px;
-        }
-
-        .kpi-label {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-bottom: 4px;
-        }
-
-        .kpi-value {
-            font-size: 22px;
-            font-weight: 850;
-            color: var(--text-main);
-        }
-
-        .kpi-sub {
-            font-size: 10.5px;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-
         /* Employee Breakdown List */
         .card-box {
             background: var(--card-bg);
@@ -1432,24 +1399,6 @@
                     </div>
                 </div>
 
-            <!-- KPI Row -->
-            <div class="kpi-row">
-                <div class="kpi-card">
-                    <div class="kpi-label" id="kpiLabel1">TOTAL TRANSAKSI HARI INI</div>
-                    <div class="kpi-value" id="kpiTodayTx">0 tx</div>
-                    <div class="kpi-sub" id="kpiTxStatus">Belum diset hari ini</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label" id="kpiLabel2">SHIFT PAGI (PIC 1)</div>
-                    <div class="kpi-value" id="kpiMorningTx" style="color: #F59E0B;">0 tx</div>
-                    <div class="kpi-sub" id="kpiMorningPic">PIC: -</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label" id="kpiLabel3">SHIFT MALAM (PIC 2)</div>
-                    <div class="kpi-value" id="kpiNightTx" style="color: #10B981;">0 tx</div>
-                    <div class="kpi-sub" id="kpiNightPic">PIC: -</div>
-                </div>
-            </div>
 
             <!-- Breakdown Transaksi Karyawan Hari Ini -->
             <div class="card-box">
@@ -3494,15 +3443,6 @@
                 }
             }
 
-            const kpiLbl1 = document.getElementById('kpiLabel1');
-            const kpiLbl2 = document.getElementById('kpiLabel2');
-            const kpiLbl3 = document.getElementById('kpiLabel3');
-            const kpiTotalEl = document.getElementById('kpiTodayTx');
-            const kpiStatusEl = document.getElementById('kpiTxStatus');
-            const kpiMorningEl = document.getElementById('kpiMorningTx');
-            const kpiMorningPicEl = document.getElementById('kpiMorningPic');
-            const kpiNightEl = document.getElementById('kpiNightTx');
-            const kpiNightPicEl = document.getElementById('kpiNightPic');
             const breakdownCont = document.getElementById('empBreakdownContainer');
             const breakdownTitle = document.getElementById('empBreakdownTitle');
             const recordedTimeEl = document.getElementById('badgeRecordedTime');
@@ -3515,46 +3455,23 @@
 
             if (currentAuthRole === 'employee' && currentEmployee) {
                 // === MODE KARYAWAN: HANYA TAMPILKAN TRANSAKSI KARYAWAN AKTIF ===
-                if (kpiLbl1) kpiLbl1.innerText = 'TRANSAKSI ANDA HARI INI';
-                if (kpiLbl2) kpiLbl2.innerText = 'STATUS TRANSAKSI HARI INI';
-                if (kpiLbl3) kpiLbl3.innerText = 'SHIFT ANDA HARI INI';
-
                 const myRec = records.find(r => r.emp_id === currentEmployee.id);
                 const curVal = myRec ? myRec.tx : 0;
                 const pendingProp = (store.tx_proposals || []).find(p => p.date === todayKey && p.emp_id === currentEmployee.id && p.status === 'pending');
 
-                // KPI 1: Transaksi Anda yang tersimpan di sistem
-                kpiTotalEl.innerText = `${curVal.toLocaleString('id-ID')} tx`;
-                if (myRec) {
-                    kpiStatusEl.innerText = `🟢 Tercatat langsung (${myRec.recorded_at || 'Hari ini'})`;
-                    kpiStatusEl.style.color = 'var(--success)';
-                    recordedTimeEl.innerText = `Tercatat: ${myRec.recorded_at || 'Hari ini'}`;
-                } else {
-                    kpiStatusEl.innerText = '⏳ Belum tercatat hari ini';
-                    kpiStatusEl.style.color = 'var(--warning)';
-                    recordedTimeEl.innerText = 'Status: Belum input transaksi hari ini';
+                if (recordedTimeEl) {
+                    if (myRec) {
+                        recordedTimeEl.innerText = `Tercatat: ${myRec.recorded_at || 'Hari ini'}`;
+                    } else {
+                        recordedTimeEl.innerText = 'Status: Belum input transaksi hari ini';
+                    }
                 }
-
-                // KPI 2: Status Transaksi Anda Hari Ini
-                if (myRec && myRec.tx !== undefined && myRec.tx !== null) {
-                    kpiMorningEl.innerHTML = `<span style="font-size: 18px; color: var(--success); font-weight: 850;">🟢 ${curVal} tx</span>`;
-                    kpiMorningPicEl.innerHTML = `<span style="color: var(--success); font-weight: 750;">Tersimpan Langsung</span>`;
-                } else if (pendingProp) {
-                    kpiMorningEl.innerHTML = `<span style="font-size: 18px; color: var(--warning); font-weight: 850;">🟡 ${pendingProp.proposed_tx} tx</span>`;
-                    kpiMorningPicEl.innerHTML = `<span style="color: var(--warning); font-weight: 750;">Menunggu Approval (${pendingProp.submitted_at || '-'})</span>`;
-                } else {
-                    kpiMorningEl.innerHTML = `<span style="font-size: 15px; color: var(--warning); font-weight: 750;">Belum Diisi</span>`;
-                    kpiMorningPicEl.innerHTML = `<span style="color: var(--warning);">Klik tombol untuk mengisi</span>`;
-                }
-
-                // KPI 3: Shift Petugas
-                const myShiftNum = myRec ? myRec.shift_num : currentEmployee.shift_num;
-                const myShiftName = myShiftNum === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
-                kpiNightEl.innerHTML = `<span style="font-size: 18px; color: var(--primary); font-weight: 850;">${escapeHtml(myShiftName)}</span>`;
-                kpiNightPicEl.innerHTML = `Petugas: <b>${escapeHtml(currentEmployee.name)}</b> (Aktif)`;
 
                 // Breakdown: Hanya tampilkan Karyawan login saat ini
                 if (breakdownTitle) breakdownTitle.innerText = '👤 Rekap Transaksi Anda Hari Ini';
+
+                const myShiftNum = myRec ? myRec.shift_num : currentEmployee.shift_num;
+                const myShiftName = myShiftNum === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
 
                 const shiftClass = myShiftNum === 1 ? 's1' : 's2';
                 let bHtml = `
@@ -3607,9 +3524,6 @@
 
             } else {
                 // === MODE ADMIN: TAMPILKAN SELURUH REKAP CABANG & KARYAWAN ===
-                if (kpiLbl1) kpiLbl1.innerText = 'TOTAL TRANSAKSI HARI INI';
-                if (kpiLbl2) kpiLbl2.innerText = 'SHIFT PAGI (PIC 1)';
-                if (kpiLbl3) kpiLbl3.innerText = 'SHIFT MALAM (PIC 2)';
                 if (breakdownTitle) breakdownTitle.innerText = '👥 Transaksi Berdasarkan Petugas Shift Hari Ini';
 
                 const activeEmps = getActiveEmployees(store);
@@ -3619,38 +3533,15 @@
                 const nRec = records.find(r => r.shift_num === 2);
 
                 const totalTx = todayData ? (todayData.total || 0) : 0;
-                kpiTotalEl.innerText = totalTx.toLocaleString('id-ID') + ' tx';
 
-                if (records.length === 0) {
-                    kpiStatusEl.innerText = '⚠️ Belum diset hari ini';
-                    kpiStatusEl.style.color = 'var(--warning)';
-                    recordedTimeEl.innerText = 'Status: Belum input transaksi hari ini';
-                } else if (unsetEmployees.length > 0) {
-                    kpiStatusEl.innerText = `🟡 Sebagian tercatat (${records.length}/${activeEmps.length} kasir)`;
-                    kpiStatusEl.style.color = 'var(--warning)';
-                    recordedTimeEl.innerText = `Terakhir update: ${todayData.recorded_time || '-'} (Ada shift berjalan)`;
-                } else {
-                    kpiStatusEl.innerText = `🟢 Lengkap • ${todayData.recorded_time || 'Hari ini'}`;
-                    kpiStatusEl.style.color = 'var(--success)';
-                    recordedTimeEl.innerText = `Terakhir update: ${todayData.recorded_time || '-'}`;
-                }
-
-                if (mRec) {
-                    kpiMorningEl.innerHTML = `<span>${mRec.tx} tx</span>`;
-                    kpiMorningEl.style.color = '#F59E0B';
-                    kpiMorningPicEl.innerHTML = `PIC: <b>${escapeHtml(mRec.emp_name)}</b> <span style="color:var(--success); font-weight:750;">✓ Tercatat</span>`;
-                } else {
-                    kpiMorningEl.innerHTML = `<span style="font-size: 15px; color: var(--text-muted); font-weight: 750;">⏳ Belum di-set</span>`;
-                    kpiMorningPicEl.innerText = `PIC: ${empS1 ? empS1.name : '-'} (Shift berjalan)`;
-                }
-
-                if (nRec) {
-                    kpiNightEl.innerHTML = `<span>${nRec.tx} tx</span>`;
-                    kpiNightEl.style.color = 'var(--primary)';
-                    kpiNightPicEl.innerHTML = `PIC: <b>${escapeHtml(nRec.emp_name)}</b> <span style="color:var(--success); font-weight:750;">✓ Tercatat</span>`;
-                } else {
-                    kpiNightEl.innerHTML = `<span style="font-size: 15px; color: var(--text-muted); font-weight: 750;">⏳ Belum di-set</span>`;
-                    kpiNightPicEl.innerText = `PIC: ${empS2 ? empS2.name : '-'} (Shift berjalan)`;
+                if (recordedTimeEl) {
+                    if (records.length === 0) {
+                        recordedTimeEl.innerText = 'Status: Belum input transaksi hari ini';
+                    } else if (unsetEmployees.length > 0) {
+                        recordedTimeEl.innerText = `Terakhir update: ${todayData.recorded_time || '-'} (Ada shift berjalan)`;
+                    } else {
+                        recordedTimeEl.innerText = `Terakhir update: ${todayData.recorded_time || '-'}`;
+                    }
                 }
 
                 if (activeEmps.length === 0 && records.length === 0) {
@@ -3666,10 +3557,10 @@
                         const s1Time = s1Def ? `${s1Def.start} - ${s1Def.end}` : '07:00 - 15:00';
                         const s2Time = s2Def ? `${s2Def.start} - ${s2Def.end}` : '15:00 - 23:00';
 
-                        const s1EmpName = mRec ? mRec.emp_name : (empS1 ? empS1.name : 'Belum Ditugaskan');
-                        const s2EmpName = nRec ? nRec.emp_name : (empS2 ? empS2.name : 'Belum Ditugaskan');
-                        const s1Avatar = escapeHtml((s1EmpName.charAt(0) || '1').toUpperCase());
-                        const s2Avatar = escapeHtml((s2EmpName.charAt(0) || '2').toUpperCase());
+                        const s1Name = mRec ? mRec.emp_name : (empS1 ? empS1.name : 'Belum Ditugaskan');
+                        const s2Name = nRec ? nRec.emp_name : (empS2 ? empS2.name : 'Belum Ditugaskan');
+                        const s1Avatar = escapeHtml((s1Name.charAt(0) || '1').toUpperCase());
+                        const s2Avatar = escapeHtml((s2Name.charAt(0) || '2').toUpperCase());
 
                         const s1Tx = mRec ? (Number(mRec.tx) || 0) : 0;
                         const s2Tx = nRec ? (Number(nRec.tx) || 0) : 0;
