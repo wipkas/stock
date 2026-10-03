@@ -13,6 +13,8 @@
 
     <!-- Supabase JS Client & CryptoJS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="ksp_sync_config.js"></script>
+<script src="ksp_sync.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 
     <style>
@@ -1295,6 +1297,27 @@
             startLiveClock();
             loadStoresData();
 
+            if (window.KspSync) {
+                KspSync.init({
+                    getStores: () => storesData,
+                    setStores: (v) => { storesData = v; },
+                    isAdmin: () => true,
+                    onRemoteUpdate: () => {
+                        if (document.querySelector('[id$="Modal"].open')) { setTimeout(() => KspSync.adminPull(), 4000); return; }
+                        if (activeStoreId && !storesData.some(st => st.id === activeStoreId)) {
+                            activeStoreId = null;
+                            const dv = document.getElementById('storeDetailView');
+                            if (dv) dv.classList.remove('active');
+                            const lv = document.getElementById('storesListView');
+                            if (lv) lv.style.display = '';
+                        }
+                        renderStoresGrid();
+                        const dv2 = document.getElementById('storeDetailView');
+                        if (activeStoreId && dv2 && dv2.classList.contains('active')) selectStore(activeStoreId);
+                    }
+                });
+            }
+
             // Check if PIN already saved in localStorage (Same key as interactive_stock.html)
             const savedPin = localStorage.getItem('kspcheck_viewer_pin'); if (savedPin) {
                 unlockWithPin(savedPin);
@@ -1356,6 +1379,9 @@
                 document.getElementById('mainApp').style.display = 'block';
 
                 renderStoresGrid();
+
+                // Sinkronisasi dengan Supabase (data cabang, karyawan, transaksi, usulan)
+                if (window.KspSync) KspSync.adminPull();
 
                 // Check URL parameter ?store= or localStorage
                 const urlParams = new URLSearchParams(window.location.search);
@@ -1892,7 +1918,8 @@
 
             const existingIdx = storesData.findIndex(s => s.id === storeId);
             if (existingIdx >= 0) {
-                storesData[existingIdx] = newStore;
+                // Pertahankan data yang tidak ada di form (transaksi harian, usulan, jadwal rotasi, dll).
+                storesData[existingIdx] = { ...storesData[existingIdx], ...newStore };
             } else {
                 storesData.push(newStore);
             }

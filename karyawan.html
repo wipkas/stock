@@ -558,15 +558,34 @@
         </div>
     </div>
 
+    <script src="ksp_sync_config.js"></script>
+    <script src="ksp_sync.js"></script>
     <script>
         let storesData = [];
         let currentStore = null;
         let currentEmployee = null;
         let sessionLogs = [];
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             applySavedTheme();
             loadStoresData();
+
+            // Segarkan data dari cloud bila ada sesi karyawan (offline => data lokal)
+            const savedCred = sessionStorage.getItem('kspcheck_emp_cred');
+            if (savedCred && window.KspSync && KspSync.enabled()) {
+                try {
+                    const r = await KspSync.empLogin(savedCred);
+                    if (r && r.ok) {
+                        storesData = [r.store];
+                        sessionStorage.setItem('kspcheck_active_emp', JSON.stringify({ storeId: r.store.id, empId: r.employee.id }));
+                    } else if (r && r.ok === false) {
+                        sessionStorage.removeItem('kspcheck_emp_cred');
+                        sessionStorage.removeItem('kspcheck_active_emp');
+                    }
+                } catch (err) {
+                    console.warn('Cloud tidak terjangkau, memakai data lokal:', err);
+                }
+            }
 
             // Check if employee already logged in
             const savedSession = sessionStorage.getItem('kspcheck_active_emp');
@@ -650,7 +669,7 @@
             }
         }
 
-        function handleEmployeeLogin(e) {
+        async function handleEmployeeLogin(e) {
             e.preventDefault();
             const pass = document.getElementById('loginPasswordInput').value.trim();
             const errBox = document.getElementById('loginError');
@@ -661,13 +680,30 @@
                 return;
             }
 
-            // Search employee across all stores by unique password
+            // Cari karyawan: cloud dulu (data terbaru); jika offline pakai data lokal
             let match = null;
-            for (const store of storesData) {
-                const emp = (store.employees || []).find(x => String(x.password).trim() === pass);
-                if (emp) {
-                    match = { store, employee: emp };
-                    break;
+            let cloudRejected = false;
+            if (window.KspSync && KspSync.enabled()) {
+                try {
+                    const r = await KspSync.empLogin(pass);
+                    if (r && r.ok) {
+                        storesData = [r.store];
+                        sessionStorage.setItem('kspcheck_emp_cred', pass);
+                        match = { store: r.store, employee: r.employee };
+                    } else {
+                        cloudRejected = true;
+                    }
+                } catch (err) {
+                    console.warn('Cloud tidak terjangkau, memakai data lokal:', err);
+                }
+            }
+            if (!match && !cloudRejected) {
+                for (const store of storesData) {
+                    const emp = (store.employees || []).find(x => String(x.password).trim() === pass);
+                    if (emp) {
+                        match = { store, employee: emp };
+                        break;
+                    }
                 }
             }
 
@@ -721,6 +757,7 @@
 
         function logoutEmployee() {
             sessionStorage.removeItem('kspcheck_active_emp');
+            sessionStorage.removeItem('kspcheck_emp_cred');
             currentStore = null;
             currentEmployee = null;
             const input = document.getElementById('loginPasswordInput');

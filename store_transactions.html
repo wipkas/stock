@@ -7,6 +7,8 @@
 
     <!-- Chart.js CDN for Analytics Graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="ksp_sync_config.js"></script>
+    <script src="ksp_sync.js"></script>
 
     <style>
         :root {
@@ -2008,6 +2010,8 @@
         }
 
         function saveStoresData() {
+            // Tampilan karyawan dari cloud hanya data sebagian: jangan menimpa cache lokal admin.
+            if (window.__kspEmployeeCloud) return;
             try {
                 localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesData));
             } catch(e) {
@@ -2054,16 +2058,25 @@
         // 2. OTENTIKASI: ADMIN VS KARYAWAN
         // ==========================================
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             applySavedTheme();
             loadStoresData();
-            processAutomaticRotations();
+
+            if (window.KspSync) {
+                KspSync.init({
+                    getStores: () => storesData,
+                    setStores: (v) => { storesData = v; },
+                    isAdmin: () => currentAuthRole === 'admin' && !window.__kspEmployeeCloud,
+                    onRemoteUpdate: refreshAfterRemoteUpdate
+                });
+            }
 
             const urlParams = new URLSearchParams(window.location.search);
             let storeParam = urlParams.get('store');
             const viewParam = urlParams.get('view');
+            const fromParam = urlParams.get('from');
             // Cek apakah dibuka dari store_manager.html (Mode Admin) atau Mode Bypass
-                                                            if (fromParam === 'manager' || sessionStorage.getItem('kspcheck_auth_mode') === 'admin') {
+                                                                                                if (fromParam === 'manager' || sessionStorage.getItem('kspcheck_auth_mode') === 'admin') {
                 currentAuthRole = 'admin';
                 sessionStorage.setItem('kspcheck_auth_mode', 'admin');
             } else {
@@ -2071,6 +2084,24 @@
             }
 
             if (currentAuthRole === 'employee') {
+                // Segarkan data karyawan dari cloud (jika ada sesi). Offline => pakai data lokal.
+                const savedCred = sessionStorage.getItem('kspcheck_emp_cred');
+                if (savedCred && window.KspSync && KspSync.enabled()) {
+                    try {
+                        const r = await KspSync.empLogin(savedCred);
+                        if (r && r.ok) {
+                            storesData = [r.store];
+                            window.__kspEmployeeCloud = true;
+                            sessionStorage.setItem('kspcheck_active_emp', JSON.stringify({ storeId: r.store.id, empId: r.employee.id }));
+                        } else if (r && r.ok === false) {
+                            sessionStorage.removeItem('kspcheck_emp_cred');
+                            sessionStorage.removeItem('kspcheck_active_emp');
+                        }
+                    } catch (err) {
+                        console.warn('Cloud karyawan tidak terjangkau, memakai data lokal:', err);
+                    }
+                }
+
                 // Periksa sesi karyawan yang tersimpan di sessionStorage
                 const empRaw = sessionStorage.getItem('kspcheck_active_emp');
                 let foundEmp = null;
@@ -2100,6 +2131,17 @@
             }
 
             hideEmployeeLoginOverlay();
+
+            // Admin: tarik data cloud di latar belakang, lalu jalankan rotasi otomatis.
+            if (currentAuthRole === 'admin') {
+                if (window.KspSync && KspSync.enabled() && localStorage.getItem('kspcheck_viewer_pin')) {
+                    KspSync.adminPull().then(() => {
+                        if (processAutomaticRotations()) refreshAfterRemoteUpdate();
+                    });
+                } else {
+                    processAutomaticRotations();
+                }
+            }
 
             // Tentukan toko yang aktif untuk Admin: URL param > localStorage > toko pertama
             if (currentAuthRole === 'admin') {
@@ -2131,6 +2173,105 @@
                     </div>
                 `;
             }
+        });
+
+        // ==========================================
+        // 2b. ROTASI SHIFT OTOMATIS & REFRESH DARI CLOUD
+        // ==========================================
+
+        function dateToKey(d) {
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+
+        // Tanggal terjadwal terakhir (<= hari ini) menurut rotation_config, atau null jika nonaktif.
+        function getLastScheduledRotationKey(cfg, lastKey, now) {
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            if (cfg.type === 'weekly') {
+                const dow = (cfg.day_of_week !== undefined) ? cfg.day_of_week : 1;
+                const diff = (today.getDay() - dow + 7) % 7;
+                const d = new Date(today); d.setDate(d.getDate() - diff);
+                return dateToKey(d);
+            }
+            if (cfg.type === 'monthly') {
+                return dateToKey(new Date(today.getFullYear(), today.getMonth(), 1));
+            }
+            if (cfg.type === 'interval') {
+                const n = Math.max(1, parseInt(cfg.interval_days) || 7);
+                const last = new Date(lastKey + 'T00:00:00');
+                const elapsed = Math.floor((today - last) / 86400000);
+                if (elapsed < n) return null;
+                return dateToKey(today);
+            }
+            return null;
+        }
+
+        // Putar shift otomatis sesuai jadwal tiap cabang. Mengembalikan true jika ada perubahan.
+        function processAutomaticRotations() {
+            if (currentAuthRole !== 'admin' || window.__kspEmployeeCloud) return false;
+            const now = new Date();
+            const todayKey = dateToKey(now);
+            const nowHM = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            let changed = false;
+
+            storesData.forEach(store => {
+                const cfg = store.rotation_config;
+                if (!cfg || cfg.type === 'disabled' || !store.employees || store.employees.length < 2) return;
+
+                if (!store.last_rotation_date) {
+                    // Titik awal: rotasi pertama dihitung sejak hari ini.
+                    store.last_rotation_date = todayKey;
+                    changed = true;
+                    return;
+                }
+
+                const due = getLastScheduledRotationKey(cfg, store.last_rotation_date, now);
+                if (!due || due <= store.last_rotation_date) return;
+                if (due === todayKey && cfg.execution_time && nowHM < cfg.execution_time) return;
+
+                store.employees.forEach(emp => { emp.shift_num = (emp.shift_num === 1) ? 2 : 1; });
+                store.last_rotation_date = todayKey;
+                changed = true;
+            });
+
+            if (changed) saveStoresData();
+            return changed;
+        }
+
+        function isAnyModalOpen() {
+            return !!document.querySelector('[id$="Modal"].open');
+        }
+
+        // Render ulang setelah data berubah dari cloud (ditunda bila ada dialog terbuka).
+        function refreshAfterRemoteUpdate() {
+            if (isAnyModalOpen()) {
+                setTimeout(refreshAfterRemoteUpdate, 4000);
+                return;
+            }
+            if (!storesData.some(s => s.id === activeStoreId)) {
+                activeStoreId = storesData[0] ? storesData[0].id : null;
+            }
+            updateStoreSwitcherDropdown();
+            if (!activeStoreId) return;
+            const dedicated = document.getElementById('dedicatedAnalyticsView');
+            if (dedicated && dedicated.classList.contains('active')) {
+                openDedicatedAnalyticsView();
+            } else {
+                openStoreAnalytics(null, activeStoreId);
+            }
+        }
+
+        // Karyawan: segarkan usulan/riwayat dari cloud saat tab kembali aktif.
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState !== 'visible' || !window.__kspEmployeeCloud || isAnyModalOpen()) return;
+            const cred = sessionStorage.getItem('kspcheck_emp_cred');
+            if (!cred || !window.KspSync) return;
+            try {
+                const r = await KspSync.empLogin(cred);
+                if (r && r.ok) {
+                    storesData = [r.store];
+                    refreshAfterRemoteUpdate();
+                }
+            } catch (err) { /* offline: abaikan */ }
         });
 
         function showEmployeeLoginOverlay() {
@@ -2169,7 +2310,7 @@
             input.focus();
         }
 
-        function handleEmployeeLogin(e) {
+        async function handleEmployeeLogin(e) {
             e.preventDefault();
             const pass = document.getElementById('loginPasswordInput').value.trim();
             const errBox = document.getElementById('loginError');
@@ -2182,13 +2323,31 @@
                 return;
             }
 
-            // Cari karyawan di seluruh cabang berdasarkan password unik
+            // Cari karyawan: cloud dulu (data terbaru), jika offline pakai data lokal
             let match = null;
-            for (const store of storesData) {
-                const emp = (store.employees || []).find(x => String(x.password).trim() === pass);
-                if (emp) {
-                    match = { store, employee: emp };
-                    break;
+            let cloudRejected = false;
+            if (window.KspSync && KspSync.enabled()) {
+                try {
+                    const r = await KspSync.empLogin(pass);
+                    if (r && r.ok) {
+                        storesData = [r.store];
+                        window.__kspEmployeeCloud = true;
+                        sessionStorage.setItem('kspcheck_emp_cred', pass);
+                        match = { store: r.store, employee: r.employee };
+                    } else {
+                        cloudRejected = true;
+                    }
+                } catch (err) {
+                    console.warn('Cloud karyawan tidak terjangkau, memakai data lokal:', err);
+                }
+            }
+            if (!match && !cloudRejected) {
+                for (const store of storesData) {
+                    const emp = (store.employees || []).find(x => String(x.password).trim() === pass);
+                    if (emp) {
+                        match = { store, employee: emp };
+                        break;
+                    }
                 }
             }
 
@@ -2227,6 +2386,11 @@
 
         function logoutEmployee() {
             sessionStorage.removeItem('kspcheck_active_emp');
+            sessionStorage.removeItem('kspcheck_emp_cred');
+            if (window.__kspEmployeeCloud) {
+                window.__kspEmployeeCloud = false;
+                loadStoresData();
+            }
             currentEmployee = null;
             currentAuthRole = 'employee';
             const passInput = document.getElementById('loginPasswordInput');
@@ -2426,15 +2590,14 @@
             const curVal = myRec ? myRec.tx : 0;
 
             const nowTimeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+            const submittedAt = nowTimeStr + ', ' + formatDateShort(getTodayKey());
+            const noteVal = noteInput ? noteInput.value.trim() : '';
 
-            let existingProp = store.tx_proposals.find(p => p.date === targetDateKey && p.emp_id === currentEmployee.id && p.status === 'pending');
+            const existingProp = store.tx_proposals.find(p => p.date === targetDateKey && p.emp_id === currentEmployee.id && p.status === 'pending');
 
-            if (existingProp) {
-                existingProp.proposed_tx = txVal;
-                existingProp.note = noteInput ? noteInput.value.trim() : '';
-                existingProp.submitted_at = nowTimeStr + ', ' + formatDateShort(getTodayKey());
-            } else {
-                const newProp = {
+            const payload = existingProp
+                ? { ...existingProp, proposed_tx: txVal, note: noteVal, submitted_at: submittedAt }
+                : {
                     id: 'prop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
                     store_id: store.id,
                     date: targetDateKey,
@@ -2444,21 +2607,50 @@
                     shift_name: currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam',
                     current_tx: curVal,
                     proposed_tx: txVal,
-                    note: noteInput ? noteInput.value.trim() : '',
-                    submitted_at: nowTimeStr + ', ' + formatDateShort(getTodayKey()),
+                    note: noteVal,
+                    submitted_at: submittedAt,
                     status: 'pending'
                 };
-                store.tx_proposals.push(newProp);
+
+            const applyLocal = (saved) => {
+                const finalProp = saved || payload;
+                const idx = store.tx_proposals.findIndex(p => p.id === finalProp.id);
+                if (idx >= 0) {
+                    store.tx_proposals[idx] = finalProp;
+                } else {
+                    store.tx_proposals.push(finalProp);
+                }
+
+                saveStoresData();
+                closeModal('employeeProposalModal');
+                renderAnalyticsDashboard(store);
+                renderHistoryTable(store);
+                if (document.getElementById('dedicatedAnalyticsView') && document.getElementById('dedicatedAnalyticsView').classList.contains('active')) {
+                    applyAnalyticsFilter();
+                }
+                showToast(`✅ Usulan transaksi (${txVal} tx) berhasil disimpan sebagai usulan menunggu approval admin!`, '📤');
+            };
+
+            // Mode cloud: usulan dikirim ke server (admin menerimanya & meng-approve nanti).
+            if (window.__kspEmployeeCloud && window.KspSync) {
+                const submitBtn = e.submitter || null;
+                if (submitBtn) submitBtn.disabled = true;
+                KspSync.empSubmitProposal(sessionStorage.getItem('kspcheck_emp_cred') || '', payload)
+                    .then(r => {
+                        if (!r || !r.ok) {
+                            showToast('❌ Usulan ditolak server (' + ((r && r.error) || 'gagal') + '). Silakan login ulang.', '⚠️');
+                            return;
+                        }
+                        applyLocal(r.proposal);
+                    })
+                    .catch(err => {
+                        showToast('❌ Usulan belum terkirim, periksa koneksi lalu coba lagi. (' + (err.message || 'offline') + ')', '⚠️');
+                    })
+                    .finally(() => { if (submitBtn) submitBtn.disabled = false; });
+                return;
             }
 
-            saveStoresData();
-            closeModal('employeeProposalModal');
-            renderAnalyticsDashboard(store);
-            renderHistoryTable(store);
-            if (document.getElementById('dedicatedAnalyticsView') && document.getElementById('dedicatedAnalyticsView').classList.contains('active')) {
-                applyAnalyticsFilter();
-            }
-            showToast(`✅ Usulan transaksi (${txVal} tx) berhasil disimpan sebagai usulan menunggu approval admin!`, '📤');
+            applyLocal(null);
         }
 
         function approveProposal(propId) {
