@@ -165,7 +165,18 @@
 
     function adminDeleteStore(storeId) {
         if (!enabled() || !adminPin()) return Promise.resolve({ skipped: true });
-        return rpc('ksp_admin_delete_store', { p_pin: adminPin(), p_store_id: storeId });
+        setStatus('busy', '☁️ Menghapus cabang di cloud…');
+        return rpc('ksp_admin_delete_store', { p_pin: adminPin(), p_store_id: storeId })
+            .then(function (r) {
+                if (!r || !r.ok) throw new Error(r && r.error === 'unauthorized' ? 'PIN admin ditolak server' : 'Gagal menghapus cabang');
+                setStatus('ok', '☁️ Cabang terhapus di cloud');
+                return r;
+            })
+            .catch(function (err) {
+                console.warn('[KspSync] delete gagal:', err);
+                setStatus('err', '⚠️ Cloud delete: ' + (err.message || 'gagal'));
+                throw err;
+            });
     }
 
     // ---------- KARYAWAN ----------
