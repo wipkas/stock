@@ -505,6 +505,126 @@
             transition: width 0.4s ease;
         }
 
+        /* Match Scoreboard 2 Shift */
+        .scoreboard-container {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            align-items: stretch;
+            margin: 8px 0 12px 0;
+        }
+
+        .scoreboard-col {
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+
+        .scoreboard-col.s1 {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1.5px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .scoreboard-col.s2 {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1.5px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .scoreboard-roll-btn-wrap {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        .scoreboard-roll-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 11px;
+            border-radius: 999px;
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .scoreboard-roll-btn:hover {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .scoreboard-tx-field {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 8px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .scoreboard-tx-field.s1 {
+            border: 1.5px solid rgba(245, 158, 11, 0.35);
+        }
+
+        .scoreboard-tx-field.s1:hover {
+            border-color: #F59E0B;
+            background: rgba(245, 158, 11, 0.06);
+            transform: translateY(-1px);
+        }
+
+        .scoreboard-tx-field.s2 {
+            border: 1.5px solid rgba(16, 185, 129, 0.35);
+        }
+
+        .scoreboard-tx-field.s2:hover {
+            border-color: #10B981;
+            background: rgba(16, 185, 129, 0.06);
+            transform: translateY(-1px);
+        }
+
+        .scoreboard-tx-num {
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+
+        .scoreboard-split-bar {
+            height: 8px;
+            border-radius: 999px;
+            overflow: hidden;
+            display: flex;
+            background: rgba(255, 255, 255, 0.06);
+            margin-top: 4px;
+        }
+
+        @media (max-width: 480px) {
+            .scoreboard-container {
+                gap: 8px;
+            }
+            .scoreboard-col {
+                padding: 10px 8px;
+            }
+            .scoreboard-tx-num {
+                font-size: 22px;
+            }
+            .scoreboard-roll-btn {
+                padding: 4px 7px;
+            }
+            .scoreboard-roll-btn .roll-label {
+                display: none;
+            }
+        }
+
         /* History Table */
         .history-table {
             width: 100%;
@@ -3536,77 +3656,231 @@
                 if (activeEmps.length === 0 && records.length === 0) {
                     breakdownCont.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted);">Belum ada karyawan aktif terdaftar di cabang ini.</div>`;
                 } else {
-                    let bHtml = '';
-                    const displayedEmps = [...activeEmps];
-                    // Masukkan kasir pengganti/inval jika ada transaksi hari ini
-                    records.forEach(r => {
-                        if (!displayedEmps.some(e => e.id === r.emp_id)) {
-                            displayedEmps.push({
-                                id: r.emp_id,
-                                name: r.emp_name,
-                                shift_num: r.shift_num,
-                                role: 'inval',
-                                status: 'active'
-                            });
+                    const shiftCountVal = parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1);
+                    if (shiftCountVal === 2) {
+                        // ==========================================
+                        // TAMPILAN MATCH SCOREBOARD 2 SHIFT
+                        // ==========================================
+                        const s1Def = (store.shifts || []).find(s => s.shift_num === 1);
+                        const s2Def = (store.shifts || []).find(s => s.shift_num === 2);
+                        const s1Time = s1Def ? `${s1Def.start} - ${s1Def.end}` : '07:00 - 15:00';
+                        const s2Time = s2Def ? `${s2Def.start} - ${s2Def.end}` : '15:00 - 23:00';
+
+                        const s1EmpName = mRec ? mRec.emp_name : (empS1 ? empS1.name : 'Belum Ditugaskan');
+                        const s2EmpName = nRec ? nRec.emp_name : (empS2 ? empS2.name : 'Belum Ditugaskan');
+                        const s1Avatar = escapeHtml((s1EmpName.charAt(0) || '1').toUpperCase());
+                        const s2Avatar = escapeHtml((s2EmpName.charAt(0) || '2').toUpperCase());
+
+                        const s1Tx = mRec ? (Number(mRec.tx) || 0) : 0;
+                        const s2Tx = nRec ? (Number(nRec.tx) || 0) : 0;
+                        const s1Recorded = Boolean(mRec);
+                        const s2Recorded = Boolean(nRec);
+
+                        const s1EmpId = mRec ? mRec.emp_id : (empS1 ? empS1.id : null);
+                        const s2EmpId = nRec ? nRec.emp_id : (empS2 ? empS2.id : null);
+                        const s1Prop = (store.tx_proposals || []).find(p => p.date === todayKey && p.emp_id === s1EmpId && p.status === 'pending');
+                        const s2Prop = (store.tx_proposals || []).find(p => p.date === todayKey && p.emp_id === s2EmpId && p.status === 'pending');
+
+                        const sumScoreTx = s1Tx + s2Tx;
+                        let p1 = 50, p2 = 50;
+                        if (sumScoreTx > 0) {
+                            p1 = Math.round((s1Tx / sumScoreTx) * 100);
+                            p2 = 100 - p1;
                         }
-                    });
 
-                    displayedEmps.forEach(emp => {
-                        const shiftName = emp.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
-                        const shiftClass = emp.shift_num === 1 ? 's1' : 's2';
-                        const rec = records.find(r => r.emp_id === emp.id);
-                        const empProp = (store.tx_proposals || []).find(p => p.date === todayKey && p.emp_id === emp.id && p.status === 'pending');
+                        let leadText = '⏳ Menunggu Rekap Shift';
+                        const diffTx = Math.abs(s1Tx - s2Tx);
+                        if (s1Tx > s2Tx) {
+                            leadText = `🏆 Pagi unggul +${diffTx} tx`;
+                        } else if (s2Tx > s1Tx) {
+                            leadText = `🏆 Malam unggul +${diffTx} tx`;
+                        } else if (sumScoreTx > 0) {
+                            leadText = `⚖️ Skor Sama Rata (${s1Tx} tx)`;
+                        }
 
-                        if (rec) {
-                            const pct = totalTx > 0 ? Math.round((rec.tx / totalTx) * 100) : 0;
-                            bHtml += `
-                                <div class="emp-tx-item">
-                                    <div class="emp-tx-header">
-                                        <div class="emp-name-tag">
-                                            <span>👤</span>
-                                            <span>${escapeHtml(emp.name)}</span>
-                                            <span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span>
-                                            ${empProp ? `<span class="badge-status badge-proposal-pending" style="font-size: 10px;">🟡 Usulan: ${empProp.proposed_tx} tx</span>` : ''}
+                        const centerControlHtml = (!isEmployeeRole && hasMultiShift) ? `
+                            <div class="scoreboard-roll-btn-wrap">
+                                <button type="button" class="scoreboard-roll-btn" onclick="rollActiveStoreShifts()" title="Tukar Shift Karyawan Sekarang (Pagi ⇄ Malam)">
+                                    <span style="color: var(--primary); font-weight: 900; font-size: 13px;">⇄</span>
+                                    <span class="roll-label" style="font-size: 10.5px; font-weight: 850; color: var(--text-main);">Roll Shift</span>
+                                </button>
+                            </div>
+                        ` : `
+                            <div class="scoreboard-roll-btn-wrap">
+                                <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 2px solid var(--card-border); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 10px; color: var(--text-muted); box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                                    VS
+                                </div>
+                            </div>
+                        `;
+
+                        breakdownCont.innerHTML = `
+                            <div class="scoreboard-container">
+                                ${centerControlHtml}
+
+                                <!-- KOLOM 1: SHIFT 1 PAGI -->
+                                <div class="scoreboard-col s1">
+                                    <div>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+                                            <span style="font-weight: 800; font-size: 12px; color: #F59E0B;">🌅 Shift 1 (Pagi)</span>
+                                            ${s1Recorded 
+                                                ? '<span class="badge-status" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 10px;">🟢 Selesai</span>'
+                                                : '<span class="badge-status" style="background: rgba(245, 158, 11, 0.15); color: var(--warning); font-size: 10px;">⏳ Berjalan</span>'}
                                         </div>
-                                        <div style="text-align: right;">
-                                            <span class="tx-val-badge">${rec.tx} tx</span>
-                                            <span style="font-size: 11px; color: var(--text-muted);"> (${pct}%)</span>
+                                        ${s1Prop ? `<div class="badge-status badge-proposal-pending" style="font-size: 10px; margin-top: 4px; display: inline-block;">🟡 Usulan: ${s1Prop.proposed_tx} tx</div>` : ''}
+                                        <!-- Petugas Kasir (Tanpa Role) -->
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+                                            <div style="width: 32px; height: 32px; min-width: 32px; border-radius: 50%; background: rgba(245, 158, 11, 0.2); color: #F59E0B; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; border: 1px solid rgba(245, 158, 11, 0.3);">
+                                                ${s1Avatar}
+                                            </div>
+                                            <div style="min-width: 0;">
+                                                <div style="font-weight: 800; font-size: 12.5px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(s1Name)}</div>
+                                                <div style="font-size: 10.5px; color: var(--text-muted);">${escapeHtml(s1Time)}</div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="progress-bar-bg">
-                                        <div class="progress-bar-fill" style="width: ${pct}%;"></div>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 10.5px; color: var(--text-muted);">
-                                        <span>Tercatat: ${escapeHtml(rec.recorded_at || 'Hari ini')}</span>
-                                        <button type="button" onclick="openDailyTxModal('${store.id}', true)" style="background: none; border: none; color: var(--primary); font-size: 11px; font-weight: 750; cursor: pointer; text-decoration: underline;">✏️ Edit</button>
+
+                                    <!-- Field Angka Transaksi Mandiri (Tengah & Klik untuk Ubah) -->
+                                    <div style="margin-top: 12px; border-top: 1px dashed rgba(245, 158, 11, 0.2); padding-top: 8px;">
+                                        <div class="scoreboard-tx-field s1" onclick="openDailyTxModal('${store.id}', true)" role="button" tabindex="0" title="Klik untuk ubah / input transaksi Shift 1">
+                                            <div style="display: flex; align-items: baseline; justify-content: center; gap: 4px;">
+                                                <span class="scoreboard-tx-num" style="color: #F59E0B;">${s1Tx}</span>
+                                                <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">tx</span>
+                                                <span style="font-size: 10px; color: #F59E0B; opacity: 0.7; margin-left: 2px;">✏️</span>
+                                            </div>
+                                            <div style="font-size: 10px; font-weight: 600; color: var(--text-muted); margin-top: 2px;">
+                                                ${s1Recorded ? 'Klik untuk ubah' : '+ Klik untuk input'}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            `;
-                        } else {
-                            bHtml += `
-                                <div class="emp-tx-item" style="border: 1px dashed var(--card-border); opacity: 0.9;">
-                                    <div class="emp-tx-header">
-                                        <div class="emp-name-tag">
-                                            <span>👤</span>
-                                            <span>${escapeHtml(emp.name)}</span>
-                                            <span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span>
-                                            ${empProp ? `<span class="badge-status badge-proposal-pending" style="font-size: 10px;">🟡 Usulan: ${empProp.proposed_tx} tx</span>` : ''}
+
+                                <!-- KOLOM 2: SHIFT 2 MALAM -->
+                                <div class="scoreboard-col s2">
+                                    <div>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+                                            <span style="font-weight: 800; font-size: 12px; color: #10B981;">🌙 Shift 2 (Malam)</span>
+                                            ${s2Recorded 
+                                                ? '<span class="badge-status" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 10px;">🟢 Selesai</span>'
+                                                : '<span class="badge-status" style="background: rgba(16, 185, 129, 0.15); color: var(--warning); font-size: 10px;">⏳ Berjalan</span>'}
                                         </div>
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            <span style="font-size: 11px; color: var(--warning); font-weight: 700;">⏳ Belum di-set</span>
-                                            <button type="button" class="btn-save-single" onclick="openDailyTxModal('${store.id}', false)">
-                                                 + Input Transaksi
-                                            </button>
+                                        ${s2Prop ? `<div class="badge-status badge-proposal-pending" style="font-size: 10px; margin-top: 4px; display: inline-block;">🟡 Usulan: ${s2Prop.proposed_tx} tx</div>` : ''}
+                                        <!-- Petugas Kasir (Tanpa Role) -->
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+                                            <div style="width: 32px; height: 32px; min-width: 32px; border-radius: 50%; background: rgba(16, 185, 129, 0.2); color: #10B981; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                                                ${s2Avatar}
+                                            </div>
+                                            <div style="min-width: 0;">
+                                                <div style="font-weight: 800; font-size: 12.5px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(s2Name)}</div>
+                                                <div style="font-size: 10.5px; color: var(--text-muted);">${escapeHtml(s2Time)}</div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
-                                        Shift masih berjalan atau menunggu input rekap kasir.
+
+                                    <!-- Field Angka Transaksi Mandiri (Tengah & Klik untuk Ubah) -->
+                                    <div style="margin-top: 12px; border-top: 1px dashed rgba(16, 185, 129, 0.2); padding-top: 8px;">
+                                        <div class="scoreboard-tx-field s2" onclick="openDailyTxModal('${store.id}', true)" role="button" tabindex="0" title="Klik untuk ubah / input transaksi Shift 2">
+                                            <div style="display: flex; align-items: baseline; justify-content: center; gap: 4px;">
+                                                <span class="scoreboard-tx-num" style="color: #10B981;">${s2Tx}</span>
+                                                <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">tx</span>
+                                                <span style="font-size: 10px; color: #10B981; opacity: 0.7; margin-left: 2px;">✏️</span>
+                                            </div>
+                                            <div style="font-size: 10px; font-weight: 600; color: var(--text-muted); margin-top: 2px;">
+                                                ${s2Recorded ? 'Klik untuk ubah' : '+ Klik untuk input'}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            `;
-                        }
-                    });
-                    breakdownCont.innerHTML = bHtml;
+                            </div>
+
+                            <!-- Match Ratio Split Bar -->
+                            <div style="margin-top: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 800; margin-bottom: 4px;">
+                                    <span style="color: #F59E0B;">🌅 Pagi: ${p1}%</span>
+                                    <span style="font-size: 10.5px; color: var(--text-main); background: rgba(255,255,255,0.06); padding: 1px 8px; border-radius: 6px; font-weight: 850;">
+                                        ${leadText}
+                                    </span>
+                                    <span style="color: #10B981;">Malam: ${p2}% 🌙</span>
+                                </div>
+                                <div class="scoreboard-split-bar">
+                                    <div style="width: ${p1}%; background: #F59E0B; transition: width 0.4s ease;"></div>
+                                    <div style="width: ${p2}%; background: #10B981; transition: width 0.4s ease;"></div>
+                                </div>
+                            </div>
+                        `;
+
+                    } else {
+                        // Regular list fallback jika 1 shift atau >2 shift
+                        let bHtml = '';
+                        const displayedEmps = [...activeEmps];
+                        records.forEach(r => {
+                            if (!displayedEmps.some(e => e.id === r.emp_id)) {
+                                displayedEmps.push({
+                                    id: r.emp_id,
+                                    name: r.emp_name,
+                                    shift_num: r.shift_num,
+                                    role: 'inval',
+                                    status: 'active'
+                                });
+                            }
+                        });
+
+                        displayedEmps.forEach(emp => {
+                            const shiftName = emp.shift_num === 1 ? 'Shift 1 Pagi' : (emp.shift_num === 2 ? 'Shift 2 Malam' : `Shift ${emp.shift_num}`);
+                            const shiftClass = emp.shift_num === 1 ? 's1' : 's2';
+                            const rec = records.find(r => r.emp_id === emp.id);
+                            const empProp = (store.tx_proposals || []).find(p => p.date === todayKey && p.emp_id === emp.id && p.status === 'pending');
+
+                            if (rec) {
+                                const pct = totalTx > 0 ? Math.round((rec.tx / totalTx) * 100) : 0;
+                                bHtml += `
+                                    <div class="emp-tx-item">
+                                        <div class="emp-tx-header">
+                                            <div class="emp-name-tag">
+                                                <span>👤</span>
+                                                <span>${escapeHtml(emp.name)}</span>
+                                                <span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span>
+                                                ${empProp ? `<span class="badge-status badge-proposal-pending" style="font-size: 10px;">🟡 Usulan: ${empProp.proposed_tx} tx</span>` : ''}
+                                            </div>
+                                            <div style="text-align: right;">
+                                                <span class="tx-val-badge">${rec.tx} tx</span>
+                                                <span style="font-size: 11px; color: var(--text-muted);"> (${pct}%)</span>
+                                            </div>
+                                        </div>
+                                        <div class="progress-bar-bg">
+                                            <div class="progress-bar-fill" style="width: ${pct}%;"></div>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 10.5px; color: var(--text-muted);">
+                                            <span>Tercatat: ${escapeHtml(rec.recorded_at || 'Hari ini')}</span>
+                                            <button type="button" onclick="openDailyTxModal('${store.id}', true)" style="background: none; border: none; color: var(--primary); font-size: 11px; font-weight: 750; cursor: pointer; text-decoration: underline;">✏️ Edit</button>
+                                        </div>
+                                    </div>
+                                `;
+                            } else {
+                                bHtml += `
+                                    <div class="emp-tx-item" style="border: 1px dashed var(--card-border); opacity: 0.9;">
+                                        <div class="emp-tx-header">
+                                            <div class="emp-name-tag">
+                                                <span>👤</span>
+                                                <span>${escapeHtml(emp.name)}</span>
+                                                <span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span>
+                                                ${empProp ? `<span class="badge-status badge-proposal-pending" style="font-size: 10px;">🟡 Usulan: ${empProp.proposed_tx} tx</span>` : ''}
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <span style="font-size: 11px; color: var(--warning); font-weight: 700;">⏳ Belum di-set</span>
+                                                <button type="button" class="btn-save-single" onclick="openDailyTxModal('${store.id}', false)">
+                                                     + Input Transaksi
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                                            Shift masih berjalan atau menunggu input rekap kasir.
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        });
+                        breakdownCont.innerHTML = bHtml;
+                    }
                 }
             }
 
