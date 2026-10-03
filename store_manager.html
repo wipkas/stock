@@ -1116,6 +1116,24 @@
             color: #ef4444;
         }
 
+        /* Rotation option cards */
+        .rot-option-card {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            background: var(--input-bg);
+            cursor: pointer;
+            transition: border-color 0.15s ease;
+        }
+
+        .rot-option-card:hover,
+        .rot-option-card:has(input[type="radio"]:checked) {
+            border-color: var(--primary);
+        }
+
         /* ===== UX Tahap 1: toast, fokus, scroll lock ===== */
         body.modal-open {
             overflow: hidden;
@@ -1562,6 +1580,14 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Badge Jadwal Rotasi Otomatis (hanya jika shift > 1 & cabang sudah tersimpan) -->
+                        <div id="rotationBadgeRow" style="display: none; margin-top: 8px; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span class="badge-status" id="formRotationBadge" role="button" tabindex="0" onclick="openRotationRuleModal(document.getElementById('formStoreId').value)" style="cursor: pointer; font-size: 11px; padding: 4px 10px; background: rgba(79, 142, 247, 0.12); color: var(--primary); border: 1px solid rgba(79, 142, 247, 0.3);" title="Klik untuk atur jadwal rotasi shift otomatis (Tukar manual selalu bisa kapan saja)">
+                                🔄 Rotasi: Otomatis Tiap Senin ⚙️
+                            </span>
+                            <span class="form-hint" style="margin: 0;">Tukar manual (Roll Shift) tetap aktif kapan saja</span>
+                        </div>
                     </div>
 
                     <!-- Karyawan & Password Login -->
@@ -1591,6 +1617,91 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL: JADWAL ROTASI SHIFT OTOMATIS (dibuka dari Edit Pengaturan Cabang) -->
+    <div id="rotationRuleModal" class="modal-backdrop" style="z-index: 1200;" onclick="handleBackdropClose(event, 'rotationRuleModal')">
+        <div class="modal-card" style="max-width: 440px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="rotStoreName">🔄 Jadwal Rotasi Shift Otomatis</h3>
+                    <p class="modal-subtitle">Tukar manual (Roll Shift) tetap bisa dilakukan kapan saja</p>
+                </div>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('rotationRuleModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label style="font-size: 12px; font-weight: 800; color: var(--text-main);">Kapan sistem otomatis memutar shift karyawan?</label>
+
+                <label class="rot-option-card">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="radio" name="rotRuleTypeRadio" value="weekly" id="rotTypeWeekly" onchange="toggleRotFields()" style="accent-color: var(--primary);">
+                        <span style="font-size: 13px; font-weight: 800;">🗓️ Mingguan (setiap hari tertentu)</span>
+                    </div>
+                    <div id="rotWeeklySubBox" style="margin-left: 24px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 12px; color: var(--text-muted);">Putar shift setiap hari:</span>
+                        <select id="rotWeeklyDaySelect" class="form-select" style="width: auto; padding: 5px 12px; font-size: 12px; font-weight: 750;">
+                            <option value="1">Senin (Awal Pekan)</option>
+                            <option value="2">Selasa</option>
+                            <option value="3">Rabu</option>
+                            <option value="4">Kamis</option>
+                            <option value="5">Jumat</option>
+                            <option value="6">Sabtu</option>
+                            <option value="0">Minggu</option>
+                        </select>
+                    </div>
+                </label>
+
+                <label class="rot-option-card">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="radio" name="rotRuleTypeRadio" value="interval" id="rotTypeInterval" onchange="toggleRotFields()" style="accent-color: var(--primary);">
+                        <span style="font-size: 13px; font-weight: 800;">🔁 Siklus berkala (setiap beberapa hari)</span>
+                    </div>
+                    <div id="rotIntervalSubBox" style="margin-left: 24px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 12px; color: var(--text-muted);">Putar shift setiap:</span>
+                        <select id="rotIntervalSelect" class="form-select" style="width: auto; padding: 5px 12px; font-size: 12px; font-weight: 750;">
+                            <option value="3">3 Hari Sekali</option>
+                            <option value="5">5 Hari Sekali</option>
+                            <option value="7">7 Hari Sekali (1 Minggu)</option>
+                            <option value="10">10 Hari Sekali</option>
+                            <option value="14">14 Hari Sekali (2 Minggu)</option>
+                        </select>
+                    </div>
+                </label>
+
+                <label class="rot-option-card">
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                        <input type="radio" name="rotRuleTypeRadio" value="monthly" id="rotTypeMonthly" onchange="toggleRotFields()" style="margin-top: 3px; accent-color: var(--primary);">
+                        <div>
+                            <div style="font-size: 13px; font-weight: 800;">📅 Bulanan (setiap tanggal 1)</div>
+                            <div class="form-hint">Rotasi kasir berganti otomatis tepat pada tanggal 1 setiap bulan baru.</div>
+                        </div>
+                    </div>
+                </label>
+
+                <label class="rot-option-card">
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                        <input type="radio" name="rotRuleTypeRadio" value="disabled" id="rotTypeDisabled" onchange="toggleRotFields()" style="margin-top: 3px; accent-color: var(--primary);">
+                        <div>
+                            <div style="font-size: 13px; font-weight: 800;">⏸️ Nonaktifkan rotasi otomatis (hanya manual)</div>
+                            <div class="form-hint">Shift hanya berganti jika kasir/admin menekan tombol tukar manual.</div>
+                        </div>
+                    </div>
+                </label>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; background: rgba(79, 142, 247, 0.05); border: 1px solid rgba(79, 142, 247, 0.2); border-radius: 12px;">
+                    <span style="font-size: 12px; color: var(--text-muted);">⏰ Waktu pergantian otomatis:</span>
+                    <select id="rotExecutionTimeSelect" class="form-select" style="width: auto; padding: 5px 10px; font-size: 12px; font-weight: 800; color: var(--primary);">
+                        <option value="00:00">00:00 WIB (Tengah Malam)</option>
+                        <option value="06:00">06:00 WIB (Pagi Hari)</option>
+                        <option value="07:00">07:00 WIB (Awal Shift 1)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal('rotationRuleModal')">Batal</button>
+                <button type="button" class="btn-primary" onclick="saveStoreRotationRule()" style="flex: 1; justify-content: center;">💾 Simpan Jadwal Rotasi</button>
+            </div>
         </div>
     </div>
 
@@ -2312,6 +2423,7 @@
 
                 const empS1 = (store.employees || []).filter(e => (e.status === 'active' || !e.status) && e.shift_num === 1).map(e => e.name).join(', ') || '(Kosong)';
                 const empS2 = (store.employees || []).filter(e => (e.status === 'active' || !e.status) && e.shift_num === 2).map(e => e.name).join(', ') || '(Kosong)';
+                const multiShift = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) > 1;
 
                 html += `
                 <div class="store-card" role="button" tabindex="0" onclick="selectStore('${store.id}')">
@@ -2330,11 +2442,12 @@
                             </div>
                         </div>
 
-                        <div class="shift-roster-box" onclick="event.stopPropagation();">
+                        <div class="shift-roster-box" onclick="event.stopPropagation();"${multiShift ? '' : ' style="justify-content: flex-start;"'}>
                             <div class="shift-col">
-                                <div class="shift-tag morning">🌅 Shift 1 Pagi</div>
+                                <div class="shift-tag morning">🌅 ${multiShift ? 'Shift 1 Pagi' : 'Shift 1'}</div>
                                 <div class="emp-name-badge" title="${escapeHtml(empS1)}">👤 ${escapeHtml(empS1)}</div>
                             </div>
+                            ${multiShift ? `
                             <button type="button" class="btn-roll-shift" onclick="rollStoreShifts(event, '${store.id}')" title="Tukar Shift Karyawan (Pagi ⇄ Malam)">
                                 <span class="roll-icon">⇄</span>
                                 <span>Roll Shift</span>
@@ -2342,7 +2455,7 @@
                             <div class="shift-col right">
                                 <div class="shift-tag night">🌙 Shift 2 Malam</div>
                                 <div class="emp-name-badge" title="${escapeHtml(empS2)}">👤 ${escapeHtml(empS2)}</div>
-                            </div>
+                            </div>` : ''}
                         </div>
                     </div>
 
@@ -2591,6 +2704,132 @@
             document.getElementById('shift1Row').style.display = (count >= 1) ? 'flex' : 'none';
             document.getElementById('shift2Row').style.display = (count >= 2) ? 'flex' : 'none';
             document.getElementById('shift3Row').style.display = (count >= 3) ? 'flex' : 'none';
+            updateRotationBadge();
+        }
+
+        // ==========================================
+        // JADWAL ROTASI SHIFT OTOMATIS (di Edit Pengaturan Cabang)
+        // ==========================================
+        let activeRotationStoreId = null;
+
+        function getRotationBadgeLabel(store) {
+            if (!store) return 'Manual Saja';
+            const cfg = store.rotation_config;
+            if (!cfg) {
+                if (store.rotation_rule === 'weekly_monday') return 'Otomatis: Tiap Senin';
+                if (store.rotation_rule === 'manual' || store.rotation_rule === 'disabled') return 'Manual Saja';
+                return 'Otomatis Aktif';
+            }
+            if (cfg.type === 'weekly') {
+                const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                const dayName = (cfg.day_of_week !== undefined && dayNames[cfg.day_of_week]) ? dayNames[cfg.day_of_week] : 'Senin';
+                return `Otomatis: Tiap ${dayName}`;
+            } else if (cfg.type === 'interval') {
+                return `Otomatis: Tiap ${cfg.interval_days} Hari`;
+            } else if (cfg.type === 'monthly') {
+                return 'Otomatis: Tiap Awal Bulan';
+            }
+            return 'Manual Saja';
+        }
+
+        // Badge hanya tampil jika cabang sudah tersimpan & punya lebih dari 1 shift
+        function updateRotationBadge() {
+            const row = document.getElementById('rotationBadgeRow');
+            const badge = document.getElementById('formRotationBadge');
+            if (!row || !badge) return;
+            const storeId = document.getElementById('formStoreId').value;
+            const count = parseInt(document.getElementById('formShiftCount').value) || 1;
+            const store = storeId ? storesData.find(s => s.id === storeId) : null;
+            if (!store || count < 2) {
+                row.style.display = 'none';
+                return;
+            }
+            row.style.display = 'flex';
+            badge.innerHTML = `🔄 Rotasi: <b>${escapeHtml(getRotationBadgeLabel(store))}</b> ⚙️`;
+        }
+
+        function toggleRotFields() {
+            const isWeekly = document.getElementById('rotTypeWeekly') && document.getElementById('rotTypeWeekly').checked;
+            const isInterval = document.getElementById('rotTypeInterval') && document.getElementById('rotTypeInterval').checked;
+            const weeklyBox = document.getElementById('rotWeeklySubBox');
+            const intervalBox = document.getElementById('rotIntervalSubBox');
+            if (weeklyBox) {
+                weeklyBox.style.opacity = isWeekly ? '1' : '0.4';
+                weeklyBox.style.pointerEvents = isWeekly ? 'auto' : 'none';
+            }
+            if (intervalBox) {
+                intervalBox.style.opacity = isInterval ? '1' : '0.4';
+                intervalBox.style.pointerEvents = isInterval ? 'auto' : 'none';
+            }
+        }
+
+        function openRotationRuleModal(storeId) {
+            storeId = storeId || activeRotationStoreId || activeStoreId;
+            const store = storesData.find(s => s.id === storeId);
+            if (!store) return;
+            activeRotationStoreId = storeId;
+
+            const titleEl = document.getElementById('rotStoreName');
+            if (titleEl) titleEl.innerText = `🔄 Jadwal Rotasi - ${store.name}`;
+
+            if (!store.rotation_config) {
+                if (store.rotation_rule === 'manual' || store.rotation_rule === 'disabled') {
+                    store.rotation_config = { type: 'disabled', day_of_week: 1, interval_days: 7, execution_time: '00:00' };
+                } else {
+                    store.rotation_config = { type: 'weekly', day_of_week: 1, interval_days: 7, execution_time: '00:00' };
+                }
+            }
+            const cfg = store.rotation_config;
+
+            const radios = { weekly: 'rotTypeWeekly', interval: 'rotTypeInterval', monthly: 'rotTypeMonthly', disabled: 'rotTypeDisabled' };
+            const radio = document.getElementById(radios[cfg.type] || radios.disabled);
+            if (radio) radio.checked = true;
+
+            const selDay = document.getElementById('rotWeeklyDaySelect');
+            const selInterval = document.getElementById('rotIntervalSelect');
+            const selTime = document.getElementById('rotExecutionTimeSelect');
+            if (selDay && cfg.day_of_week !== undefined) selDay.value = String(cfg.day_of_week);
+            if (selInterval && cfg.interval_days !== undefined) selInterval.value = String(cfg.interval_days);
+            if (selTime && cfg.execution_time) selTime.value = cfg.execution_time;
+
+            toggleRotFields();
+            openModal('rotationRuleModal');
+        }
+
+        function saveStoreRotationRule() {
+            const store = storesData.find(s => s.id === activeRotationStoreId);
+            if (!store) return;
+
+            let selectedType = 'weekly';
+            if (document.getElementById('rotTypeInterval').checked) selectedType = 'interval';
+            else if (document.getElementById('rotTypeMonthly').checked) selectedType = 'monthly';
+            else if (document.getElementById('rotTypeDisabled').checked) selectedType = 'disabled';
+
+            const dayOfWeek = parseInt(document.getElementById('rotWeeklyDaySelect').value);
+            const intervalDays = parseInt(document.getElementById('rotIntervalSelect').value);
+            const execTime = document.getElementById('rotExecutionTimeSelect').value || '00:00';
+
+            store.rotation_config = {
+                type: selectedType,
+                day_of_week: isNaN(dayOfWeek) ? 1 : dayOfWeek,
+                interval_days: isNaN(intervalDays) ? 7 : intervalDays,
+                execution_time: execTime
+            };
+
+            if (selectedType === 'weekly') {
+                store.rotation_rule = (dayOfWeek === 1) ? 'weekly_monday' : `weekly_${dayOfWeek}`;
+            } else if (selectedType === 'interval') {
+                store.rotation_rule = `interval_${intervalDays}`;
+            } else if (selectedType === 'monthly') {
+                store.rotation_rule = 'monthly_1';
+            } else {
+                store.rotation_rule = 'disabled';
+            }
+
+            saveStoresData();
+            closeModal('rotationRuleModal');
+            updateRotationBadge();
+            showToast(`Jadwal rotasi ${store.name} diperbarui: ${getRotationBadgeLabel(store)} (tukar manual tetap aktif).`, '🔄');
         }
 
         function addEmployeeRow(name = '', pass = '', shift = 1, id = '', role = 'kasir', status = 'active', photo = '', phone = '', address = '', notes = '') {

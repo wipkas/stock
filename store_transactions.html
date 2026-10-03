@@ -1288,9 +1288,6 @@
                         </button>
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
                             <h2 id="anStoreTitle" style="font-size: 18px; font-weight: 850; margin: 0;">KSP Check - Cabang Utama</h2>
-                            <span class="badge-status" id="anRotationBadge" onclick="openRotationRuleModal(activeStoreId)" style="cursor: pointer; font-size: 11px; padding: 3px 8px; background: rgba(79, 142, 247, 0.12); color: var(--primary); border: 1px solid rgba(79, 142, 247, 0.3);" title="Klik untuk atur jadwal rotasi shift otomatis (Tukar manual selalu bisa kapan saja)">
-                                🔄 Rotasi: Otomatis Tiap Senin (+ Manual Bebas) ⚙️
-                            </span>
                         </div>
                         <p id="anDateSubtitle" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Analisa Transaksi Karyawan • Hari Ini</p>
                     </div>
@@ -3391,18 +3388,12 @@
             const breakdownCont = document.getElementById('empBreakdownContainer');
             const breakdownTitle = document.getElementById('empBreakdownTitle');
             const recordedTimeEl = document.getElementById('badgeRecordedTime');
-            const rotBadge = document.getElementById('anRotationBadge');
-
-            if (rotBadge) {
-                if (currentAuthRole === 'employee') {
-                    rotBadge.style.display = 'none';
-                } else {
-                    rotBadge.style.display = 'inline-block';
-                    const label = getRotationBadgeLabel(store);
-                    rotBadge.innerHTML = `🔄 Rotasi: <b>${escapeHtml(label)}</b> <span style="font-size:9.5px; opacity:0.85;">(+ Manual Bebas)</span> ⚙️`;
-                    rotBadge.title = "Klik untuk atur jadwal rotasi otomatis (Tukar manual selalu bisa kapan saja)";
-                }
-            }
+            // Tombol Roll Shift hanya relevan jika cabang punya lebih dari 1 shift
+            const hasMultiShift = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) > 1;
+            ['btnRollShifts', 'btnDedicatedRollShifts'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = hasMultiShift ? '' : 'none';
+            });
 
             if (currentAuthRole === 'employee' && currentEmployee) {
                 // === MODE KARYAWAN: HANYA TAMPILKAN TRANSAKSI KARYAWAN AKTIF ===
