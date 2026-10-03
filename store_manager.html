@@ -752,6 +752,7 @@
 
         .emp-item-row {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             gap: 8px;
             background: var(--input-bg);
@@ -761,8 +762,8 @@
         }
 
         .emp-name-input {
-            flex: 1;
-            min-width: 0;
+            flex: 1 1 100%;
+            min-width: 140px;
             background: transparent;
             border: none;
             color: var(--text-main);
@@ -2865,7 +2866,6 @@
                         <input type="text" class="emp-name-input" value="${escapeHtml(name)}" readonly style="text-decoration: line-through; opacity: 0.8;">
                     </div>
                     <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; white-space: nowrap;">Shift ${shift}</span>
-                    ${id ? `<button type="button" class="btn-emp-action" onclick="openEditEmployeeModal('${id}', '${currentStoreId}')" title="Edit Kontak & Info" style="color: var(--primary); border-color: rgba(79, 142, 247, 0.35); background: rgba(79, 142, 247, 0.08);">✏️ Kontak</button>` : ''}
                     <button type="button" class="btn-emp-action btn-rehire" onclick="openRehireEmpModal('${id}', '${escapeHtml(name)}', '${currentStoreId}')" title="Aktifkan Kembali / Re-hire">♻️ Aktifkan</button>
                     <button type="button" class="btn-del-emp" onclick="confirmDeleteEmpRow('${rowId}')" title="Hapus Karyawan">&times;</button>
                 `;
@@ -2883,9 +2883,7 @@
                     </select>
                     <button type="button" class="${btnClass}" onclick="openEmpPasswordModal('${rowId}')" title="Klik untuk atur Password / PIN">${btnLabel}</button>
                     ${id ? `
-                        <button type="button" class="btn-emp-action" onclick="openEditEmployeeModal('${id}', document.getElementById('formStoreId').value)" title="Edit Kontak & Alamat" style="color: var(--primary); border-color: rgba(79, 142, 247, 0.35); background: rgba(79, 142, 247, 0.08);">✏️ Kontak</button>
                         <button type="button" class="btn-emp-action btn-transfer" onclick="openTransferEmpModal('${id}', '${escapeHtml(name)}', document.getElementById('formStoreId').value)" title="Mutasi / Pindah Cabang">🔄 Mutasi</button>
-                        <button type="button" class="btn-emp-action btn-deactivate" onclick="openDeactivateEmpModal('${id}', '${escapeHtml(name)}', document.getElementById('formStoreId').value)" title="Nonaktifkan / Resign">🚪 Resign</button>
                     ` : ''}
                     <button type="button" class="btn-del-emp" onclick="confirmDeleteEmpRow('${rowId}')" title="Hapus Karyawan">&times;</button>
                 `;
