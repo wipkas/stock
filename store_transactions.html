@@ -1295,9 +1295,6 @@
                         <button type="button" id="btnRollShifts" class="btn-preset" onclick="rollActiveStoreShifts()" style="padding: 8px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;" title="Tukar Shift Karyawan Sekarang (Pagi ⇄ Malam)">
                             <span>⇄</span> Roll Shift
                         </button>
-                        <button type="button" id="btnOpenDailyModal" class="btn-action-primary" onclick="openDailyTxModal(activeStoreId, true)">
-                            <span>✏️</span> Set / Edit Transaksi Hari Ini
-                        </button>
                     </div>
                 </div>
 
@@ -2967,6 +2964,10 @@
         }
 
         function rollActiveStoreShifts() {
+            if (currentAuthRole === 'employee') {
+                showToast('⚠️ Hanya admin yang memiliki akses untuk melakukan roll shift.', '⚠️');
+                return;
+            }
             if (!activeStoreId) return;
             const store = storesData.find(s => s.id === activeStoreId);
             const activeEmps = (store?.employees || []).filter(e => e.status === 'active' || !e.status);
@@ -3247,7 +3248,10 @@
             const btnDedicatedRoll = document.getElementById('btnDedicatedRollShifts');
             const btnDedicatedDaily = document.getElementById('btnDedicatedOpenDailyModal');
 
-            if (currentAuthRole === 'employee' && currentEmployee) {
+            const isEmployeeRole = (currentAuthRole === 'employee');
+            const hasMultiShift = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) > 1;
+
+            if (isEmployeeRole && currentEmployee) {
                 if (titleEl) titleEl.innerText = `📊 Analisa & Riwayat Transaksi - ${store.name}`;
                 if (subEl) subEl.innerText = `Tren & Performa Transaksi Kasir (${currentEmployee.name}) • ${getTodayDisplay()}`;
                 if (btnDedicatedRoll) btnDedicatedRoll.style.display = 'none';
@@ -3258,7 +3262,7 @@
             } else {
                 if (titleEl) titleEl.innerText = `📊 Analisa & Grafik - ${store.name}`;
                 if (subEl) subEl.innerText = `Filter Rentang Tanggal, Perbandingan Kasir & Tren Shift • ${getTodayDisplay()}`;
-                if (btnDedicatedRoll) btnDedicatedRoll.style.display = 'inline-flex';
+                if (btnDedicatedRoll) btnDedicatedRoll.style.display = hasMultiShift ? 'inline-flex' : 'none';
                 if (btnDedicatedDaily) {
                     btnDedicatedDaily.innerHTML = '<span>✏️</span> Set / Edit Transaksi Hari Ini';
                     btnDedicatedDaily.onclick = () => openDailyTxModal(store.id, true);
@@ -3326,13 +3330,15 @@
             const btnAdminManage = document.getElementById('btnAdminManageStores');
             const btnEmpLogout = document.getElementById('btnEmployeeLogout');
             const btnRollShifts = document.getElementById('btnRollShifts');
-            const btnOpenDailyModal = document.getElementById('btnOpenDailyModal');
             const btnHeaderBackStores = document.getElementById('btnHeaderBackStores');
             const topNavBackBtn = document.getElementById('topNavBackBtn');
             const topAppTitle = document.getElementById('topAppTitle');
             const topAppSubtitle = document.getElementById('topAppSubtitle');
 
-            if (currentAuthRole === 'employee' && currentEmployee) {
+            const isEmployeeRole = (currentAuthRole === 'employee');
+            const hasMultiShift = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) > 1;
+
+            if (isEmployeeRole && currentEmployee) {
                 if (adminSwitcher) adminSwitcher.style.display = 'none';
                 if (empBadgeWrap) empBadgeWrap.style.display = 'flex';
                 if (badgeEmpStore) badgeEmpStore.innerText = `🏬 ${store.name}`;
@@ -3344,24 +3350,16 @@
                 if (topNavBackBtn) topNavBackBtn.title = 'Kembali ke Portal Karyawan';
                 if (topAppTitle) topAppTitle.innerText = `Transaksi Kasir - ${currentEmployee.name}`;
                 if (topAppSubtitle) topAppSubtitle.innerText = `Catat & Usulkan Transaksi Anda di ${store.name}`;
-                if (btnOpenDailyModal) {
-                    btnOpenDailyModal.innerHTML = '<span>✏️</span> Input Transaksi Hari Ini';
-                    btnOpenDailyModal.onclick = () => openEmployeeProposalModal(todayKey);
-                }
             } else {
                 if (adminSwitcher) adminSwitcher.style.display = 'flex';
                 if (empBadgeWrap) empBadgeWrap.style.display = 'none';
                 if (btnAdminManage) btnAdminManage.style.display = 'inline-flex';
                 if (btnEmpLogout) btnEmpLogout.style.display = 'none';
-                if (btnRollShifts) btnRollShifts.style.display = 'inline-flex';
+                if (btnRollShifts) btnRollShifts.style.display = hasMultiShift ? 'inline-flex' : 'none';
                 if (btnHeaderBackStores) btnHeaderBackStores.innerHTML = '&larr; Kembali ke Kelola Cabang';
                 if (topNavBackBtn) topNavBackBtn.title = 'Kembali ke Kelola Cabang';
                 if (topAppTitle) topAppTitle.innerText = 'Transaksi & Shift Kasir';
                 if (topAppSubtitle) topAppSubtitle.innerText = 'Pencatatan Transaksi Harian, Rotasi Shift & Analisa Performa';
-                if (btnOpenDailyModal) {
-                    btnOpenDailyModal.innerHTML = '<span>✏️</span> Set / Edit Transaksi Hari Ini';
-                    btnOpenDailyModal.onclick = () => openDailyTxModal(store.id, true);
-                }
             }
 
             // Banner Usulan Menunggu Approval Admin
@@ -3388,11 +3386,11 @@
             const breakdownCont = document.getElementById('empBreakdownContainer');
             const breakdownTitle = document.getElementById('empBreakdownTitle');
             const recordedTimeEl = document.getElementById('badgeRecordedTime');
-            // Tombol Roll Shift hanya relevan jika cabang punya lebih dari 1 shift
-            const hasMultiShift = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) > 1;
+
+            // Tombol Roll Shift hanya relevan untuk Admin dan jika cabang punya lebih dari 1 shift
             ['btnRollShifts', 'btnDedicatedRollShifts'].forEach(id => {
                 const el = document.getElementById(id);
-                if (el) el.style.display = hasMultiShift ? '' : 'none';
+                if (el) el.style.display = (!isEmployeeRole && hasMultiShift) ? 'inline-flex' : 'none';
             });
 
             if (currentAuthRole === 'employee' && currentEmployee) {
