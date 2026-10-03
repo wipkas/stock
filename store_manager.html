@@ -1011,6 +1011,30 @@
             border-color: var(--primary);
         }
 
+        /* Manage Stores Modal Item */
+        .manage-store-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+
+        .manage-store-item:hover {
+            border-color: var(--primary) !important;
+            background: var(--card-hover) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+
+        .manage-store-item:active {
+            transform: scale(0.98);
+        }
+
         /* ===== UX Tahap 1: toast, fokus, scroll lock ===== */
         body.modal-open {
             overflow: hidden;
@@ -1259,8 +1283,8 @@
                 <button class="btn-primary" onclick="openMasterEmployeesModal()" style="background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.4); color: #0ea5e9;">
                     <span>👥</span> Master Karyawan
                 </button>
-                <button class="btn-primary" onclick="openAddStoreModal()">
-                    <span>➕</span> Tambah Cabang
+                <button class="btn-primary" onclick="openManageStoresModal()">
+                    <span>🏢</span> Atur Cabang
                 </button>
                 <button class="btn-nav-action" id="themeToggleBtn" onclick="toggleTheme()" title="Ubah Tema">🌙</button>
                 <button class="btn-nav-action" onclick="lockStoreManager()" title="Kunci / Logout">🔒</button>
@@ -1309,97 +1333,7 @@
             <h3 style="font-size: 14px; font-weight: 800; margin-bottom: 10px; color: var(--text-muted);">MODUL OPERASIONAL CABANG</h3>
             <div class="feature-grid">
 
-                <!-- 1. Jadwal Shift & Jam Kerja -->
-                <div class="feature-card" style="--feature-accent: #8B5CF6;" role="button" tabindex="0" onclick="openShiftSettingsModal()">
-                    <div>
-                        <div class="feature-card-top">
-                            <div class="feature-icon">⏰</div>
-                            <div class="feature-title">Pengaturan Jam Shift</div>
-                        </div>
-                        <p class="feature-desc" id="featureShiftSummary">Atur rentang jam kerja shift 1, shift 2, dan batas toleransi pergantian shift.</p>
-                    </div>
-                    <div class="feature-action">
-                        <span>Konfigurasi Shift</span>
-                        <span>&rarr;</span>
-                    </div>
-                </div>
-
-                <!-- 2. Kelola Karyawan & Mutasi Cabang -->
-                <div class="feature-card" style="--feature-accent: #10B981;" role="button" tabindex="0" onclick="openMasterEmployeesModal(activeStoreId)">
-                    <div>
-                        <div class="feature-card-top">
-                            <div class="feature-icon">👥</div>
-                            <div class="feature-title">Karyawan &amp; Mutasi Cabang</div>
-                        </div>
-                        <p class="feature-desc" id="featureEmpSummary">Daftar kasir aktif, mutasi rolling cabang, kasir inval, dan status keaktifan.</p>
-                    </div>
-                    <div class="feature-action">
-                        <span>Kelola Personel</span>
-                        <span>&rarr;</span>
-                    </div>
-                </div>
-
-                <!-- 3. Portal Akses Karyawan -->
-                <a id="linkPortalKaryawan" href="#" class="feature-card" style="--feature-accent: #0EA5E9;">
-                    <div>
-                        <div class="feature-card-top">
-                            <div class="feature-icon">👤</div>
-                            <div class="feature-title">Portal Karyawan</div>
-                        </div>
-                        <p class="feature-desc">Halaman khusus login kasir &amp; karyawan untuk input transaksi dengan verifikasi shift.</p>
-                    </div>
-                    <div class="feature-action">
-                        <span>Buka Halaman Karyawan</span>
-                        <span>&rarr;</span>
-                    </div>
-                </a>
-
-                <!-- 4. Laporan & Rekap Tutup Shift -->
-                <a id="linkLaporanShift" href="interactive_stock.html?tab=daily" class="feature-card" style="--feature-accent: #EC4899;">
-                    <div>
-                        <div class="feature-card-top">
-                            <div class="feature-icon">🌙</div>
-                            <div class="feature-title">Rekap Shift &amp; Laporan</div>
-                        </div>
-                        <p class="feature-desc">Periksa penjualan voucher, modal kasir, dan ringkasan tutup buku shift cabang ini.</p>
-                    </div>
-                    <div class="feature-action">
-                        <span>Buka Laporan Shift</span>
-                        <span>&rarr;</span>
-                    </div>
-                </a>
-
-                <!-- 5. Monitoring Saldo E-Wallet Toko -->
-                <a href="interactive_stock.html?tab=balance" class="feature-card" style="--feature-accent: #F59E0B;">
-                    <div>
-                        <div class="feature-card-top">
-                            <div class="feature-icon">💳</div>
-                            <div class="feature-title">Monitoring Saldo Realtime</div>
-                        </div>
-                        <p class="feature-desc">Pantau saldo terkini DANA, GoPay, ShopeePay, OrderKuota, Tekmo kasir cabang ini.</p>
-                    </div>
-                    <div class="feature-action">
-                        <span>Buka Saldo</span>
-                        <span>&rarr;</span>
-                    </div>
-                </a>
-
-                <!-- 6. Uji Konfirmasi Transisi Shift (Simulasi) -->
-                <div class="feature-card" style="--feature-accent: #F97316;" role="button" tabindex="0" onclick="testShiftTransitionPrompt()">
-                    <div>
-                        <div class="feature-card-top">
-                            <div class="feature-icon">🛡️</div>
-                            <div class="feature-title">Uji Validasi Transisi (30m)</div>
-                        </div>
-                        <p class="feature-desc">Simulasikan verifikasi password karyawan &amp; pemilihan shift saat masa pergantian shift aktif.</p>
-                    </div>
-                    <div class="feature-action">
-                        <span>Uji Verifikasi</span>
-                        <span>&rarr;</span>
-                    </div>
-                </div>
-
-                <!-- 7. Transaksi & Analisa Shift Kasir -->
+                <!-- Transaksi & Analisa Shift Kasir -->
                 <a id="linkTransaksiAnalisa" href="store_transactions.html?from=manager" class="feature-card" style="--feature-accent: #3B82F6;">
                     <div>
                         <div class="feature-card-top">
@@ -1417,6 +1351,33 @@
             </div>
         </section>
 
+    </div>
+
+    <!-- MODAL ATUR CABANG TOKO -->
+    <div id="manageStoresModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'manageStoresModal')">
+        <div class="modal-card" style="max-width: 480px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">🏢 Atur Cabang Toko</h3>
+                    <p class="modal-subtitle">Pilih cabang untuk edit info &amp; shift, atau tambah cabang baru</p>
+                </div>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('manageStoresModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 16px;">
+                <button type="button" class="btn-primary" onclick="closeModal('manageStoresModal'); openAddStoreModal();" style="width: 100%; justify-content: center; padding: 12px; font-size: 13px; margin-bottom: 8px;">
+                    <span>➕</span> Tambah Cabang Baru
+                </button>
+                <div style="font-size: 11.5px; font-weight: 750; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 10px 0 6px 2px;">
+                    Daftar Cabang:
+                </div>
+                <div id="manageStoresListContainer" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Diisi dinamis oleh renderManageStoresList -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal('manageStoresModal')">Tutup</button>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL 1: FORM TAMBAH / EDIT TOKO CABANG -->
@@ -2339,12 +2300,18 @@
             document.getElementById('detailStoreName').innerText = store.name;
             document.getElementById('detailStoreMeta').innerText = `${store.shift_count} Shift • ${store.buffer_minutes} Menit Toleransi • ${(store.employees || []).length} Karyawan`;
 
-            // Shift summary text
-            let sText = store.shifts.map(s => `Shift ${s.shift_num}: ${s.start}-${s.end}`).join(' | ');
-            document.getElementById('featureShiftSummary').innerText = `${sText} (Toleransi: ${store.buffer_minutes}m).`;
-            document.getElementById('featureEmpSummary').innerText = `${(store.employees || []).length} personel terdaftar dengan password masing-masing.`;
+            // Shift summary text (safe check if element exists)
+            const shiftSumEl = document.getElementById('featureShiftSummary');
+            if (shiftSumEl) {
+                let sText = (store.shifts || []).map(s => `Shift ${s.shift_num}: ${s.start}-${s.end}`).join(' | ');
+                shiftSumEl.innerText = `${sText} (Toleransi: ${store.buffer_minutes}m).`;
+            }
+            const empSumEl = document.getElementById('featureEmpSummary');
+            if (empSumEl) {
+                empSumEl.innerText = `${(store.employees || []).length} personel terdaftar dengan password masing-masing.`;
+            }
 
-            // Portal link update
+            // Portal link update (safe check if element exists)
             const pLink = document.getElementById('linkPortalKaryawan');
             if (pLink) pLink.href = 'karyawan.html';
 
@@ -2393,7 +2360,62 @@
             renderStoresGrid();
         }
 
-        // 7. Store Form Modal (Add / Edit)
+        // 7. Manage Stores Modal (Atur Cabang) & Store Form Modal (Add / Edit)
+        function openManageStoresModal() {
+            renderManageStoresList();
+            openModal('manageStoresModal');
+        }
+
+        function renderManageStoresList() {
+            const cont = document.getElementById('manageStoresListContainer');
+            if (!cont) return;
+
+            if (!storesData || storesData.length === 0) {
+                cont.innerHTML = `
+                    <div style="text-align: center; padding: 24px 12px; color: var(--text-muted); font-size: 13px; line-height: 1.5;">
+                        Belum ada cabang toko terdaftar.<br>Klik tombol di atas untuk membuat cabang baru.
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            storesData.forEach(store => {
+                const empCount = (store.employees || []).length;
+                const shiftCount = store.shift_count || (store.shifts ? store.shifts.length : 2);
+                let shiftTimes = (store.shifts || []).map(s => `${s.start}-${s.end}`).join(', ');
+                if (!shiftTimes) shiftTimes = `${shiftCount} Shift`;
+
+                html += `
+                    <div class="manage-store-item" role="button" tabindex="0" onclick="handleSelectStoreToEdit('${store.id}')">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(14, 165, 233, 0.12); color: #0ea5e9; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                🏢
+                            </div>
+                            <div>
+                                <div style="font-weight: 800; font-size: 13.5px; color: var(--text-main); margin-bottom: 2px;">
+                                    ${escapeHtml(store.name)}
+                                </div>
+                                <div style="font-size: 11.5px; color: var(--text-muted);">
+                                    ${shiftCount} Shift (${shiftTimes}) • ${empCount} Karyawan
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 4px; color: var(--primary); font-size: 12px; font-weight: 750; flex-shrink: 0;">
+                            <span>Edit</span>
+                            <span style="font-size: 14px;">➔</span>
+                        </div>
+                    </div>
+                `;
+            });
+            cont.innerHTML = html;
+        }
+
+        function handleSelectStoreToEdit(storeId) {
+            closeModal('manageStoresModal');
+            openEditCurrentStoreModal(storeId);
+        }
+
         function openAddStoreModal() {
             document.getElementById('storeModalHeading').innerText = 'Tambah Cabang Toko';
             document.getElementById('formStoreId').value = '';
@@ -2418,9 +2440,12 @@
             openModal('storeFormModal');
         }
 
-        function openEditCurrentStoreModal() {
-            const store = storesData.find(s => s.id === activeStoreId);
+        function openEditCurrentStoreModal(storeId = null) {
+            const targetId = storeId || activeStoreId;
+            const store = storesData.find(s => s.id === targetId);
             if (!store) return;
+
+            activeStoreId = store.id;
 
             document.getElementById('storeModalHeading').innerText = 'Edit Cabang Toko';
             document.getElementById('formStoreId').value = store.id;
@@ -2431,17 +2456,18 @@
             const delBtn = document.getElementById('btnDeleteStore');
             if (delBtn) delBtn.style.display = 'inline-flex';
 
-            if (store.shifts[0]) {
-                document.getElementById('s1Start').value = store.shifts[0].start;
-                document.getElementById('s1End').value = store.shifts[0].end;
+            const shifts = store.shifts || [];
+            if (shifts[0]) {
+                document.getElementById('s1Start').value = shifts[0].start || '07:00';
+                document.getElementById('s1End').value = shifts[0].end || '15:00';
             }
-            if (store.shifts[1]) {
-                document.getElementById('s2Start').value = store.shifts[1].start;
-                document.getElementById('s2End').value = store.shifts[1].end;
+            if (shifts[1]) {
+                document.getElementById('s2Start').value = shifts[1].start || '15:00';
+                document.getElementById('s2End').value = shifts[1].end || '23:00';
             }
-            if (store.shifts[2]) {
-                document.getElementById('s3Start').value = store.shifts[2].start;
-                document.getElementById('s3End').value = store.shifts[2].end;
+            if (shifts[2]) {
+                document.getElementById('s3Start').value = shifts[2].start || '23:00';
+                document.getElementById('s3End').value = shifts[2].end || '07:00';
             }
             renderShiftInputs();
 
