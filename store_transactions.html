@@ -4242,6 +4242,36 @@
         // 7. RENDER TABEL RIWAYAT
         // ==========================================
 
+        function getMonthToDateKeys(store, empId = null) {
+            const dateSet = new Set();
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const todayNum = now.getDate();
+
+            // Tanggal 1 bulan ini sampai hari ini (today)
+            for (let d = 1; d <= todayNum; d++) {
+                const dayStr = String(d).padStart(2, '0');
+                dateSet.add(`${year}-${month}-${dayStr}`);
+            }
+
+            // Tambahkan juga riwayat transaksi yang tersimpan di cabang ini
+            if (store && store.daily_transactions) {
+                Object.keys(store.daily_transactions).forEach(k => dateSet.add(k));
+            }
+
+            // Tambahkan usulan proposal karyawan jika ada
+            if (store && store.tx_proposals) {
+                store.tx_proposals.forEach(p => {
+                    if (p.date && (!empId || p.emp_id === empId)) {
+                        dateSet.add(p.date);
+                    }
+                });
+            }
+
+            return Array.from(dateSet).sort().reverse();
+        }
+
         function renderHistoryTable(store) {
             const tbody = document.getElementById('historyTableBody');
             const thead = document.getElementById('historyTableHeader');
@@ -4263,15 +4293,7 @@
                     `;
                 }
 
-                const dateSet = new Set();
-                if (store && store.daily_transactions) {
-                    Object.keys(store.daily_transactions).forEach(k => dateSet.add(k));
-                }
-                if (store && store.tx_proposals) {
-                    store.tx_proposals.filter(p => p.emp_id === currentEmployee.id).forEach(p => dateSet.add(p.date));
-                }
-
-                const dateKeys = Array.from(dateSet).sort().reverse();
+                const dateKeys = getMonthToDateKeys(store, currentEmployee.id);
 
                 if (dateKeys.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 18px;">Belum ada riwayat transaksi Anda di cabang ini.</td></tr>`;
@@ -4280,7 +4302,7 @@
 
                 let html = '';
                 dateKeys.forEach(dateKey => {
-                    const dayData = (store.daily_transactions && store.daily_transactions[dateKey]) ? store.daily_transactions[dateKey] : null;
+                    const dayData = (store && store.daily_transactions && store.daily_transactions[dateKey]) ? store.daily_transactions[dateKey] : null;
                     const records = (dayData && dayData.records) ? dayData.records : [];
                     const myRec = records.find(r => r.emp_id === currentEmployee.id);
 
@@ -4298,9 +4320,9 @@
                         approvedHtml = `<span style="color: var(--text-muted); font-size: 11.5px;">Belum tercatat (0 tx)</span>`;
                     }
 
-                    const pendingProp = (store.tx_proposals || []).find(p => p.date === dateKey && p.emp_id === currentEmployee.id && p.status === 'pending');
-                    const appProp = (store.tx_proposals || []).find(p => p.date === dateKey && p.emp_id === currentEmployee.id && p.status === 'approved');
-                    const rejProp = (store.tx_proposals || []).find(p => p.date === dateKey && p.emp_id === currentEmployee.id && p.status === 'rejected');
+                    const pendingProp = (store && store.tx_proposals || []).find(p => p.date === dateKey && p.emp_id === currentEmployee.id && p.status === 'pending');
+                    const appProp = (store && store.tx_proposals || []).find(p => p.date === dateKey && p.emp_id === currentEmployee.id && p.status === 'approved');
+                    const rejProp = (store && store.tx_proposals || []).find(p => p.date === dateKey && p.emp_id === currentEmployee.id && p.status === 'rejected');
 
                     let propStatusHtml = '';
                     if (pendingProp) {
@@ -4343,16 +4365,16 @@
                     `;
                 }
 
-                if (!store || !store.daily_transactions || Object.keys(store.daily_transactions).length === 0) {
+                const dateKeys = getMonthToDateKeys(store);
+
+                if (dateKeys.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 18px;">Belum ada riwayat transaksi tercatat di cabang ini.</td></tr>`;
                     return;
                 }
 
-                const dateKeys = Object.keys(store.daily_transactions).sort().reverse();
                 let html = '';
-
                 dateKeys.forEach(dateKey => {
-                    const dayData = store.daily_transactions[dateKey];
+                    const dayData = (store && store.daily_transactions && store.daily_transactions[dateKey]) ? store.daily_transactions[dateKey] : null;
                     const records = (dayData && dayData.records) ? dayData.records : [];
                     const s1Rec = records.find(r => r.shift_num === 1);
                     const s2Rec = records.find(r => r.shift_num === 2);
@@ -4365,12 +4387,12 @@
                         ? `<b>${escapeHtml(s2Rec.emp_name)}</b> (${s2Rec.tx} tx)` 
                         : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>';
 
-                    const totalVal = dayData.total || 0;
+                    const totalVal = (dayData && dayData.total) || 0;
                     const totalHighlight = totalVal > 0 
                         ? `<b style="color: var(--primary); font-size: 13px;">${totalVal} tx</b>` 
                         : `<span style="color: var(--text-muted); font-size: 12px;">0 tx</span>`;
 
-                    const pendingOnDate = (store.tx_proposals || []).filter(p => p.date === dateKey && p.status === 'pending');
+                    const pendingOnDate = (store && store.tx_proposals || []).filter(p => p.date === dateKey && p.status === 'pending');
 
                     html += `
                         <tr class="clickable-history-row" onclick="openDailyTxModal('${store.id}', true, '${dateKey}')" title="Klik baris untuk edit transaksi ${dateKey}">

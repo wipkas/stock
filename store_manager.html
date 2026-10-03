@@ -1520,6 +1520,28 @@
             return Number(store.monthly_tx) || 0;
         }
 
+        function getTodayKey() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function calculateStoreTodayTx(store) {
+            if (!store || !store.daily_transactions || typeof store.daily_transactions !== 'object') return 0;
+            const todayKey = getTodayKey();
+            const todayData = store.daily_transactions[todayKey];
+            if (!todayData) return 0;
+            if (typeof todayData.total === 'number') {
+                return todayData.total;
+            }
+            if (Array.isArray(todayData.records)) {
+                return todayData.records.reduce((sum, r) => sum + (Number(r && r.tx) || 0), 0);
+            }
+            return 0;
+        }
+
         // 5. Render Stores Cards Grid (Admin View)
         function renderStoresGrid() {
             const container = document.getElementById('storesGridContainer');
@@ -1537,7 +1559,7 @@
             storesData.forEach(store => {
                 const status = getShiftStatus(store);
                 const empCount = (store.employees || []).length;
-                const monthlyTx = calculateStoreMonthlyTx(store).toLocaleString('id-ID');
+                const todayTx = calculateStoreTodayTx(store).toLocaleString('id-ID');
 
                 let badgeHtml = '';
                 if (status.inTransition) {
@@ -1559,9 +1581,9 @@
                         <h3 class="store-name">${escapeHtml(store.name)}</h3>
                         
                         <div class="store-stat-row" onclick="openStoreTransactions(event, '${store.id}')" title="Klik untuk buka Transaksi &amp; Analisa Cabang">
-                            <span class="stat-label"><span>📊</span> Transaksi per Bulan:</span>
+                            <span class="stat-label"><span>📊</span> Transaksi Hari Ini:</span>
                             <div class="stat-val-wrap">
-                                <span class="stat-val">${monthlyTx} tx</span>
+                                <span class="stat-val">${todayTx} tx</span>
                                 <span class="stat-arrow">Analisa &rarr;</span>
                             </div>
                         </div>
