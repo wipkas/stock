@@ -1010,6 +1010,223 @@
         .pin-input:focus {
             border-color: var(--primary);
         }
+
+        /* ===== UX Tahap 1: toast, fokus, scroll lock ===== */
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        .ks-toast {
+            position: fixed;
+            left: 50%;
+            bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+            transform: translate(-50%, 16px);
+            max-width: min(92vw, 460px);
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.4;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+            z-index: 99999;
+            opacity: 0;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        .ks-toast.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .ks-toast-icon {
+            font-size: 16px;
+            flex-shrink: 0;
+            line-height: 1.3;
+        }
+
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible,
+        [role="button"]:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        [role="button"] {
+            cursor: pointer;
+        }
+
+        .modal-close-btn {
+            min-width: 36px;
+            min-height: 36px;
+        }
+
+        .modal-close-btn:hover {
+            background: var(--chip-bg);
+            color: var(--text-main);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition-duration: 0.01ms !important;
+                animation-duration: 0.01ms !important;
+            }
+        }
+
+        /* ===== Responsif (tablet & HP) ===== */
+        @media (max-width: 720px) {
+            .top-bar {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .sub-header,
+            .detail-header-card {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .store-grid,
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            /* Modal menjadi bottom-sheet agar nyaman di HP */
+            .modal-backdrop {
+                padding: 0;
+                align-items: flex-end;
+            }
+
+            .modal-card {
+                max-width: 100% !important;
+                width: 100% !important;
+                max-height: 94dvh !important;
+                border-radius: 18px 18px 0 0;
+                margin: 0;
+            }
+
+            .modal-footer {
+                flex-wrap: wrap;
+                padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+            }
+
+            .modal-footer > button {
+                flex: 1 1 140px;
+                min-height: 42px;
+                justify-content: center;
+            }
+
+            .modal-footer[style*="space-between"] {
+                justify-content: flex-end !important;
+            }
+
+            input.form-input,
+            select.form-select,
+            textarea.form-input {
+                font-size: 16px; /* cegah auto-zoom iOS */
+                min-height: 40px;
+            }
+
+            .btn-emp-action {
+                min-height: 36px;
+            }
+
+            #masterEmployeesModal [style*="overflow-x: auto"] {
+                overflow-x: visible !important;
+                border: none !important;
+            }
+
+            #masterEmployeesModal #searchMasterEmp,
+            #masterEmployeesModal #filterMasterEmpStore,
+            #masterEmployeesModal #filterMasterEmpStatus {
+                width: 100% !important;
+            }
+
+            /* Tabel -> kartu bertumpuk */
+            .emp-master-table,
+            .emp-master-table tbody,
+            .emp-master-table tr,
+            .emp-master-table td {
+                display: block;
+                width: 100%;
+            }
+
+            .emp-master-table thead {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                overflow: hidden;
+                clip: rect(0 0 0 0);
+            }
+
+            .emp-master-table tbody tr {
+                background: var(--card-bg);
+                border: 1px solid var(--card-border);
+                border-radius: 14px;
+                padding: 8px 12px;
+                margin-bottom: 10px;
+            }
+
+            .emp-master-table td {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 7px 0;
+                border-bottom: 1px dashed var(--card-border);
+                text-align: right;
+            }
+
+            .emp-master-table td:last-child {
+                border-bottom: none;
+            }
+
+            .emp-master-table td[data-label]::before {
+                content: attr(data-label);
+                flex-shrink: 0;
+                font-size: 10.5px;
+                font-weight: 800;
+                color: var(--text-muted);
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+                text-align: left;
+            }
+
+            .emp-master-table td.td-span-all {
+                justify-content: center;
+                text-align: center;
+            }
+
+            /* Kolom pertama (nama karyawan/waktu) jadi judul kartu */
+            .emp-master-table td:first-child {
+                justify-content: flex-start;
+                text-align: left;
+            }
+
+            .emp-master-table td:first-child::before {
+                display: none;
+            }
+
+            /* Kolom aksi: tombol penuh */
+            .emp-master-table td:last-child > div {
+                width: 100%;
+                flex-wrap: wrap;
+                justify-content: stretch !important;
+            }
+
+            .emp-master-table td:last-child > div > .btn-emp-action {
+                flex: 1 1 90px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1093,7 +1310,7 @@
             <div class="feature-grid">
 
                 <!-- 1. Jadwal Shift & Jam Kerja -->
-                <div class="feature-card" style="--feature-accent: #8B5CF6;" onclick="openShiftSettingsModal()">
+                <div class="feature-card" style="--feature-accent: #8B5CF6;" role="button" tabindex="0" onclick="openShiftSettingsModal()">
                     <div>
                         <div class="feature-card-top">
                             <div class="feature-icon">⏰</div>
@@ -1108,7 +1325,7 @@
                 </div>
 
                 <!-- 2. Kelola Karyawan & Mutasi Cabang -->
-                <div class="feature-card" style="--feature-accent: #10B981;" onclick="openMasterEmployeesModal(activeStoreId)">
+                <div class="feature-card" style="--feature-accent: #10B981;" role="button" tabindex="0" onclick="openMasterEmployeesModal(activeStoreId)">
                     <div>
                         <div class="feature-card-top">
                             <div class="feature-icon">👥</div>
@@ -1168,7 +1385,7 @@
                 </a>
 
                 <!-- 6. Uji Konfirmasi Transisi Shift (Simulasi) -->
-                <div class="feature-card" style="--feature-accent: #F97316;" onclick="testShiftTransitionPrompt()">
+                <div class="feature-card" style="--feature-accent: #F97316;" role="button" tabindex="0" onclick="testShiftTransitionPrompt()">
                     <div>
                         <div class="feature-card-top">
                             <div class="feature-icon">🛡️</div>
@@ -1210,7 +1427,7 @@
                     <h3 class="modal-title" id="storeModalHeading">Tambah Cabang Toko</h3>
                     <p class="modal-subtitle">Atur nama toko, pengaturan shift kerja, dan personel karyawan</p>
                 </div>
-                <button class="modal-close-btn" onclick="closeModal('storeFormModal')">&times;</button>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('storeFormModal')">&times;</button>
             </div>
             <form onsubmit="saveStoreForm(event)">
                 <div class="modal-body">
@@ -1319,7 +1536,7 @@
                     <h3 class="modal-title">⏰ Konfirmasi Pergantian Shift</h3>
                     <p class="modal-subtitle">Masa transisi shift aktif (Toleransi 30 Menit)</p>
                 </div>
-                <button class="modal-close-btn" onclick="closeModal('transitionConfirmModal')">&times;</button>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('transitionConfirmModal')">&times;</button>
             </div>
             <form onsubmit="handleTransitionVerify(event)">
                 <div class="modal-body">
@@ -1364,7 +1581,7 @@
                     <h3 class="modal-title">🔐 Atur Password / PIN</h3>
                     <p class="modal-subtitle">Karyawan: <b id="pwModalEmpName" style="color: var(--primary);">-</b></p>
                 </div>
-                <button class="modal-close-btn" onclick="closeModal('empPasswordModal')">&times;</button>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('empPasswordModal')">&times;</button>
             </div>
             <form onsubmit="handleSaveEmpPasswordModal(event)">
                 <div class="modal-body">
@@ -1407,7 +1624,7 @@
                     <h3 class="modal-title">🔄 Mutasi Cabang Karyawan</h3>
                     <p class="modal-subtitle">Pindahkan karyawan ke cabang lain &amp; tentukan shift baru</p>
                 </div>
-                <button class="modal-close-btn" onclick="closeModal('transferEmpModal')">&times;</button>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('transferEmpModal')">&times;</button>
             </div>
             <form onsubmit="handleTransferEmpSubmit(event)">
                 <input type="hidden" id="transferEmpId">
@@ -1460,7 +1677,7 @@
                     <h3 class="modal-title">🚪 Nonaktifkan / Resign Karyawan</h3>
                     <p class="modal-subtitle">Cabut akses PIN login &amp; arsipkan data karyawan</p>
                 </div>
-                <button class="modal-close-btn" onclick="closeModal('deactivateEmpModal')">&times;</button>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('deactivateEmpModal')">&times;</button>
             </div>
             <form onsubmit="handleDeactivateEmpSubmit(event)">
                 <input type="hidden" id="deactivateEmpId">
@@ -1505,7 +1722,7 @@
                     <h3 class="modal-title">♻️ Aktifkan Kembali Karyawan</h3>
                     <p class="modal-subtitle">Tugaskan kembali ke cabang &amp; atur PIN login baru</p>
                 </div>
-                <button class="modal-close-btn" onclick="closeModal('rehireEmpModal')">&times;</button>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('rehireEmpModal')">&times;</button>
             </div>
             <form onsubmit="handleRehireEmpSubmit(event)">
                 <input type="hidden" id="rehireEmpId">
@@ -1560,7 +1777,7 @@
                     <h3 class="modal-title">👤 Edit Data &amp; Kontak Karyawan</h3>
                     <p class="modal-subtitle">Atur nomor HP/WA, alamat domisili, shift, dan catatan</p>
                 </div>
-                <button class="modal-close-btn" onclick="closeModal('editEmployeeModal')">&times;</button>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('editEmployeeModal')">&times;</button>
             </div>
             <form onsubmit="handleSaveEditEmployeeModal(event)">
                 <input type="hidden" id="editEmpId">
@@ -1640,7 +1857,7 @@
                     <h3 class="modal-title">👥 Master Karyawan &amp; Log Mutasi</h3>
                     <p class="modal-subtitle">Kelola seluruh kasir cabang, mutasi rotasi, dan riwayat penugasan</p>
                 </div>
-                <button class="modal-close-btn" onclick="closeModal('masterEmployeesModal')">&times;</button>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('masterEmployeesModal')">&times;</button>
             </div>
 
             <!-- Tab Nav -->
@@ -2031,7 +2248,7 @@
                 const empS2 = (store.employees || []).filter(e => (e.status === 'active' || !e.status) && e.shift_num === 2).map(e => e.name).join(', ') || '(Kosong)';
 
                 html += `
-                <div class="store-card" onclick="selectStore('${store.id}')">
+                <div class="store-card" role="button" tabindex="0" onclick="selectStore('${store.id}')">
                     <div>
                         <div class="store-card-header">
                             <div class="store-card-icon">🏬</div>
@@ -2039,7 +2256,7 @@
                         </div>
                         <h3 class="store-name">${escapeHtml(store.name)}</h3>
                         
-                        <div class="store-stat-row" onclick="openStoreTransactions(event, '${store.id}')" title="Klik untuk buka Transaksi &amp; Analisa Cabang">
+                        <div class="store-stat-row" role="button" tabindex="0" onclick="openStoreTransactions(event, '${store.id}')" title="Klik untuk buka Transaksi &amp; Analisa Cabang">
                             <span class="stat-label"><span>📊</span> Transaksi Hari Ini:</span>
                             <div class="stat-val-wrap">
                                 <span class="stat-val">${todayTx} tx</span>
@@ -2306,17 +2523,24 @@
             cont.appendChild(div);
         }
 
-        function confirmDeleteEmpRow(rowId) {
+        async function confirmDeleteEmpRow(rowId) {
             const row = document.getElementById(rowId);
             if (!row) return;
             const empId = row.dataset.empId;
             const empName = row.querySelector('.emp-name-input')?.value.trim() || 'karyawan ini';
             if (empId) {
-                if (!confirm(`⚠️ Karyawan "${empName}" sudah terdaftar di sistem.\n\nJika karyawan sudah tidak bekerja, disarankan menggunakan tombol "🚪 Resign" agar riwayat transaksi masa lalu tetap aman dan tercatat.\n\nApakah Anda tetap ingin menghapus baris karyawan ini?`)) {
-                    return;
-                }
+                const ok = await uiConfirm({
+                    icon: '⚠️',
+                    title: 'Hapus Baris Karyawan?',
+                    message: `Karyawan "${empName}" sudah terdaftar di sistem. Jika sudah tidak bekerja, gunakan tombol "🚪 Resign" agar riwayat transaksi tetap aman dan tercatat.`,
+                    confirmText: 'Tetap Hapus',
+                    cancelText: 'Batal',
+                    danger: true
+                });
+                if (!ok) return;
             }
-            row.remove();
+            const stillRow = document.getElementById(rowId);
+            if (stillRow) stillRow.remove();
         }
 
         // Dedicated Employee Password Modal Logic
@@ -2448,19 +2672,19 @@
                 const existingObj = (existingStore?.employees || []).find(e => e.id === existingEmpId);
 
                 if (!empName) {
-                    alert('⚠️ Nama setiap karyawan wajib diisi!');
+                    uiAlert('⚠️ Nama setiap karyawan wajib diisi!');
                     return;
                 }
 
                 if (empStatus === 'active') {
                     if (!empPass) {
-                        alert(`⚠️ Password PIN untuk karyawan "${empName}" belum diatur! Silakan klik tombol "🔑 Set PIN".`);
+                        uiAlert(`⚠️ Password PIN untuk karyawan "${empName}" belum diatur! Silakan klik tombol "🔑 Set PIN".`);
                         return;
                     }
 
                     // Check intra-store duplicate
                     if (seenInStore.has(empPass)) {
-                        alert(`⚠️ Password PIN "${empPass}" digunakan lebih dari satu karyawan di cabang ini. Setiap karyawan wajib memiliki PIN yang berbeda!`);
+                        uiAlert(`⚠️ Password PIN "${empPass}" digunakan lebih dari satu karyawan di cabang ini. Setiap karyawan wajib memiliki PIN yang berbeda!`);
                         return;
                     }
                     seenInStore.add(empPass);
@@ -2470,7 +2694,7 @@
                         if (otherStore.id === storeId) continue;
                         const conflict = (otherStore.employees || []).find(o => (o.status === 'active' || !o.status) && String(o.password).trim() === empPass);
                         if (conflict) {
-                            alert(`⚠️ Password PIN "${empPass}" sudah dipakai oleh karyawan "${conflict.name}" di cabang "${otherStore.name}".\n\nMohon buat PIN yang unik agar sistem dapat mengenali cabang dan nama karyawan secara otomatis saat login.`);
+                            uiAlert(`⚠️ Password PIN "${empPass}" sudah dipakai oleh karyawan "${conflict.name}" di cabang "${otherStore.name}".\n\nMohon buat PIN yang unik agar sistem dapat mengenali cabang dan nama karyawan secara otomatis saat login.`);
                             return;
                         }
                     }
@@ -2738,7 +2962,7 @@
                 }
             }
             if (!emp) {
-                alert('Data karyawan tidak ditemukan!');
+                uiAlert('Data karyawan tidak ditemukan!');
                 return;
             }
 
@@ -2785,7 +3009,7 @@
             const newNotes = document.getElementById('editEmpNotesInput').value.trim();
 
             if (!newName) {
-                alert('Nama karyawan wajib diisi!');
+                uiAlert('Nama karyawan wajib diisi!');
                 return;
             }
 
@@ -2805,7 +3029,7 @@
             }
 
             if (!foundEmp) {
-                alert('Gagal menemukan data karyawan!');
+                uiAlert('Gagal menemukan data karyawan!');
                 return;
             }
 
@@ -2911,7 +3135,7 @@
             });
 
             if (toSelect.options.length === 0) {
-                alert('⚠️ Anda hanya memiliki 1 cabang toko. Tambah cabang baru terlebih dahulu untuk melakukan mutasi/rolling karyawan.');
+                uiAlert('⚠️ Anda hanya memiliki 1 cabang toko. Tambah cabang baru terlebih dahulu untuk melakukan mutasi/rolling karyawan.');
                 return;
             }
 
@@ -2943,7 +3167,7 @@
             const reason = document.getElementById('transferReasonInput').value.trim() || 'Mutasi / Rolling Shift';
 
             if (!toStoreId || toStoreId === fromStoreId) {
-                alert('⚠️ Pilih cabang tujuan yang berbeda dari cabang asal!');
+                uiAlert('⚠️ Pilih cabang tujuan yang berbeda dari cabang asal!');
                 return;
             }
 
@@ -3127,7 +3351,7 @@
             const newPin = document.getElementById('rehirePinInput').value.trim();
 
             if (!newPin) {
-                alert('⚠️ PIN Password baru wajib diisi untuk mengaktifkan karyawan!');
+                uiAlert('⚠️ PIN Password baru wajib diisi untuk mengaktifkan karyawan!');
                 return;
             }
 
@@ -3135,7 +3359,7 @@
             for (const store of storesData) {
                 const conflict = (store.employees || []).find(o => o.id !== empId && (o.status === 'active' || !o.status) && String(o.password).trim() === newPin);
                 if (conflict) {
-                    alert(`⚠️ Password PIN "${newPin}" sudah dipakai oleh karyawan "${conflict.name}" di cabang "${store.name}". Buat PIN yang berbeda!`);
+                    uiAlert(`⚠️ Password PIN "${newPin}" sudah dipakai oleh karyawan "${conflict.name}" di cabang "${store.name}". Buat PIN yang berbeda!`);
                     return;
                 }
             }
@@ -3207,7 +3431,15 @@
             const store = storesData.find(s => s.id === storeId);
             const storeName = store ? store.name : 'cabang ini';
 
-            if (!confirm(`⚠️ Apakah Anda yakin ingin menghapus cabang "${storeName}"?\n\nSemua data cabang, jadwal shift, personel karyawan, dan riwayat transaksi pada cabang ini akan dihapus secara permanen di perangkat ini dan di Supabase Cloud.`)) {
+            const confirmedDelete = await uiConfirm({
+                icon: '🗑️',
+                title: 'Hapus Cabang?',
+                message: `Cabang "${storeName}" akan dihapus permanen: jadwal shift, personel karyawan, dan riwayat transaksi, baik di perangkat ini maupun di Supabase Cloud.`,
+                confirmText: 'Hapus Permanen',
+                danger: true,
+                requireText: storeName
+            });
+            if (!confirmedDelete) {
                 return;
             }
 
@@ -3295,7 +3527,7 @@
             }
 
             closeModal('transitionConfirmModal');
-            alert(`✅ Verifikasi Berhasil!\n\nData tercatat:\n• Toko: ${store.name}\n• PIC: ${emp.name}\n• Shift: Shift ${selectedShift}\n• Waktu: ${new Date().toLocaleTimeString('id-ID')} WIB\n\nIdentitas shift dan karyawan berhasil divalidasi.`);
+            showToast(`Verifikasi berhasil · ${store.name} · ${emp.name} · Shift ${selectedShift} · ${new Date().toLocaleTimeString('id-ID')} WIB`, '✅');
         }
 
         function openShiftSettingsModal() {
@@ -3307,14 +3539,29 @@
         }
 
         // Modal Utility Helpers
+        const __modalReturnFocus = {};
         function openModal(id) {
             const el = document.getElementById(id);
-            if (el) el.classList.add('open');
+            if (!el) return;
+            __modalReturnFocus[id] = document.activeElement;
+            el.classList.add('open');
+            document.body.classList.add('modal-open');
+            setTimeout(() => {
+                const target = el.querySelector('input:not([type="hidden"]):not([readonly]):not([disabled]), select, textarea') || el.querySelector('.modal-close-btn');
+                if (target && typeof target.focus === 'function') target.focus({ preventScroll: true });
+            }, 60);
         }
 
         function closeModal(id) {
             const el = document.getElementById(id);
-            if (el) el.classList.remove('open');
+            if (!el) return;
+            el.classList.remove('open');
+            if (!document.querySelector('.modal-backdrop.open')) document.body.classList.remove('modal-open');
+            const back = __modalReturnFocus[id];
+            delete __modalReturnFocus[id];
+            if (back && typeof back.focus === 'function' && document.body.contains(back)) {
+                try { back.focus({ preventScroll: true }); } catch (e) {}
+            }
         }
 
         function handleBackdropClose(e, id) {
@@ -3360,22 +3607,184 @@
             if (!toast) {
                 toast = document.createElement('div');
                 toast.id = 'toastNotice';
-                toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1e293b;color:#f8fafc;padding:12px 18px;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.35);z-index:99999;transition:all .3s;opacity:0;transform:translateY(12px);border:1px solid rgba(255,255,255,0.1);pointer-events:none;';
-                toast.innerHTML = `<span id="toastIcon" style="font-size:16px;"></span><span id="toastText"></span>`;
+                toast.className = 'ks-toast';
+                toast.setAttribute('role', 'status');
+                toast.setAttribute('aria-live', 'polite');
+                toast.innerHTML = `<span id="toastIcon" class="ks-toast-icon" aria-hidden="true"></span><span id="toastText"></span>`;
                 document.body.appendChild(toast);
             }
             const iconEl = toast.querySelector('#toastIcon');
             const textEl = toast.querySelector('#toastText');
             if (iconEl) iconEl.innerText = icon;
             if (textEl) textEl.innerText = text;
-            toast.style.opacity = '1';
-            toast.style.transform = 'translateY(0)';
+            toast.classList.add('show');
             clearTimeout(window.__toastTimeout);
-            window.__toastTimeout = setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateY(12px)';
-            }, 3000);
+            const duration = Math.min(9000, 3000 + String(text || '').length * 35);
+            window.__toastTimeout = setTimeout(() => toast.classList.remove('show'), duration);
         }
+
+        // Pengganti alert() bawaan browser: non-blocking & konsisten dengan tema.
+        function uiAlert(message) {
+            let text = String(message == null ? '' : message);
+            let icon = '⚠️';
+            const m = text.match(/^\s*(\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*)\s*/u);
+            if (m) {
+                icon = m[1];
+                text = text.slice(m[0].length);
+            }
+            showToast(text.replace(/\s*\n\s*/g, ' ').trim(), icon);
+        }
+
+        // Pengganti confirm() bawaan: mengembalikan Promise<boolean>.
+        // opsi: { title, message, icon, confirmText, cancelText, danger, requireText }
+        function uiConfirm(opts) {
+            opts = opts || {};
+            return new Promise(resolve => {
+                const old = document.getElementById('uiConfirmModal');
+                if (old) old.remove();
+
+                const prevFocus = document.activeElement;
+                const wrap = document.createElement('div');
+                wrap.id = 'uiConfirmModal';
+                wrap.className = 'modal-backdrop';
+                wrap.style.zIndex = '1500';
+                const needText = opts.requireText ? String(opts.requireText) : '';
+                wrap.innerHTML = `
+                    <div class="modal-card" style="max-width: 400px;">
+                        <div class="modal-header">
+                            <div>
+                                <h3 class="modal-title" id="uiConfirmTitle">${escapeHtml(opts.icon || '⚠️')} ${escapeHtml(opts.title || 'Konfirmasi')}</h3>
+                            </div>
+                        </div>
+                        <div class="modal-body">
+                            <p style="font-size: 13px; line-height: 1.55; color: var(--text-main);">${escapeHtml(opts.message || '')}</p>
+                            ${needText ? `
+                            <div>
+                                <label class="form-label" for="uiConfirmInput" style="display:block; margin-bottom:6px;">Ketik <b>${escapeHtml(needText)}</b> untuk melanjutkan:</label>
+                                <input type="text" id="uiConfirmInput" class="form-input" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%;">
+                            </div>` : ''}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" id="uiConfirmCancel">${escapeHtml(opts.cancelText || 'Batal')}</button>
+                            <button type="button" class="${opts.danger ? 'btn-danger' : 'btn-primary'}" id="uiConfirmOk">${escapeHtml(opts.confirmText || 'Ya, Lanjutkan')}</button>
+                        </div>
+                    </div>`;
+                wrap.setAttribute('role', 'alertdialog');
+                wrap.setAttribute('aria-modal', 'true');
+                wrap.setAttribute('aria-labelledby', 'uiConfirmTitle');
+                document.body.appendChild(wrap);
+                document.body.classList.add('modal-open');
+
+                const okBtn = wrap.querySelector('#uiConfirmOk');
+                const cancelBtn = wrap.querySelector('#uiConfirmCancel');
+                const input = wrap.querySelector('#uiConfirmInput');
+
+                const syncOk = () => {
+                    if (!input) return;
+                    const match = input.value.trim().toLowerCase() === needText.toLowerCase();
+                    okBtn.disabled = !match;
+                    okBtn.style.opacity = match ? '1' : '0.5';
+                    okBtn.style.cursor = match ? 'pointer' : 'not-allowed';
+                };
+
+                const finish = (val) => {
+                    document.removeEventListener('keydown', onKey, true);
+                    wrap.classList.remove('open');
+                    setTimeout(() => wrap.remove(), 200);
+                    if (!document.querySelector('.modal-backdrop.open')) document.body.classList.remove('modal-open');
+                    if (prevFocus && typeof prevFocus.focus === 'function') { try { prevFocus.focus(); } catch (e) {} }
+                    resolve(val);
+                };
+                const onKey = (ev) => {
+                    if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); finish(false); }
+                    else if (ev.key === 'Enter' && ev.target === input && !okBtn.disabled) { ev.preventDefault(); finish(true); }
+                    else if (ev.key === 'Tab') {
+                        const f = Array.from(wrap.querySelectorAll('button:not([disabled]), input'));
+                        if (!f.length) return;
+                        const first = f[0], last = f[f.length - 1];
+                        if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+                        else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+                    }
+                };
+
+                okBtn.addEventListener('click', () => finish(true));
+                cancelBtn.addEventListener('click', () => finish(false));
+                wrap.addEventListener('click', (ev) => { if (ev.target === wrap) finish(false); });
+                if (input) input.addEventListener('input', syncOk);
+                document.addEventListener('keydown', onKey, true);
+                syncOk();
+
+                requestAnimationFrame(() => {
+                    wrap.classList.add('open');
+                    (input || cancelBtn).focus();
+                });
+            });
+        }
+
+        // ===== Aksesibilitas & responsif tabel =====
+        function enhanceA11y(root) {
+            root = root || document;
+            // Tombol/tautan ikon tanpa label: pakai atribut title sebagai aria-label
+            root.querySelectorAll('button[title]:not([aria-label]), a[title]:not([aria-label])').forEach(el => {
+                el.setAttribute('aria-label', el.getAttribute('title'));
+            });
+            // Dialog semantics
+            root.querySelectorAll('.modal-backdrop:not([role])').forEach(el => {
+                el.setAttribute('role', 'dialog');
+                el.setAttribute('aria-modal', 'true');
+                const t = el.querySelector('.modal-title');
+                if (t) {
+                    if (!t.id) t.id = el.id + 'Title';
+                    el.setAttribute('aria-labelledby', t.id);
+                }
+            });
+            // Label kolom tabel untuk mode kartu di layar kecil
+            root.querySelectorAll('table.emp-master-table').forEach(tbl => {
+                const heads = Array.from(tbl.querySelectorAll('thead th')).map(th => th.textContent.trim());
+                tbl.querySelectorAll('tbody tr').forEach(tr => {
+                    Array.from(tr.children).forEach((td, i) => {
+                        if (td.tagName !== 'TD') return;
+                        if (td.hasAttribute('colspan')) { td.classList.add('td-span-all'); return; }
+                        if (heads[i] && td.getAttribute('data-label') !== heads[i]) td.setAttribute('data-label', heads[i]);
+                    });
+                });
+            });
+        }
+
+        // Elemen non-native yang berperan sebagai tombol bisa dioperasikan dengan keyboard
+        document.addEventListener('keydown', (ev) => {
+            if (ev.key !== 'Enter' && ev.key !== ' ') return;
+            const el = ev.target;
+            if (el && el.getAttribute && el.getAttribute('role') === 'button' && el.tagName !== 'BUTTON' && el.tagName !== 'A') {
+                ev.preventDefault();
+                el.click();
+            }
+        });
+
+        // Escape menutup modal paling atas yang terbuka
+        document.addEventListener('keydown', (ev) => {
+            if (ev.key !== 'Escape') return;
+            if (document.getElementById('uiConfirmModal')) return;
+            const open = Array.from(document.querySelectorAll('.modal-backdrop.open'));
+            if (!open.length) return;
+            const top = open[open.length - 1];
+            if (top.id) closeModal(top.id);
+        });
+
+        (function initA11yObserver() {
+            let pending = false;
+            const run = () => { pending = false; enhanceA11y(document); };
+            const start = () => {
+                enhanceA11y(document);
+                new MutationObserver(() => {
+                    if (pending) return;
+                    pending = true;
+                    requestAnimationFrame(run);
+                }).observe(document.body, { childList: true, subtree: true });
+            };
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+            else start();
+        })();
     </script>
 </body>
 </html>
