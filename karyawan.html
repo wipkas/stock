@@ -339,7 +339,7 @@
 
         .grid-features {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: 1fr;
             gap: 10px;
             margin-bottom: 16px;
         }
@@ -586,46 +586,10 @@
             <!-- Fitur Kasir & Operasional Karyawan -->
             <h3 style="font-size: 13.5px; font-weight: 800; margin-bottom: 10px; color: var(--text-muted);">MENU KARYAWAN</h3>
             <div class="grid-features">
-                <!-- 1. Cek & Order Stok -->
-                <a href="interactive_stock.html?tab=order" class="feat-box">
-                    <div class="feat-icon">📦</div>
-                    <div class="feat-title">Cek &amp; Restok</div>
-                    <div class="feat-sub">Stok voucher etalase</div>
-                </a>
-
                 <!-- 2. Transaksi & Usulan Karyawan -->
                 <a href="store_transactions.html" class="feat-box">
                     <div class="feat-icon">📊</div>
                     <div class="feat-title">History Transaksi</div>
-                   
-                </a>
-
-                <!-- 3. Foto Profil Saya -->
-                <div class="feat-box" onclick="openEmpProfileModal()">
-                    <div class="feat-icon">📷</div>
-                    <div class="feat-title">Foto Profil</div>
-                    <div class="feat-sub">Upload foto kasir</div>
-                </div>
-
-                <!-- 4. Uji Aksi Update / Transaksi -->
-                <div class="feat-box" onclick="triggerEmployeeAction()">
-                    <div class="feat-icon">⚡</div>
-                    <div class="feat-title">Uji Shift Transisi</div>
-                    <div class="feat-sub">Validasi shift (30m)</div>
-                </div>
-
-                <!-- 5. Rekap Laporan Shift -->
-                <a href="interactive_stock.html?tab=daily" class="feat-box">
-                    <div class="feat-icon">🌙</div>
-                    <div class="feat-title">Laporan Shift</div>
-                    <div class="feat-sub">Tutup buku kasir</div>
-                </a>
-
-                <!-- 6. Saldo Realtime -->
-                <a href="interactive_stock.html?tab=balance" class="feat-box">
-                    <div class="feat-icon">💳</div>
-                    <div class="feat-title">Saldo Kasir</div>
-                    <div class="feat-sub">DANA, GoPay, Tekmo</div>
                 </a>
             </div>
 
@@ -1108,8 +1072,7 @@
                 imgPreview.style.display = 'none';
                 placeholder.style.display = 'block';
                 if (noteEl) {
-                    noteEl.innerHTML = '
-';
+                    noteEl.innerHTML = '';
                     noteEl.style.color = 'var(--text-muted)';
                 }
             }
