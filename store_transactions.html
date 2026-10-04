@@ -1419,13 +1419,12 @@
                 <div class="card-box-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span>📜</span>
-                        <span id="historyTableTitle">Riwayat Transaksi Harian Cabang</span>
-                        <span class="badge-status" style="font-size: 10px; padding: 2px 7px;">💡 Klik item untuk edit</span>
-                    </div>
+                        <span id="historyTableTitle">Riwayat</span>
+                                            </div>
                     <!-- TOMBOL ANALISA DI UJUNG CARD-BOX-TITLE HISTORY -->
                     <button type="button" class="btn-action-primary" onclick="openDedicatedAnalyticsView()" style="padding: 7px 14px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px;" title="Buka Halaman Analisa Grafik & Filter Lengkap">
                         <span>📊</span>
-                        <span>Buka Analisa Grafik &rarr;</span>
+                        <span>Analytics &rarr;</span>
                     </button>
                 </div>
                 <div style="overflow-x: auto;">
@@ -1433,8 +1432,8 @@
                         <thead id="historyTableHeader">
                             <tr>
                                 <th>Tanggal</th>
-                                <th>Petugas Shift 1 (Pagi)</th>
-                                <th>Petugas Shift 2 (Malam)</th>
+                                <th>Shift 1 (Pagi)</th>
+                                <th>Shift 2 (Malam)</th>
                                 <th>Total Toko</th>
                             </tr>
                         </thead>
@@ -1458,14 +1457,6 @@
                         <h2 id="dedicatedStoreTitle" style="font-size: 18px; font-weight: 850; margin: 0;">📊 Analisa &amp; Grafik Transaksi</h2>
                     </div>
                     <p id="dedicatedStoreSubtitle" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Filter Rentang Tanggal, Perbandingan Kasir &amp; Tren Shift</p>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <button type="button" id="btnDedicatedRollShifts" class="btn-preset" onclick="rollActiveStoreShifts()" style="padding: 8px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;" title="Tukar Shift Karyawan Sekarang (Pagi ⇄ Malam)">
-                        <span>⇄</span> Roll Shift
-                    </button>
-                    <button type="button" id="btnDedicatedOpenDailyModal" class="btn-action-primary" onclick="openDailyTxModal(activeStoreId, true)" style="padding: 8px 14px; font-size: 12px;">
-                        <span>✏️</span> Set / Edit Transaksi Hari Ini
-                    </button>
                 </div>
             </div>
 
@@ -1605,8 +1596,8 @@
                         <thead id="filteredAnalyticsTableHeader">
                             <tr>
                                 <th>Tanggal</th>
-                                <th>Petugas Shift 1 (Pagi)</th>
-                                <th>Petugas Shift 2 (Malam)</th>
+                                <th>Shift 1 (Pagi)</th>
+                                <th>Shift 2 (Malam)</th>
                                 <th>Total Toko</th>
                             </tr>
                         </thead>
@@ -1645,17 +1636,6 @@
                     <!-- Shift yang sedang berjalan -->
                     <div id="modalRunningShiftBox" style="background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.25); border-radius: 12px; padding: 10px 14px;">
                         <!-- Diisi via JS: Shift yang sedang berjalan -->
-                    </div>
-
-                    <!-- Tombol Cepat: Tukar Petugas Hari Ini -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.03); border: 1px dashed var(--card-border); border-radius: 10px; padding: 8px 12px;">
-                        <div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                            <span>🔄</span>
-                            <span id="modalSwapLabel">Ada kesepakatan tukar shift hari ini?</span>
-                        </div>
-                        <button type="button" class="btn-preset" onclick="swapModalEmployeesToday()" style="background: rgba(79, 142, 247, 0.18); color: var(--primary); border: 1px solid rgba(79, 142, 247, 0.4); font-weight: 800; font-size: 11px; padding: 5px 10px; cursor: pointer; border-radius: 6px;" title="Tukar posisi shift kasir">
-                            <span>⇄</span> <span id="modalSwapBtnText">Tukar Petugas Hari Ini</span>
-                        </button>
                     </div>
 
                     <!-- Input Form Transaksi Karyawan Yang Belum Di-set -->
@@ -1768,7 +1748,7 @@
                     <span style="font-size: 20px; line-height: 1;">🤝</span>
                     <div style="font-size: 12px; color: var(--text-main); line-height: 1.45;">
                         <b style="color: var(--success); font-weight: 800;">Tukar Shift Manual Selalu Aktif!</b><br>
-                        Kasir/admin tetap bisa bertukar shift kapan saja via tombol <b>Roll Shift</b> atau <b>⇄ Tukar Petugas Hari Ini</b> sesuai kesepakatan bersama, tanpa mengganggu jadwal otomatis.
+                        Kasir/admin tetap bisa bertukar shift kapan saja via tombol <b>Roll Shift</b> sesuai kesepakatan bersama, tanpa mengganggu jadwal otomatis.
                     </div>
                 </div>
 
@@ -3187,74 +3167,6 @@
             showToast(`✅ Jadwal rotasi ${store.name} diperbarui: ${label} (Tukar manual tetap aktif kapan saja).`, '🔄');
         }
 
-        function swapModalEmployeesToday() {
-            const store = storesData.find(s => s.id === activeStoreId);
-            const activeEmps = (store?.employees || []).filter(e => e.status === 'active' || !e.status);
-            if (!store || activeEmps.length < 2) {
-                showToast('⚠️ Minimal harus ada 2 karyawan aktif untuk menukar shift.', '⚠️');
-                return;
-            }
-
-            const targetDate = currentModalDateKey || getTodayKey();
-            const isToday = targetDate === getTodayKey();
-
-            // Simpan sementara nilai yang sedang diketik user agar tidak hilang
-            const enteredValues = {};
-            document.querySelectorAll('#dailyTxFormFields .emp-tx-input').forEach(inp => {
-                enteredValues[inp.dataset.empid] = inp.value;
-            });
-
-            let swappedPairs = [];
-
-            // Update shift_num di employees (jika hari ini)
-            if (isToday) {
-                activeEmps.forEach(emp => {
-                    const oldShift = emp.shift_num;
-                    const newShift = (oldShift === 1) ? 2 : 1;
-                    emp.shift_num = newShift;
-                    swappedPairs.push(`${emp.name} ➔ Shift ${newShift}`);
-                });
-            }
-
-            // Update catatan transaksi pada targetDate
-            if (store.daily_transactions && store.daily_transactions[targetDate] && store.daily_transactions[targetDate].records) {
-                store.daily_transactions[targetDate].records.forEach(rec => {
-                    const oldShift = rec.shift_num;
-                    const newShift = (oldShift === 1) ? 2 : 1;
-                    rec.shift_num = newShift;
-                    rec.shift_name = newShift === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
-                    if (!isToday) {
-                        swappedPairs.push(`${rec.emp_name} ➔ Shift ${newShift}`);
-                    }
-                });
-            } else if (!isToday) {
-                activeEmps.forEach(emp => {
-                    const oldShift = emp.shift_num;
-                    const newShift = (oldShift === 1) ? 2 : 1;
-                    emp.shift_num = newShift;
-                    swappedPairs.push(`${emp.name} ➔ Shift ${newShift}`);
-                });
-            }
-
-            saveStoresData();
-
-            // Buka ulang modal dalam mode manual edit untuk me-refresh urutan dan badge shift
-            openDailyTxModal(store.id, true, targetDate);
-
-            // Pulihkan nilai angka yang sudah diketik sebelumnya
-            Object.keys(enteredValues).forEach(empId => {
-                const inp = document.getElementById(`input_emp_${empId}`);
-                if (inp && enteredValues[empId] !== '') {
-                    inp.value = enteredValues[empId];
-                }
-            });
-
-            renderAnalyticsDashboard(store);
-            renderHistoryTable(store);
-
-            showToast(`🔄 Shift tanggal ${formatDateShort(targetDate)} berhasil ditukar! (${swappedPairs.join(', ')})`, '🔄');
-        }
-
         // ==========================================
         // 5. NAVIGASI HALAMAN & ANALISA CABANG
         // ==========================================
@@ -3314,28 +3226,15 @@
 
             const titleEl = document.getElementById('dedicatedStoreTitle');
             const subEl = document.getElementById('dedicatedStoreSubtitle');
-            const btnDedicatedRoll = document.getElementById('btnDedicatedRollShifts');
-            const btnDedicatedDaily = document.getElementById('btnDedicatedOpenDailyModal');
 
             const isEmployeeRole = (currentAuthRole === 'employee');
-            const hasMultiShift = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) > 1;
 
             if (isEmployeeRole && currentEmployee) {
                 if (titleEl) titleEl.innerText = `📊 Analisa & Riwayat Transaksi - ${store.name}`;
                 if (subEl) subEl.innerText = `Tren & Performa Transaksi Kasir (${currentEmployee.name}) • ${getTodayDisplay()}`;
-                if (btnDedicatedRoll) btnDedicatedRoll.style.display = 'none';
-                if (btnDedicatedDaily) {
-                    btnDedicatedDaily.innerHTML = '<span>✏️</span> Input Transaksi Hari Ini';
-                    btnDedicatedDaily.onclick = () => openEmployeeProposalModal(getTodayKey());
-                }
             } else {
                 if (titleEl) titleEl.innerText = `📊 Analisa & Grafik - ${store.name}`;
                 if (subEl) subEl.innerText = `Filter Rentang Tanggal, Perbandingan Kasir & Tren Shift • ${getTodayDisplay()}`;
-                if (btnDedicatedRoll) btnDedicatedRoll.style.display = hasMultiShift ? 'inline-flex' : 'none';
-                if (btnDedicatedDaily) {
-                    btnDedicatedDaily.innerHTML = '<span>✏️</span> Set / Edit Transaksi Hari Ini';
-                    btnDedicatedDaily.onclick = () => openDailyTxModal(store.id, true);
-                }
             }
 
             initFilterControls(store);
@@ -3424,10 +3323,10 @@
                 if (empBadgeWrap) empBadgeWrap.style.display = 'none';
                 if (btnAdminManage) btnAdminManage.style.display = 'inline-flex';
                 if (btnEmpLogout) btnEmpLogout.style.display = 'none';
-                if (btnRollShifts) btnRollShifts.style.display = hasMultiShift ? 'inline-flex' : 'none';
+                if (btnRollShifts) btnRollShifts.style.display = (hasMultiShift && shiftCountVal !== 2) ? 'inline-flex' : 'none';
                 if (btnHeaderBackStores) btnHeaderBackStores.innerHTML = '&larr; Kembali ke Kelola Cabang';
                 if (topNavBackBtn) topNavBackBtn.title = 'Kembali ke Kelola Cabang';
-                if (topAppTitle) topAppTitle.innerText = 'Transaksi & Shift Kasir';
+                if (topAppTitle) topAppTitle.innerText = 'Transaksi & Shift';
                 if (topAppSubtitle) topAppSubtitle.innerText = 'Pencatatan Transaksi Harian, Rotasi Shift & Analisa Performa';
             }
 
@@ -3447,11 +3346,11 @@
             const breakdownTitle = document.getElementById('empBreakdownTitle');
             const recordedTimeEl = document.getElementById('badgeRecordedTime');
 
-            // Tombol Roll Shift hanya relevan untuk Admin dan jika cabang punya lebih dari 1 shift
-            ['btnRollShifts', 'btnDedicatedRollShifts'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.style.display = (!isEmployeeRole && hasMultiShift) ? 'inline-flex' : 'none';
-            });
+            // Tombol Roll Shift:
+            // - btnRollShifts di analytics-header-card disembunyikan jika 2 shift karena sudah ada di card-box scoreboard
+            if (btnRollShifts) {
+                btnRollShifts.style.display = (!isEmployeeRole && hasMultiShift && shiftCountVal !== 2) ? 'inline-flex' : 'none';
+            }
 
             if (currentAuthRole === 'employee' && currentEmployee) {
                 // === MODE KARYAWAN: HANYA TAMPILKAN TRANSAKSI KARYAWAN AKTIF ===
@@ -3524,7 +3423,7 @@
 
             } else {
                 // === MODE ADMIN: TAMPILKAN SELURUH REKAP CABANG & KARYAWAN ===
-                if (breakdownTitle) breakdownTitle.innerText = '👥 Transaksi Berdasarkan Petugas Shift Hari Ini';
+                if (breakdownTitle) breakdownTitle.innerText = '👥 Transaksi Hari Ini';
 
                 const activeEmps = getActiveEmployees(store);
                 const empS1 = activeEmps.find(e => e.shift_num === 1);
@@ -3638,10 +3537,7 @@
                                                 <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">tx</span>
                                                 <span style="font-size: 10px; color: #F59E0B; opacity: 0.7; margin-left: 2px;">✏️</span>
                                             </div>
-                                            <div style="font-size: 10px; font-weight: 600; color: var(--text-muted); margin-top: 2px;">
-                                                ${s1Recorded ? 'Klik untuk ubah' : '+ Klik untuk input'}
-                                            </div>
-                                        </div>
+                                                                                    </div>
                                     </div>
                                 </div>
 
@@ -4962,18 +4858,6 @@
             if (modalDateDisplay) {
                 modalDateDisplay.innerText = formatFullDate(targetDate);
                 modalDateDisplay.title = `${targetDate} (${formatFullDate(targetDate)})`;
-            }
-
-            const swapLabel = document.getElementById('modalSwapLabel');
-            const swapBtnText = document.getElementById('modalSwapBtnText');
-            if (swapLabel && swapBtnText) {
-                if (isToday) {
-                    swapLabel.innerText = 'Ada kesepakatan tukar shift hari ini?';
-                    swapBtnText.innerText = 'Tukar Petugas Hari Ini';
-                } else {
-                    swapLabel.innerText = `Tukar posisi shift pada tanggal ${formatDateShort(targetDate)}?`;
-                    swapBtnText.innerText = 'Tukar Petugas Tanggal Ini';
-                }
             }
 
             // 2. Info Shift Sedang Berjalan (Hanya jika Hari Ini)
