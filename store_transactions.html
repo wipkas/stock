@@ -595,7 +595,7 @@
             }
         }
 
-        /* History Table */
+        /* History Table Base */
         .history-table {
             width: 100%;
             border-collapse: collapse;
@@ -614,6 +614,17 @@
         .history-table td {
             padding: 10px;
             border-bottom: 1px solid var(--card-border);
+        }
+
+        .ht-mobile-lbl {
+            display: none;
+        }
+
+        .ht-date-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
         .clickable-history-row {
@@ -1195,6 +1206,94 @@
 
             .mobile-scroll-hint.show {
                 display: block;
+            }
+
+            /* Responsive Mobile Card Layout for History Table */
+            .history-table {
+                display: block;
+                width: 100%;
+                border: none;
+            }
+
+            .history-table thead {
+                display: none;
+            }
+
+            .history-table tbody {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .history-table tr.clickable-history-row {
+                display: flex;
+                flex-direction: column;
+                background: var(--input-bg);
+                border: 1px solid var(--card-border);
+                border-radius: 12px;
+                padding: 12px 14px;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+                gap: 6px;
+                transition: transform 0.15s ease, border-color 0.15s ease;
+            }
+
+            .history-table tr.clickable-history-row:active {
+                transform: scale(0.99);
+            }
+
+            .history-table tr.history-row-today {
+                border: 1.5px solid rgba(79, 142, 247, 0.45);
+                background: rgba(79, 142, 247, 0.04);
+            }
+
+            .history-table td.ht-cell {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 5px 0;
+                border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+                font-size: 12px;
+            }
+
+            body.light-theme .history-table td.ht-cell {
+                border-bottom: 1px dashed rgba(0, 0, 0, 0.08);
+            }
+
+            .history-table td.ht-date {
+                padding-bottom: 8px;
+                border-bottom: 1px solid var(--card-border);
+                font-size: 13px;
+            }
+
+            .history-table td.ht-action {
+                border-bottom: none;
+                padding-top: 6px;
+                padding-bottom: 0;
+            }
+
+            .history-table td.ht-action .btn-row-edit {
+                width: 100%;
+                justify-content: center;
+                padding: 8px 12px;
+                font-size: 12px;
+                border-radius: 8px;
+            }
+
+            .history-table td.ht-total-action {
+                border-bottom: none;
+                padding-top: 6px;
+            }
+
+            .ht-mobile-lbl {
+                display: inline-block;
+                font-size: 11px;
+                color: var(--text-muted);
+                font-weight: 600;
+            }
+
+            .ht-val {
+                text-align: right;
             }
         }
 
@@ -4649,12 +4748,27 @@
                     const rowTooltip = isTodayRow ? `Input / Edit transaksi hari ini (${dateKey})` : `Usulkan / Edit transaksi ${dateKey}`;
 
                     html += `
-                        <tr class="clickable-history-row">
-                            <td><b>${escapeHtml(dateKey)}</b> <span style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(dateKey)})</span></td>
-                            <td><span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span></td>
-                            <td>${approvedHtml}</td>
-                            <td>${propStatusHtml}</td>
-                            <td style="text-align: right;">
+                        <tr class="clickable-history-row history-row-emp ${isTodayRow ? 'history-row-today' : ''}">
+                            <td class="ht-cell ht-date">
+                                <div class="ht-date-wrap">
+                                    <span class="ht-date-main"><b>${escapeHtml(dateKey)}</b></span>
+                                    <span class="ht-date-sub" style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(dateKey)})</span>
+                                    ${isTodayRow ? '<span class="badge-status" style="background: rgba(79, 142, 247, 0.15); color: var(--primary); font-size: 10px; padding: 2px 6px; font-weight: 800;">Hari Ini</span>' : ''}
+                                </div>
+                            </td>
+                            <td class="ht-cell ht-shift">
+                                <span class="ht-mobile-lbl">Shift:</span>
+                                <div class="ht-val"><span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span></div>
+                            </td>
+                            <td class="ht-cell ht-approved">
+                                <span class="ht-mobile-lbl">Disetujui Admin:</span>
+                                <div class="ht-val">${approvedHtml}</div>
+                            </td>
+                            <td class="ht-cell ht-status">
+                                <span class="ht-mobile-lbl">Status Usulan:</span>
+                                <div class="ht-val">${propStatusHtml}</div>
+                            </td>
+                            <td class="ht-cell ht-action" style="text-align: right;">
                                 <button type="button" class="btn-row-edit" onclick="openEmployeeProposalModal('${dateKey}')" title="${rowTooltip}">
                                     <span>✏️</span> <span>${actionBtnLabel}</span>
                                 </button>
@@ -4719,15 +4833,27 @@
                     const pendingOnDate = (store && store.tx_proposals || []).filter(p => p.date === dateKey && p.status === 'pending');
 
                     html += `
-                        <tr class="clickable-history-row">
-                            <td>
-                                <b>${escapeHtml(dateKey)}</b> <span style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(dateKey)})</span>
-                                ${pendingOnDate.length > 0 ? `<span class="badge-status badge-proposal-pending" style="font-size:9.5px; margin-left:4px;">🟡 ${pendingOnDate.length} Usulan</span>` : ''}
+                        <tr class="clickable-history-row history-row-admin">
+                            <td class="ht-cell ht-date">
+                                <div class="ht-date-wrap">
+                                    <span class="ht-date-main"><b>${escapeHtml(dateKey)}</b></span>
+                                    <span class="ht-date-sub" style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(dateKey)})</span>
+                                    ${pendingOnDate.length > 0 ? `<span class="badge-status badge-proposal-pending" style="font-size:9.5px; margin-left:4px;">🟡 ${pendingOnDate.length} Usulan</span>` : ''}
+                                </div>
                             </td>
-                            <td>${s1Text}</td>
-                            ${isSingleShift ? '' : `<td>${s2Text}</td>`}
-                            <td>
-                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                            <td class="ht-cell ht-shift1">
+                                <span class="ht-mobile-lbl">${isSingleShift ? 'Full Shift:' : 'Shift 1 (Pagi):'}</span>
+                                <div class="ht-val">${s1Text}</div>
+                            </td>
+                            ${isSingleShift ? '' : `
+                            <td class="ht-cell ht-shift2">
+                                <span class="ht-mobile-lbl">Shift 2 (Malam):</span>
+                                <div class="ht-val">${s2Text}</div>
+                            </td>
+                            `}
+                            <td class="ht-cell ht-total-action">
+                                <span class="ht-mobile-lbl">Total Toko:</span>
+                                <div class="ht-val" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                                     <span>${totalHighlight}</span>
                                     <button type="button" class="btn-row-edit" onclick="openDailyTxModal('${store.id}', true, '${dateKey}')" title="Edit transaksi ${dateKey}">
                                         <span>✏️</span> <span>Edit</span>
@@ -4819,12 +4945,27 @@
                     const rowTooltip = isTodayRow ? `Input / Edit transaksi hari ini (${item.date})` : `Usulkan transaksi ${item.date}`;
 
                     html += `
-                        <tr class="clickable-history-row">
-                            <td><b>${escapeHtml(item.date)}</b> <span style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(item.date)})</span></td>
-                            <td><span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span></td>
-                            <td>${approvedHtml}</td>
-                            <td>${propStatusHtml}</td>
-                            <td style="text-align: right;">
+                        <tr class="clickable-history-row history-row-emp ${isTodayRow ? 'history-row-today' : ''}">
+                            <td class="ht-cell ht-date">
+                                <div class="ht-date-wrap">
+                                    <span class="ht-date-main"><b>${escapeHtml(item.date)}</b></span>
+                                    <span class="ht-date-sub" style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(item.date)})</span>
+                                    ${isTodayRow ? '<span class="badge-status" style="background: rgba(79, 142, 247, 0.15); color: var(--primary); font-size: 10px; padding: 2px 6px; font-weight: 800;">Hari Ini</span>' : ''}
+                                </div>
+                            </td>
+                            <td class="ht-cell ht-shift">
+                                <span class="ht-mobile-lbl">Shift:</span>
+                                <div class="ht-val"><span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span></div>
+                            </td>
+                            <td class="ht-cell ht-approved">
+                                <span class="ht-mobile-lbl">Disetujui Admin:</span>
+                                <div class="ht-val">${approvedHtml}</div>
+                            </td>
+                            <td class="ht-cell ht-status">
+                                <span class="ht-mobile-lbl">Status Usulan:</span>
+                                <div class="ht-val">${propStatusHtml}</div>
+                            </td>
+                            <td class="ht-cell ht-action" style="text-align: right;">
                                 <button type="button" class="btn-row-edit" onclick="openEmployeeProposalModal('${item.date}')" title="${rowTooltip}">
                                     <span>✏️</span> <span>${actionBtnLabel}</span>
                                 </button>
@@ -4875,15 +5016,27 @@
                     const pendingOnDate = (store.tx_proposals || []).filter(p => p.date === item.date && p.status === 'pending');
 
                     html += `
-                        <tr class="clickable-history-row">
-                            <td>
-                                <b>${escapeHtml(item.date)}</b> <span style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(item.date)})</span>
-                                ${pendingOnDate.length > 0 ? `<span class="badge-status badge-proposal-pending" style="font-size:9.5px; margin-left:4px;">🟡 ${pendingOnDate.length} Usulan</span>` : ''}
+                        <tr class="clickable-history-row history-row-admin">
+                            <td class="ht-cell ht-date">
+                                <div class="ht-date-wrap">
+                                    <span class="ht-date-main"><b>${escapeHtml(item.date)}</b></span>
+                                    <span class="ht-date-sub" style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(${formatDateShort(item.date)})</span>
+                                    ${pendingOnDate.length > 0 ? `<span class="badge-status badge-proposal-pending" style="font-size:9.5px; margin-left:4px;">🟡 ${pendingOnDate.length} Usulan</span>` : ''}
+                                </div>
                             </td>
-                            <td>${s1Text}</td>
-                            ${isSingleShift ? '' : `<td>${s2Text}</td>`}
-                            <td>
-                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                            <td class="ht-cell ht-shift1">
+                                <span class="ht-mobile-lbl">${isSingleShift ? 'Full Shift:' : 'Shift 1 (Pagi):'}</span>
+                                <div class="ht-val">${s1Text}</div>
+                            </td>
+                            ${isSingleShift ? '' : `
+                            <td class="ht-cell ht-shift2">
+                                <span class="ht-mobile-lbl">Shift 2 (Malam):</span>
+                                <div class="ht-val">${s2Text}</div>
+                            </td>
+                            `}
+                            <td class="ht-cell ht-total-action">
+                                <span class="ht-mobile-lbl">Total Toko:</span>
+                                <div class="ht-val" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                                     <span>${totalHighlight}</span>
                                     <button type="button" class="btn-row-edit" onclick="openDailyTxModal('${store.id}', true, '${item.date}')" title="Edit transaksi ${item.date}">
                                         <span>✏️</span> <span>Edit</span>

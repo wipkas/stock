@@ -2110,8 +2110,13 @@
                                 <option value="resigned">Resign / Nonaktif</option>
                             </select>
                         </div>
-                        <div style="font-size: 12px; color: var(--text-muted);">
-                            Total: <b id="filteredEmpCount" style="color: var(--primary);">0</b> Karyawan
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <div style="font-size: 12px; color: var(--text-muted);">
+                                Total: <b id="filteredEmpCount" style="color: var(--primary);">0</b> Karyawan
+                            </div>
+                            <button type="button" class="btn-primary" onclick="openAddNewEmployeeModal()" style="padding: 6px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;" title="Tambah Karyawan Baru">
+                                <span>➕</span> <span>Tambah Karyawan</span>
+                            </button>
                         </div>
                     </div>
 
@@ -2170,6 +2175,80 @@
             <div class="modal-footer" style="justify-content: flex-end;">
                 <button type="button" class="btn-secondary" onclick="closeModal('masterEmployeesModal')">Tutup</button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL 9: TAMBAH KARYAWAN BARU (MASTER DATA) -->
+    <div id="addNewEmployeeModal" class="modal-backdrop" style="z-index: 1250;" onclick="handleBackdropClose(event, 'addNewEmployeeModal')">
+        <div class="modal-card" style="max-width: 490px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">👤 Tambah Karyawan Baru</h3>
+                    <p class="modal-subtitle">Daftarkan karyawan baru ke cabang atau ke pool unassigned</p>
+                </div>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('addNewEmployeeModal')">&times;</button>
+            </div>
+            <form id="addNewEmployeeForm" onsubmit="handleSaveNewEmployeeSubmit(event)" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin: 0;">
+                <div class="modal-body" style="padding: 16px 20px; overflow-y: auto; flex: 1;">
+                    <div class="form-group">
+                        <label class="form-label" for="newMasterEmpNameInput">Nama Lengkap Karyawan <span style="color: var(--danger);">*</span></label>
+                        <input type="text" id="newMasterEmpNameInput" class="form-input" placeholder="Misal: Budi Santoso" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="newMasterEmpPinInput">PIN Password Login <span style="color: var(--danger);">*</span></label>
+                        <input type="password" id="newMasterEmpPinInput" class="form-input" placeholder="Minimal 3 digit angka/huruf (unik)" required>
+                        <div class="form-hint">Digunakan karyawan untuk login portal dan pencatatan transaksi harian.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="newMasterEmpStoreSelect">Penugasan Cabang Toko</label>
+                        <select id="newMasterEmpStoreSelect" class="form-select" onchange="updateNewEmpShiftOptions()">
+                            <!-- Dinamis via JS: unassigned + semua cabang -->
+                        </select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="form-group">
+                            <label class="form-label" for="newMasterEmpShiftSelect">Shift Bertugas</label>
+                            <select id="newMasterEmpShiftSelect" class="form-select">
+                                <option value="1">Shift 1</option>
+                                <option value="2">Shift 2</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="newMasterEmpRoleSelect">Role Penugasan</label>
+                            <select id="newMasterEmpRoleSelect" class="form-select">
+                                <option value="kasir">Kasir Tetap</option>
+                                <option value="inval">Kasir Inval (Pengganti)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="newMasterEmpPhoneInput">Nomor HP / WhatsApp (Opsional)</label>
+                        <div style="position: relative; display: flex; align-items: center;">
+                            <span style="position: absolute; left: 12px; font-size: 14px; color: var(--text-muted);">📱</span>
+                            <input type="tel" id="newMasterEmpPhoneInput" class="form-input" style="padding-left: 36px;" placeholder="08xxxxxxxxxx">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="newMasterEmpAddressInput">Alamat Lengkap Domisili (Opsional)</label>
+                        <textarea id="newMasterEmpAddressInput" class="form-input" rows="2" placeholder="Alamat tempat tinggal karyawan..." style="resize: vertical;"></textarea>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" for="newMasterEmpNotesInput">Catatan Tambahan (Opsional)</label>
+                        <input type="text" id="newMasterEmpNotesInput" class="form-input" placeholder="Misal: Penanggung jawab kunci...">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('addNewEmployeeModal')">Batal</button>
+                    <button type="submit" id="btnSaveNewMasterEmp" class="btn-primary">➕ Tambahkan Karyawan</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -3950,6 +4029,192 @@
             renderStoresGrid();
 
             showToast(`Data kontak & profil "${newName}" berhasil disimpan!`, '✅');
+        }
+
+        // ==========================================
+        // MODAL TAMBAH KARYAWAN BARU (MASTER DATA) LOGIC
+        // ==========================================
+
+        function openAddNewEmployeeModal() {
+            const storeSel = document.getElementById('newMasterEmpStoreSelect');
+            if (!storeSel) return;
+            storeSel.innerHTML = `
+                <option value="unassigned">🟢 Tanpa Cabang (Unassigned Pool)</option>
+            `;
+            storesData.forEach(st => {
+                const opt = document.createElement('option');
+                opt.value = st.id;
+                opt.textContent = `🏢 ${st.name}`;
+                storeSel.appendChild(opt);
+            });
+
+            // Ambil default dari filter jika sedang memilih cabang tertentu
+            const currentFilterStore = document.getElementById('filterMasterEmpStore')?.value;
+            if (currentFilterStore && currentFilterStore !== 'all' && currentFilterStore !== 'unassigned') {
+                storeSel.value = currentFilterStore;
+            } else if (currentFilterStore === 'unassigned') {
+                storeSel.value = 'unassigned';
+            }
+
+            document.getElementById('newMasterEmpNameInput').value = '';
+            document.getElementById('newMasterEmpPinInput').value = '';
+            document.getElementById('newMasterEmpPhoneInput').value = '';
+            document.getElementById('newMasterEmpAddressInput').value = '';
+            document.getElementById('newMasterEmpNotesInput').value = '';
+            document.getElementById('newMasterEmpRoleSelect').value = 'kasir';
+
+            updateNewEmpShiftOptions();
+            openModal('addNewEmployeeModal');
+        }
+
+        function updateNewEmpShiftOptions() {
+            const storeId = document.getElementById('newMasterEmpStoreSelect')?.value;
+            const shiftSel = document.getElementById('newMasterEmpShiftSelect');
+            if (!shiftSel) return;
+
+            if (!storeId || storeId === 'unassigned') {
+                shiftSel.innerHTML = '<option value="1">Shift 1 (Default)</option>';
+                shiftSel.disabled = true;
+                return;
+            }
+
+            shiftSel.disabled = false;
+            shiftSel.innerHTML = '';
+            const st = storesData.find(s => s.id === storeId);
+            const count = st ? (parseInt(st.shift_count) || (st.shifts ? st.shifts.length : 2)) : 2;
+            for (let i = 1; i <= count; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = `Shift ${i}`;
+                shiftSel.appendChild(opt);
+            }
+        }
+
+        async function handleSaveNewEmployeeSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('newMasterEmpNameInput').value.trim();
+            const pin = document.getElementById('newMasterEmpPinInput').value.trim();
+            const storeId = document.getElementById('newMasterEmpStoreSelect').value;
+            const shiftNum = parseInt(document.getElementById('newMasterEmpShiftSelect').value) || 1;
+            const role = document.getElementById('newMasterEmpRoleSelect').value || 'kasir';
+            const phone = document.getElementById('newMasterEmpPhoneInput').value.trim();
+            const address = document.getElementById('newMasterEmpAddressInput').value.trim();
+            const notes = document.getElementById('newMasterEmpNotesInput').value.trim();
+
+            if (!name) {
+                uiAlert('⚠️ Masukkan nama lengkap karyawan!');
+                return;
+            }
+            if (!pin || pin.length < 3) {
+                uiAlert('⚠️ PIN password login minimal 3 karakter!');
+                return;
+            }
+
+            // Cek duplikasi PIN
+            for (const st of storesData) {
+                const conflict = (st.employees || []).find(o => (o.status === 'active' || !o.status) && String(o.password).trim() === pin);
+                if (conflict) {
+                    uiAlert(`⚠️ Password PIN "${pin}" sudah dipakai oleh karyawan "${conflict.name}" di cabang "${st.name}". Gunakan PIN yang berbeda!`);
+                    return;
+                }
+            }
+            const uConflict = getUnassignedEmployees().find(o => (o.status === 'active' || !o.status) && String(o.password).trim() === pin);
+            if (uConflict) {
+                uiAlert(`⚠️ Password PIN "${pin}" sudah dipakai oleh karyawan "${uConflict.name}". Gunakan PIN yang berbeda!`);
+                return;
+            }
+
+            const newEmpId = 'emp_' + Date.now();
+            const newEmpObj = {
+                id: newEmpId,
+                name: name,
+                password: pin,
+                shift_num: shiftNum,
+                role: role,
+                status: 'active',
+                phone: phone,
+                address: address,
+                notes: notes,
+                created_at: new Date().toISOString()
+            };
+
+            const btn = document.getElementById('btnSaveNewMasterEmp');
+            const origText = btn ? btn.innerText : 'Simpan';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = '⏳ Menyimpan...';
+            }
+
+            if (storeId && storeId !== 'unassigned') {
+                const targetStore = storesData.find(s => s.id === storeId);
+                if (!targetStore) {
+                    if (btn) { btn.disabled = false; btn.innerText = origText; }
+                    uiAlert('⚠️ Cabang yang dipilih tidak ditemukan!');
+                    return;
+                }
+                if (!targetStore.employees) targetStore.employees = [];
+                targetStore.employees.push(newEmpObj);
+
+                recordMutationLog({
+                    id: 'mut_' + Date.now() + '_add',
+                    emp_id: newEmpId,
+                    emp_name: name,
+                    from_store_id: 'Karyawan Baru',
+                    to_store_id: targetStore.id,
+                    new_shift_num: shiftNum,
+                    reason: `Penambahan Karyawan Baru (${targetStore.name})`,
+                    transfer_date: new Date().toISOString()
+                });
+
+                saveStoresData();
+
+                if (window.KspSync && typeof window.KspSync.adminTransferEmployee === 'function') {
+                    try {
+                        window.KspSync.adminTransferEmployee(newEmpId, targetStore.id, shiftNum, 'Karyawan Baru').catch(() => {});
+                    } catch(e) {}
+                }
+            } else {
+                // Simpan ke pool unassigned
+                addUnassignedEmployee(newEmpObj);
+
+                recordMutationLog({
+                    id: 'mut_' + Date.now() + '_add_unassigned',
+                    emp_id: newEmpId,
+                    emp_name: name,
+                    from_store_id: 'Karyawan Baru',
+                    to_store_id: 'unassigned',
+                    new_shift_num: '-',
+                    reason: 'Penambahan Karyawan Baru (Pool Unassigned)',
+                    transfer_date: new Date().toISOString()
+                });
+
+                saveStoresData();
+            }
+
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = origText;
+            }
+
+            closeModal('addNewEmployeeModal');
+            filterMasterEmployeesTable();
+            renderStoresGrid();
+
+            // Jika modal cabang sedang terbuka, perbarui juga
+            const formModal = document.getElementById('storeFormModal');
+            if (formModal && formModal.classList.contains('open')) {
+                const curEditId = document.getElementById('formStoreId').value;
+                const updatedStore = storesData.find(s => s.id === curEditId);
+                if (updatedStore) {
+                    const empCont = document.getElementById('empListContainer');
+                    empCont.innerHTML = '';
+                    (updatedStore.employees || []).forEach(emp => {
+                        addEmployeeRow(emp.name, emp.password, emp.shift_num, emp.id, emp.role || 'kasir', emp.status || 'active', emp.photo || '', emp.phone || '', emp.address || '', emp.notes || '');
+                    });
+                }
+            }
+
+            showToast(`Karyawan "${name}" berhasil ditambahkan!`, '✅');
         }
 
         function getLocalMutationLogs() {
