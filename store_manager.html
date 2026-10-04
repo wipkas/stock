@@ -1590,14 +1590,19 @@
 
                     <!-- Karyawan & Password Login -->
                     <div class="form-group">
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <label class="form-label">Daftar Karyawan</label>
-                            <button type="button" class="btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="addEmployeeRow()">
-                                + Tambah Karyawan
-                            </button>
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                            <label class="form-label" style="margin-bottom: 0;">Daftar Karyawan</label>
+                            <div style="display: flex; gap: 6px;">
+                                <button type="button" class="btn-secondary" style="padding: 5px 10px; font-size: 11px; display: inline-flex; align-items: center; gap: 5px;" onclick="openPickExistingEmployeeModal()">
+                                    <span>👥</span> <span>Pilih Karyawan Ada</span>
+                                </button>
+                                <button type="button" class="btn-primary" style="padding: 5px 10px; font-size: 11px; display: inline-flex; align-items: center; gap: 5px;" onclick="addEmployeeRow()">
+                                    <span>+</span> <span>Karyawan Baru</span>
+                                </button>
+                            </div>
                         </div>
                         <div class="form-hint" style="background: rgba(79, 142, 247, 0.1); border: 1px solid rgba(79, 142, 247, 0.25); padding: 8px 10px; border-radius: 8px; margin: 4px 0 8px 0; font-size: 11px; line-height: 1.45; color: var(--text-main);">
-                            💡 <b>Password Karyawan:</b> Klik tombol <b>🔑 PIN</b> pada masing-masing karyawan untuk memasukkan atau mengubah password/PIN login unik.
+                            💡 <b>Petugas Cabang:</b> Anda dapat menugaskan karyawan yang sudah ada (dari cabang lain / unassigned) atau menambah karyawan baru. Klik tombol <b>🔑 PIN</b> untuk mengatur password kasir.
                         </div>
                         <div class="emp-list-container" id="empListContainer">
                             <!-- Dynamic Employee Rows -->
@@ -1615,6 +1620,35 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL: PILIH KARYAWAN YANG SUDAH ADA -->
+    <div id="pickExistingEmpModal" class="modal-backdrop" style="z-index: 1250;" onclick="handleBackdropClose(event, 'pickExistingEmpModal')">
+        <div class="modal-card" style="max-width: 520px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">👥 Pilih Karyawan yang Sudah Ada</h3>
+                    <p class="modal-subtitle">Tugaskan karyawan yang sudah terdaftar ke cabang ini</p>
+                </div>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('pickExistingEmpModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 14px 18px; overflow-y: auto; flex: 1;">
+                <div style="margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    <input type="text" id="searchPickEmp" placeholder="🔍 Cari nama atau telepon..." class="form-input" style="flex: 1; min-width: 160px; padding: 7px 12px; font-size: 12px;" oninput="renderPickExistingEmpList()">
+                    <select id="filterPickEmpStatus" class="form-select" style="width: auto; padding: 7px 10px; font-size: 12px;" onchange="renderPickExistingEmpList()">
+                        <option value="all">Semua Karyawan</option>
+                        <option value="unassigned" selected>Tanpa Cabang (Unassigned)</option>
+                        <option value="other_store">Cabang Lain</option>
+                    </select>
+                </div>
+                <div id="pickEmpListContainer" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Diisi dinamis via renderPickExistingEmpList() -->
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: flex-end;">
+                <button type="button" class="btn-secondary" onclick="closeModal('pickExistingEmpModal')">Tutup</button>
+            </div>
         </div>
     </div>
 
@@ -2824,6 +2858,265 @@
             showToast(`Jadwal rotasi ${store.name} diperbarui: ${getRotationBadgeLabel(store)} (tukar manual tetap aktif).`, '🔄');
         }
 
+        // ==========================================
+        // MANAJEMEN KARYAWAN TANPA CABANG (UNASSIGNED) & PICKER
+        // ==========================================
+
+        function getUnassignedEmployees() {
+            try {
+                const raw = localStorage.getItem('kspcheck_unassigned_employees');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) return parsed;
+                }
+            } catch (e) {
+                console.warn('[StoreManager] Error parsing unassigned employees:', e);
+            }
+            return [];
+        }
+
+        function saveUnassignedEmployees(list) {
+            try {
+                localStorage.setItem('kspcheck_unassigned_employees', JSON.stringify(list || []));
+            } catch (e) {
+                console.warn('[StoreManager] Error saving unassigned employees:', e);
+            }
+        }
+
+        function addUnassignedEmployee(emp) {
+            if (!emp || !emp.id) return;
+            const list = getUnassignedEmployees();
+            const idx = list.findIndex(e => e.id === emp.id);
+            const cleanEmp = {
+                id: emp.id,
+                name: emp.name || 'Karyawan',
+                password: emp.password || '',
+                shift_num: emp.shift_num || 1,
+                role: emp.role || 'kasir',
+                status: emp.status || 'active',
+                photo: emp.photo || '',
+                phone: emp.phone || '',
+                address: emp.address || '',
+                notes: emp.notes || ''
+            };
+            if (idx >= 0) {
+                list[idx] = { ...list[idx], ...cleanEmp };
+            } else {
+                list.unshift(cleanEmp);
+            }
+            saveUnassignedEmployees(list);
+        }
+
+        function removeUnassignedEmployee(empId) {
+            if (!empId) return;
+            const list = getUnassignedEmployees().filter(e => e.id !== empId);
+            saveUnassignedEmployees(list);
+        }
+
+        function getAllKnownEmployees() {
+            const map = new Map();
+
+            // 1. Dari cache cloud master employees jika ada
+            let cachedMaster = [];
+            try {
+                const raw = localStorage.getItem('kspcheck_master_employees_cache');
+                if (raw) cachedMaster = JSON.parse(raw);
+            } catch(e) {}
+            if (Array.isArray(cachedMaster)) {
+                cachedMaster.forEach(e => {
+                    if (e && (e.id || e.name)) map.set(e.id || e.name, { ...e });
+                });
+            }
+
+            // 2. Dari storesData (data cabang saat ini)
+            storesData.forEach(st => {
+                (st.employees || []).forEach(e => {
+                    if (e && (e.id || e.name)) {
+                        const key = e.id || e.name;
+                        const existing = map.get(key) || {};
+                        map.set(key, {
+                            ...existing,
+                            ...e,
+                            store_id: st.id,
+                            store_name: st.name
+                        });
+                    }
+                });
+            });
+
+            // 3. Dari daftar unassigned employees
+            getUnassignedEmployees().forEach(e => {
+                if (e && (e.id || e.name)) {
+                    const key = e.id || e.name;
+                    const existing = map.get(key) || {};
+                    map.set(key, {
+                        ...existing,
+                        ...e,
+                        store_id: null,
+                        store_name: null
+                    });
+                }
+            });
+
+            return Array.from(map.values());
+        }
+
+        async function fetchMasterEmployees() {
+            if (window.KspSync && typeof window.KspSync.adminGetAllEmployees === 'function') {
+                try {
+                    const res = await window.KspSync.adminGetAllEmployees();
+                    if (res && res.employees && Array.isArray(res.employees)) {
+                        localStorage.setItem('kspcheck_master_employees_cache', JSON.stringify(res.employees));
+                        // Daftarkan karyawan yang tidak terhubung dengan cabang aktif ke unassigned
+                        res.employees.forEach(e => {
+                            if (!e.store_id || e.store_id === 'null' || !storesData.some(s => s.id === e.store_id)) {
+                                addUnassignedEmployee({ ...e, store_id: null, store_name: null });
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.warn('[StoreManager] Gagal fetch master employees:', e);
+                }
+            }
+        }
+
+        async function openPickExistingEmployeeModal() {
+            openModal('pickExistingEmpModal');
+            renderPickExistingEmpList();
+            if (window.KspSync && window.KspSync.enabled()) {
+                fetchMasterEmployees().then(() => {
+                    renderPickExistingEmpList();
+                });
+            }
+        }
+
+        function renderPickExistingEmpList() {
+            const container = document.getElementById('pickEmpListContainer');
+            if (!container) return;
+
+            const search = (document.getElementById('searchPickEmp')?.value || '').toLowerCase().trim();
+            const filterType = document.getElementById('filterPickEmpStatus')?.value || 'unassigned';
+            const currentEditingStoreId = document.getElementById('formStoreId')?.value || '';
+
+            // ID yang sudah ada di baris form saat ini
+            const alreadyAssignedIds = new Set();
+            document.querySelectorAll('#empListContainer .emp-item-row').forEach(row => {
+                if (row.dataset.empId) alreadyAssignedIds.add(row.dataset.empId);
+            });
+
+            const allEmps = getAllKnownEmployees();
+            const availableEmps = allEmps.filter(emp => {
+                if (alreadyAssignedIds.has(emp.id)) return false;
+
+                const isUnassigned = !emp.store_id || emp.store_id === 'null' || !storesData.some(s => s.id === emp.store_id);
+                const isOtherStore = Boolean(emp.store_id && emp.store_id !== currentEditingStoreId && storesData.some(s => s.id === emp.store_id));
+
+                if (filterType === 'unassigned' && !isUnassigned) return false;
+                if (filterType === 'other_store' && !isOtherStore) return false;
+
+                if (search) {
+                    const matchName = (emp.name || '').toLowerCase().includes(search);
+                    const matchPhone = (emp.phone || '').toLowerCase().includes(search);
+                    const matchStore = (emp.store_name || '').toLowerCase().includes(search);
+                    if (!matchName && !matchPhone && !matchStore) return false;
+                }
+
+                return true;
+            });
+
+            if (availableEmps.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 28px 14px; color: var(--text-muted); font-size: 12.5px;">
+                        <div style="font-size: 28px; margin-bottom: 6px;">👥</div>
+                        Tidak ada karyawan yang sesuai filter.<br>
+                        <span style="font-size: 11px; opacity: 0.8;">Coba ganti filter pencarian atau gunakan tombol "<b>+ Karyawan Baru</b>".</span>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            availableEmps.forEach(emp => {
+                const isUnassigned = !emp.store_id || emp.store_id === 'null' || !storesData.some(s => s.id === emp.store_id);
+                const hasPass = Boolean(emp.password && String(emp.password).trim().length > 0);
+
+                let avatarHtml = '';
+                if (emp.photo) {
+                    avatarHtml = `<img src="${escapeHtml(emp.photo)}" alt="${escapeHtml(emp.name)}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--primary); flex-shrink: 0;">`;
+                } else {
+                    const init = escapeHtml((emp.name ? emp.name.charAt(0) : '?').toUpperCase());
+                    avatarHtml = `<div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(79, 142, 247, 0.15); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; border: 1px solid rgba(79, 142, 247, 0.3); flex-shrink: 0;">${init}</div>`;
+                }
+
+                const branchBadge = isUnassigned
+                    ? '<span class="badge-status" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 10.5px;">🟢 Bebas Ditugaskan (Tanpa Cabang)</span>'
+                    : `<span class="badge-status" style="background: rgba(79, 142, 247, 0.15); color: var(--primary); font-size: 10.5px;">🏢 ${escapeHtml(emp.store_name || 'Cabang Lain')}</span>`;
+
+                const passBadge = hasPass
+                    ? '<span style="color: var(--success); font-size: 10.5px; font-weight: 700;">🔑 PIN Tersedia</span>'
+                    : '<span style="color: var(--warning); font-size: 10.5px; font-weight: 700;">⚠️ Belum ada PIN</span>';
+
+                html += `
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+                            ${avatarHtml}
+                            <div style="min-width: 0;">
+                                <div style="font-weight: 800; font-size: 13.5px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    ${escapeHtml(emp.name)}
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 3px;">
+                                    ${branchBadge}
+                                    ${passBadge}
+                                    ${emp.phone ? `<span style="color: var(--text-muted); font-size: 10.5px;">📱 ${escapeHtml(emp.phone)}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-primary" style="padding: 6px 12px; font-size: 11.5px; font-weight: 800; white-space: nowrap;" onclick="assignExistingEmployee('${emp.id}')">
+                            + Tugaskan
+                        </button>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function assignExistingEmployee(empId) {
+            const allEmps = getAllKnownEmployees();
+            const emp = allEmps.find(e => e.id === empId);
+            if (!emp) {
+                uiAlert('Data karyawan tidak ditemukan!');
+                return;
+            }
+
+            // Hitung shift dengan jumlah kasir paling sedikit di form cabang saat ini
+            let countS1 = 0, countS2 = 0;
+            document.querySelectorAll('#empListContainer .emp-shift-select').forEach(sel => {
+                if (sel.value == '1') countS1++;
+                else if (sel.value == '2') countS2++;
+            });
+            const targetShift = (countS1 > countS2) ? 2 : (emp.shift_num || 1);
+
+            addEmployeeRow(
+                emp.name,
+                emp.password || '',
+                targetShift,
+                emp.id,
+                emp.role || 'kasir',
+                'active',
+                emp.photo || '',
+                emp.phone || '',
+                emp.address || '',
+                emp.notes || ''
+            );
+
+            // Hapus dari unassigned jika ada
+            removeUnassignedEmployee(emp.id);
+
+            closeModal('pickExistingEmpModal');
+            showToast(`"${emp.name}" berhasil ditugaskan ke cabang ini!`, '✅');
+        }
+
         function addEmployeeRow(name = '', pass = '', shift = 1, id = '', role = 'kasir', status = 'active', photo = '', phone = '', address = '', notes = '') {
             const cont = document.getElementById('empListContainer');
             const rowId = 'empRow_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
@@ -2845,6 +3138,14 @@
             const btnLabel = hasPass ? '🔑 PIN Tersedia' : '🔑 Set PIN';
             const currentStoreId = document.getElementById('formStoreId')?.value || '';
 
+            let avatarMini = '';
+            if (photo) {
+                avatarMini = `<img src="${escapeHtml(photo)}" alt="" style="width: 26px; height: 26px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--primary); flex-shrink: 0;">`;
+            } else if (name) {
+                const init = escapeHtml(name.charAt(0).toUpperCase());
+                avatarMini = `<div style="width: 26px; height: 26px; border-radius: 50%; background: rgba(79, 142, 247, 0.15); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; flex-shrink: 0; border: 1px solid rgba(79, 142, 247, 0.3);">${init}</div>`;
+            }
+
             if (isResigned) {
                 const statusBadge = status === 'resigned' 
                     ? '<span class="badge-status badge-status-resigned">🔴 Resign</span>' 
@@ -2853,16 +3154,20 @@
                 div.style.background = 'rgba(239, 68, 68, 0.04)';
                 div.innerHTML = `
                     <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;">
+                        ${avatarMini}
                         ${statusBadge}
-                        <input type="text" class="emp-name-input" value="${escapeHtml(name)}" readonly style="text-decoration: line-through; opacity: 0.8;">
+                        <input type="text" class="emp-name-input" value="${escapeHtml(name)}" readonly style="text-decoration: line-through; opacity: 0.8; flex: 1;">
                     </div>
                     <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; white-space: nowrap;">Shift ${shift}</span>
                     <button type="button" class="btn-emp-action btn-rehire" onclick="openRehireEmpModal('${id}', '${escapeHtml(name)}', '${currentStoreId}')" title="Aktifkan Kembali / Re-hire">♻️ Aktifkan</button>
-                    <button type="button" class="btn-del-emp" onclick="confirmDeleteEmpRow('${rowId}')" title="Hapus Karyawan">&times;</button>
+                    <button type="button" class="btn-del-emp" onclick="confirmDeleteEmpRow('${rowId}')" title="Lepas Karyawan dari Cabang">&times;</button>
                 `;
             } else {
                 div.innerHTML = `
-                    <input type="text" class="emp-name-input" placeholder="Nama Karyawan" value="${escapeHtml(name)}" required>
+                    <div style="flex: 1; min-width: 140px; display: flex; align-items: center; gap: 8px;">
+                        ${avatarMini}
+                        <input type="text" class="emp-name-input" placeholder="Nama Karyawan" value="${escapeHtml(name)}" required style="flex: 1;">
+                    </div>
                     <select class="form-select emp-role-select" title="Role Penugasan">
                         <option value="kasir" ${role === 'kasir' ? 'selected' : ''}>Kasir Tetap</option>
                         <option value="inval" ${role === 'inval' ? 'selected' : ''}>Kasir Inval</option>
@@ -2876,7 +3181,7 @@
                     ${id ? `
                         <button type="button" class="btn-emp-action btn-transfer" onclick="openTransferEmpModal('${id}', '${escapeHtml(name)}', document.getElementById('formStoreId').value)" title="Mutasi / Pindah Cabang">🔄 Mutasi</button>
                     ` : ''}
-                    <button type="button" class="btn-del-emp" onclick="confirmDeleteEmpRow('${rowId}')" title="Hapus Karyawan">&times;</button>
+                    <button type="button" class="btn-del-emp" onclick="confirmDeleteEmpRow('${rowId}')" title="Lepas Karyawan dari Cabang">&times;</button>
                 `;
             }
             cont.appendChild(div);
@@ -2886,22 +3191,42 @@
             const row = document.getElementById(rowId);
             if (!row) return;
             const empId = row.dataset.empId;
-            const empName = row.querySelector('.emp-name-input')?.value.trim() || 'karyawan ini';
+            const nameInput = row.querySelector('.emp-name-input');
+            const empName = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : 'karyawan ini';
+
             if (empId) {
                 const ok = await uiConfirm({
-                    icon: '⚠️',
-                    title: 'Hapus Baris Karyawan?',
-                    message: `Karyawan "${empName}" sudah terdaftar di sistem. Jika sudah tidak bekerja, gunakan tombol "🚪 Resign" agar riwayat transaksi tetap aman dan tercatat.`,
-                    confirmText: 'Tetap Hapus',
+                    icon: '👥',
+                    title: 'Lepas Karyawan dari Cabang?',
+                    message: `Lepas "${empName}" dari cabang ini?\n\nKaryawan tidak akan dihapus dari sistem, melainkan menjadi karyawan tanpa cabang (bebas ditugaskan kembali ke cabang mana pun kapan saja).`,
+                    confirmText: 'Lepas dari Cabang',
                     cancelText: 'Batal',
-                    danger: true
+                    danger: false
                 });
                 if (!ok) return;
 
-                if (window.KspSync && typeof window.KspSync.adminDeleteEmployee === 'function') {
-                    window.KspSync.adminDeleteEmployee(empId).catch(err => console.warn('[KspSync] Hapus karyawan cloud error:', err));
-                }
+                // Catat ke daftar karyawan tanpa cabang (unassigned)
+                const currentStoreId = document.getElementById('formStoreId')?.value || '';
+                const existingStore = storesData.find(s => s.id === currentStoreId);
+                const existingEmpObj = (existingStore?.employees || []).find(e => e.id === empId);
+
+                const unassignedEmp = {
+                    id: empId,
+                    name: empName,
+                    password: (row.dataset.empPass || existingEmpObj?.password || '').trim(),
+                    shift_num: parseInt(row.querySelector('.emp-shift-select')?.value) || existingEmpObj?.shift_num || 1,
+                    role: row.querySelector('.emp-role-select')?.value || row.dataset.empRole || existingEmpObj?.role || 'kasir',
+                    status: row.dataset.empStatus || existingEmpObj?.status || 'active',
+                    photo: row.dataset.empPhoto || existingEmpObj?.photo || '',
+                    phone: row.dataset.empPhone || existingEmpObj?.phone || '',
+                    address: row.dataset.empAddress || existingEmpObj?.address || '',
+                    notes: row.dataset.empNotes || existingEmpObj?.notes || ''
+                };
+                addUnassignedEmployee(unassignedEmp);
+
+                showToast(`"${empName}" dilepas dari cabang ini (data karyawan tetap tersimpan).`, '👥');
             }
+
             const stillRow = document.getElementById(rowId);
             if (stillRow) stillRow.remove();
         }
@@ -2977,9 +3302,10 @@
 
             // 2. Check duplicate across other branches
             const currentStoreId = document.getElementById('formStoreId').value;
+            const currentEmpId = row.dataset.empId;
             for (const otherStore of storesData) {
                 if (otherStore.id === currentStoreId) continue;
-                const conflict = (otherStore.employees || []).find(o => (o.status === 'active' || !o.status) && String(o.password).trim() === newPass);
+                const conflict = (otherStore.employees || []).find(o => o.id !== currentEmpId && (o.status === 'active' || !o.status) && String(o.password).trim() === newPass);
                 if (conflict) {
                     errBox.innerText = `⚠️ PIN "${newPass}" sudah dipakai oleh ${conflict.name} di ${otherStore.name}.`;
                     errBox.style.display = 'block';
@@ -3055,7 +3381,7 @@
                     // Check conflict with other branches
                     for (const otherStore of storesData) {
                         if (otherStore.id === storeId) continue;
-                        const conflict = (otherStore.employees || []).find(o => (o.status === 'active' || !o.status) && String(o.password).trim() === empPass);
+                        const conflict = (otherStore.employees || []).find(o => o.id !== existingEmpId && (o.status === 'active' || !o.status) && String(o.password).trim() === empPass);
                         if (conflict) {
                             uiAlert(`⚠️ Password PIN "${empPass}" sudah dipakai oleh karyawan "${conflict.name}" di cabang "${otherStore.name}".\n\nMohon buat PIN yang unik agar sistem dapat mengenali cabang dan nama karyawan secara otomatis saat login.`);
                             return;
@@ -3076,6 +3402,25 @@
                     photo: row.dataset.empPhoto || existingObj?.photo || null
                 });
             }
+
+            // Sinkronisasi unassign & deduplikasi cabang
+            if (existingStore && existingStore.employees) {
+                existingStore.employees.forEach(oldEmp => {
+                    if (!employees.some(ne => ne.id === oldEmp.id)) {
+                        addUnassignedEmployee({ ...oldEmp, status: oldEmp.status || 'active' });
+                    }
+                });
+            }
+
+            employees.forEach(emp => {
+                removeUnassignedEmployee(emp.id);
+                storesData.forEach(otherStore => {
+                    if (otherStore.id === storeId) return;
+                    if (otherStore.employees) {
+                        otherStore.employees = otherStore.employees.filter(oe => oe.id !== emp.id);
+                    }
+                });
+            });
 
             const currentMonthlyTx = existingStore ? calculateStoreMonthlyTx(existingStore) : 0;
 
@@ -3116,7 +3461,7 @@
             // Populate filter stores dropdown
             const filterStoreSelect = document.getElementById('filterMasterEmpStore');
             if (filterStoreSelect) {
-                filterStoreSelect.innerHTML = '<option value="all">Semua Cabang</option>';
+                filterStoreSelect.innerHTML = '<option value="all">Semua Cabang</option><option value="unassigned">Tanpa Cabang (Unassigned)</option>';
                 storesData.forEach(st => {
                     const opt = document.createElement('option');
                     opt.value = st.id;
@@ -3155,14 +3500,26 @@
 
         function getAllEmployeesFlat() {
             const list = [];
+            const seenIds = new Set();
             storesData.forEach(store => {
                 (store.employees || []).forEach(emp => {
+                    if (emp && emp.id) seenIds.add(emp.id);
                     list.push({
                         ...emp,
                         store_id: store.id,
                         store_name: store.name
                     });
                 });
+            });
+            // Sertakan juga karyawan tanpa cabang (unassigned)
+            getUnassignedEmployees().forEach(emp => {
+                if (emp && emp.id && !seenIds.has(emp.id)) {
+                    list.push({
+                        ...emp,
+                        store_id: null,
+                        store_name: 'Tanpa Cabang (Unassigned)'
+                    });
+                }
             });
             return list;
         }
@@ -3180,7 +3537,12 @@
             if (countBadge) countBadge.innerText = allEmps.length;
 
             const filtered = allEmps.filter(emp => {
-                if (storeFilter !== 'all' && emp.store_id !== storeFilter) return false;
+                if (storeFilter === 'unassigned') {
+                    if (emp.store_id) return false;
+                } else if (storeFilter !== 'all' && emp.store_id !== storeFilter) {
+                    return false;
+                }
+
                 const empStatus = emp.status || 'active';
                 const empRole = emp.role || 'kasir';
 
@@ -3261,16 +3623,16 @@
                 if (isActive) {
                     actionHtml = `
                         <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                            <button type="button" class="btn-emp-action" onclick="openEditEmployeeModal('${emp.id}', '${emp.store_id}')" title="Edit Data & Kontak" style="color: var(--primary); border-color: rgba(79, 142, 247, 0.35); background: rgba(79, 142, 247, 0.08);">✏️ Edit</button>
-                            <button type="button" class="btn-emp-action btn-transfer" onclick="openTransferEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${emp.store_id}')" title="Mutasi ke Cabang Lain">🔄 Pindah</button>
-                            <button type="button" class="btn-emp-action btn-deactivate" onclick="openDeactivateEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${emp.store_id}')" title="Nonaktifkan / Resign">🚪 Resign</button>
+                            <button type="button" class="btn-emp-action" onclick="openEditEmployeeModal('${emp.id}', '${emp.store_id || ''}')" title="Edit Data & Kontak" style="color: var(--primary); border-color: rgba(79, 142, 247, 0.35); background: rgba(79, 142, 247, 0.08);">✏️ Edit</button>
+                            <button type="button" class="btn-emp-action btn-transfer" onclick="openTransferEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${emp.store_id || ''}')" title="${emp.store_id ? 'Mutasi ke Cabang Lain' : 'Tugaskan ke Cabang'}">${emp.store_id ? '🔄 Pindah' : '➕ Tugaskan'}</button>
+                            <button type="button" class="btn-emp-action btn-deactivate" onclick="openDeactivateEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${emp.store_id || ''}')" title="Nonaktifkan / Resign">🚪 Resign</button>
                         </div>
                     `;
                 } else {
                     actionHtml = `
                         <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                            <button type="button" class="btn-emp-action" onclick="openEditEmployeeModal('${emp.id}', '${emp.store_id}')" title="Edit Data & Kontak" style="color: var(--primary); border-color: rgba(79, 142, 247, 0.35); background: rgba(79, 142, 247, 0.08);">✏️ Edit</button>
-                            <button type="button" class="btn-emp-action btn-rehire" onclick="openRehireEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${emp.store_id}')" title="Aktifkan Kembali / Re-hire">♻️ Aktifkan</button>
+                            <button type="button" class="btn-emp-action" onclick="openEditEmployeeModal('${emp.id}', '${emp.store_id || ''}')" title="Edit Data & Kontak" style="color: var(--primary); border-color: rgba(79, 142, 247, 0.35); background: rgba(79, 142, 247, 0.08);">✏️ Edit</button>
+                            <button type="button" class="btn-emp-action btn-rehire" onclick="openRehireEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${emp.store_id || ''}')" title="Aktifkan Kembali / Re-hire">♻️ Aktifkan</button>
                         </div>
                     `;
                 }
@@ -3287,11 +3649,11 @@
                             </div>
                         </td>
                         <td>
-                            <div style="font-weight: 700; color: var(--text-main);">${escapeHtml(emp.store_name)}</div>
+                            <div style="font-weight: 700; color: ${emp.store_id ? 'var(--text-main)' : 'var(--success)'};">${emp.store_id ? escapeHtml(emp.store_name) : '🟢 Tanpa Cabang'}</div>
                         </td>
                         <td>${contactHtml}</td>
                         <td>
-                            <span class="badge-status" style="background: var(--input-bg); border: 1px solid var(--card-border); font-size: 11px;">Shift ${emp.shift_num}</span>
+                            ${emp.store_id ? `<span class="badge-status" style="background: var(--input-bg); border: 1px solid var(--card-border); font-size: 11px;">Shift ${emp.shift_num}</span>` : '<span style="color: var(--text-muted); font-size: 11px;">-</span>'}
                         </td>
                         <td>${roleBadge}</td>
                         <td>${statusBadge}</td>
@@ -3325,6 +3687,9 @@
                 }
             }
             if (!emp) {
+                emp = getUnassignedEmployees().find(e => e.id === empId);
+            }
+            if (!emp) {
                 uiAlert('Data karyawan tidak ditemukan!');
                 return;
             }
@@ -3332,7 +3697,7 @@
             document.getElementById('editEmpId').value = emp.id;
             document.getElementById('editEmpStoreId').value = store ? store.id : '';
             document.getElementById('editEmpTitleName').innerText = emp.name;
-            document.getElementById('editEmpStoreNameBadge').innerText = store ? `Cabang: ${store.name}` : '-';
+            document.getElementById('editEmpStoreNameBadge').innerText = store ? `Cabang: ${store.name}` : 'Tanpa Cabang (Unassigned)';
 
             const statusBadge = document.getElementById('editEmpStatusBadge');
             if (statusBadge) {
@@ -3388,6 +3753,21 @@
                     emp.notes = newNotes || null;
                     foundEmp = emp;
                     break;
+                }
+            }
+
+            if (!foundEmp) {
+                const uList = getUnassignedEmployees();
+                const uIdx = uList.findIndex(e => e.id === empId);
+                if (uIdx >= 0) {
+                    uList[uIdx].name = newName;
+                    uList[uIdx].phone = newPhone || null;
+                    uList[uIdx].address = newAddress || null;
+                    uList[uIdx].shift_num = newShift;
+                    uList[uIdx].role = newRole;
+                    uList[uIdx].notes = newNotes || null;
+                    saveUnassignedEmployees(uList);
+                    foundEmp = uList[uIdx];
                 }
             }
 
@@ -3481,16 +3861,16 @@
 
         function openTransferEmpModal(empId, empName, fromStoreId) {
             document.getElementById('transferEmpId').value = empId;
-            document.getElementById('transferFromStoreId').value = fromStoreId;
+            document.getElementById('transferFromStoreId').value = fromStoreId || '';
 
             const fromStore = storesData.find(s => s.id === fromStoreId);
             document.getElementById('transferEmpNameDisplay').innerText = empName;
-            document.getElementById('transferEmpFromDisplay').innerText = `Asal: ${fromStore ? fromStore.name : fromStoreId}`;
+            document.getElementById('transferEmpFromDisplay').innerText = `Asal: ${fromStore ? fromStore.name : 'Tanpa Cabang (Unassigned)'}`;
 
             const toSelect = document.getElementById('transferToStoreSelect');
             toSelect.innerHTML = '';
             storesData.forEach(st => {
-                if (st.id === fromStoreId) return; // Cabang tujuan tidak boleh sama dengan asal
+                if (fromStoreId && st.id === fromStoreId) return; // Cabang tujuan tidak boleh sama dengan asal
                 const opt = document.createElement('option');
                 opt.value = st.id;
                 opt.textContent = st.name;
@@ -3498,7 +3878,7 @@
             });
 
             if (toSelect.options.length === 0) {
-                uiAlert('⚠️ Anda hanya memiliki 1 cabang toko. Tambah cabang baru terlebih dahulu untuk melakukan mutasi/rolling karyawan.');
+                uiAlert('⚠️ Tidak ada cabang toko yang tersedia untuk mutasi / penugasan.');
                 return;
             }
 
@@ -3529,7 +3909,7 @@
             const newShift = parseInt(document.getElementById('transferNewShiftSelect').value) || 1;
             const reason = document.getElementById('transferReasonInput').value.trim() || 'Mutasi / Rolling Shift';
 
-            if (!toStoreId || toStoreId === fromStoreId) {
+            if (!toStoreId || (fromStoreId && toStoreId === fromStoreId)) {
                 uiAlert('⚠️ Pilih cabang tujuan yang berbeda dari cabang asal!');
                 return;
             }
@@ -3565,6 +3945,16 @@
                     toStore.employees.push(empObj);
                     saveStoresData();
                 }
+            } else if (toStore && (!fromStoreId || fromStoreId === 'null')) {
+                const uList = getUnassignedEmployees();
+                const uEmp = uList.find(e => e.id === empId);
+                const empObj = uEmp ? { ...uEmp } : { id: empId, name: document.getElementById('transferEmpNameDisplay').innerText || 'Karyawan', shift_num: newShift, status: 'active', role: 'kasir' };
+                empObj.shift_num = newShift;
+                if (!toStore.employees) toStore.employees = [];
+                toStore.employees = toStore.employees.filter(e => e.id !== empId);
+                toStore.employees.push(empObj);
+                removeUnassignedEmployee(empId);
+                saveStoresData();
             }
 
             btn.disabled = false;
@@ -3598,11 +3988,11 @@
 
         function openDeactivateEmpModal(empId, empName, storeId) {
             document.getElementById('deactivateEmpId').value = empId;
-            document.getElementById('deactivateStoreId').value = storeId;
+            document.getElementById('deactivateStoreId').value = storeId || '';
 
             const store = storesData.find(s => s.id === storeId);
             document.getElementById('deactivateEmpNameDisplay').innerText = empName;
-            document.getElementById('deactivateStoreNameDisplay').innerText = `Cabang: ${store ? store.name : storeId}`;
+            document.getElementById('deactivateStoreNameDisplay').innerText = `Cabang: ${store ? store.name : (storeId ? storeId : 'Tanpa Cabang (Unassigned)')}`;
             openModal('deactivateEmpModal');
         }
 
@@ -3640,6 +4030,16 @@
                     emp.password = ''; // Cabut PIN
                     emp.resigned_at = new Date().toISOString();
                     saveStoresData();
+                }
+            } else {
+                const uList = getUnassignedEmployees();
+                const uEmp = uList.find(e => e.id === empId);
+                if (uEmp) {
+                    empName = uEmp.name;
+                    uEmp.status = status;
+                    uEmp.password = '';
+                    uEmp.resigned_at = new Date().toISOString();
+                    saveUnassignedEmployees(uList);
                 }
             }
 
@@ -3761,6 +4161,25 @@
                     }
                 }
                 saveStoresData();
+            } else {
+                const uList = getUnassignedEmployees();
+                const uIdx = uList.findIndex(e => e.id === empId);
+                if (uIdx >= 0) {
+                    foundEmp = uList[uIdx];
+                    foundEmp.status = 'active';
+                    foundEmp.role = role;
+                    foundEmp.shift_num = newShift;
+                    foundEmp.password = newPin;
+                    foundEmp.resigned_at = null;
+                    removeUnassignedEmployee(empId);
+
+                    const destStore = storesData.find(s => s.id === targetStoreId);
+                    if (destStore) {
+                        if (!destStore.employees) destStore.employees = [];
+                        destStore.employees.push(foundEmp);
+                        saveStoresData();
+                    }
+                }
             }
 
             btn.disabled = false;
@@ -3822,6 +4241,13 @@
             } catch (err) {
                 cloudErr = err;
                 console.warn('[StoreManager] Hapus cabang di cloud gagal:', err);
+            }
+
+            // Amankan karyawan cabang yang dihapus menjadi unassigned
+            if (store && store.employees) {
+                store.employees.forEach(e => {
+                    addUnassignedEmployee({ ...e, status: e.status || 'active' });
+                });
             }
 
             // Hapus dari state lokal
