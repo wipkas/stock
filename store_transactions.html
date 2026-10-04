@@ -1375,7 +1375,7 @@
             <!-- Breakdown Transaksi Karyawan Hari Ini -->
             <div class="card-box">
                 <div class="card-box-title">
-                    <span id="empBreakdownTitle">👥 Transaksi Berdasarkan Petugas Shift Hari Ini</span>
+                    <span id="empBreakdownTitle">👥 Transaksi Shift Hari Ini</span>
                     <span id="badgeRecordedTime" style="font-size: 11px; color: var(--text-muted); font-weight: 600;"></span>
                 </div>
                 <div id="empBreakdownContainer">
@@ -1629,7 +1629,7 @@
             <div class="modal-header" style="padding: 14px 18px;">
                 <div>
                     <h3 class="modal-title" id="empPropModalTitle" style="font-size: 15.5px; font-weight: 850;">✏️ Usulan Transaksi Kasir</h3>
-                    <p id="empPropModalSubtitle" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Ajukan angka transaksi shift Anda untuk diverifikasi Admin</p>
+                    <p id="empPropModalSubtitle" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;"></p>
                 </div>
                 <button type="button" class="btn-cancel" onclick="closeModal('employeeProposalModal')" style="padding: 4px 8px; font-size: 14px;" title="Tutup">&times;</button>
             </div>
@@ -1645,11 +1645,7 @@
                         <button type="button" class="btn-preset" onclick="navigateProposalDate(1)" style="padding: 4px 10px; font-size: 11px;">H+1 &rarr;</button>
                     </div>
 
-                    <!-- Notice Usulan / Input Langsung -->
-                    <div id="empPropNoticeBox" style="background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.25); border-radius: 10px; padding: 10px 12px; font-size: 11.5px; color: var(--text-main); line-height: 1.45;">
-                        💡 <b>Informasi Usulan:</b> Nilai yang Anda simpan berstatus <b>Usulan</b> dan menunggu persetujuan (approval) Admin Toko. Data transaksi sebelumnya tidak akan terhapus sampai disetujui.
-                    </div>
-
+                    
                     <!-- Identitas Kasir -->
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px;">
                         <span id="empPropEmpName" style="font-size: 13px; font-weight: 800;">👤 -</span>
@@ -2586,9 +2582,9 @@
 
             if (isToday) {
                 if (modalTitle) modalTitle.innerText = '✏️ Input Transaksi Hari Ini';
-                if (modalSubtitle) modalSubtitle.innerText = 'Catat langsung transaksi shift Anda hari ini';
+                if (modalSubtitle) modalSubtitle.innerText = '';
                 if (noticeBox) {
-                    noticeBox.innerHTML = '💡 <b>Transaksi Hari Ini:</b> Nilai transaksi langsung tersimpan ke sistem toko tanpa perlu approval Admin.';
+                    noticeBox.innerHTML = '';
                     noticeBox.style.background = 'rgba(16, 185, 129, 0.08)';
                     noticeBox.style.borderColor = 'rgba(16, 185, 129, 0.25)';
                 }
@@ -3344,7 +3340,7 @@
                 }
 
                 // Breakdown: Hanya tampilkan Karyawan login saat ini
-                if (breakdownTitle) breakdownTitle.innerText = '👤 Rekap Transaksi Anda Hari Ini';
+                if (breakdownTitle) breakdownTitle.innerText = '👤 Rekap Transaksi';
 
                 const myShiftNum = myRec ? myRec.shift_num : currentEmployee.shift_num;
                 const myShiftName = myShiftNum === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
