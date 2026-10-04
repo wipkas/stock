@@ -982,17 +982,12 @@
             margin: auto;
         }
 
-        .pin-icon {
-            width: 52px;
-            height: 52px;
-            border-radius: 16px;
-            background: rgba(79, 142, 247, 0.15);
-            color: var(--primary);
-            font-size: 26px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px auto;
+        .pin-title {
+            font-size: 20px;
+            font-weight: 850;
+            color: var(--text-main);
+            margin-bottom: 20px;
+            letter-spacing: -0.3px;
         }
 
         .pin-input {
@@ -1357,17 +1352,17 @@
 </head>
 <body>
 
-    <!-- PIN SECURITY GATE (Same as interactive_stock.html) -->
+    <!-- PIN SECURITY GATE -->
     <div id="pinModal">
         <div class="pin-card">
-            <div class="pin-icon">🔒</div>
-            <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 6px;">Akses Kelola Toko</h2>
-            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 18px;">Masukkan PIN Toko untuk membuka manajemen cabang &amp; shift karyawan.</p>
+            <h2 class="pin-title">KSPCHECK</h2>
 
             <form onsubmit="handlePinSubmit(event)">
-                <input type="password" id="pinInput" class="pin-input" placeholder="••••" autofocus required>
+                <input type="password" id="pinInput" class="pin-input" placeholder="Password..." autocomplete="current-password" autofocus required>
                 <div id="pinError" style="color: var(--danger); font-size: 11px; margin-bottom: 12px; display: none;">PIN salah atau file config.enc tidak cocok!</div>
-                <button type="submit" id="btnUnlock" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 13px;">Buka Manajemen Toko</button>
+                <button type="submit" id="btnUnlock" class="btn-primary" style="width: 100%; justify-content: center; padding: 14px; font-size: 14px; font-weight: 800; border-radius: 14px;">
+                    <span>MASUK</span> ➜
+                </button>
             </form>
         </div>
     </div>
@@ -2215,7 +2210,7 @@
         async function unlockWithPin(pin) {
             const btn = document.getElementById('btnUnlock');
             const errBox = document.getElementById('pinError');
-            if (btn) btn.innerText = 'Membuka...';
+            if (btn) btn.innerHTML = '<span>Membuka...</span>';
             if (errBox) errBox.style.display = 'none';
 
             try {
@@ -2255,7 +2250,7 @@
                 document.getElementById('pinModal').style.display = 'flex';
                 document.getElementById('mainApp').style.display = 'none';
             } finally {
-                if (btn) btn.innerText = 'Buka Manajemen Toko';
+                if (btn) btn.innerHTML = '<span>MASUK</span> ➜';
             }
         }
 

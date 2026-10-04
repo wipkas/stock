@@ -116,23 +116,13 @@
             margin-top: 20px;
         }
 
-        .login-header {
+        .pin-title {
+            font-size: 20px;
+            font-weight: 850;
+            color: var(--text-main);
+            margin-bottom: 20px;
             text-align: center;
-            margin-bottom: 22px;
-        }
-
-        .login-avatar {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%);
-            color: #FFFFFF;
-            font-size: 26px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 12px auto;
-            box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+            letter-spacing: -0.3px;
         }
 
         .form-group {
@@ -526,27 +516,18 @@
 
         <!-- VIEW 1: FORM LOGIN CEPAT KARYAWAN -->
         <section id="loginSection" class="login-card">
-            <div class="login-header">
-                <div class="login-avatar">⚡</div>
-                <h1 style="font-size: 20px; font-weight: 800; margin-bottom: 6px;">Login Karyawan</h1>
-                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.45;">
-                    Masukkan Password / PIN unik Anda.<br>Cabang &amp; nama karyawan terdeteksi otomatis.
-                </p>
-            </div>
+            <h2 class="pin-title">KSPCHECK</h2>
 
             <form onsubmit="handleEmployeeLogin(event)">
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <label class="form-label" for="loginPasswordInput" style="text-align: center; display: block; margin-bottom: 8px;">
-                        Password / PIN Karyawan
-                    </label>
+                <div class="form-group" style="margin-bottom: 14px;">
                     <div style="position: relative; display: flex; align-items: center;">
                         <input type="password" 
                                id="loginPasswordInput" 
                                class="form-input" 
                                autocomplete="current-password"
                                autofocus 
-                               placeholder="Ketik PIN / Password..." 
-                               style="font-size: 20px; text-align: center; font-weight: 800; padding: 14px 44px 14px 14px; width: 100%;" 
+                               placeholder="Password..." 
+                               style="font-size: 20px; text-align: center; font-weight: 800; padding: 14px 44px 14px 14px; width: 100%; letter-spacing: 4px;" 
                                required>
                         <button type="button" 
                                 id="btnTogglePass" 
@@ -557,16 +538,10 @@
                     <div id="loginError" style="color: var(--danger); font-size: 12px; margin-top: 8px; text-align: center; font-weight: 600; display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); padding: 8px 12px; border-radius: 8px;"></div>
                 </div>
 
-                <button type="submit" class="btn-submit" style="font-size: 15px; padding: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <span>Masuk ke Portal</span> ➜
+                <button type="submit" class="btn-submit" style="font-size: 14px; font-weight: 800; padding: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border-radius: 14px;">
+                    <span>MASUK</span> ➜
                 </button>
             </form>
-
-            <div style="margin-top: 20px; padding-top: 14px; border-top: 1px dashed var(--card-border); text-align: center;">
-                <div style="font-size: 11px; color: var(--text-muted); line-height: 1.45;">
-                    💡 <i>Tips: Masukkan PIN unik yang diberikan oleh Admin Toko. Sistem akan langsung mengenali nama dan cabang Anda.</i>
-                </div>
-            </div>
         </section>
 
         <!-- VIEW 2: DASHBOARD KARYAWAN (SETELAH LOGIN) -->
@@ -606,8 +581,8 @@
                 <!-- 2. Transaksi & Usulan Karyawan -->
                 <a href="store_transactions.html" class="feat-box">
                     <div class="feat-icon">📊</div>
-                    <div class="feat-title">Transaksi Kasir</div>
-                    <div class="feat-sub">Usul angka &amp; analisa</div>
+                    <div class="feat-title">History Transaksi</div>
+                   
                 </a>
 
                 <!-- 3. Foto Profil Saya -->
@@ -698,8 +673,7 @@
         <div class="modal-card">
             <div class="modal-header">
                 <div>
-                    <h3 style="font-size: 15px; font-weight: 800;">📷 Foto Profil Karyawan</h3>
-                    <p style="font-size: 11px; color: var(--text-muted);">Unggah atau ganti foto profil kasir Anda</p>
+                    <h3 style="font-size: 15px; font-weight: 800;">📷 Profil</h3>
                 </div>
                 <button type="button" class="btn-cancel" onclick="closeEmpProfileModal()">&times;</button>
             </div>
@@ -716,7 +690,7 @@
                             <span>📷</span> Ambil / Pilih Foto
                         </button>
                         <div id="photoSizeNote" style="font-size: 10.5px; color: var(--text-muted); text-align: center; line-height: 1.4;">
-                            Foto otomatis dikompres ke Base64 (JPG) agar hemat kuota &amp; ringan.
+                            
                         </div>
                     </div>
 

@@ -3308,22 +3308,15 @@
     <!-- PIN Unlock Modal -->
     <div id="pinModal" class="modal-overlay" style="display: none;">
         <div class="modal-card">
-            <div style="font-size: 36px; margin-bottom: 10px;">🔒</div>
-            <h2 style="font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 4px;">Akses Cloud Restock</h2>
-            <p style="font-size: 12px; color: #94A3B8; margin-bottom: 20px;">Masukkan PIN Toko untuk memuat stok &amp; order restock.</p>
+            <h2 style="font-size: 20px; font-weight: 850; color: #fff; margin-bottom: 20px; text-align: center;">KSPCHECK</h2>
 
             <form onsubmit="handlePinSubmit(event)">
-                <input type="password" id="pinInput" placeholder="Masukkan PIN Toko" style="width: 100%; padding: 12px; background: #0F172A; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 18px; font-weight: 700; text-align: center; letter-spacing: 4px; margin-bottom: 12px; outline: none;">
-                
-                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 18px;">
-                    <input type="checkbox" id="rememberPin" checked style="accent-color: #4F8EF7;">
-                    <label for="rememberPin" style="font-size: 12px; color: #94A3B8; cursor: pointer;">Ingat PIN di perangkat ini</label>
-                </div>
+                <input type="password" id="pinInput" placeholder="Password..." autocomplete="current-password" autofocus required style="width: 100%; padding: 14px; background: #0F172A; border: 1px solid #334155; border-radius: 12px; color: #fff; font-size: 20px; font-weight: 800; text-align: center; letter-spacing: 4px; margin-bottom: 14px; outline: none;">
 
                 <div id="pinError" style="color: #EF4444; font-size: 12px; margin-bottom: 12px; display: none;">PIN salah atau file config.enc tidak ditemukan!</div>
 
-                <button type="submit" id="btnUnlock" style="width: 100%; padding: 12px; background: #4F8EF7; border: none; border-radius: 8px; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;">
-                    Buka Stok &amp; Restock
+                <button type="submit" id="btnUnlock" style="width: 100%; padding: 14px; background: #4F8EF7; border: none; border-radius: 14px; color: #fff; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>MASUK</span> ➜
                 </button>
             </form>
         </div>
@@ -4852,7 +4845,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             const btn = document.getElementById('btnUnlock');
             const errBox = document.getElementById('pinError');
             if (btn) {
-                btn.innerText = 'Membuka...';
+                btn.innerHTML = '<span>Membuka...</span>';
                 btn.disabled = true;
             }
             if (errBox) errBox.style.display = 'none';
@@ -4864,7 +4857,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                     errBox.style.display = 'block';
                 }
                 if (btn) {
-                    btn.innerText = 'Buka Stok & Restock';
+                    btn.innerHTML = '<span>MASUK</span> ➜';
                     btn.disabled = false;
                 }
                 return;
@@ -4910,7 +4903,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                 }
             } finally {
                 if (btn) {
-                    btn.innerText = 'Buka Stok & Restock';
+                    btn.innerHTML = '<span>MASUK</span> ➜';
                     btn.disabled = false;
                 }
             }

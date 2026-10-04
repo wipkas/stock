@@ -488,50 +488,12 @@
             overflow: hidden;
         }
 
-        .pin-icon {
-            width: 58px;
-            height: 58px;
-            border-radius: 18px;
-            background: var(--primary-glow);
-            border: 1px solid rgba(79, 142, 247, 0.35);
-            color: var(--primary);
-            font-size: 26px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 14px auto;
-            box-shadow: 0 6px 18px var(--primary-glow);
-        }
-
-        .pin-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: var(--chip-bg);
-            border: 1px solid var(--card-border);
-            color: var(--primary);
-            padding: 4px 12px;
-            border-radius: 999px;
-            font-size: 11px;
-            font-weight: 750;
-            margin-bottom: 10px;
-            letter-spacing: 0.3px;
-        }
-
         .pin-title {
             font-size: 20px;
             font-weight: 850;
             color: var(--text-main);
             margin-bottom: 6px;
             letter-spacing: -0.3px;
-        }
-
-        .pin-subtitle {
-            font-size: 12.5px;
-            color: var(--text-muted);
-            line-height: 1.5;
-            margin-bottom: 22px;
-            padding: 0 4px;
         }
 
         .pin-input-group {
@@ -634,19 +596,6 @@
             font-weight: 600;
             text-align: left;
         }
-
-        .pin-footer-tip {
-            margin-top: 20px;
-            padding-top: 14px;
-            border-top: 1px dashed var(--card-border);
-            font-size: 11.5px;
-            color: var(--text-muted);
-            line-height: 1.5;
-            text-align: left;
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-        }
     </style>
 </head>
 <body>
@@ -658,19 +607,14 @@
                 <button type="button" class="btn-action" id="pinThemeToggleBtn" onclick="toggleTheme()" title="Ubah Tema">🌙</button>
             </div>
             <div class="pin-card">
-                <div class="pin-icon">🔒</div>
-                <div class="pin-badge">🛡️ Akses Sistem</div>
-                <h2 class="pin-title">KSP Check</h2>
-                <p class="pin-subtitle">
-                    Masukkan PIN Admin Toko atau Password Karyawan Anda untuk membuka sistem.
-                </p>
+                <h2 class="pin-title">KSPCHECK</h2>
 
                 <form onsubmit="handlePinSubmit(event)">
                     <div class="pin-input-group">
                         <input type="password" 
                                id="pinInput" 
                                class="pin-input" 
-                               placeholder="PIN / Password..." 
+                               placeholder="Password..." 
                                autocomplete="current-password" 
                                autofocus 
                                required>
@@ -682,14 +626,9 @@
                     </div>
                     <div id="pinError" class="pin-error-box"></div>
                     <button type="submit" id="btnUnlock" class="btn-pin-submit">
-                        <span>Buka KSP Check</span> ➜
+                        <span>MASUK</span> ➜
                     </button>
                 </form>
-
-                <div class="pin-footer-tip">
-                    <span style="font-size: 15px; flex-shrink: 0; line-height: 1;">💡</span>
-                    <div><b>Karyawan / Kasir:</b> Masukkan password Anda untuk langsung diarahkan ke <b>Portal Karyawan</b>.</div>
-                </div>
             </div>
         </div>
     </div>
