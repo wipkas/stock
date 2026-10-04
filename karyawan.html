@@ -533,7 +533,7 @@
         <section id="loginSection" class="login-card">
             <h2 class="pin-title">KSPCHECK</h2>
 
-            <form onsubmit="handleEmployeeLogin(event)">
+            <form id="employeeLoginForm" onsubmit="handleEmployeeLogin(event)">
                 <div class="form-group" style="margin-bottom: 14px;">
                     <div style="position: relative; display: flex; align-items: center;">
                         <input type="password" 
@@ -728,6 +728,20 @@
                     const session = JSON.parse(savedSession);
                     sessionRestored = restoreSession(session);
                 } catch(e) {}
+            }
+
+            // Check if ?pin= parameter is provided in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const pinFromUrl = urlParams.get('pin');
+            if (pinFromUrl) {
+                const passInput = document.getElementById('loginPasswordInput');
+                if (passInput) {
+                    passInput.value = pinFromUrl;
+                    setTimeout(() => {
+                        handleEmployeeLogin(new Event('submit'));
+                    }, 180);
+                    return;
+                }
             }
 
             if (!sessionRestored) {
