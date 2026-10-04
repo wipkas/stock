@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bgOrder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A150E"/>
+      <stop offset="100%" stop-color="#0C0E18"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Card -->
+  <rect width="512" height="512" rx="108" fill="url(#bgOrder)"/>
+  <rect x="14" y="14" width="484" height="484" rx="98" fill="none" stroke="#EA580C" stroke-width="8" opacity="0.8"/>
+
+  <!-- Package / Restock Box Icon -->
+  <path d="M256 120 L376 175 L256 230 L136 175 Z" fill="#FBBF24"/>
+  <path d="M136 195 L246 247 L246 352 L136 300 Z" fill="#F59E0B"/>
+  <path d="M266 247 L376 195 L376 300 L266 352 Z" fill="#EA580C"/>
+  <path d="M196 148 L316 203" stroke="#FEF3C7" stroke-width="7" stroke-linecap="round" opacity="0.85"/>
+
+  <!-- Badge Top Right (Plus) -->
+  <circle cx="380" cy="135" r="46" fill="#EA580C" stroke="#FFFFFF" stroke-width="4"/>
+  <path d="M380 112 V158 M357 135 H403" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- Pill Tab Name -->
+  <rect x="131" y="392" width="250" height="68" rx="34" fill="rgba(245, 158, 11, 0.18)" stroke="#F59E0B" stroke-width="3"/>
+  <text x="256" y="440" font-family="Segoe UI, Arial, sans-serif" font-weight="bold" font-size="34" fill="#FFFFFF" text-anchor="middle">ORDER</text>
+</svg>

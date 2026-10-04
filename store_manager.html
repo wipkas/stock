@@ -11,11 +11,13 @@
     <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
     <meta name="theme-color" content="#0F1117">
 
-    <!-- Supabase JS Client & CryptoJS CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="ksp_sync_config.js"></script>
-<script src="ksp_sync.js"></script>
+    <!-- CryptoJS (dekripsi config.enc) & modul bersama di js/ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script src="js/ksp_sync_config.js?v=20261004"></script>
+    <script src="js/ksp_sync.js?v=20261004"></script>
+    <script src="js/ksp_ui.js?v=20261004"></script>
+    <script src="js/ksp_theme.js?v=20261004"></script>
+    <script src="js/ksp_auth.js?v=20261004"></script>
 
     <style>
         :root {
@@ -2130,7 +2132,6 @@
 
     <!-- APP SCRIPT LOGIC -->
     <script>
-        let supabaseClient = null;
         let storesData = [];
         let activeStoreId = null;
 
@@ -2196,7 +2197,7 @@
             }
 
             // Check if PIN already saved in localStorage (Same key as interactive_stock.html)
-            const savedPin = localStorage.getItem('kspcheck_viewer_pin'); if (savedPin) {
+            const savedPin = KspAuth.getAdminPin(); if (savedPin) {
                 unlockWithPin(savedPin);
             } else {
                 document.getElementById('pinModal').style.display = 'flex';
@@ -2218,38 +2219,11 @@
             if (errBox) errBox.style.display = 'none';
 
             try {
-                // Fetch config.enc
-                const res = await fetch('./config.enc?t=' + Date.now());
-                if (!res.ok) throw new Error('File config.enc tidak ditemukan.');
-                const base64Encrypted = await res.text();
+                // Dekripsi config.enc (melempar Error berpesan jelas bila PIN salah / file tidak ada)
+                await KspAuth.decryptConfig(pin);
 
-                // Decrypt AES-256-CBC
-                const combined = CryptoJS.enc.Base64.parse(base64Encrypted.trim());
-                const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4), 16);
-                const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4), combined.sigBytes - 16);
-                const cipherParams = CryptoJS.lib.CipherParams.create({ ciphertext: ciphertext });
-
-                const key = CryptoJS.SHA256(pin);
-                const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
-                    iv: iv,
-                    mode: CryptoJS.mode.CBC,
-                    padding: CryptoJS.pad.Pkcs7
-                });
-
-                const decryptedJson = decrypted.toString(CryptoJS.enc.Utf8);
-                if (!decryptedJson) throw new Error('PIN Salah!');
-
-                const config = JSON.parse(decryptedJson);
-                if (!config.supabase_url || !config.supabase_anon_key) {
-                    throw new Error('Format konfigurasi tidak valid.');
-                }
-
-                // PIN Valid! Remember PIN
-                localStorage.setItem('kspcheck_viewer_pin', pin);
-                sessionStorage.setItem('kspcheck_auth_mode', 'admin');
-
-                // Initialize Supabase Client
-                supabaseClient = supabase.createClient(config.supabase_url, config.supabase_anon_key);
+                // PIN Valid! Simpan sesi admin
+                KspAuth.setAdminSession(pin);
 
                 // Reveal Admin Dashboard
                 document.getElementById('pinModal').style.display = 'none';
@@ -2286,8 +2260,8 @@
         }
 
         function lockStoreManager() {
-            sessionStorage.removeItem('kspcheck_auth_mode');
-            localStorage.removeItem('kspcheck_viewer_pin');
+            // Hapus sesi admin + cache data toko (bila aman: cloud aktif & tidak ada data belum tersinkron)
+            KspAuth.clearSession({ scope: 'admin' });
             document.getElementById('pinInput').value = '';
             document.getElementById('pinModal').style.display = 'flex';
             document.getElementById('mainApp').style.display = 'none';
@@ -3938,32 +3912,8 @@
             }
         }
 
-        // Theme management & Top Menu
-        function applySavedTheme() {
-            const savedTheme = localStorage.getItem('kspcheck_theme');
-            const themeBtn = document.getElementById('themeToggleBtn');
-            if (savedTheme === 'light') {
-                document.body.classList.add('light-theme');
-                if (themeBtn) themeBtn.innerText = '☀️';
-            } else {
-                document.body.classList.remove('light-theme');
-                if (themeBtn) themeBtn.innerText = '🌙';
-            }
-            updateTopMenuThemeDisplay();
-        }
-
-        function toggleTheme() {
-            const isLight = document.body.classList.toggle('light-theme');
-            const themeBtn = document.getElementById('themeToggleBtn');
-            if (isLight) {
-                localStorage.setItem('kspcheck_theme', 'light');
-                if (themeBtn) themeBtn.innerText = '☀️';
-            } else {
-                localStorage.setItem('kspcheck_theme', 'dark');
-                if (themeBtn) themeBtn.innerText = '🌙';
-            }
-            updateTopMenuThemeDisplay();
-        }
+        // Theme management & Top Menu (logika tema ada di js/ksp_theme.js)
+        KspTheme.onChange(function () { updateTopMenuThemeDisplay(); });
 
         function updateTopMenuThemeDisplay() {
             const icon = document.getElementById('menuThemeIcon');
@@ -3997,12 +3947,7 @@
             }
         });
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/[&<>"']/g, m => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-            }[m]));
-        }
+        // escapeHtml -> js/ksp_ui.js
 
         function showToast(text, icon = '🔄') {
             let toast = document.getElementById('toastNotice');

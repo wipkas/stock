@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bgHistory" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A1C16"/>
+      <stop offset="100%" stop-color="#0A0F18"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Card -->
+  <rect width="512" height="512" rx="108" fill="url(#bgHistory)"/>
+  <rect x="14" y="14" width="484" height="484" rx="98" fill="none" stroke="#10B981" stroke-width="8" opacity="0.8"/>
+
+  <!-- Order Log Sheet -->
+  <rect x="145" y="120" width="200" height="225" rx="18" fill="#064E3B" stroke="#34D399" stroke-width="5"/>
+  <rect x="173" y="152" width="144" height="14" rx="7" fill="#6EE7B7"/>
+  <rect x="173" y="190" width="110" height="14" rx="7" fill="#10B981"/>
+  <rect x="173" y="228" width="144" height="14" rx="7" fill="#6EE7B7"/>
+  <rect x="173" y="266" width="90" height="14" rx="7" fill="#10B981"/>
+  <rect x="173" y="304" width="124" height="14" rx="7" fill="#6EE7B7"/>
+
+  <!-- Badge Top Right (Clock) -->
+  <circle cx="380" cy="135" r="46" fill="#0891B2" stroke="#FFFFFF" stroke-width="4"/>
+  <circle cx="380" cy="135" r="28" fill="none" stroke="#FFFFFF" stroke-width="6"/>
+  <path d="M380 118 V136 L393 145" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Pill Tab Name -->
+  <rect x="131" y="392" width="250" height="68" rx="34" fill="rgba(16, 185, 129, 0.2)" stroke="#10B981" stroke-width="3"/>
+  <text x="256" y="440" font-family="Segoe UI, Arial, sans-serif" font-weight="bold" font-size="34" fill="#FFFFFF" text-anchor="middle">HISTORY</text>
+</svg>

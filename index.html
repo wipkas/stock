@@ -15,11 +15,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="KSP Check">
 
-    <!-- Supabase JS, KspSync, & CryptoJS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="ksp_sync_config.js"></script>
-    <script src="ksp_sync.js"></script>
+    <!-- CryptoJS (dekripsi config.enc) & modul bersama di js/ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script src="js/ksp_sync_config.js?v=20261004"></script>
+    <script src="js/ksp_sync.js?v=20261004"></script>
+    <script src="js/ksp_ui.js?v=20261004"></script>
+    <script src="js/ksp_theme.js?v=20261004"></script>
+    <script src="js/ksp_auth.js?v=20261004"></script>
 
     <style>
         :root {
@@ -902,34 +904,9 @@
     </div>
 
     <script>
-        let supabaseClient = null;
+        // Tema -> js/ksp_theme.js | escapeHtml -> js/ksp_ui.js | sesi & PIN -> js/ksp_auth.js
 
-        // 1. Theme Management
-        function applySavedTheme() {
-            const savedTheme = localStorage.getItem('kspcheck_theme');
-            const themeBtn = document.getElementById('themeToggleBtn');
-            const pinThemeBtn = document.getElementById('pinThemeToggleBtn');
-            const icon = (savedTheme === 'light') ? '☀️' : '🌙';
-            if (savedTheme === 'light') {
-                document.body.classList.add('light-theme');
-            } else {
-                document.body.classList.remove('light-theme');
-            }
-            if (themeBtn) themeBtn.innerText = icon;
-            if (pinThemeBtn) pinThemeBtn.innerText = icon;
-        }
-
-        function toggleTheme() {
-            const isLight = document.body.classList.toggle('light-theme');
-            const themeBtn = document.getElementById('themeToggleBtn');
-            const pinThemeBtn = document.getElementById('pinThemeToggleBtn');
-            const icon = isLight ? '☀️' : '🌙';
-            localStorage.setItem('kspcheck_theme', isLight ? 'light' : 'dark');
-            if (themeBtn) themeBtn.innerText = icon;
-            if (pinThemeBtn) pinThemeBtn.innerText = icon;
-        }
-
-        // 2. Modal Dialog Management
+        // 1. Modal Dialog Management
         function openInfoModal() {
             const modal = document.getElementById('infoModal');
             if (modal) modal.classList.add('open');
@@ -966,65 +943,6 @@
             input.focus();
         }
 
-        async function verifyAdminPin(pin) {
-            try {
-                const res = await fetch('./config.enc?t=' + Date.now());
-                if (!res.ok) return null;
-                const base64Encrypted = await res.text();
-
-                const combined = CryptoJS.enc.Base64.parse(base64Encrypted.trim());
-                const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4), 16);
-                const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4), combined.sigBytes - 16);
-                const cipherParams = CryptoJS.lib.CipherParams.create({ ciphertext: ciphertext });
-
-                const key = CryptoJS.SHA256(pin);
-                const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
-                    iv: iv,
-                    mode: CryptoJS.mode.CBC,
-                    padding: CryptoJS.pad.Pkcs7
-                });
-
-                const decryptedJson = decrypted.toString(CryptoJS.enc.Utf8);
-                if (!decryptedJson) return null;
-
-                const config = JSON.parse(decryptedJson);
-                if (!config.supabase_url || !config.supabase_anon_key) return null;
-                return config;
-            } catch (e) {
-                return null;
-            }
-        }
-
-        async function checkEmployeePassword(pass) {
-            // 1. Coba verifikasi lewat Supabase Cloud RPC ksp_emp_login
-            if (window.KspSync && typeof window.KspSync.empLogin === 'function') {
-                try {
-                    const r = await window.KspSync.empLogin(pass);
-                    if (r && r.ok && r.store && r.employee) {
-                        return { store: r.store, employee: r.employee };
-                    }
-                } catch (e) {
-                    console.warn('[Index] Cloud check warning:', e);
-                }
-            }
-
-            // 2. Fallback: Cek data toko lokal di localStorage
-            try {
-                const raw = localStorage.getItem('kspcheck_stores_data');
-                if (raw) {
-                    const stores = JSON.parse(raw);
-                    for (const s of stores) {
-                        const emp = (s.employees || []).find(x => (x.status === 'active' || !x.status) && String(x.password).trim() === pass);
-                        if (emp) {
-                            return { store: s, employee: emp };
-                        }
-                    }
-                }
-            } catch (e) {}
-
-            return null;
-        }
-
         async function handlePinSubmit(e) {
             e.preventDefault();
             const pin = document.getElementById('pinInput').value.trim();
@@ -1038,13 +956,9 @@
             if (errBox) errBox.style.display = 'none';
 
             // Langkah 1: Cek apakah Admin PIN
-            const adminConfig = await verifyAdminPin(pin);
+            const adminConfig = await KspAuth.verifyAdminPin(pin);
             if (adminConfig) {
-                localStorage.setItem('kspcheck_viewer_pin', pin);
-                sessionStorage.setItem('kspcheck_auth_mode', 'admin');
-                if (window.supabase) {
-                    supabaseClient = supabase.createClient(adminConfig.supabase_url, adminConfig.supabase_anon_key);
-                }
+                KspAuth.setAdminSession(pin);
                 document.getElementById('pinModal').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
                 btn.disabled = false;
@@ -1053,15 +967,10 @@
             }
 
             // Langkah 2: Cek apakah Password Karyawan
-            const empMatch = await checkEmployeePassword(pin);
+            const empMatch = await KspAuth.checkEmployeePassword(pin);
             if (empMatch) {
-                btn.innerHTML = `<span>Membuka Portal ${escapeHtml(empMatch.employee.name)}...</span> ➜`;
-                sessionStorage.setItem('kspcheck_emp_cred', pin);
-                sessionStorage.setItem('kspcheck_active_emp', JSON.stringify({
-                    storeId: empMatch.store.id,
-                    empId: empMatch.employee.id
-                }));
-                sessionStorage.setItem('kspcheck_auth_mode', 'employee');
+                btn.innerHTML = `<span>Membuka Portal ${KspUI.escapeHtml(empMatch.employee.name)}...</span> ➜`;
+                KspAuth.setEmployeeSession(pin, empMatch.store.id, empMatch.employee.id);
 
                 // Redirect langsung ke portal karyawan!
                 window.location.replace('karyawan.html');
@@ -1083,10 +992,8 @@
         }
 
         function lockApp() {
-            sessionStorage.removeItem('kspcheck_auth_mode');
-            sessionStorage.removeItem('kspcheck_emp_cred');
-            sessionStorage.removeItem('kspcheck_active_emp');
-            localStorage.removeItem('kspcheck_viewer_pin');
+            // Hapus sesi + cache data toko (bila aman: cloud aktif & tidak ada data belum tersinkron)
+            KspAuth.clearSession({ scope: 'all' });
             document.getElementById('pinInput').value = '';
             const errBox = document.getElementById('pinError');
             if (errBox) errBox.style.display = 'none';
@@ -1098,34 +1005,22 @@
             }, 100);
         }
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/[&<>"']/g, m => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-            }[m]));
-        }
-
         // Initialize on load
         document.addEventListener('DOMContentLoaded', async () => {
             applySavedTheme();
 
             // 1. Jika sesi aktif adalah karyawan, langsung arahkan ke karyawan.html
-            const authMode = sessionStorage.getItem('kspcheck_auth_mode');
-            const empSession = sessionStorage.getItem('kspcheck_active_emp');
-            if (authMode === 'employee' || (empSession && !localStorage.getItem('kspcheck_viewer_pin'))) {
+            if (KspAuth.hasEmployeeSession()) {
                 window.location.replace('karyawan.html');
                 return;
             }
 
             // 2. Cek apakah ada PIN Admin tersimpan
-            const savedPin = localStorage.getItem('kspcheck_viewer_pin');
+            const savedPin = KspAuth.getAdminPin();
             if (savedPin) {
-                const config = await verifyAdminPin(savedPin);
+                const config = await KspAuth.verifyAdminPin(savedPin);
                 if (config) {
-                    sessionStorage.setItem('kspcheck_auth_mode', 'admin');
-                    if (window.supabase) {
-                        supabaseClient = supabase.createClient(config.supabase_url, config.supabase_anon_key);
-                    }
+                    KspAuth.setAdminSession(savedPin);
                     document.getElementById('pinModal').style.display = 'none';
                     document.getElementById('mainApp').style.display = 'block';
                     return;

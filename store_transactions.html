@@ -7,8 +7,11 @@
 
     <!-- Chart.js CDN for Analytics Graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="ksp_sync_config.js"></script>
-    <script src="ksp_sync.js"></script>
+    <script src="js/ksp_sync_config.js?v=20261004"></script>
+    <script src="js/ksp_sync.js?v=20261004"></script>
+    <script src="js/ksp_ui.js?v=20261004"></script>
+    <script src="js/ksp_theme.js?v=20261004"></script>
+    <script src="js/ksp_auth.js?v=20261004"></script>
 
     <style>
         :root {
@@ -2163,29 +2166,9 @@
             }
         }
 
-        // Tema Gelap / Terang
-        function applySavedTheme() {
-            const savedTheme = localStorage.getItem('kspcheck_theme');
-            const themeBtn = document.getElementById('themeToggleBtn');
-            if (savedTheme === 'light') {
-                document.body.classList.add('light-theme');
-                if (themeBtn) themeBtn.innerText = '☀️';
-            } else {
-                document.body.classList.remove('light-theme');
-                if (themeBtn) themeBtn.innerText = '🌙';
-            }
-        }
-
-        function toggleTheme() {
-            const isLight = document.body.classList.toggle('light-theme');
-            const themeBtn = document.getElementById('themeToggleBtn');
-            if (isLight) {
-                localStorage.setItem('kspcheck_theme', 'light');
-                if (themeBtn) themeBtn.innerText = '☀️';
-            } else {
-                localStorage.setItem('kspcheck_theme', 'dark');
-                if (themeBtn) themeBtn.innerText = '🌙';
-            }
+        // Tema Gelap / Terang (logika dasar ada di js/ksp_theme.js)
+        KspTheme.onChange(function (isLight, reason) {
+            if (reason !== 'toggle') return;
 
             // Refresh charts theme if active
             if (activeStoreId && document.getElementById('dedicatedAnalyticsView').classList.contains('active')) {
@@ -2196,7 +2179,7 @@
                     renderEmpContributionChart(agg);
                 }
             }
-        }
+        });
 
         // ==========================================
         // 2. OTENTIKASI: ADMIN VS KARYAWAN
@@ -2529,12 +2512,13 @@
         }
 
         function logoutEmployee() {
-            sessionStorage.removeItem('kspcheck_active_emp');
-            sessionStorage.removeItem('kspcheck_emp_cred');
             if (window.__kspEmployeeCloud) {
                 window.__kspEmployeeCloud = false;
                 loadStoresData();
             }
+            // Hapus sesi + cache data toko (setelah loadStoresData agar state dipulihkan dulu;
+            // cache hanya dihapus bila cloud aktif & tidak ada data belum tersinkron)
+            KspAuth.clearSession({ scope: 'employee' });
             currentEmployee = null;
             currentAuthRole = 'employee';
             const passInput = document.getElementById('loginPasswordInput');
@@ -5283,12 +5267,7 @@
             }, 3000);
         }
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/[&<>"']/g, m => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-            }[m]));
-        }
+        // escapeHtml -> js/ksp_ui.js
     </script>
 </body>
 </html>
