@@ -1612,9 +1612,12 @@
                         <!-- Dinamis per karyawan bertugas -->
                     </div>
                 </div>
-                <div class="modal-footer" style="padding: 12px 18px;">
-                    <button type="button" class="btn-cancel" onclick="closeModal('dailyTxModal')" style="padding: 10px 16px;">Batal</button>
-                    <button type="submit" class="btn-action-primary" id="btnSaveDailyTx" style="flex: 1; justify-content: center; padding: 10px 16px; font-size: 13px; font-weight: 800;">💾 Simpan</button>
+                <div class="modal-footer" style="padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                    <button type="button" class="btn-cancel" id="btnDeleteDailyTxModal" onclick="handleDeleteDailyTxModal()" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.4); padding: 10px 14px;" title="Reset dan hapus seluruh transaksi tanggal ini">🗑️ Reset</button>
+                    <div style="display: flex; gap: 8px; margin-left: auto;">
+                        <button type="button" class="btn-cancel" onclick="closeModal('dailyTxModal')" style="padding: 10px 16px;">Batal</button>
+                        <button type="submit" class="btn-action-primary" id="btnSaveDailyTx" style="justify-content: center; padding: 10px 18px; font-size: 13px; font-weight: 800;">💾 Simpan</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -2071,15 +2074,11 @@
                         storesData = parsed;
                         // Pastikan tiap toko memiliki rotation_config dan daily_transactions jika sebelumnya belum ada
                         storesData.forEach(store => {
-                            const defMatch = DEFAULT_STORES.find(d => d.id === store.id);
-                            if (!store.daily_transactions || Object.keys(store.daily_transactions).length === 0) {
-                                if (defMatch && defMatch.daily_transactions) {
-                                    store.daily_transactions = JSON.parse(JSON.stringify(defMatch.daily_transactions));
-                                } else {
-                                    store.daily_transactions = {};
-                                }
+                            if (!store.daily_transactions) {
+                                store.daily_transactions = {};
                             }
                             if (!store.rotation_config) {
+                                const defMatch = DEFAULT_STORES.find(d => d.id === store.id);
                                 if (defMatch && defMatch.rotation_config) {
                                     store.rotation_config = { ...defMatch.rotation_config };
                                 } else {
@@ -2087,21 +2086,29 @@
                                 }
                             }
                             if (!store.rotation_rule) {
+                                const defMatch = DEFAULT_STORES.find(d => d.id === store.id);
                                 store.rotation_rule = (defMatch && defMatch.rotation_rule) ? defMatch.rotation_rule : 'weekly_monday';
                             }
                         });
                     } else {
-                        storesData = JSON.parse(JSON.stringify(DEFAULT_STORES));
-                        saveStoresData();
+                        if (!window.KspSync || !window.KspSync.enabled()) {
+                            storesData = JSON.parse(JSON.stringify(DEFAULT_STORES));
+                            saveStoresData();
+                        } else {
+                            storesData = [];
+                        }
                     }
                 } catch(e) {
                     console.error('Error parsing stores data:', e);
-                    storesData = JSON.parse(JSON.stringify(DEFAULT_STORES));
-                    saveStoresData();
+                    storesData = [];
                 }
             } else {
-                storesData = JSON.parse(JSON.stringify(DEFAULT_STORES));
-                saveStoresData();
+                if (!window.KspSync || !window.KspSync.enabled()) {
+                    storesData = JSON.parse(JSON.stringify(DEFAULT_STORES));
+                    saveStoresData();
+                } else {
+                    storesData = [];
+                }
             }
         }
 
@@ -2110,6 +2117,9 @@
             if (window.__kspEmployeeCloud) return;
             try {
                 localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesData));
+                if (window.KspSync && typeof window.KspSync.adminPush === 'function' && currentAuthRole === 'admin') {
+                    window.KspSync.adminPush().catch(e => console.warn('[KspSync] Auto adminPush error:', e));
+                }
             } catch(e) {
                 console.error('Error saving stores data:', e);
             }
@@ -4963,6 +4973,10 @@
             `;
 
             fieldsCont.innerHTML = html;
+            const btnDelete = document.getElementById('btnDeleteDailyTxModal');
+            if (btnDelete) {
+                btnDelete.style.display = (setRecords.length > 0 && currentAuthRole === 'admin') ? 'inline-flex' : 'none';
+            }
             openModal('dailyTxModal');
 
             // 4. Autofocus input pertama
@@ -5115,6 +5129,40 @@
             } else {
                 showToast(`✅ Transaksi tanggal ${targetDateKey} berhasil diperbarui (Total: ${dayData.total} tx).`, '✏️');
             }
+        }
+
+        async function handleDeleteDailyTxModal() {
+            if (currentAuthRole !== 'admin') return;
+            const store = storesData.find(s => s.id === activeStoreId);
+            if (!store) return;
+            const targetDateKey = currentModalDateKey || getTodayKey();
+
+            if (!confirm(`Hapus dan reset seluruh data transaksi cabang "${store.name}" pada tanggal ${targetDateKey}?\n\nData akan dihapus permanen baik di perangkat ini maupun di Supabase.`)) {
+                return;
+            }
+
+            if (store.daily_transactions && store.daily_transactions[targetDateKey]) {
+                delete store.daily_transactions[targetDateKey];
+                const totalAllDays = Object.values(store.daily_transactions).reduce((sum, d) => sum + (d.total || 0), 0);
+                store.monthly_tx = totalAllDays;
+            }
+
+            if (window.KspSync && typeof window.KspSync.adminDeleteDailyTx === 'function') {
+                try {
+                    await window.KspSync.adminDeleteDailyTx(store.id, targetDateKey);
+                } catch (err) {
+                    console.warn('[KspSync] Gagal delete daily tx di server:', err);
+                }
+            }
+
+            saveStoresData();
+            closeModal('dailyTxModal');
+            renderAnalyticsDashboard(store);
+            renderHistoryTable(store);
+            if (document.getElementById('dedicatedAnalyticsView') && document.getElementById('dedicatedAnalyticsView').classList.contains('active')) {
+                applyAnalyticsFilter();
+            }
+            showToast(`🗑️ Transaksi tanggal ${targetDateKey} berhasil direset/dihapus.`, '🗑️');
         }
 
         // ==========================================

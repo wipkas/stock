@@ -126,41 +126,28 @@
     function adminPull() {
         if (!enabled() || !adminPin() || !opts.getStores) return Promise.resolve({ skipped: true });
         setStatus('busy', '☁️ Mengambil data cloud…');
-        var first = isDirty() ? adminPush() : Promise.resolve();
-        return first.then(function () {
-            return rpc('ksp_admin_get_stores', { p_pin: adminPin() });
-        }).then(function (r) {
-            if (!r || !r.ok) throw new Error(r && r.error === 'unauthorized' ? 'PIN admin ditolak server' : 'Gagal mengambil data');
-            var remote = r.stores || [];
-            if (remote.length === 0) {
-                // Cloud masih kosong: kirim data lokal sebagai data awal.
-                var local = opts.getStores() || [];
-                if (local.length > 0) {
-                    setDirty(Date.now());
-                    return adminPush().then(function () { return { seeded: true }; });
+        return rpc('ksp_admin_get_stores', { p_pin: adminPin() })
+            .then(function (r) {
+                if (!r || !r.ok) throw new Error(r && r.error === 'unauthorized' ? 'PIN admin ditolak server' : 'Gagal mengambil data');
+                var remote = r.stores || [];
+
+                // Supabase adalah Single Source of Truth (Pusat Kebenaran Mutlak):
+                // Jika database cloud kosong, jangan pernah auto-seeding / upload ulang data lokal!
+                var before = JSON.stringify(opts.getStores() || []);
+                var after = JSON.stringify(remote);
+                if (before !== after || isDirty()) {
+                    opts.setStores(remote);
+                    writeLocalCache(remote);
+                    setDirty(null); // Bersihkan tanda dirty lokal karena data cloud menjadi acuan utama
+                    if (typeof opts.onRemoteUpdate === 'function') opts.onRemoteUpdate();
                 }
-                setStatus('ok', '☁️ Tersinkron');
-                return { empty: true };
-            }
-            if (isDirty()) {
-                // Masih ada perubahan lokal yang belum terkirim: jangan ditimpa.
-                setStatus('err', '⚠️ Ada perubahan lokal belum terkirim');
-                return { dirty: true };
-            }
-            var before = JSON.stringify(opts.getStores());
-            var after = JSON.stringify(remote);
-            if (before !== after) {
-                opts.setStores(remote);
-                writeLocalCache(remote);
-                if (typeof opts.onRemoteUpdate === 'function') opts.onRemoteUpdate();
-            }
-            setStatus('ok', '☁️ Tersinkron');
-            return { updated: before !== after };
-        }).catch(function (err) {
-            console.warn('[KspSync] pull gagal:', err);
-            setStatus('err', '⚠️ Cloud: ' + (err.message || 'offline') + ' (pakai data lokal)');
-            return { error: err };
-        });
+                setStatus('ok', remote.length === 0 ? '☁️ Cloud kosong' : '☁️ Tersinkron');
+                return { updated: before !== after, count: remote.length };
+            }).catch(function (err) {
+                console.warn('[KspSync] pull gagal:', err);
+                setStatus('err', '⚠️ Cloud: ' + (err.message || 'offline') + ' (pakai data lokal)');
+                return { error: err };
+            });
     }
 
     function adminDeleteStore(storeId) {
@@ -177,6 +164,41 @@
                 setStatus('err', '⚠️ Cloud delete: ' + (err.message || 'gagal'));
                 throw err;
             });
+    }
+
+    function adminDeleteEmployee(empId) {
+        if (!enabled() || !adminPin()) return Promise.resolve({ skipped: true });
+        setStatus('busy', '☁️ Menghapus karyawan di cloud…');
+        return rpc('ksp_admin_delete_employee', { p_pin: adminPin(), p_emp_id: empId })
+            .then(function (r) {
+                if (!r || !r.ok) throw new Error(r && r.error === 'unauthorized' ? 'PIN admin ditolak server' : 'Gagal menghapus karyawan');
+                setStatus('ok', '☁️ Karyawan terhapus di cloud');
+                return r;
+            })
+            .catch(function (err) {
+                console.warn('[KspSync] delete employee gagal:', err);
+                setStatus('err', '⚠️ Cloud delete: ' + (err.message || 'gagal'));
+                throw err;
+            });
+    }
+
+    function adminDeleteDailyTx(storeId, txDate, empId) {
+        if (!enabled() || !adminPin()) return Promise.resolve({ skipped: true });
+        setStatus('busy', '☁️ Menghapus transaksi di cloud…');
+        return rpc('ksp_admin_delete_daily_tx', {
+            p_pin: adminPin(),
+            p_store_id: storeId,
+            p_tx_date: txDate,
+            p_emp_id: empId || null
+        }).then(function (r) {
+            if (!r || !r.ok) throw new Error(r && r.error === 'unauthorized' ? 'PIN admin ditolak server' : 'Gagal menghapus transaksi');
+            setStatus('ok', '☁️ Transaksi terhapus di cloud');
+            return r;
+        }).catch(function (err) {
+            console.warn('[KspSync] delete tx gagal:', err);
+            setStatus('err', '⚠️ Cloud delete tx: ' + (err.message || 'gagal'));
+            throw err;
+        });
     }
 
     function adminTransferEmployee(empId, toStoreId, newShift, reason) {
@@ -273,11 +295,15 @@
         hookSave();
         if (!enabled()) return;
         window.addEventListener('online', function () {
-            if (opts.isAdmin() && isDirty()) adminPush();
+            if (opts.isAdmin()) adminPull();
         });
         document.addEventListener('visibilitychange', function () {
             if (document.visibilityState === 'visible' && opts.isAdmin() && !modalOpen()) adminPull();
         });
+        // Tarik data terbaru dari cloud begitu halaman siap (Cloud Authoritative)
+        if (opts.isAdmin() && !modalOpen()) {
+            adminPull();
+        }
     }
 
     window.KspSync = {
@@ -286,6 +312,8 @@
         adminPull: adminPull,
         adminPush: adminPush,
         adminDeleteStore: adminDeleteStore,
+        adminDeleteEmployee: adminDeleteEmployee,
+        adminDeleteDailyTx: adminDeleteDailyTx,
         adminTransferEmployee: adminTransferEmployee,
         adminDeactivateEmployee: adminDeactivateEmployee,
         adminGetAllEmployees: adminGetAllEmployees,

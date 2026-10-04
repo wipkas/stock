@@ -2267,13 +2267,18 @@
             const raw = localStorage.getItem('kspcheck_stores_data');
             if (raw) {
                 try {
-                    storesData = JSON.parse(raw);
+                    const parsed = JSON.parse(raw);
+                    storesData = Array.isArray(parsed) ? parsed : [];
                 } catch(e) {
-                    storesData = DEFAULT_STORES;
+                    storesData = [];
                 }
             } else {
-                storesData = DEFAULT_STORES;
-                saveStoresData();
+                if (!window.KspSync || !window.KspSync.enabled()) {
+                    storesData = DEFAULT_STORES;
+                    saveStoresData();
+                } else {
+                    storesData = [];
+                }
             }
         }
 
@@ -2892,6 +2897,10 @@
                     danger: true
                 });
                 if (!ok) return;
+
+                if (window.KspSync && typeof window.KspSync.adminDeleteEmployee === 'function') {
+                    window.KspSync.adminDeleteEmployee(empId).catch(err => console.warn('[KspSync] Hapus karyawan cloud error:', err));
+                }
             }
             const stillRow = document.getElementById(rowId);
             if (stillRow) stillRow.remove();

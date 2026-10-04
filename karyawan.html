@@ -767,10 +767,15 @@
             const raw = localStorage.getItem('kspcheck_stores_data');
             if (raw) {
                 try {
-                    storesData = JSON.parse(raw);
-                } catch(e) {}
+                    const parsed = JSON.parse(raw);
+                    storesData = Array.isArray(parsed) ? parsed : [];
+                } catch(e) {
+                    storesData = [];
+                }
+            } else {
+                storesData = [];
             }
-            if (!storesData || storesData.length === 0) {
+            if ((!storesData || storesData.length === 0) && (!window.KspSync || !window.KspSync.enabled())) {
                 storesData = [
                     {
                         id: 'store_pusat',
