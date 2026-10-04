@@ -2451,7 +2451,7 @@
         }
 
         // Roll Shift: tukar Shift 1 (Pagi) <-> Shift 2 (Malam) karyawan aktif di cabang
-        function rollStoreShifts(e, storeId) {
+        async function rollStoreShifts(e, storeId) {
             if (e) e.stopPropagation();
             const store = storesData.find(s => s.id === storeId);
             const activeEmps = (store?.employees || []).filter(e => e.status === 'active' || !e.status);
@@ -2459,6 +2459,23 @@
                 showToast('⚠️ Minimal harus ada 2 karyawan aktif untuk melakukan roll shift.', '⚠️');
                 return;
             }
+
+            const empS1 = activeEmps.find(emp => emp.shift_num === 1);
+            const empS2 = activeEmps.find(emp => emp.shift_num === 2);
+            let detail = '';
+            if (empS1 && empS2) {
+                detail = `\n• ${empS1.name} (Shift 1 ➔ Shift 2)\n• ${empS2.name} (Shift 2 ➔ Shift 1)`;
+            }
+
+            const ok = await uiConfirm({
+                title: 'Tukar Jadwal Shift',
+                icon: '🔄',
+                message: `Tukar jadwal Shift 1 (Pagi) ⇄ Shift 2 (Malam) untuk cabang "${store.name}"?${detail}`,
+                confirmText: 'Ya, Tukar Shift',
+                cancelText: 'Batal'
+            });
+            if (!ok) return;
+
             const swapped = [];
             activeEmps.forEach(emp => {
                 emp.shift_num = (emp.shift_num === 1) ? 2 : 1;
@@ -3982,91 +3999,7 @@
             showToast(text.replace(/\s*\n\s*/g, ' ').trim(), icon);
         }
 
-        // Pengganti confirm() bawaan: mengembalikan Promise<boolean>.
-        // opsi: { title, message, icon, confirmText, cancelText, danger, requireText }
-        function uiConfirm(opts) {
-            opts = opts || {};
-            return new Promise(resolve => {
-                const old = document.getElementById('uiConfirmModal');
-                if (old) old.remove();
-
-                const prevFocus = document.activeElement;
-                const wrap = document.createElement('div');
-                wrap.id = 'uiConfirmModal';
-                wrap.className = 'modal-backdrop';
-                wrap.style.zIndex = '1500';
-                const needText = opts.requireText ? String(opts.requireText) : '';
-                wrap.innerHTML = `
-                    <div class="modal-card" style="max-width: 400px;">
-                        <div class="modal-header">
-                            <div>
-                                <h3 class="modal-title" id="uiConfirmTitle">${escapeHtml(opts.icon || '⚠️')} ${escapeHtml(opts.title || 'Konfirmasi')}</h3>
-                            </div>
-                        </div>
-                        <div class="modal-body">
-                            <p style="font-size: 13px; line-height: 1.55; color: var(--text-main);">${escapeHtml(opts.message || '')}</p>
-                            ${needText ? `
-                            <div>
-                                <label class="form-label" for="uiConfirmInput" style="display:block; margin-bottom:6px;">Ketik <b>${escapeHtml(needText)}</b> untuk melanjutkan:</label>
-                                <input type="text" id="uiConfirmInput" class="form-input" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%;">
-                            </div>` : ''}
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn-secondary" id="uiConfirmCancel">${escapeHtml(opts.cancelText || 'Batal')}</button>
-                            <button type="button" class="${opts.danger ? 'btn-danger' : 'btn-primary'}" id="uiConfirmOk">${escapeHtml(opts.confirmText || 'Ya, Lanjutkan')}</button>
-                        </div>
-                    </div>`;
-                wrap.setAttribute('role', 'alertdialog');
-                wrap.setAttribute('aria-modal', 'true');
-                wrap.setAttribute('aria-labelledby', 'uiConfirmTitle');
-                document.body.appendChild(wrap);
-                document.body.classList.add('modal-open');
-
-                const okBtn = wrap.querySelector('#uiConfirmOk');
-                const cancelBtn = wrap.querySelector('#uiConfirmCancel');
-                const input = wrap.querySelector('#uiConfirmInput');
-
-                const syncOk = () => {
-                    if (!input) return;
-                    const match = input.value.trim().toLowerCase() === needText.toLowerCase();
-                    okBtn.disabled = !match;
-                    okBtn.style.opacity = match ? '1' : '0.5';
-                    okBtn.style.cursor = match ? 'pointer' : 'not-allowed';
-                };
-
-                const finish = (val) => {
-                    document.removeEventListener('keydown', onKey, true);
-                    wrap.classList.remove('open');
-                    setTimeout(() => wrap.remove(), 200);
-                    if (!document.querySelector('.modal-backdrop.open')) document.body.classList.remove('modal-open');
-                    if (prevFocus && typeof prevFocus.focus === 'function') { try { prevFocus.focus(); } catch (e) {} }
-                    resolve(val);
-                };
-                const onKey = (ev) => {
-                    if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); finish(false); }
-                    else if (ev.key === 'Enter' && ev.target === input && !okBtn.disabled) { ev.preventDefault(); finish(true); }
-                    else if (ev.key === 'Tab') {
-                        const f = Array.from(wrap.querySelectorAll('button:not([disabled]), input'));
-                        if (!f.length) return;
-                        const first = f[0], last = f[f.length - 1];
-                        if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
-                        else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
-                    }
-                };
-
-                okBtn.addEventListener('click', () => finish(true));
-                cancelBtn.addEventListener('click', () => finish(false));
-                wrap.addEventListener('click', (ev) => { if (ev.target === wrap) finish(false); });
-                if (input) input.addEventListener('input', syncOk);
-                document.addEventListener('keydown', onKey, true);
-                syncOk();
-
-                requestAnimationFrame(() => {
-                    wrap.classList.add('open');
-                    (input || cancelBtn).focus();
-                });
-            });
-        }
+        // uiConfirm -> js/ksp_ui.js
 
         // ===== Aksesibilitas & responsif tabel =====
         function enhanceA11y(root) {

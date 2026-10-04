@@ -3016,7 +3016,7 @@
             showToast(`🏬 Beralih ke ${targetStore.name}`, '🏬');
         }
 
-        function rollActiveStoreShifts() {
+        async function rollActiveStoreShifts() {
             if (currentAuthRole === 'employee') {
                 showToast('⚠️ Hanya admin yang memiliki akses untuk melakukan roll shift.', '⚠️');
                 return;
@@ -3028,6 +3028,22 @@
                 showToast('⚠️ Minimal harus ada 2 karyawan aktif untuk melakukan roll shift.', '⚠️');
                 return;
             }
+
+            const empS1 = activeEmps.find(emp => emp.shift_num === 1);
+            const empS2 = activeEmps.find(emp => emp.shift_num === 2);
+            let detail = '';
+            if (empS1 && empS2) {
+                detail = `\n• ${empS1.name} (Shift 1 ➔ Shift 2)\n• ${empS2.name} (Shift 2 ➔ Shift 1)`;
+            }
+
+            const ok = await uiConfirm({
+                title: 'Tukar Jadwal Shift',
+                icon: '🔄',
+                message: `Tukar jadwal Shift 1 (Pagi) ⇄ Shift 2 (Malam) untuk cabang "${store.name}"?${detail}`,
+                confirmText: 'Ya, Tukar Shift',
+                cancelText: 'Batal'
+            });
+            if (!ok) return;
 
             let swappedPairs = [];
             activeEmps.forEach(emp => {
