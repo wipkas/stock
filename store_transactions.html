@@ -2531,12 +2531,18 @@
                 const diffText = diff > 0 ? `+${diff} tx` : `${diff} tx`;
                 const diffColor = diff >= 0 ? 'var(--success)' : 'var(--danger)';
 
+                const propEmpObj = (store.employees || []).find(e => e.id === prop.emp_id);
+                const propAvatarHtml = getEmployeeAvatarHtml(propEmpObj, prop.emp_name ? prop.emp_name.charAt(0) : 'K', 'var(--primary)', 20);
+
                 html += `
                     <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
                         <div style="min-width: 220px; flex: 1;">
                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                 <span style="font-weight: 850; font-size: 13.5px; color: var(--text-main);">📅 ${escapeHtml(prop.date)} (${formatDateShort(prop.date)})</span>
-                                <span class="badge-status" style="font-size: 10.5px; background: rgba(79, 142, 247, 0.15); color: var(--primary);">👤 ${escapeHtml(prop.emp_name)} (${escapeHtml(prop.shift_name)})</span>
+                                <span class="badge-status" style="font-size: 10.5px; background: rgba(79, 142, 247, 0.15); color: var(--primary); display: inline-flex; align-items: center; gap: 6px;">
+                                    ${propAvatarHtml}
+                                    <span>${escapeHtml(prop.emp_name)} (${escapeHtml(prop.shift_name)})</span>
+                                </span>
                             </div>
                             <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12.5px;">
                                 <span>Data Tercatat: <b>${prop.current_tx || 0} tx</b></span>
@@ -2632,9 +2638,13 @@
                 }
             }
 
-            if (empNameEl) empNameEl.innerText = `👤 ${currentEmployee.name}`;
-            const sName = currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
-            const sClass = currentEmployee.shift_num === 1 ? 's1' : 's2';
+            if (empNameEl) {
+                const empAvatarModal = getEmployeeAvatarHtml(currentEmployee, currentEmployee.name.charAt(0) || 'K', '#3B82F6', 24);
+                empNameEl.innerHTML = `<span style="display: inline-flex; align-items: center; gap: 8px;">${empAvatarModal} <span>${escapeHtml(currentEmployee.name)}</span></span>`;
+            }
+            const isSingle = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) === 1;
+            const sName = isSingle ? 'Full Shift' : (currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam');
+            const sClass = isSingle ? 's1' : (currentEmployee.shift_num === 1 ? 's1' : 's2');
             if (shiftBadgeEl) {
                 shiftBadgeEl.className = `shift-pill ${sClass}`;
                 shiftBadgeEl.innerText = sName;
@@ -2720,18 +2730,20 @@
 
                 const dayData = store.daily_transactions[todayKey];
                 let rec = (dayData.records || []).find(r => r.emp_id === currentEmployee.id);
+                const isSingle = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) === 1;
+                const empShiftName = isSingle ? 'Full Shift' : (currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : (currentEmployee.shift_num === 2 ? 'Shift 2 Malam' : `Shift ${currentEmployee.shift_num}`));
                 if (rec) {
                     rec.tx = txVal;
                     rec.recorded_at = nowTimeStr + ' (Input Kasir)';
                     rec.shift_num = currentEmployee.shift_num;
-                    rec.shift_name = currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
+                    rec.shift_name = empShiftName;
                 } else {
                     if (!dayData.records) dayData.records = [];
                     dayData.records.push({
                         emp_id: currentEmployee.id,
                         emp_name: currentEmployee.name,
                         shift_num: currentEmployee.shift_num,
-                        shift_name: currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam',
+                        shift_name: empShiftName,
                         tx: txVal,
                         recorded_at: nowTimeStr + ' (Input Kasir)'
                     });
@@ -2817,7 +2829,7 @@
                     emp_id: currentEmployee.id,
                     emp_name: currentEmployee.name,
                     shift_num: currentEmployee.shift_num,
-                    shift_name: currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam',
+                    shift_name: ((parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) === 1) ? 'Full Shift' : (currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam'),
                     current_tx: curVal,
                     proposed_tx: txVal,
                     note: noteVal,
@@ -3259,6 +3271,35 @@
             return dateData.records;
         }
 
+        function getEmployeeAvatarHtml(empObj, fallbackInitial = '?', themeColor = '#F59E0B', size = 32) {
+            const photo = empObj ? empObj.photo : null;
+            const name = empObj ? (empObj.name || '') : '';
+            const initial = escapeHtml((fallbackInitial || (name ? name.charAt(0) : '?')).toUpperCase());
+            const bg = (themeColor === '#10B981') ? 'rgba(16, 185, 129, 0.2)' 
+                     : ((themeColor === '#F59E0B') ? 'rgba(245, 158, 11, 0.2)' 
+                     : ((themeColor === '#0EA5E9') ? 'rgba(14, 165, 233, 0.2)' 
+                     : 'rgba(79, 142, 247, 0.2)'));
+            const border = (themeColor === '#10B981') ? 'rgba(16, 185, 129, 0.3)' 
+                        : ((themeColor === '#F59E0B') ? 'rgba(245, 158, 11, 0.3)' 
+                        : ((themeColor === '#0EA5E9') ? 'rgba(14, 165, 233, 0.3)' 
+                        : 'rgba(79, 142, 247, 0.3)'));
+
+            if (photo && typeof photo === 'string' && photo.trim().length > 0) {
+                return `
+                    <div style="width: ${size}px; height: ${size}px; min-width: ${size}px; border-radius: 50%; overflow: hidden; border: 1.5px solid ${themeColor}; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; background: ${bg};">
+                        <img src="${escapeHtml(photo)}" alt="${escapeHtml(name)}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                        <span style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; font-weight: 800; font-size: ${Math.round(size * 0.4)}px; color: ${themeColor};">${initial}</span>
+                    </div>
+                `;
+            }
+
+            return `
+                <div style="width: ${size}px; height: ${size}px; min-width: ${size}px; border-radius: 50%; background: ${bg}; color: ${themeColor}; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: ${Math.round(size * 0.4)}px; border: 1px solid ${border}; flex-shrink: 0;">
+                    ${initial}
+                </div>
+            `;
+        }
+
         function renderAnalyticsDashboard(store) {
             const todayKey = getTodayKey();
             const todayData = store.daily_transactions ? store.daily_transactions[todayKey] : null;
@@ -3285,7 +3326,13 @@
                 if (adminSwitcher) adminSwitcher.style.display = 'none';
                 if (empBadgeWrap) empBadgeWrap.style.display = 'flex';
                 if (badgeEmpStore) badgeEmpStore.innerText = `🏬 ${store.name}`;
-                if (badgeEmpUser) badgeEmpUser.innerText = `👤 ${currentEmployee.name}`;
+                if (badgeEmpUser) {
+                    const miniEmpAvatar = getEmployeeAvatarHtml(currentEmployee, currentEmployee.name.charAt(0) || 'K', '#0EA5E9', 20);
+                    badgeEmpUser.innerHTML = `${miniEmpAvatar} <span>${escapeHtml(currentEmployee.name)}</span>`;
+                    badgeEmpUser.style.display = 'inline-flex';
+                    badgeEmpUser.style.alignItems = 'center';
+                    badgeEmpUser.style.gap = '6px';
+                }
                 if (btnEmpLogout) btnEmpLogout.style.display = 'inline-flex';
                 if (btnRollShifts) btnRollShifts.style.display = 'none';
                 if (btnHeaderBackStores) btnHeaderBackStores.innerHTML = '&larr; Kembali ke Portal Karyawan';
@@ -3343,14 +3390,16 @@
                 if (breakdownTitle) breakdownTitle.innerText = '👤 Rekap Transaksi';
 
                 const myShiftNum = myRec ? myRec.shift_num : currentEmployee.shift_num;
-                const myShiftName = myShiftNum === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
+                const isSingleShift = (shiftCountVal === 1);
+                const myShiftName = isSingleShift ? 'Full Shift' : (myShiftNum === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam');
 
-                const shiftClass = myShiftNum === 1 ? 's1' : 's2';
+                const shiftClass = isSingleShift ? 's1' : (myShiftNum === 1 ? 's1' : 's2');
+                const myAvatarHtml = getEmployeeAvatarHtml(currentEmployee, currentEmployee.name.charAt(0) || 'K', '#3B82F6', 32);
                 let bHtml = `
                     <div class="emp-tx-item" style="border: 1.5px solid var(--primary); background: rgba(79, 142, 247, 0.04); padding: 16px; border-radius: 14px;">
                         <div class="emp-tx-header" style="margin-bottom: 10px;">
-                            <div class="emp-name-tag">
-                                <span style="font-size: 20px;">👤</span>
+                            <div class="emp-name-tag" style="display: flex; align-items: center; gap: 8px;">
+                                ${myAvatarHtml}
                                 <span style="font-size: 15px; font-weight: 850;">${escapeHtml(currentEmployee.name)}</span>
                                 <span class="shift-pill ${shiftClass}">${escapeHtml(myShiftName)}</span>
                                 <span class="badge-status" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 10.5px;">Akun Anda</span>
@@ -3419,7 +3468,75 @@
                 if (activeEmps.length === 0 && records.length === 0) {
                     breakdownCont.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted);">Belum ada karyawan aktif terdaftar di cabang ini.</div>`;
                 } else {
-                    if (shiftCountVal === 2) {
+                    if (shiftCountVal === 1) {
+                        // ==========================================
+                        // TAMPILAN SCOREBOARD 1 SHIFT (FULL SHIFT)
+                        // ==========================================
+                        const s1Def = (store.shifts || []).find(s => s.shift_num === 1) || (store.shifts && store.shifts[0]);
+                        const s1Time = s1Def ? `${s1Def.start} - ${s1Def.end}` : '07:00 - 22:00';
+
+                        const s1EmpObj = mRec ? (store.employees || []).find(e => e.id === mRec.emp_id) : (empS1 || activeEmps[0]);
+                        const s1Name = s1EmpObj ? s1EmpObj.name : (mRec ? mRec.emp_name : 'Belum Ditugaskan');
+                        const s1AvatarHtml = getEmployeeAvatarHtml(s1EmpObj, s1Name.charAt(0) || 'F', '#F59E0B', 32);
+
+                        const s1Tx = mRec ? (Number(mRec.tx) || 0) : (totalTx > 0 ? totalTx : 0);
+                        const s1Recorded = Boolean(mRec) || (totalTx > 0);
+
+                        const s1EmpId = mRec ? mRec.emp_id : (s1EmpObj ? s1EmpObj.id : null);
+                        const s1Prop = (store.tx_proposals || []).find(p => p.date === todayKey && p.emp_id === s1EmpId && p.status === 'pending');
+
+                        let extraRecordsHtml = '';
+                        const extraRecords = records.filter(r => r.emp_id !== s1EmpId);
+                        if (extraRecords.length > 0) {
+                            extraRecordsHtml = `
+                                <div style="margin-top: 8px; padding: 8px 12px; background: rgba(79, 142, 247, 0.06); border-radius: 10px; font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
+                                    <span>👤 Kasir Tambahan / Inval: <b>${extraRecords.map(r => `${escapeHtml(r.emp_name)} (${r.tx} tx)`).join(', ')}</b></span>
+                                    <button type="button" onclick="openDailyTxModal('${store.id}', true)" style="background: none; border: none; color: var(--primary); font-size: 11px; font-weight: 750; cursor: pointer; text-decoration: underline;">Ubah</button>
+                                </div>
+                            `;
+                        }
+
+                        breakdownCont.innerHTML = `
+                            <div class="scoreboard-container" style="grid-template-columns: 1fr;">
+                                <!-- SCOREBOARD FULL SHIFT -->
+                                <div class="scoreboard-col s1">
+                                    <div>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+                                            <span style="font-weight: 800; font-size: 12px; color: #F59E0B;">🌅 Full Shift</span>
+                                            ${s1Recorded 
+                                                ? '<span class="badge-status" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 10px;">🟢 Selesai</span>'
+                                                : '<span class="badge-status" style="background: rgba(245, 158, 11, 0.15); color: var(--warning); font-size: 10px;">⏳ Berjalan</span>'}
+                                        </div>
+                                        ${s1Prop ? `<div class="badge-status badge-proposal-pending" style="font-size: 10px; margin-top: 4px; display: inline-block;">🟡 Usulan: ${s1Prop.proposed_tx} tx</div>` : ''}
+                                        <!-- Petugas Kasir (Full Shift) -->
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+                                            ${s1AvatarHtml}
+                                            <div style="min-width: 0;">
+                                                <div style="font-weight: 800; font-size: 12.5px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(s1Name)}</div>
+                                                <div style="font-size: 10.5px; color: var(--text-muted);">${escapeHtml(s1Time)}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Field Angka Transaksi Mandiri (Tengah & Klik untuk Ubah) -->
+                                    <div style="margin-top: 12px; border-top: 1px dashed rgba(245, 158, 11, 0.2); padding-top: 8px;">
+                                        <div class="scoreboard-tx-field s1" onclick="openDailyTxModal('${store.id}', true)" role="button" tabindex="0" title="Klik untuk ubah / input transaksi Full Shift">
+                                            <div style="display: flex; align-items: baseline; justify-content: center; gap: 4px;">
+                                                <span class="scoreboard-tx-num" style="color: #F59E0B;">${s1Tx}</span>
+                                                <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">tx</span>
+                                                <span style="font-size: 10px; color: #F59E0B; opacity: 0.7; margin-left: 2px;">✏️</span>
+                                            </div>
+                                            <div style="font-size: 10px; font-weight: 600; color: var(--text-muted); margin-top: 2px;">
+                                                ${s1Recorded ? 'Klik untuk ubah' : '+ Klik untuk input'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            ${extraRecordsHtml}
+                        `;
+
+                    } else if (shiftCountVal === 2) {
                         // ==========================================
                         // TAMPILAN MATCH SCOREBOARD 2 SHIFT
                         // ==========================================
@@ -3432,8 +3549,8 @@
                         const s2EmpObj = nRec ? (store.employees || []).find(e => e.id === nRec.emp_id) : empS2;
                         const s1Name = s1EmpObj ? s1EmpObj.name : (mRec ? mRec.emp_name : 'Belum Ditugaskan');
                         const s2Name = s2EmpObj ? s2EmpObj.name : (nRec ? nRec.emp_name : 'Belum Ditugaskan');
-                        const s1Avatar = escapeHtml((s1Name.charAt(0) || '1').toUpperCase());
-                        const s2Avatar = escapeHtml((s2Name.charAt(0) || '2').toUpperCase());
+                        const s1AvatarHtml = getEmployeeAvatarHtml(s1EmpObj, s1Name.charAt(0) || '1', '#F59E0B', 32);
+                        const s2AvatarHtml = getEmployeeAvatarHtml(s2EmpObj, s2Name.charAt(0) || '2', '#10B981', 32);
 
                         const s1Tx = mRec ? (Number(mRec.tx) || 0) : 0;
                         const s2Tx = nRec ? (Number(nRec.tx) || 0) : 0;
@@ -3493,9 +3610,7 @@
                                         ${s1Prop ? `<div class="badge-status badge-proposal-pending" style="font-size: 10px; margin-top: 4px; display: inline-block;">🟡 Usulan: ${s1Prop.proposed_tx} tx</div>` : ''}
                                         <!-- Petugas Kasir (Tanpa Role) -->
                                         <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
-                                            <div style="width: 32px; height: 32px; min-width: 32px; border-radius: 50%; background: rgba(245, 158, 11, 0.2); color: #F59E0B; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; border: 1px solid rgba(245, 158, 11, 0.3);">
-                                                ${s1Avatar}
-                                            </div>
+                                            ${s1AvatarHtml}
                                             <div style="min-width: 0;">
                                                 <div style="font-weight: 800; font-size: 12.5px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(s1Name)}</div>
                                                 <div style="font-size: 10.5px; color: var(--text-muted);">${escapeHtml(s1Time)}</div>
@@ -3511,7 +3626,7 @@
                                                 <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">tx</span>
                                                 <span style="font-size: 10px; color: #F59E0B; opacity: 0.7; margin-left: 2px;">✏️</span>
                                             </div>
-                                                                                    </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -3527,9 +3642,7 @@
                                         ${s2Prop ? `<div class="badge-status badge-proposal-pending" style="font-size: 10px; margin-top: 4px; display: inline-block;">🟡 Usulan: ${s2Prop.proposed_tx} tx</div>` : ''}
                                         <!-- Petugas Kasir (Tanpa Role) -->
                                         <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
-                                            <div style="width: 32px; height: 32px; min-width: 32px; border-radius: 50%; background: rgba(16, 185, 129, 0.2); color: #10B981; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; border: 1px solid rgba(16, 185, 129, 0.3);">
-                                                ${s2Avatar}
-                                            </div>
+                                            ${s2AvatarHtml}
                                             <div style="min-width: 0;">
                                                 <div style="font-weight: 800; font-size: 12.5px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(s2Name)}</div>
                                                 <div style="font-size: 10.5px; color: var(--text-muted);">${escapeHtml(s2Time)}</div>
@@ -3570,7 +3683,7 @@
                         `;
 
                     } else {
-                        // Regular list fallback jika 1 shift atau >2 shift
+                        // Regular list fallback jika >2 shift (misal 3 shift)
                         let bHtml = '';
                         const displayedEmps = [...activeEmps];
                         records.forEach(r => {
@@ -3591,14 +3704,17 @@
                             const shiftClass = emp.shift_num === 1 ? 's1' : 's2';
                             const rec = records.find(r => r.emp_id === emp.id);
                             const empProp = (store.tx_proposals || []).find(p => p.date === todayKey && p.emp_id === emp.id && p.status === 'pending');
+                            const empObj = (store.employees || []).find(e => e.id === emp.id) || emp;
+                            const empThemeColor = emp.shift_num === 1 ? '#F59E0B' : (emp.shift_num === 2 ? '#10B981' : 'var(--primary)');
+                            const empAvatarHtml = getEmployeeAvatarHtml(empObj, emp.name ? emp.name.charAt(0) : 'K', empThemeColor, 28);
 
                             if (rec) {
                                 const pct = totalTx > 0 ? Math.round((rec.tx / totalTx) * 100) : 0;
                                 bHtml += `
                                     <div class="emp-tx-item">
                                         <div class="emp-tx-header">
-                                            <div class="emp-name-tag">
-                                                <span>👤</span>
+                                            <div class="emp-name-tag" style="display: flex; align-items: center; gap: 8px;">
+                                                ${empAvatarHtml}
                                                 <span>${escapeHtml(emp.name)}</span>
                                                 <span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span>
                                                 ${empProp ? `<span class="badge-status badge-proposal-pending" style="font-size: 10px;">🟡 Usulan: ${empProp.proposed_tx} tx</span>` : ''}
@@ -3621,8 +3737,8 @@
                                 bHtml += `
                                     <div class="emp-tx-item" style="border: 1px dashed var(--card-border); opacity: 0.9;">
                                         <div class="emp-tx-header">
-                                            <div class="emp-name-tag">
-                                                <span>👤</span>
+                                            <div class="emp-name-tag" style="display: flex; align-items: center; gap: 8px;">
+                                                ${empAvatarHtml}
                                                 <span>${escapeHtml(emp.name)}</span>
                                                 <span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span>
                                                 ${empProp ? `<span class="badge-status badge-proposal-pending" style="font-size: 10px;">🟡 Usulan: ${empProp.proposed_tx} tx</span>` : ''}
@@ -4551,8 +4667,15 @@
             } else {
                 // === TABEL MODE ADMIN ===
                 if (titleEl) titleEl.innerText = 'History';
+                const isSingleShift = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) === 1;
                 if (thead) {
-                    thead.innerHTML = `
+                    thead.innerHTML = isSingleShift ? `
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Full Shift</th>
+                            <th>Total Toko</th>
+                        </tr>
+                    ` : `
                         <tr>
                             <th>Tanggal</th>
                             <th>Shift 1 (Pagi)</th>
@@ -4565,7 +4688,7 @@
                 const dateKeys = getMonthToDateKeys(store);
 
                 if (dateKeys.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 18px;">Belum ada History transaksi tercatat di cabang ini.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="${isSingleShift ? 3 : 4}" style="text-align: center; color: var(--text-muted); padding: 18px;">Belum ada History transaksi tercatat di cabang ini.</td></tr>`;
                     return;
                 }
 
@@ -4573,7 +4696,7 @@
                 dateKeys.forEach(dateKey => {
                     const dayData = (store && store.daily_transactions && store.daily_transactions[dateKey]) ? store.daily_transactions[dateKey] : null;
                     const records = (dayData && dayData.records) ? dayData.records : [];
-                    const s1Rec = records.find(r => r.shift_num === 1);
+                    const s1Rec = records.find(r => r.shift_num === 1) || (isSingleShift ? records[0] : null);
                     const s2Rec = records.find(r => r.shift_num === 2);
 
                     const s1EmpObj = s1Rec ? (store.employees || []).find(e => e.id === s1Rec.emp_id) : null;
@@ -4602,7 +4725,7 @@
                                 ${pendingOnDate.length > 0 ? `<span class="badge-status badge-proposal-pending" style="font-size:9.5px; margin-left:4px;">🟡 ${pendingOnDate.length} Usulan</span>` : ''}
                             </td>
                             <td>${s1Text}</td>
-                            <td>${s2Text}</td>
+                            ${isSingleShift ? '' : `<td>${s2Text}</td>`}
                             <td>
                                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                                     <span>${totalHighlight}</span>
@@ -4712,8 +4835,15 @@
                 tbody.innerHTML = html;
 
             } else {
+                const isSingleShift = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) === 1;
                 if (thead) {
-                    thead.innerHTML = `
+                    thead.innerHTML = isSingleShift ? `
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Full Shift</th>
+                            <th>Total Toko</th>
+                        </tr>
+                    ` : `
                         <tr>
                             <th>Tanggal</th>
                             <th>Shift 1 (Pagi)</th>
@@ -4724,14 +4854,14 @@
                 }
 
                 if (list.length === 0 || (agg.overallTotalTx === 0 && list.every(item => !item.hasData))) {
-                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 18px;">Tidak ada History transaksi pada rentang filter ini.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="${isSingleShift ? 3 : 4}" style="text-align: center; color: var(--text-muted); padding: 18px;">Tidak ada History transaksi pada rentang filter ini.</td></tr>`;
                     return;
                 }
 
                 let html = '';
                 list.forEach(item => {
                     const s1Text = item.shift1Tx > 0 
-                        ? `<b>${escapeHtml(item.shift1Emp || 'Shift 1')}</b> (${item.shift1Tx} tx)` 
+                        ? `<b>${escapeHtml(item.shift1Emp || (isSingleShift ? 'Full Shift' : 'Shift 1'))}</b> (${item.shift1Tx} tx)` 
                         : (item.hasData ? '<span style="color:var(--text-muted); font-size:11px;">0 tx / libur</span>' : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>');
 
                     const s2Text = item.shift2Tx > 0 
@@ -4751,7 +4881,7 @@
                                 ${pendingOnDate.length > 0 ? `<span class="badge-status badge-proposal-pending" style="font-size:9.5px; margin-left:4px;">🟡 ${pendingOnDate.length} Usulan</span>` : ''}
                             </td>
                             <td>${s1Text}</td>
-                            <td>${s2Text}</td>
+                            ${isSingleShift ? '' : `<td>${s2Text}</td>`}
                             <td>
                                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                                     <span>${totalHighlight}</span>
@@ -4847,14 +4977,17 @@
             if (shiftBox) {
                 if (isToday) {
                     if (runningShift && runningEmp) {
+                        const isSingle = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) === 1;
+                        const dispShiftName = isSingle ? 'Full Shift' : runningShift.name;
+                        const runningEmpAvatar = getEmployeeAvatarHtml(runningEmp, runningEmp.name ? runningEmp.name.charAt(0) : 'K', 'var(--primary)', 28);
                         shiftBox.innerHTML = `
                             <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 18px;">⏰</span>
+                                    ${runningEmpAvatar}
                                     <div>
                                         <div style="font-size: 10.5px; font-weight: 750; color: var(--primary); text-transform: uppercase;">Shift Sedang Berjalan</div>
                                         <div style="font-size: 12.5px; font-weight: 850; color: var(--text-main);">
-                                            ${escapeHtml(runningShift.name)}: <b>${escapeHtml(runningEmp.name)}</b>
+                                            ${escapeHtml(dispShiftName)}: <b>${escapeHtml(runningEmp.name)}</b>
                                         </div>
                                     </div>
                                 </div>
@@ -4915,17 +5048,21 @@
                 employeesToRender.forEach((emp) => {
                     const existingRecord = setRecords.find(r => r.emp_id === emp.id);
                     const empShiftNum = existingRecord ? existingRecord.shift_num : emp.shift_num;
-                    const shiftName = empShiftNum === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
-                    const shiftClass = empShiftNum === 1 ? 's1' : 's2';
+                    const isSingle = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) === 1;
+                    const shiftName = isSingle ? 'Full Shift' : (empShiftNum === 1 ? 'Shift 1 Pagi' : (empShiftNum === 2 ? 'Shift 2 Malam' : `Shift ${empShiftNum}`));
+                    const shiftClass = isSingle ? 's1' : (empShiftNum === 1 ? 's1' : 's2');
                     const prefillVal = (existingRecord && existingRecord.tx !== undefined && existingRecord.tx !== null) ? existingRecord.tx : '';
                     const isRunning = isToday && runningShift && runningShift.shift_num === empShiftNum;
                     const isInval = (emp.role === 'inval' || String(emp.id).startsWith('inval_'));
+                    const empObj = (store.employees || []).find(e => e.id === emp.id) || emp;
+                    const empAvatarModalHtml = getEmployeeAvatarHtml(empObj, emp.name ? emp.name.charAt(0) : 'K', empShiftNum === 1 ? '#F59E0B' : (empShiftNum === 2 ? '#10B981' : 'var(--primary)'), 24);
 
                     html += `
                     <div class="form-group" style="${isRunning ? 'background: rgba(79, 142, 247, 0.05); padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(79, 142, 247, 0.25);' : (isInval ? 'background: rgba(245, 158, 11, 0.05); padding: 10px 12px; border-radius: 12px; border: 1px dashed rgba(245, 158, 11, 0.3);' : '')}">
                         <label class="form-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                            <span style="font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px;">
-                                <span>👤 ${escapeHtml(emp.name)}</span>
+                            <span style="font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                                ${empAvatarModalHtml}
+                                <span>${escapeHtml(emp.name)}</span>
                                 ${isRunning ? '<span style="font-size: 9.5px; color: var(--primary); font-weight: 800; background: rgba(79, 142, 247, 0.15); padding: 2px 6px; border-radius: 6px;">SEDANG BERTUGAS</span>' : ''}
                                 ${isInval ? '<span style="font-size: 9.5px; color: #f59e0b; font-weight: 800; background: rgba(245, 158, 11, 0.15); padding: 2px 6px; border-radius: 6px;">INVAL PENGGANTI</span>' : ''}
                             </span>
@@ -5012,10 +5149,12 @@
             const rowDiv = document.createElement('div');
             rowDiv.className = 'form-group';
             rowDiv.style.cssText = 'background: rgba(245, 158, 11, 0.06); padding: 10px 12px; border-radius: 12px; border: 1px dashed rgba(245, 158, 11, 0.35); margin-top: 8px;';
+            const invalAvatar = getEmployeeAvatarHtml({ name: cleanName }, cleanName.charAt(0) || 'I', '#F59E0B', 24);
             rowDiv.innerHTML = `
                 <label class="form-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <span style="font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px;">
-                        <span>👤 ${escapeHtml(cleanName)}</span>
+                    <span style="font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                        ${invalAvatar}
+                        <span>${escapeHtml(cleanName)}</span>
                         <span style="font-size: 9.5px; color: #f59e0b; font-weight: 800; background: rgba(245, 158, 11, 0.15); padding: 2px 6px; border-radius: 6px;">KASIR INVAL</span>
                     </span>
                     <span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span>
