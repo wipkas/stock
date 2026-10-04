@@ -15,11 +15,6 @@
       "type": "image/png"
     },
     {
-      "src": "../icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    },
-    {
       "src": "../icons/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
@@ -61,6 +56,34 @@
       "description": "Buka tab Laporan Stok Harian",
       "url": "../../interactive_stock.html?tab=daily",
       "icons": [{ "src": "../icons/icon-daily-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "💹 Margin Voucher",
+      "short_name": "Margin",
+      "description": "Buka tab Margin Voucher",
+      "url": "../../interactive_stock.html?tab=margin",
+      "icons": [{ "src": "../icons/icon-margin-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "⚖️ Fee Rule",
+      "short_name": "Fee Rule",
+      "description": "Buka tab Fee Rule (aturan biaya admin)",
+      "url": "../../interactive_stock.html?tab=feerule",
+      "icons": [{ "src": "../icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "🏢 Kelola Toko",
+      "short_name": "Toko",
+      "description": "Kelola cabang, shift, dan karyawan",
+      "url": "../../store_manager.html",
+      "icons": [{ "src": "../icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "👤 Portal Karyawan",
+      "short_name": "Karyawan",
+      "description": "Login kasir & personel toko",
+      "url": "../../karyawan.html",
+      "icons": [{ "src": "../icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
