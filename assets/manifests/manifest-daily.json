@@ -55,6 +55,20 @@
       "description": "Buka tab Riwayat & Rekonsiliasi Order",
       "url": "../../interactive_stock.html?tab=history",
       "icons": [{ "src": "../icons/icon-history-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "💹 Margin Voucher",
+      "short_name": "Margin",
+      "description": "Buka tab Margin Voucher",
+      "url": "../../interactive_stock.html?tab=margin",
+      "icons": [{ "src": "../icons/icon-margin-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "⚖️ Fee Rule",
+      "short_name": "Fee Rule",
+      "description": "Buka tab Fee Rule (aturan biaya admin)",
+      "url": "../../interactive_stock.html?tab=feerule",
+      "icons": [{ "src": "../icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

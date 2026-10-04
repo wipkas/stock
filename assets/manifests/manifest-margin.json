@@ -52,16 +52,23 @@
     {
       "name": "📊 Riwayat Order",
       "short_name": "Riwayat",
-      "description": "Buka tab Riwayat Order",
+      "description": "Buka tab Riwayat & Rekonsiliasi Order",
       "url": "../../interactive_stock.html?tab=history",
       "icons": [{ "src": "../icons/icon-history-192.png", "sizes": "192x192" }]
     },
     {
       "name": "🌙 Laporan Harian",
       "short_name": "Laporan",
-      "description": "Buka tab Laporan Harian",
+      "description": "Buka tab Laporan Stok Harian",
       "url": "../../interactive_stock.html?tab=daily",
       "icons": [{ "src": "../icons/icon-daily-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "⚖️ Fee Rule",
+      "short_name": "Fee Rule",
+      "description": "Buka tab Fee Rule (aturan biaya admin)",
+      "url": "../../interactive_stock.html?tab=feerule",
+      "icons": [{ "src": "../icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

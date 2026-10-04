@@ -865,6 +865,11 @@
             color: #94a3b8;
             border: 1px solid rgba(148, 163, 184, 0.35);
         }
+        .badge-status-leave {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+        }
 
         .btn-emp-action {
             display: inline-flex;
@@ -886,6 +891,14 @@
         .btn-emp-action:hover {
             border-color: var(--primary);
             background: rgba(79, 142, 247, 0.15);
+        }
+        .btn-emp-action.btn-leave {
+            color: #f59e0b;
+            border-color: rgba(245, 158, 11, 0.35);
+            background: rgba(245, 158, 11, 0.08);
+        }
+        .btn-emp-action.btn-leave:hover {
+            background: rgba(245, 158, 11, 0.2);
         }
         .btn-emp-action.btn-transfer {
             color: #0ea5e9;
@@ -2092,6 +2105,7 @@
                             <select id="filterMasterEmpStatus" class="form-select" onchange="filterMasterEmployeesTable()" style="width: 150px; padding: 6px 10px; font-size: 12px;">
                                 <option value="all">Semua Status</option>
                                 <option value="active" selected>Aktif Saja</option>
+                                <option value="leave">Izin / Libur</option>
                                 <option value="inval">Kasir Inval</option>
                                 <option value="resigned">Resign / Nonaktif</option>
                             </select>
@@ -2156,6 +2170,116 @@
             <div class="modal-footer" style="justify-content: flex-end;">
                 <button type="button" class="btn-secondary" onclick="closeModal('masterEmployeesModal')">Tutup</button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL: IZIN LIBUR & KASIR PENGGANTI (INVAL) -->
+    <div id="leaveInvalModal" class="modal-backdrop" style="z-index: 1250;" onclick="handleBackdropClose(event, 'leaveInvalModal')">
+        <div class="modal-card" style="max-width: 520px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">🏖️ Izin Libur &amp; Kasir Pengganti (Inval)</h3>
+                    <p class="modal-subtitle">Berikan izin libur dan tugaskan kasir pengganti agar shift tetap berjalan</p>
+                </div>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('leaveInvalModal')">&times;</button>
+            </div>
+            <form id="leaveInvalForm" onsubmit="handleLeaveInvalSubmit(event)" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin: 0;">
+                <input type="hidden" id="leaveEmpId">
+                <input type="hidden" id="leaveStoreId">
+                <input type="hidden" id="leaveShiftNum">
+                <input type="hidden" id="leaveEmpName">
+
+                <div class="modal-body" style="padding: 16px 20px; overflow-y: auto; flex: 1;">
+                    <!-- Card Info Karyawan yang Izin -->
+                    <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;">
+                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: #f59e0b; letter-spacing: 0.5px; margin-bottom: 4px;">Karyawan yang Mengajukan Izin:</div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                            <div style="font-weight: 800; font-size: 15px; color: var(--text-main);" id="leaveEmpNameDisplay">-</div>
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <span class="badge-status" id="leaveStoreNameBadge" style="background: var(--input-bg); border: 1px solid var(--card-border); font-size: 11px;">Cabang</span>
+                                <span class="badge-status" id="leaveShiftBadge" style="background: rgba(79, 142, 247, 0.15); color: var(--primary); font-size: 11px;">Shift 1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Keterangan / Alasan Izin -->
+                    <div class="form-group">
+                        <label class="form-label" for="leaveReasonSelect">Alasan / Jenis Izin <span style="color: var(--danger);">*</span></label>
+                        <select id="leaveReasonSelect" class="form-select" onchange="toggleLeaveReasonCustom()">
+                            <option value="Izin Sakit">🤒 Izin Sakit</option>
+                            <option value="Cuti / Libur Pribadi">🏖️ Cuti / Libur Pribadi</option>
+                            <option value="Izin Keperluan Keluarga">👨‍👩‍👧 Izin Keperluan Keluarga</option>
+                            <option value="Izin Urusan Mendadak">⚡ Izin Urusan Mendadak</option>
+                            <option value="custom">✏️ Alasan Lainnya (Ketik Manual)...</option>
+                        </select>
+                        <input type="text" id="leaveReasonCustomInput" class="form-input" placeholder="Tulis alasan izin..." style="display: none; margin-top: 8px;">
+                    </div>
+
+                    <!-- Pilihan Kasir Pengganti (Inval) -->
+                    <div class="form-group" style="margin-top: 14px;">
+                        <label class="form-label" style="margin-bottom: 8px;">Pilihan Kasir Pengganti (Inval)</label>
+                        <div style="display: flex; gap: 8px; flex-direction: column;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; cursor: pointer; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--card-border); background: var(--input-bg);">
+                                <input type="radio" name="invalOptionType" value="existing" checked onchange="switchInvalOption('existing')">
+                                <span>👥 Pilih dari Karyawan yang Sudah Ada</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; cursor: pointer; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--card-border); background: var(--input-bg);">
+                                <input type="radio" name="invalOptionType" value="new" onchange="switchInvalOption('new')">
+                                <span>✨ Tambah Kasir Pengganti Baru (Inval Baru)</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; cursor: pointer; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--card-border); background: var(--input-bg);">
+                                <input type="radio" name="invalOptionType" value="none" onchange="switchInvalOption('none')">
+                                <span>🚫 Tanpa Pengganti (Shift Dibiarkan Kosong)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- SUB-FORM 1: PILIH KARYAWAN ADA -->
+                    <div id="subFormInvalExisting" style="background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; margin-top: 10px;">
+                        <label class="form-label" for="invalExistingEmpSelect">Pilih Karyawan Pengganti</label>
+                        <select id="invalExistingEmpSelect" class="form-select">
+                            <!-- Populated dynamically -->
+                        </select>
+                        <div class="form-hint" style="margin-top: 6px;">
+                            💡 Karyawan yang dipilih akan ditugaskan ke cabang ini sebagai <b>Kasir Inval</b> pada shift yang sama.
+                        </div>
+                    </div>
+
+                    <!-- SUB-FORM 2: TAMBAH KASIR INVAL BARU -->
+                    <div id="subFormInvalNew" style="display: none; background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; margin-top: 10px;">
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <label class="form-label" for="newInvalNameInput">Nama Kasir Pengganti (Inval) <span style="color: var(--danger);">*</span></label>
+                            <input type="text" id="newInvalNameInput" class="form-input" placeholder="Misal: Rian (Inval)">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <label class="form-label" for="newInvalPinInput">PIN Password Kasir Baru <span style="color: var(--danger);">*</span></label>
+                            <input type="password" id="newInvalPinInput" class="form-input" placeholder="Minimal 3 digit angka/huruf">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="newInvalPhoneInput">No. HP / WhatsApp (Opsional)</label>
+                            <input type="tel" id="newInvalPhoneInput" class="form-input" placeholder="08xxxxxxxxxx">
+                        </div>
+                    </div>
+
+                    <!-- SUB-FORM 3: TANPA PENGGANTI -->
+                    <div id="subFormInvalNone" style="display: none; background: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 10px 12px; margin-top: 10px; font-size: 12px; color: var(--text-muted); line-height: 1.45;">
+                        ⚠️ Tidak ada kasir pengganti yang ditugaskan. Kasir yang izin akan dinonaktifkan sementara dari shift hingga kembali bertugas.
+                    </div>
+
+                    <!-- Catatan Tambahan -->
+                    <div class="form-group" style="margin-top: 14px;">
+                        <label class="form-label" for="leaveNotesInput">Catatan / Keterangan Tambahan (Opsional)</label>
+                        <input type="text" id="leaveNotesInput" class="form-input" placeholder="Misal: Izin 1 hari, kembali besok...">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('leaveInvalModal')">Batal</button>
+                    <button type="submit" id="btnSubmitLeaveInval" class="btn-primary" style="background: #f59e0b; border-color: #d97706;">
+                        🏖️ Simpan Izin &amp; Tugaskan Pengganti
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -3133,6 +3257,7 @@
             div.dataset.empNotes = notes || '';
 
             const isResigned = (status === 'resigned' || status === 'inactive');
+            const isLeave = (status === 'leave');
             const hasPass = Boolean(pass && String(pass).trim().length > 0);
             const btnClass = hasPass ? 'btn-emp-pass has-pass' : 'btn-emp-pass no-pass';
             const btnLabel = hasPass ? '🔑 PIN Tersedia' : '🔑 Set PIN';
@@ -3160,6 +3285,19 @@
                     </div>
                     <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; white-space: nowrap;">Shift ${shift}</span>
                     <button type="button" class="btn-emp-action btn-rehire" onclick="openRehireEmpModal('${id}', '${escapeHtml(name)}', '${currentStoreId}')" title="Aktifkan Kembali / Re-hire">♻️ Aktifkan</button>
+                    <button type="button" class="btn-del-emp" onclick="confirmDeleteEmpRow('${rowId}')" title="Lepas Karyawan dari Cabang">&times;</button>
+                `;
+            } else if (isLeave) {
+                div.style.opacity = '0.9';
+                div.style.background = 'rgba(245, 158, 11, 0.05)';
+                div.innerHTML = `
+                    <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;">
+                        ${avatarMini}
+                        <span class="badge-status badge-status-leave">🏖️ Izin Libur</span>
+                        <input type="text" class="emp-name-input" value="${escapeHtml(name)}" readonly style="flex: 1; font-weight: 700;">
+                    </div>
+                    <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; white-space: nowrap;">Shift ${shift}</span>
+                    <button type="button" class="btn-emp-action btn-rehire" onclick="handleReturnFromLeave('${id}', '${escapeHtml(name)}', '${currentStoreId}')" title="Selesai Izin & Aktifkan Kembali">✅ Selesai</button>
                     <button type="button" class="btn-del-emp" onclick="confirmDeleteEmpRow('${rowId}')" title="Lepas Karyawan dari Cabang">&times;</button>
                 `;
             } else {
@@ -3547,8 +3685,9 @@
                 const empRole = emp.role || 'kasir';
 
                 if (statusFilter === 'active' && empStatus !== 'active') return false;
-                if (statusFilter === 'inval' && (empRole !== 'inval' || empStatus !== 'active')) return false;
-                if (statusFilter === 'resigned' && empStatus === 'active') return false;
+                if (statusFilter === 'leave' && empStatus !== 'leave') return false;
+                if (statusFilter === 'inval' && empRole !== 'inval') return false;
+                if (statusFilter === 'resigned' && empStatus !== 'resigned' && empStatus !== 'inactive') return false;
 
                 if (searchQuery) {
                     const matchName = (emp.name || '').toLowerCase().includes(searchQuery);
@@ -3579,6 +3718,7 @@
                 const empStatus = emp.status || 'active';
                 const empRole = emp.role || 'kasir';
                 const isActive = (empStatus === 'active');
+                const isLeave = (empStatus === 'leave');
                 const hasPass = Boolean(emp.password && String(emp.password).trim().length > 0);
 
                 let photoHtml = '';
@@ -3591,9 +3731,10 @@
                 let statusBadge = '<span class="badge-status badge-active">🟢 Aktif</span>';
                 if (empStatus === 'resigned') statusBadge = '<span class="badge-status badge-status-resigned">🔴 Resign</span>';
                 else if (empStatus === 'inactive') statusBadge = '<span class="badge-status badge-status-inactive">🟡 Nonaktif</span>';
+                else if (empStatus === 'leave') statusBadge = '<span class="badge-status badge-status-leave" title="Sedang Izin / Cuti">🏖️ Izin Libur</span>';
 
                 let roleBadge = (empRole === 'inval')
-                    ? '<span class="badge-status badge-role-inval">Inval Pengganti</span>'
+                    ? '<span class="badge-status badge-role-inval" title="Kasir Inval / Pengganti">Inval Pengganti</span>'
                     : '<span class="badge-status badge-role-kasir">Kasir Tetap</span>';
 
                 let passBadge = hasPass 
@@ -3620,10 +3761,22 @@
                 }
 
                 let actionHtml = '';
-                if (isActive) {
+                if (isLeave) {
                     actionHtml = `
                         <div style="display: flex; gap: 6px; justify-content: flex-end;">
                             <button type="button" class="btn-emp-action" onclick="openEditEmployeeModal('${emp.id}', '${emp.store_id || ''}')" title="Edit Data & Kontak" style="color: var(--primary); border-color: rgba(79, 142, 247, 0.35); background: rgba(79, 142, 247, 0.08);">✏️ Edit</button>
+                            <button type="button" class="btn-emp-action btn-rehire" onclick="handleReturnFromLeave('${emp.id}', '${escapeHtml(emp.name)}', '${emp.store_id || ''}')" title="Selesai Cuti & Aktifkan Kembali Kasir" style="color: var(--success); border-color: rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.08);">✅ Selesai Izin</button>
+                            <button type="button" class="btn-emp-action btn-deactivate" onclick="openDeactivateEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${emp.store_id || ''}')" title="Nonaktifkan / Resign">🚪 Resign</button>
+                        </div>
+                    `;
+                } else if (isActive) {
+                    const canTakeLeave = Boolean(emp.store_id);
+                    actionHtml = `
+                        <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                            <button type="button" class="btn-emp-action" onclick="openEditEmployeeModal('${emp.id}', '${emp.store_id || ''}')" title="Edit Data & Kontak" style="color: var(--primary); border-color: rgba(79, 142, 247, 0.35); background: rgba(79, 142, 247, 0.08);">✏️ Edit</button>
+                            ${canTakeLeave ? `
+                                <button type="button" class="btn-emp-action btn-leave" onclick="openLeaveInvalModal('${emp.id}', '${escapeHtml(emp.name)}', '${emp.store_id}', ${emp.shift_num || 1})" title="Berikan Izin Libur & Tugaskan Kasir Pengganti (Inval)">🏖️ Izin / Inval</button>
+                            ` : ''}
                             <button type="button" class="btn-emp-action btn-transfer" onclick="openTransferEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${emp.store_id || ''}')" title="${emp.store_id ? 'Mutasi ke Cabang Lain' : 'Tugaskan ke Cabang'}">${emp.store_id ? '🔄 Pindah' : '➕ Tugaskan'}</button>
                             <button type="button" class="btn-emp-action btn-deactivate" onclick="openDeactivateEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${emp.store_id || ''}')" title="Nonaktifkan / Resign">🚪 Resign</button>
                         </div>
@@ -3799,6 +3952,30 @@
             showToast(`Data kontak & profil "${newName}" berhasil disimpan!`, '✅');
         }
 
+        function getLocalMutationLogs() {
+            try {
+                const raw = localStorage.getItem('kspcheck_employee_mutation_logs');
+                return raw ? JSON.parse(raw) : [];
+            } catch(e) {
+                return [];
+            }
+        }
+
+        function recordMutationLog(logEntry) {
+            const logs = getLocalMutationLogs();
+            if (!logEntry.id) logEntry.id = 'mut_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            if (!logEntry.transfer_date) logEntry.transfer_date = new Date().toISOString();
+
+            const exists = logs.some(l => l.id === logEntry.id);
+            if (!exists) {
+                logs.unshift(logEntry);
+                if (logs.length > 250) logs.length = 250;
+                try {
+                    localStorage.setItem('kspcheck_employee_mutation_logs', JSON.stringify(logs));
+                } catch(e) {}
+            }
+        }
+
         async function loadMutationLogsFromCloud() {
             const tbody = document.getElementById('mutationLogTableBody');
             if (!tbody) return;
@@ -3806,28 +3983,44 @@
             tbody.innerHTML = `
                 <tr>
                     <td colspan="6" style="text-align: center; padding: 24px; color: var(--text-muted);">
-                        ⏳ Memuat riwayat mutasi dari cloud...
+                        ⏳ Memuat riwayat mutasi...
                     </td>
                 </tr>
             `;
 
-            let logs = [];
+            let cloudLogs = [];
             if (window.KspSync && typeof window.KspSync.adminGetAllEmployees === 'function') {
                 try {
                     const res = await window.KspSync.adminGetAllEmployees();
                     if (res && res.transfers) {
-                        logs = res.transfers;
+                        cloudLogs = res.transfers;
                     }
                 } catch (e) {
-                    console.warn('[StoreManager] Gagal mengambil log mutasi:', e);
+                    console.warn('[StoreManager] Gagal mengambil log mutasi cloud:', e);
                 }
             }
+
+            const localLogs = getLocalMutationLogs();
+
+            // Gabungkan log lokal dan cloud
+            const combinedMap = new Map();
+            localLogs.forEach(item => {
+                const key = item.id || `${item.emp_id}_${item.transfer_date}`;
+                combinedMap.set(key, item);
+            });
+            cloudLogs.forEach(item => {
+                const key = item.id || `${item.emp_id}_${item.transfer_date}`;
+                combinedMap.set(key, item);
+            });
+
+            const logs = Array.from(combinedMap.values());
+            logs.sort((a, b) => new Date(b.transfer_date || 0) - new Date(a.transfer_date || 0));
 
             if (!logs || logs.length === 0) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="6" style="text-align: center; padding: 28px; color: var(--text-muted);">
-                            Belum ada catatan mutasi cabang karyawan.
+                            Belum ada catatan mutasi atau izin libur karyawan.
                         </td>
                     </tr>
                 `;
@@ -3837,16 +4030,52 @@
             let html = '';
             logs.forEach(item => {
                 const dateStr = item.transfer_date ? new Date(item.transfer_date).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-';
-                const fromStore = storesData.find(s => s.id === item.from_store_id)?.name || item.from_store_id || '-';
-                const toStore = storesData.find(s => s.id === item.to_store_id)?.name || item.to_store_id || '-';
+
+                // Format Cabang Asal
+                let fromDisplay = '-';
+                if (item.from_store_id === 'leave') {
+                    fromDisplay = '<span style="color: #f59e0b; font-weight: 750;">🏖️ Izin Libur</span>';
+                } else if (item.from_store_id === 'unassigned') {
+                    fromDisplay = '<span style="color: var(--text-muted);">🟢 Tanpa Cabang</span>';
+                } else if (item.from_store_id === 'Karyawan Baru') {
+                    fromDisplay = '<span style="color: #10b981; font-weight: 750;">✨ Karyawan Baru</span>';
+                } else {
+                    const fromStore = storesData.find(s => s.id === item.from_store_id);
+                    fromDisplay = fromStore ? escapeHtml(fromStore.name) : escapeHtml(item.from_store_id || '-');
+                }
+
+                // Format Tujuan
+                let toDisplay = '-';
+                if (item.to_store_id === 'leave') {
+                    toDisplay = '<span style="color: #f59e0b; font-weight: 750;">🏖️ Izin Libur</span>';
+                } else if (item.to_store_id === 'unassigned') {
+                    toDisplay = '<span style="color: var(--text-muted); font-weight: 700;">➔ Tanpa Cabang</span>';
+                } else if (item.to_store_id === 'Resign' || item.to_store_id === 'resigned') {
+                    toDisplay = '<span style="color: #ef4444; font-weight: 750;">🔴 Resign</span>';
+                } else if (item.to_store_id === 'Nonaktif' || item.to_store_id === 'inactive') {
+                    toDisplay = '<span style="color: #f59e0b; font-weight: 750;">🟡 Nonaktif</span>';
+                } else if (item.to_store_id === 'Selesai Inval') {
+                    toDisplay = '<span style="color: var(--text-muted); font-weight: 700;">Selesai Inval</span>';
+                } else {
+                    const toStore = storesData.find(s => s.id === item.to_store_id);
+                    toDisplay = `<span style="font-weight: 750; color: #0ea5e9;">➔ ${escapeHtml(toStore ? toStore.name : (item.to_store_id || '-'))}</span>`;
+                }
+
+                // Format Shift
+                let shiftDisplay = '-';
+                if (item.new_shift_num && item.new_shift_num !== '-') {
+                    shiftDisplay = `<span class="badge-status" style="background: var(--input-bg); border: 1px solid var(--card-border);">Shift ${item.new_shift_num}</span>`;
+                } else {
+                    shiftDisplay = '<span style="color: var(--text-muted); font-size: 11px;">-</span>';
+                }
 
                 html += `
                     <tr>
                         <td style="white-space: nowrap; color: var(--text-muted); font-size: 11.5px;">${dateStr}</td>
                         <td style="font-weight: 800; color: var(--text-main);">${escapeHtml(item.emp_name || item.emp_id)}</td>
-                        <td style="color: var(--text-muted);">${escapeHtml(fromStore)}</td>
-                        <td style="font-weight: 700; color: #0ea5e9;">➔ ${escapeHtml(toStore)}</td>
-                        <td><span class="badge-status" style="background: var(--input-bg); border: 1px solid var(--card-border);">Shift ${item.new_shift_num || 1}</span></td>
+                        <td style="color: var(--text-muted);">${fromDisplay}</td>
+                        <td>${toDisplay}</td>
+                        <td>${shiftDisplay}</td>
                         <td style="font-size: 11.5px; color: var(--text-muted);">${escapeHtml(item.reason || '-')}</td>
                     </tr>
                 `;
@@ -3957,6 +4186,18 @@
                 saveStoresData();
             }
 
+            // Catat log mutasi
+            recordMutationLog({
+                id: 'mut_' + Date.now() + '_transfer',
+                emp_id: empId,
+                emp_name: document.getElementById('transferEmpNameDisplay')?.innerText || 'Karyawan',
+                from_store_id: fromStoreId || 'unassigned',
+                to_store_id: toStoreId,
+                new_shift_num: newShift,
+                reason: reason,
+                transfer_date: new Date().toISOString()
+            });
+
             btn.disabled = false;
             btn.innerText = origText;
             closeModal('transferEmpModal');
@@ -4042,6 +4283,18 @@
                     saveUnassignedEmployees(uList);
                 }
             }
+
+            // Catat log mutasi
+            recordMutationLog({
+                id: 'mut_' + Date.now() + '_deactivate',
+                emp_id: empId,
+                emp_name: empName,
+                from_store_id: storeId || 'unassigned',
+                to_store_id: status === 'resigned' ? 'Resign' : 'Nonaktif',
+                new_shift_num: '-',
+                reason: reason,
+                transfer_date: new Date().toISOString()
+            });
 
             btn.disabled = false;
             btn.innerText = origText;
@@ -4182,6 +4435,18 @@
                 }
             }
 
+            // Catat log mutasi
+            recordMutationLog({
+                id: 'mut_' + Date.now() + '_rehire',
+                emp_id: empId,
+                emp_name: foundEmp ? foundEmp.name : 'Karyawan',
+                from_store_id: originStore ? originStore.id : 'unassigned',
+                to_store_id: targetStoreId,
+                new_shift_num: newShift,
+                reason: 'Diaktifkan Kembali / Re-hire',
+                transfer_date: new Date().toISOString()
+            });
+
             btn.disabled = false;
             btn.innerText = origText;
             closeModal('rehireEmpModal');
@@ -4204,6 +4469,518 @@
             renderStoresGrid();
 
             showToast(`Karyawan ${foundEmp ? foundEmp.name : ''} berhasil diaktifkan kembali!`, '✅');
+        }
+
+        // ==========================================
+        // MODAL IZIN LIBUR & KASIR PENGGANTI (INVAL) LOGIC
+        // ==========================================
+
+        function openLeaveInvalModal(empId, empName, storeId, shiftNum) {
+            document.getElementById('leaveEmpId').value = empId;
+            document.getElementById('leaveStoreId').value = storeId || '';
+            document.getElementById('leaveShiftNum').value = shiftNum || 1;
+            document.getElementById('leaveEmpName').value = empName;
+
+            document.getElementById('leaveEmpNameDisplay').innerText = empName;
+            const store = storesData.find(s => s.id === storeId);
+            document.getElementById('leaveStoreNameBadge').innerText = store ? store.name : 'Cabang';
+            document.getElementById('leaveShiftBadge').innerText = `Shift ${shiftNum || 1}`;
+
+            // Reset dropdown & fields
+            document.getElementById('leaveReasonSelect').value = 'Izin Sakit';
+            document.getElementById('leaveReasonCustomInput').value = '';
+            document.getElementById('leaveReasonCustomInput').style.display = 'none';
+            document.getElementById('leaveNotesInput').value = '';
+
+            // Reset radio option ke 'existing'
+            const radios = document.getElementsByName('invalOptionType');
+            radios.forEach(r => { r.checked = (r.value === 'existing'); });
+            switchInvalOption('existing');
+
+            // Isi daftar kandidat kasir pengganti
+            const candSelect = document.getElementById('invalExistingEmpSelect');
+            candSelect.innerHTML = '';
+
+            const unassignedList = getUnassignedEmployees().filter(e => e.id !== empId && (e.status === 'active' || !e.status));
+            const otherStoreEmployees = [];
+            storesData.forEach(st => {
+                (st.employees || []).forEach(e => {
+                    if (e.id !== empId && (e.status === 'active' || !e.status)) {
+                        otherStoreEmployees.push({
+                            ...e,
+                            store_id: st.id,
+                            store_name: st.name
+                        });
+                    }
+                });
+            });
+
+            let hasCandidates = false;
+
+            if (unassignedList.length > 0) {
+                const grp = document.createElement('optgroup');
+                grp.label = '🟢 Karyawan Tanpa Cabang (Unassigned)';
+                unassignedList.forEach(e => {
+                    const opt = document.createElement('option');
+                    opt.value = `unassigned:${e.id}`;
+                    opt.textContent = `${e.name} (ID: ${e.id})`;
+                    grp.appendChild(opt);
+                    hasCandidates = true;
+                });
+                candSelect.appendChild(grp);
+            }
+
+            if (otherStoreEmployees.length > 0) {
+                const grp = document.createElement('optgroup');
+                grp.label = '🏢 Karyawan dari Cabang Lain / Shift Lain';
+                otherStoreEmployees.forEach(e => {
+                    const opt = document.createElement('option');
+                    opt.value = `store:${e.store_id}:${e.id}`;
+                    const sameStore = (e.store_id === storeId);
+                    opt.textContent = `${e.name} [${sameStore ? 'Shift ' + e.shift_num : e.store_name + ' - Shift ' + e.shift_num}]`;
+                    grp.appendChild(opt);
+                    hasCandidates = true;
+                });
+                candSelect.appendChild(grp);
+            }
+
+            if (!hasCandidates) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = '(Tidak ada karyawan aktif lain yang tersedia)';
+                candSelect.appendChild(opt);
+                // Bila tidak ada kandidat, arahkan ke buat inval baru
+                radios.forEach(r => { r.checked = (r.value === 'new'); });
+                switchInvalOption('new');
+            }
+
+            document.getElementById('newInvalNameInput').value = `${empName} (Inval)`;
+            document.getElementById('newInvalPinInput').value = '';
+            document.getElementById('newInvalPhoneInput').value = '';
+
+            openModal('leaveInvalModal');
+        }
+
+        function switchInvalOption(type) {
+            const elExisting = document.getElementById('subFormInvalExisting');
+            const elNew = document.getElementById('subFormInvalNew');
+            const elNone = document.getElementById('subFormInvalNone');
+            if (elExisting) elExisting.style.display = (type === 'existing') ? 'block' : 'none';
+            if (elNew) elNew.style.display = (type === 'new') ? 'block' : 'none';
+            if (elNone) elNone.style.display = (type === 'none') ? 'block' : 'none';
+        }
+
+        function toggleLeaveReasonCustom() {
+            const sel = document.getElementById('leaveReasonSelect');
+            const inp = document.getElementById('leaveReasonCustomInput');
+            if (sel && inp) {
+                if (sel.value === 'custom') {
+                    inp.style.display = 'block';
+                    inp.focus();
+                } else {
+                    inp.style.display = 'none';
+                    inp.value = '';
+                }
+            }
+        }
+
+        async function handleLeaveInvalSubmit(e) {
+            e.preventDefault();
+            const empId = document.getElementById('leaveEmpId').value;
+            const storeId = document.getElementById('leaveStoreId').value;
+            const shiftNum = parseInt(document.getElementById('leaveShiftNum').value) || 1;
+            const empName = document.getElementById('leaveEmpName').value;
+
+            const reasonSel = document.getElementById('leaveReasonSelect').value;
+            const reasonCustom = document.getElementById('leaveReasonCustomInput').value.trim();
+            const reason = (reasonSel === 'custom') ? (reasonCustom || 'Izin Khusus') : reasonSel;
+            const notes = document.getElementById('leaveNotesInput').value.trim();
+
+            const optionType = document.querySelector('input[name="invalOptionType"]:checked')?.value || 'existing';
+
+            const store = storesData.find(s => s.id === storeId);
+            if (!store) {
+                uiAlert('⚠️ Cabang tidak ditemukan!');
+                return;
+            }
+
+            const emp = (store.employees || []).find(e => e.id === empId);
+            if (!emp) {
+                uiAlert('⚠️ Data karyawan tidak ditemukan di cabang ini!');
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitLeaveInval');
+            const origText = btn ? btn.innerText : 'Simpan';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = '⏳ Menyimpan...';
+            }
+
+            let invalEmp = null;
+            let invalOriginStoreId = null;
+
+            if (optionType === 'existing') {
+                const val = document.getElementById('invalExistingEmpSelect').value;
+                if (!val) {
+                    if (btn) { btn.disabled = false; btn.innerText = origText; }
+                    uiAlert('⚠️ Pilih karyawan pengganti, atau pilih opsi "Tambah Kasir Pengganti Baru" / "Tanpa Pengganti"!');
+                    return;
+                }
+
+                const parts = val.split(':');
+                if (parts[0] === 'unassigned') {
+                    const candId = parts[1];
+                    const uList = getUnassignedEmployees();
+                    const uIdx = uList.findIndex(x => x.id === candId);
+                    if (uIdx >= 0) {
+                        const uEmp = uList[uIdx];
+                        removeUnassignedEmployee(candId);
+                        invalEmp = {
+                            ...uEmp,
+                            role: 'inval',
+                            shift_num: shiftNum,
+                            status: 'active',
+                            replacing_emp_id: empId,
+                            temp_assigned_from: 'unassigned'
+                        };
+                        if (!store.employees) store.employees = [];
+                        store.employees.push(invalEmp);
+                        invalOriginStoreId = 'unassigned';
+                    } else {
+                        if (btn) { btn.disabled = false; btn.innerText = origText; }
+                        uiAlert('⚠️ Karyawan pengganti tidak ditemukan di unassigned pool!');
+                        return;
+                    }
+                } else if (parts[0] === 'store') {
+                    const candStoreId = parts[1];
+                    const candId = parts[2];
+                    const candStore = storesData.find(s => s.id === candStoreId);
+                    if (!candStore) {
+                        if (btn) { btn.disabled = false; btn.innerText = origText; }
+                        uiAlert('⚠️ Cabang asal karyawan pengganti tidak ditemukan!');
+                        return;
+                    }
+                    const cEmp = (candStore.employees || []).find(x => x.id === candId);
+                    if (!cEmp) {
+                        if (btn) { btn.disabled = false; btn.innerText = origText; }
+                        uiAlert('⚠️ Karyawan pengganti tidak ditemukan!');
+                        return;
+                    }
+
+                    if (candStoreId === storeId) {
+                        // Dari toko yang sama: buat assignment inval
+                        invalEmp = {
+                            id: 'inval_' + Date.now(),
+                            name: `${cEmp.name} (Inval Shift ${shiftNum})`,
+                            password: cEmp.password,
+                            phone: cEmp.phone || '',
+                            address: cEmp.address || '',
+                            role: 'inval',
+                            shift_num: shiftNum,
+                            status: 'active',
+                            replacing_emp_id: empId,
+                            temp_assigned_from: storeId,
+                            origin_emp_id: cEmp.id
+                        };
+                        store.employees.push(invalEmp);
+                        invalOriginStoreId = storeId;
+                    } else {
+                        // Dari toko lain: pindahkan sementara sebagai inval ke toko ini
+                        const candIdx = candStore.employees.findIndex(x => x.id === candId);
+                        const [movedEmp] = candStore.employees.splice(candIdx, 1);
+                        invalEmp = {
+                            ...movedEmp,
+                            role: 'inval',
+                            shift_num: shiftNum,
+                            status: 'active',
+                            replacing_emp_id: empId,
+                            temp_assigned_from: candStoreId
+                        };
+                        if (!store.employees) store.employees = [];
+                        store.employees.push(invalEmp);
+                        invalOriginStoreId = candStoreId;
+                    }
+                }
+            } else if (optionType === 'new') {
+                const newName = document.getElementById('newInvalNameInput').value.trim();
+                const newPin = document.getElementById('newInvalPinInput').value.trim();
+                const newPhone = document.getElementById('newInvalPhoneInput').value.trim();
+
+                if (!newName) {
+                    if (btn) { btn.disabled = false; btn.innerText = origText; }
+                    uiAlert('⚠️ Masukkan nama kasir pengganti (inval)!');
+                    return;
+                }
+                if (!newPin || newPin.length < 3) {
+                    if (btn) { btn.disabled = false; btn.innerText = origText; }
+                    uiAlert('⚠️ Buat PIN kasir minimal 3 karakter!');
+                    return;
+                }
+
+                // Cek PIN unik
+                for (const st of storesData) {
+                    const conflict = (st.employees || []).find(o => (o.status === 'active' || !o.status) && String(o.password).trim() === newPin);
+                    if (conflict) {
+                        if (btn) { btn.disabled = false; btn.innerText = origText; }
+                        uiAlert(`⚠️ PIN "${newPin}" sudah dipakai oleh karyawan "${conflict.name}" di cabang "${st.name}". Gunakan PIN lain!`);
+                        return;
+                    }
+                }
+                const uConflict = getUnassignedEmployees().find(o => (o.status === 'active' || !o.status) && String(o.password).trim() === newPin);
+                if (uConflict) {
+                    if (btn) { btn.disabled = false; btn.innerText = origText; }
+                    uiAlert(`⚠️ PIN "${newPin}" sudah dipakai oleh karyawan "${uConflict.name}". Gunakan PIN lain!`);
+                    return;
+                }
+
+                invalEmp = {
+                    id: 'inval_' + Date.now(),
+                    name: newName,
+                    password: newPin,
+                    phone: newPhone,
+                    role: 'inval',
+                    status: 'active',
+                    shift_num: shiftNum,
+                    replacing_emp_id: empId,
+                    temp_assigned_from: 'new'
+                };
+                if (!store.employees) store.employees = [];
+                store.employees.push(invalEmp);
+                invalOriginStoreId = 'new';
+            }
+
+            // Set status karyawan yang izin
+            emp.status = 'leave';
+            emp.leave_reason = reason;
+            emp.leave_notes = notes;
+            emp.leave_date = new Date().toISOString();
+            emp.replaced_by = invalEmp ? invalEmp.id : null;
+            emp.replaced_by_name = invalEmp ? invalEmp.name : null;
+
+            // Catat log riwayat mutasi lokal
+            recordMutationLog({
+                id: 'mut_' + Date.now() + '_leave',
+                emp_id: empId,
+                emp_name: empName,
+                from_store_id: storeId,
+                to_store_id: 'leave',
+                new_shift_num: shiftNum,
+                reason: `Izin Libur: ${reason}${notes ? ' (' + notes + ')' : ''}${invalEmp ? ' [Digantikan: ' + invalEmp.name + ']' : ' [Tanpa Pengganti]'}`,
+                transfer_date: new Date().toISOString()
+            });
+
+            if (invalEmp) {
+                recordMutationLog({
+                    id: 'mut_' + Date.now() + '_inval',
+                    emp_id: invalEmp.id,
+                    emp_name: invalEmp.name,
+                    from_store_id: invalOriginStoreId === 'new' ? 'Karyawan Baru' : (invalOriginStoreId || 'unassigned'),
+                    to_store_id: storeId,
+                    new_shift_num: shiftNum,
+                    reason: `Penugasan Kasir Pengganti (Inval) untuk ${empName} (${reason})`,
+                    transfer_date: new Date().toISOString()
+                });
+            }
+
+            // Simpan dan sinkronkan data
+            saveStoresData();
+
+            if (window.KspSync && typeof window.KspSync.adminTransferEmployee === 'function') {
+                try {
+                    window.KspSync.adminTransferEmployee(empId, 'leave', shiftNum, `Izin: ${reason}`).catch(() => {});
+                    if (invalEmp) {
+                        window.KspSync.adminTransferEmployee(invalEmp.id, storeId, shiftNum, `Inval Pengganti ${empName}`).catch(() => {});
+                    }
+                } catch(err) {
+                    console.warn('[StoreManager] Sync leave/inval warning:', err);
+                }
+            }
+
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = origText;
+            }
+            closeModal('leaveInvalModal');
+
+            // Refresh modal form cabang jika buka
+            const formModal = document.getElementById('storeFormModal');
+            if (formModal && formModal.classList.contains('open')) {
+                const curEditId = document.getElementById('formStoreId').value;
+                const updatedStore = storesData.find(s => s.id === curEditId);
+                if (updatedStore) {
+                    const empCont = document.getElementById('empListContainer');
+                    empCont.innerHTML = '';
+                    (updatedStore.employees || []).forEach(e => {
+                        addEmployeeRow(e.name, e.password, e.shift_num, e.id, e.role || 'kasir', e.status || 'active', e.photo || '', e.phone || '', e.address || '', e.notes || '');
+                    });
+                }
+            }
+
+            filterMasterEmployeesTable();
+            renderStoresGrid();
+
+            const toastMsg = invalEmp 
+                ? `${empName} berhasil diberikan izin (${reason}). Kasir pengganti: ${invalEmp.name} (Shift ${shiftNum})` 
+                : `${empName} berhasil diberikan izin (${reason}) tanpa pengganti.`;
+            showToast(toastMsg, '🏖️');
+        }
+
+        async function handleReturnFromLeave(empId, empName, storeId) {
+            let store = storesData.find(s => s.id === storeId);
+            let emp = null;
+
+            if (store) {
+                emp = (store.employees || []).find(e => e.id === empId);
+            } else {
+                for (const st of storesData) {
+                    const found = (st.employees || []).find(e => e.id === empId);
+                    if (found) {
+                        store = st;
+                        emp = found;
+                        break;
+                    }
+                }
+            }
+
+            if (!emp || !store) {
+                uiAlert('⚠️ Data karyawan atau cabang tidak ditemukan!');
+                return;
+            }
+
+            const confirmed = await uiConfirm({
+                icon: '✅',
+                title: 'Selesai Izin & Aktifkan Kembali',
+                message: `Karyawan "${empName}" akan diaktifkan kembali bertugas pada Shift ${emp.shift_num || 1} di "${store.name}".\n\nJika ada Kasir Pengganti (Inval) yang bertugas, kasir inval akan otomatis dilepas.`,
+                confirmText: 'Aktifkan Kembali',
+                danger: false
+            });
+            if (!confirmed) return;
+
+            // Aktifkan kembali karyawan
+            emp.status = 'active';
+            const oldReason = emp.leave_reason || 'Izin Libur';
+            emp.leave_reason = null;
+            emp.leave_notes = null;
+            emp.leave_date = null;
+
+            // Lepas kasir inval pengganti
+            let invalEmp = null;
+            let invalIdx = -1;
+
+            if (emp.replaced_by) {
+                invalIdx = (store.employees || []).findIndex(e => e.id === emp.replaced_by);
+            }
+            if (invalIdx < 0) {
+                invalIdx = (store.employees || []).findIndex(e => e.replacing_emp_id === empId);
+            }
+
+            if (invalIdx >= 0) {
+                const [removedInval] = store.employees.splice(invalIdx, 1);
+                invalEmp = removedInval;
+
+                if (invalEmp.temp_assigned_from && invalEmp.temp_assigned_from !== 'unassigned' && invalEmp.temp_assigned_from !== 'new' && invalEmp.temp_assigned_from !== store.id) {
+                    const originStore = storesData.find(s => s.id === invalEmp.temp_assigned_from);
+                    if (originStore) {
+                        invalEmp.role = 'kasir';
+                        delete invalEmp.replacing_emp_id;
+                        delete invalEmp.temp_assigned_from;
+                        if (!originStore.employees) originStore.employees = [];
+                        originStore.employees.push(invalEmp);
+
+                        recordMutationLog({
+                            id: 'mut_' + Date.now() + '_inval_return',
+                            emp_id: invalEmp.id,
+                            emp_name: invalEmp.name,
+                            from_store_id: store.id,
+                            to_store_id: originStore.id,
+                            new_shift_num: invalEmp.shift_num || 1,
+                            reason: `Selesai Tugas Inval Pengganti ${empName} (Kembali ke ${originStore.name})`,
+                            transfer_date: new Date().toISOString()
+                        });
+                    } else {
+                        addUnassignedEmployee({
+                            id: invalEmp.id,
+                            name: invalEmp.name,
+                            password: invalEmp.password,
+                            phone: invalEmp.phone || '',
+                            address: invalEmp.address || '',
+                            notes: invalEmp.notes || '',
+                            status: 'active',
+                            role: 'kasir'
+                        });
+                    }
+                } else if (invalEmp.temp_assigned_from === store.id && invalEmp.origin_emp_id) {
+                    recordMutationLog({
+                        id: 'mut_' + Date.now() + '_inval_end',
+                        emp_id: invalEmp.id,
+                        emp_name: invalEmp.name,
+                        from_store_id: store.id,
+                        to_store_id: 'Selesai Inval',
+                        new_shift_num: '-',
+                        reason: `Selesai Tugas Inval Pengganti ${empName}`,
+                        transfer_date: new Date().toISOString()
+                    });
+                } else {
+                    delete invalEmp.replacing_emp_id;
+                    delete invalEmp.temp_assigned_from;
+                    invalEmp.role = 'kasir';
+                    addUnassignedEmployee(invalEmp);
+
+                    recordMutationLog({
+                        id: 'mut_' + Date.now() + '_inval_unassigned',
+                        emp_id: invalEmp.id,
+                        emp_name: invalEmp.name,
+                        from_store_id: store.id,
+                        to_store_id: 'unassigned',
+                        new_shift_num: '-',
+                        reason: `Selesai Tugas Inval Pengganti ${empName} (Pindah ke Unassigned)`,
+                        transfer_date: new Date().toISOString()
+                    });
+                }
+            }
+
+            emp.replaced_by = null;
+            emp.replaced_by_name = null;
+
+            // Catat log mutasi
+            recordMutationLog({
+                id: 'mut_' + Date.now() + '_return',
+                emp_id: empId,
+                emp_name: empName,
+                from_store_id: 'leave',
+                to_store_id: store.id,
+                new_shift_num: emp.shift_num || 1,
+                reason: `Selesai Izin Libur (${oldReason}) - Aktif Kembali Bertugas`,
+                transfer_date: new Date().toISOString()
+            });
+
+            saveStoresData();
+
+            if (window.KspSync && typeof window.KspSync.adminTransferEmployee === 'function') {
+                try {
+                    window.KspSync.adminTransferEmployee(empId, store.id, emp.shift_num || 1, 'Aktif Kembali').catch(() => {});
+                } catch(e) {}
+            }
+
+            // Refresh modal cabang jika buka
+            const formModal = document.getElementById('storeFormModal');
+            if (formModal && formModal.classList.contains('open')) {
+                const curEditId = document.getElementById('formStoreId').value;
+                const updatedStore = storesData.find(s => s.id === curEditId);
+                if (updatedStore) {
+                    const empCont = document.getElementById('empListContainer');
+                    empCont.innerHTML = '';
+                    (updatedStore.employees || []).forEach(e => {
+                        addEmployeeRow(e.name, e.password, e.shift_num, e.id, e.role || 'kasir', e.status || 'active', e.photo || '', e.phone || '', e.address || '', e.notes || '');
+                    });
+                }
+            }
+
+            filterMasterEmployeesTable();
+            renderStoresGrid();
+
+            showToast(`${empName} telah kembali aktif bertugas di Shift ${emp.shift_num || 1}!`, '✅');
         }
 
         async function handleDeleteStore() {
