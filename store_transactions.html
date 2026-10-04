@@ -3284,7 +3284,7 @@
                 if (btnRollShifts) btnRollShifts.style.display = 'none';
                 if (btnHeaderBackStores) btnHeaderBackStores.innerHTML = '&larr; Kembali ke Portal Karyawan';
                 if (topNavBackBtn) topNavBackBtn.title = 'Kembali ke Portal Karyawan';
-                if (topAppTitle) topAppTitle.innerText = `Transaksi Kasir - ${currentEmployee.name}`;
+                if (topAppTitle) topAppTitle.innerText = `Transaksi - ${currentEmployee.name}`;
                 if (topAppSubtitle) topAppSubtitle.innerText = `Catat & Usulkan Transaksi Anda di ${store.name}`;
             } else {
                 if (adminSwitcher) adminSwitcher.style.display = 'flex';
@@ -3422,8 +3422,10 @@
                         const s1Time = s1Def ? `${s1Def.start} - ${s1Def.end}` : '07:00 - 15:00';
                         const s2Time = s2Def ? `${s2Def.start} - ${s2Def.end}` : '15:00 - 23:00';
 
-                        const s1Name = mRec ? mRec.emp_name : (empS1 ? empS1.name : 'Belum Ditugaskan');
-                        const s2Name = nRec ? nRec.emp_name : (empS2 ? empS2.name : 'Belum Ditugaskan');
+                        const s1EmpObj = mRec ? (store.employees || []).find(e => e.id === mRec.emp_id) : empS1;
+                        const s2EmpObj = nRec ? (store.employees || []).find(e => e.id === nRec.emp_id) : empS2;
+                        const s1Name = s1EmpObj ? s1EmpObj.name : (mRec ? mRec.emp_name : 'Belum Ditugaskan');
+                        const s2Name = s2EmpObj ? s2EmpObj.name : (nRec ? nRec.emp_name : 'Belum Ditugaskan');
                         const s1Avatar = escapeHtml((s1Name.charAt(0) || '1').toUpperCase());
                         const s2Avatar = escapeHtml((s2Name.charAt(0) || '2').toUpperCase());
 
@@ -3567,9 +3569,10 @@
                         const displayedEmps = [...activeEmps];
                         records.forEach(r => {
                             if (!displayedEmps.some(e => e.id === r.emp_id)) {
+                                const empMatch = (store.employees || []).find(e => e.id === r.emp_id);
                                 displayedEmps.push({
                                     id: r.emp_id,
-                                    name: r.emp_name,
+                                    name: empMatch ? empMatch.name : r.emp_name,
                                     shift_num: r.shift_num,
                                     role: 'inval',
                                     status: 'active'
@@ -3886,8 +3889,11 @@
 
                 if (dayData && dayData.records) {
                     dayData.records.forEach(rec => {
-                        if (rec.shift_num === 1 && !s1EmpName) s1EmpName = rec.emp_name;
-                        if (rec.shift_num === 2 && !s2EmpName) s2EmpName = rec.emp_name;
+                        const recEmpObj = (store.employees || []).find(e => e.id === rec.emp_id);
+                        const resolvedEmpName = recEmpObj ? recEmpObj.name : rec.emp_name;
+
+                        if (rec.shift_num === 1 && !s1EmpName) s1EmpName = resolvedEmpName;
+                        if (rec.shift_num === 2 && !s2EmpName) s2EmpName = resolvedEmpName;
 
                         const matchShift = (filter.shift === 'all') || (String(rec.shift_num) === String(filter.shift));
                         const matchEmp = (filter.employeeId === 'all') || (rec.emp_id === filter.employeeId);
@@ -3907,7 +3913,7 @@
                             if (!empMap[rec.emp_id]) {
                                 empMap[rec.emp_id] = {
                                     id: rec.emp_id,
-                                    name: rec.emp_name,
+                                    name: resolvedEmpName,
                                     shiftNum: rec.shift_num,
                                     totalTx: 0,
                                     activeDays: 0,
@@ -4564,12 +4570,16 @@
                     const s1Rec = records.find(r => r.shift_num === 1);
                     const s2Rec = records.find(r => r.shift_num === 2);
 
+                    const s1EmpObj = s1Rec ? (store.employees || []).find(e => e.id === s1Rec.emp_id) : null;
+                    const s1Name = s1EmpObj ? s1EmpObj.name : (s1Rec ? s1Rec.emp_name : '');
                     const s1Text = s1Rec 
-                        ? `<b>${escapeHtml(s1Rec.emp_name)}</b> (${s1Rec.tx} tx)` 
+                        ? `<b>${escapeHtml(s1Name)}</b> (${s1Rec.tx} tx)` 
                         : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>';
 
+                    const s2EmpObj = s2Rec ? (store.employees || []).find(e => e.id === s2Rec.emp_id) : null;
+                    const s2Name = s2EmpObj ? s2EmpObj.name : (s2Rec ? s2Rec.emp_name : '');
                     const s2Text = s2Rec 
-                        ? `<b>${escapeHtml(s2Rec.emp_name)}</b> (${s2Rec.tx} tx)` 
+                        ? `<b>${escapeHtml(s2Name)}</b> (${s2Rec.tx} tx)` 
                         : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>';
 
                     const totalVal = (dayData && dayData.total) || 0;
@@ -4879,9 +4889,10 @@
             // Sertakan kasir dari setRecords jika ada (misal kasir inval atau riwayat kasir sebelumnya)
             setRecords.forEach(r => {
                 if (!employeesToRender.some(e => e.id === r.emp_id)) {
+                    const empMatch = (store.employees || []).find(e => e.id === r.emp_id);
                     employeesToRender.push({
                         id: r.emp_id,
-                        name: r.emp_name,
+                        name: empMatch ? empMatch.name : r.emp_name,
                         shift_num: r.shift_num,
                         role: 'inval',
                         status: 'active'
@@ -4933,7 +4944,10 @@
                 if (isToday && !isManualEdit && setRecords.length > 0) {
                     html += `
                     <div style="margin-top: 2px; padding: 6px 10px; background: rgba(16, 185, 129, 0.06); border-radius: 8px; font-size: 11px; color: var(--success); display: flex; justify-content: space-between; align-items: center;">
-                        <span>✓ ${setRecords.map(r => `${r.emp_name} (${r.tx} tx)`).join(', ')} sudah tercatat</span>
+                        <span>✓ ${setRecords.map(r => {
+                            const empMatch = (store.employees || []).find(e => e.id === r.emp_id);
+                            return `${empMatch ? empMatch.name : r.emp_name} (${r.tx} tx)`;
+                        }).join(', ')} sudah tercatat</span>
                         <button type="button" onclick="openDailyTxModal('${storeId}', true, '${targetDate}')" style="background: none; border: none; color: var(--primary); font-size: 11px; font-weight: 750; cursor: pointer; text-decoration: underline;">Ubah</button>
                     </div>`;
                 }
