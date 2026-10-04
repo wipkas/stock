@@ -1421,8 +1421,8 @@
         <section id="storesListView">
             <div class="sub-header">
                 <div>
-                    <h2 style="font-size: 15px; font-weight: 800;">Daftar Cabang Toko</h2>
-                    <p style="font-size: 11.5px; color: var(--text-muted);">Pilih cabang untuk mengelola karyawan, shift, dan fitur operasional</p>
+                    <h2 style="font-size: 15px; font-weight: 800;"></h2>
+                    <p style="font-size: 11.5px; color: var(--text-muted);"></p>
                 </div>
                 <div class="clock-badge">
                     <span>⏱️</span> <span id="liveClockDisplay">--:--:-- WIB</span>
@@ -2413,13 +2413,13 @@
                             <span class="stat-label"><span>📊</span> Transaksi Hari Ini:</span>
                             <div class="stat-val-wrap">
                                 <span class="stat-val">${todayTx} tx</span>
-                                <span class="stat-arrow">Analisa &rarr;</span>
+                                <span class="stat-arrow">Cek &rarr;</span>
                             </div>
                         </div>
 
                         <div class="shift-roster-box" onclick="event.stopPropagation();"${multiShift ? '' : ' style="justify-content: flex-start;"'}>
                             <div class="shift-col">
-                                <div class="shift-tag morning">🌅 ${multiShift ? 'Shift 1 Pagi' : 'Shift 1'}</div>
+                                <div class="shift-tag morning">🌅 ${multiShift ? 'Pagi' : 'Full Shift'}</div>
                                 <div class="emp-name-badge" title="${escapeHtml(empS1)}">👤 ${escapeHtml(empS1)}</div>
                             </div>
                             ${multiShift ? `
@@ -2428,7 +2428,7 @@
                                 <span>Roll Shift</span>
                             </button>
                             <div class="shift-col right">
-                                <div class="shift-tag night">🌙 Shift 2 Malam</div>
+                                <div class="shift-tag night">🌙 Malam</div>
                                 <div class="emp-name-badge" title="${escapeHtml(empS2)}">👤 ${escapeHtml(empS2)}</div>
                             </div>` : ''}
                         </div>
