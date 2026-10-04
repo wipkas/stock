@@ -7,6 +7,16 @@
     <!-- Web App Manifest & PWA Meta Tags (Tab-Specific PWA Shortcut Support) -->
     <script>
         (function() {
+            if (window.location.protocol !== 'file:') {
+                try {
+                    var path = window.location.pathname;
+                    if (path.endsWith('/index.html')) {
+                        window.history.replaceState(null, '', (path.slice(0, -10) || '/') + window.location.search + window.location.hash);
+                    } else if (path.endsWith('.html')) {
+                        window.history.replaceState(null, '', path.slice(0, -5) + window.location.search + window.location.hash);
+                    }
+                } catch (e) {}
+            }
             try {
                 var p = new URLSearchParams(window.location.search);
                 var t = p.get('tab') || (window.location.hash.includes('tab=') ? window.location.hash.split('tab=')[1].split('&')[0] : '');

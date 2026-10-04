@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Prototype - Shift Roll & Analisa Cabang</title>
 
+    <!-- Clean URL (Hapus .html di address bar browser) -->
+    <script>
+        (function() {
+            if (window.location.protocol === 'file:') return;
+            try {
+                var p = window.location.pathname;
+                if (p.endsWith('/index.html')) {
+                    window.history.replaceState(null, '', (p.slice(0, -10) || '/') + window.location.search + window.location.hash);
+                } else if (p.endsWith('.html')) {
+                    window.history.replaceState(null, '', p.slice(0, -5) + window.location.search + window.location.hash);
+                }
+            } catch(e) {}
+        })();
+    </script>
+
     <!-- Chart.js CDN for Analytics Graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 

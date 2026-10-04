@@ -11,6 +11,32 @@
 (function () {
     'use strict';
 
+    // Bersihkan nama file .html dan index.html dari address bar (Clean URL di GitHub Pages)
+    function cleanUrl() {
+        if (typeof window === 'undefined' || !window.location) return;
+        if (window.location.protocol === 'file:') return; // Aman untuk pengujian lokal file:///
+
+        try {
+            var path = window.location.pathname;
+            var newPath = null;
+            if (path.endsWith('/index.html')) {
+                newPath = path.slice(0, -10) || '/';
+            } else if (path === 'index.html') {
+                newPath = './';
+            } else if (path.endsWith('.html')) {
+                newPath = path.slice(0, -5);
+            }
+
+            if (newPath !== null && newPath !== path) {
+                window.history.replaceState(null, '', newPath + window.location.search + window.location.hash);
+            }
+        } catch (e) {
+            /* ignore */
+        }
+    }
+
+    cleanUrl();
+
     var ESCAPE_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
     function escapeHtml(str) {
@@ -125,7 +151,8 @@
 
     window.KspUI = {
         escapeHtml: escapeHtml,
-        confirm: uiConfirm
+        confirm: uiConfirm,
+        cleanUrl: cleanUrl
     };
 
     // Alias global agar kode lama tetap berjalan langsung.

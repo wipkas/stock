@@ -4,6 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>KSP Check — Margin Voucher</title>
+<!-- Clean URL (Hapus .html di address bar browser) -->
+<script>
+(function() {
+    if (window.location.protocol === 'file:') return;
+    try {
+        var p = window.location.pathname;
+        if (p.endsWith('/index.html')) {
+            window.history.replaceState(null, '', (p.slice(0, -10) || '/') + window.location.search + window.location.hash);
+        } else if (p.endsWith('.html')) {
+            window.history.replaceState(null, '', p.slice(0, -5) + window.location.search + window.location.hash);
+        }
+    } catch(e) {}
+})();
+</script>
 <!-- Supabase JS Client & CryptoJS CDN -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
