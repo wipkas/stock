@@ -1787,6 +1787,59 @@
             color: var(--text-main);
         }
 
+        /* Date Navigator di Modal Set Transaksi */
+        .modal-date-navigator {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 6px 8px;
+        }
+
+        .btn-date-nav {
+            background: rgba(79, 142, 247, 0.12);
+            border: 1px solid rgba(79, 142, 247, 0.35);
+            color: var(--primary);
+            width: 34px;
+            height: 34px;
+            min-width: 34px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 13px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-date-nav:hover:not(:disabled) {
+            background: var(--primary);
+            color: #FFFFFF;
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .btn-date-nav:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+
+        .btn-date-nav:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            border-color: transparent;
+        }
+
+        .modal-date-nav-center {
+            flex: 1;
+            text-align: center;
+            min-width: 0;
+            padding: 0 4px;
+        }
+
         @media (prefers-reduced-motion: reduce) {
             * {
                 transition-duration: 0.01ms !important;
@@ -3268,13 +3321,38 @@
             <form onsubmit="handleSaveDailyTx(event)">
                 <input type="hidden" id="dailyTxStoreId">
                 <input type="hidden" id="dailyTxShiftNum">
+                <input type="hidden" id="dailyTxDateKey">
                 <div class="modal-body" style="padding: 16px 20px;">
-                    <div id="dailyTxModalStoreInfo" style="margin-bottom: 14px; background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.25); border-radius: 12px; padding: 12px 14px;">
+                    <div id="dailyTxModalStoreInfo" style="margin-bottom: 12px; background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.25); border-radius: 12px; padding: 12px 14px;">
                         <!-- Diisi via JS -->
                     </div>
 
+                    <!-- NAVIGATOR TANGGAL TRANSAKSI -->
+                    <div class="modal-date-navigator" style="margin-bottom: 12px;">
+                        <button type="button" class="btn-date-nav" onclick="navigateDailyTxDate(-1)" title="Hari Sebelumnya (◀)">
+                            ◀
+                        </button>
+                        <div class="modal-date-nav-center">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <span id="dailyTxModalDateTag" style="font-size: 10px; font-weight: 800; color: #10B981; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(16, 185, 129, 0.12); padding: 2px 7px; border-radius: 6px;">HARI INI</span>
+                                <button type="button" id="dailyTxModalBtnJumpToday" onclick="navigateDailyTxDateToToday()" style="display: none; background: none; border: none; color: var(--primary); font-size: 10px; font-weight: 800; cursor: pointer; text-decoration: underline; padding: 0;" title="Kembali ke hari ini">↺ Hari Ini</button>
+                            </div>
+                            <div style="position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 5px; margin-top: 3px; cursor: pointer;" onclick="openDailyTxDatePicker()" title="Klik untuk pilih tanggal dari kalender">
+                                <span id="dailyTxModalDateDisplay" style="font-size: 13.5px; font-weight: 800; color: var(--text-main);">Senin, 5 Oktober 2026</span>
+                                <span style="font-size: 12px; opacity: 0.75;">📅</span>
+                                <input type="date" id="dailyTxDateNativePicker" onchange="onDailyTxDatePicked(this.value)" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
+                            </div>
+                        </div>
+                        <button type="button" class="btn-date-nav" id="btnDailyTxNavNext" onclick="navigateDailyTxDate(1)" title="Hari Berikutnya (▶)">
+                            ▶
+                        </button>
+                    </div>
+
                     <div class="form-group" style="margin-bottom: 12px;">
-                        <label class="form-label" style="font-size: 12px; font-weight: 750;">Jumlah Transaksi (tx):</label>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label class="form-label" style="font-size: 12px; font-weight: 750; margin: 0;">Jumlah Transaksi (tx):</label>
+                            <span id="dailyTxExistingNotice" style="font-size: 11px; font-weight: 700; color: var(--text-muted);">Belum ada data</span>
+                        </div>
                         <input type="number" 
                                id="dailyTxInput" 
                                class="form-control" 
@@ -3296,7 +3374,7 @@
                 </div>
                 <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
                     <button type="button" class="btn-secondary" onclick="closeModal('dailyTxModal')">Batal</button>
-                    <button type="submit" class="btn-primary">💾 Simpan Transaksi</button>
+                    <button type="submit" id="btnSubmitDailyTx" class="btn-primary">💾 Simpan Transaksi</button>
                 </div>
             </form>
         </div>
@@ -3977,6 +4055,24 @@
             return `${year}-${month}-${day}`;
         }
 
+        function formatFullDateIndo(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-').map(Number);
+            const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return dt.toLocaleDateString('id-ID', options);
+        }
+
+        function shiftDateKey(dateStr, daysOffset) {
+            if (!dateStr) dateStr = getTodayKey();
+            const parts = dateStr.split('-').map(Number);
+            const dt = new Date(parts[0], parts[1] - 1, parts[2] + daysOffset);
+            const y = dt.getFullYear();
+            const m = String(dt.getMonth() + 1).padStart(2, '0');
+            const d = String(dt.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
         function calculateStoreTodayTx(store) {
             if (!store || !store.daily_transactions || typeof store.daily_transactions !== 'object') return 0;
             const todayKey = getTodayKey();
@@ -3991,19 +4087,22 @@
             return 0;
         }
 
-        function getStoreShiftTodayTx(store, shiftNum) {
+        function getStoreShiftDateTx(store, shiftNum, dateKey) {
             if (!store || !store.daily_transactions || typeof store.daily_transactions !== 'object') return 0;
-            const todayKey = getTodayKey();
-            const todayData = store.daily_transactions[todayKey];
-            if (!todayData) return 0;
-            if (Array.isArray(todayData.records)) {
-                const rec = todayData.records.find(r => r.shift_num === shiftNum);
+            const dayData = store.daily_transactions[dateKey];
+            if (!dayData) return 0;
+            if (Array.isArray(dayData.records)) {
+                const rec = dayData.records.find(r => r.shift_num === shiftNum);
                 if (rec && typeof rec.tx === 'number') return rec.tx;
             }
-            if (shiftNum === 1 && typeof todayData.total === 'number') {
-                return todayData.total;
+            if (shiftNum === 1 && typeof dayData.total === 'number') {
+                return dayData.total;
             }
             return 0;
+        }
+
+        function getStoreShiftTodayTx(store, shiftNum) {
+            return getStoreShiftDateTx(store, shiftNum, getTodayKey());
         }
 
         let currentMainStoreFilter = 'all';
@@ -4254,24 +4353,172 @@
         // ==========================================
         // MODAL SET TRANSAKSI HARIAN KASIR
         // ==========================================
-        function openDailyTxModal(e, storeId, shiftNum) {
+        function openDailyTxDatePicker() {
+            const inp = document.getElementById('dailyTxDateNativePicker');
+            if (!inp) return;
+            try {
+                if (typeof inp.showPicker === 'function') {
+                    inp.showPicker();
+                } else {
+                    inp.focus();
+                }
+            } catch (err) {
+                inp.focus();
+            }
+        }
+
+        function renderDailyTxModalDateState(store, shiftNum, dateKey) {
+            if (!store) return;
+            const todayKey = getTodayKey();
+            const isToday = (dateKey === todayKey);
+
+            const tagEl = document.getElementById('dailyTxModalDateTag');
+            const jumpTodayBtn = document.getElementById('dailyTxModalBtnJumpToday');
+            const dateDisplayEl = document.getElementById('dailyTxModalDateDisplay');
+            const pickerEl = document.getElementById('dailyTxDateNativePicker');
+            const noticeEl = document.getElementById('dailyTxExistingNotice');
+            const nextBtn = document.getElementById('btnDailyTxNavNext');
+            const subtitleEl = document.getElementById('dailyTxModalSubtitle');
+            const titleEl = document.getElementById('dailyTxModalTitle');
+            const inputEl = document.getElementById('dailyTxInput');
+            const dateKeyInput = document.getElementById('dailyTxDateKey');
+
+            if (dateKeyInput) dateKeyInput.value = dateKey;
+
+            if (pickerEl) {
+                pickerEl.value = dateKey;
+                pickerEl.max = todayKey;
+            }
+
+            if (dateDisplayEl) {
+                dateDisplayEl.innerText = formatFullDateIndo(dateKey);
+            }
+
+            const shiftName = shiftNum === 1 ? 'Shift 1 (Pagi)' : 'Shift 2 (Malam)';
+            if (titleEl) {
+                titleEl.innerText = `✏️ Set Transaksi · ${shiftName}`;
+            }
+
+            if (isToday) {
+                if (tagEl) {
+                    tagEl.innerText = 'HARI INI';
+                    tagEl.style.color = '#10B981';
+                    tagEl.style.background = 'rgba(16, 185, 129, 0.12)';
+                }
+                if (jumpTodayBtn) jumpTodayBtn.style.display = 'none';
+                if (subtitleEl) subtitleEl.innerText = 'Update catatan transaksi kasir shift hari ini';
+            } else {
+                const [y1, m1, d1] = todayKey.split('-').map(Number);
+                const [y2, m2, d2] = dateKey.split('-').map(Number);
+                const diffTime = new Date(y1, m1 - 1, d1) - new Date(y2, m2 - 1, d2);
+                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+                let tagText = 'SUSULAN';
+                if (diffDays === 1) tagText = 'KEMARIN (H-1)';
+                else if (diffDays === 2) tagText = 'H-2 (2 HARI LALU)';
+                else if (diffDays > 2) tagText = `H-${diffDays} (${diffDays} HARI LALU)`;
+                else if (diffDays < 0) tagText = 'TANGGAL MASA DEPAN';
+
+                if (tagEl) {
+                    tagEl.innerText = tagText;
+                    tagEl.style.color = '#F59E0B';
+                    tagEl.style.background = 'rgba(245, 158, 11, 0.12)';
+                }
+                if (jumpTodayBtn) jumpTodayBtn.style.display = 'inline-block';
+                if (subtitleEl) subtitleEl.innerText = `Catatan transaksi susulan · ${dateKey}`;
+            }
+
+            // Batasi tombol Next jika sudah berada di hari ini
+            if (nextBtn) {
+                nextBtn.disabled = (dateKey >= todayKey);
+            }
+
+            // Ambil data transaksi pada tanggal yang dipilih
+            const currentTx = getStoreShiftDateTx(store, shiftNum, dateKey);
+            if (inputEl) {
+                inputEl.value = currentTx;
+            }
+
+            if (noticeEl) {
+                if (currentTx > 0) {
+                    noticeEl.innerHTML = `<span style="color: #10B981;">✓ Tercatat: <b>${currentTx.toLocaleString('id-ID')} tx</b></span>`;
+                } else {
+                    noticeEl.innerHTML = `<span style="color: var(--text-muted);">Belum ada data (0 tx)</span>`;
+                }
+            }
+        }
+
+        function navigateDailyTxDate(offset) {
+            const storeId = document.getElementById('dailyTxStoreId')?.value;
+            const shiftNum = parseInt(document.getElementById('dailyTxShiftNum')?.value, 10);
+            const currentDateKey = document.getElementById('dailyTxDateKey')?.value || getTodayKey();
+            const store = storesData.find(s => s.id === storeId);
+            if (!store) return;
+
+            const newDateKey = shiftDateKey(currentDateKey, offset);
+            const todayKey = getTodayKey();
+            if (offset > 0 && newDateKey > todayKey) return;
+
+            renderDailyTxModalDateState(store, shiftNum, newDateKey);
+
+            const inputEl = document.getElementById('dailyTxInput');
+            if (inputEl) {
+                inputEl.focus();
+                try { inputEl.select(); } catch (e) {}
+            }
+        }
+
+        function navigateDailyTxDateToToday() {
+            const storeId = document.getElementById('dailyTxStoreId')?.value;
+            const shiftNum = parseInt(document.getElementById('dailyTxShiftNum')?.value, 10);
+            const store = storesData.find(s => s.id === storeId);
+            if (!store) return;
+
+            const todayKey = getTodayKey();
+            renderDailyTxModalDateState(store, shiftNum, todayKey);
+
+            const inputEl = document.getElementById('dailyTxInput');
+            if (inputEl) {
+                inputEl.focus();
+                try { inputEl.select(); } catch (e) {}
+            }
+        }
+
+        function onDailyTxDatePicked(val) {
+            if (!val) return;
+            const storeId = document.getElementById('dailyTxStoreId')?.value;
+            const shiftNum = parseInt(document.getElementById('dailyTxShiftNum')?.value, 10);
+            const store = storesData.find(s => s.id === storeId);
+            if (!store) return;
+
+            const todayKey = getTodayKey();
+            const finalDateKey = (val > todayKey) ? todayKey : val;
+
+            renderDailyTxModalDateState(store, shiftNum, finalDateKey);
+
+            const inputEl = document.getElementById('dailyTxInput');
+            if (inputEl) {
+                inputEl.focus();
+                try { inputEl.select(); } catch (e) {}
+            }
+        }
+
+        function openDailyTxModal(e, storeId, shiftNum, targetDateKey) {
             if (e) e.stopPropagation();
             const store = storesData.find(s => s.id === storeId);
             if (!store) return;
 
+            const dateKey = targetDateKey || getTodayKey();
             const shiftName = shiftNum === 1 ? 'Shift 1 (Pagi)' : 'Shift 2 (Malam)';
-            const currentTx = getStoreShiftTodayTx(store, shiftNum);
             const emp = (store.employees || []).find(e => (e.status === 'active' || !e.status) && e.shift_num === shiftNum);
 
             const storeIdInput = document.getElementById('dailyTxStoreId');
             const shiftNumInput = document.getElementById('dailyTxShiftNum');
-            const titleEl = document.getElementById('dailyTxModalTitle');
             const infoEl = document.getElementById('dailyTxModalStoreInfo');
             const inputEl = document.getElementById('dailyTxInput');
 
             if (storeIdInput) storeIdInput.value = storeId;
             if (shiftNumInput) shiftNumInput.value = shiftNum;
-            if (titleEl) titleEl.innerText = `✏️ Set Transaksi · ${shiftName}`;
 
             if (infoEl) {
                 infoEl.innerHTML = `
@@ -4284,10 +4531,11 @@
                 `;
             }
 
+            renderDailyTxModalDateState(store, shiftNum, dateKey);
+
             openModal('dailyTxModal');
 
             if (inputEl) {
-                inputEl.value = currentTx;
                 setTimeout(() => {
                     inputEl.focus();
                     try {
@@ -4336,6 +4584,7 @@
             const storeId = document.getElementById('dailyTxStoreId').value;
             const shiftNum = parseInt(document.getElementById('dailyTxShiftNum').value, 10);
             const inputVal = parseInt(document.getElementById('dailyTxInput').value, 10) || 0;
+            const targetDateKey = document.getElementById('dailyTxDateKey')?.value || getTodayKey();
 
             const store = storesData.find(s => s.id === storeId);
             if (!store) return;
@@ -4346,15 +4595,15 @@
             if (!store.daily_transactions || typeof store.daily_transactions !== 'object') {
                 store.daily_transactions = {};
             }
-            if (!store.daily_transactions[todayKey]) {
-                store.daily_transactions[todayKey] = {
-                    date: todayKey,
+            if (!store.daily_transactions[targetDateKey]) {
+                store.daily_transactions[targetDateKey] = {
+                    date: targetDateKey,
                     recorded_time: nowTime,
                     total: 0,
                     records: []
                 };
             }
-            const dayData = store.daily_transactions[todayKey];
+            const dayData = store.daily_transactions[targetDateKey];
             if (!Array.isArray(dayData.records)) dayData.records = [];
 
             const emp = (store.employees || []).find(e => (e.status === 'active' || !e.status) && e.shift_num === shiftNum);
@@ -4369,7 +4618,7 @@
                 shift_num: shiftNum,
                 shift_name: shiftName,
                 tx: inputVal,
-                recorded_at: nowTime
+                recorded_at: (targetDateKey === todayKey) ? nowTime : `${nowTime} (Susulan)`
             };
 
             if (existingIdx >= 0) {
@@ -4387,7 +4636,9 @@
             saveStoresData();
             closeModal('dailyTxModal');
             renderStoresGrid();
-            showToast(`✅ Transaksi ${shiftName} di ${store.name} berhasil disimpan: ${inputVal} tx!`, '💾');
+
+            const dateLabel = (targetDateKey === todayKey) ? 'hari ini' : formatFullDateIndo(targetDateKey);
+            showToast(`✅ Transaksi ${shiftName} (${dateLabel}) di ${store.name} berhasil disimpan: ${inputVal} tx!`, '💾');
         }
 
         // Buka halaman Transaksi & Analisa cabang (langsung ke view analytics)
