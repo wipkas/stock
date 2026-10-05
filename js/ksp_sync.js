@@ -91,13 +91,77 @@
         try { localStorage.setItem(LS_STORES, JSON.stringify(stores)); } catch (e) { /* ignore */ }
     }
 
+    function prepareStoresForPush(stores, fallbackLeave) {
+        if (!Array.isArray(stores)) return stores;
+        return stores.map(function (s) {
+            var clone = Object.assign({}, s);
+            if (Array.isArray(clone.employees)) {
+                clone.employees = clone.employees.map(function (e) {
+                    var ec = Object.assign({}, e);
+                    if (ec.status === 'leave') {
+                        var leaveMeta = {
+                            reason: ec.leave_reason || 'Izin Libur',
+                            notes: ec.leave_notes || '',
+                            date: ec.leave_date || new Date().toISOString(),
+                            replaced_by: ec.replaced_by || null,
+                            replaced_by_name: ec.replaced_by_name || null
+                        };
+                        var metaTag = '[LEAVE_INFO:' + encodeURIComponent(JSON.stringify(leaveMeta)) + ']';
+                        var baseNotes = (ec.notes || '').replace(/\[LEAVE_INFO:.*?\]/g, '').trim();
+                        ec.notes = (baseNotes ? baseNotes + ' ' : '') + metaTag;
+                        if (fallbackLeave) {
+                            ec.status = 'inactive';
+                        }
+                    } else if (ec.notes && typeof ec.notes === 'string') {
+                        ec.notes = ec.notes.replace(/\[LEAVE_INFO:.*?\]/g, '').trim();
+                    }
+                    return ec;
+                });
+            }
+            return clone;
+        });
+    }
+
+    function unpackLeaveInfoFromRemote(stores) {
+        if (!Array.isArray(stores)) return stores;
+        stores.forEach(function (s) {
+            if (Array.isArray(s.employees)) {
+                s.employees.forEach(function (e) {
+                    if (e.notes && typeof e.notes === 'string') {
+                        var m = e.notes.match(/\[LEAVE_INFO:(.*?)\]/);
+                        if (m) {
+                            try {
+                                var rawStr = m[1];
+                                var jsonStr = rawStr.indexOf('%') !== -1 ? decodeURIComponent(rawStr) : rawStr;
+                                var meta = JSON.parse(jsonStr);
+                                if (e.status === 'leave' || e.status === 'inactive') {
+                                    e.status = 'leave';
+                                    e.leave_reason = meta.reason || 'Izin Libur';
+                                    e.leave_notes = meta.notes || '';
+                                    e.leave_date = meta.date || null;
+                                    e.replaced_by = meta.replaced_by || null;
+                                    e.replaced_by_name = meta.replaced_by_name || null;
+                                }
+                            } catch(ex) {}
+                            e.notes = e.notes.replace(/\[LEAVE_INFO:.*?\]/g, '').trim();
+                        }
+                    }
+                });
+            }
+        });
+        return stores;
+    }
+
     function adminPush() {
         if (!enabled() || !adminPin() || !opts.getStores) return Promise.resolve({ skipped: true });
         if (pushing) { pushAgain = true; return Promise.resolve({ queued: true }); }
         pushing = true;
         var stamp = localStorage.getItem(LS_DIRTY);
         setStatus('busy', '☁️ Menyimpan ke cloud…');
-        return rpc('ksp_admin_save_stores', { p_pin: adminPin(), p_stores: opts.getStores() })
+
+        var primaryPayload = prepareStoresForPush(opts.getStores(), false);
+
+        return rpc('ksp_admin_save_stores', { p_pin: adminPin(), p_stores: primaryPayload })
             .then(function (r) {
                 if (!r || !r.ok) throw new Error(r && r.error === 'unauthorized' ? 'PIN admin ditolak server' : 'Gagal menyimpan');
                 // Hapus tanda dirty hanya jika tidak ada perubahan baru sejak push dimulai.
@@ -106,6 +170,19 @@
                 return r;
             })
             .catch(function (err) {
+                var errMsg = String(err && err.message || '');
+                // Auto-fallback jika check constraint di database server belum diupdate ke schema v2.1
+                if (errMsg.indexOf('ksp_employees_status_check') !== -1) {
+                    console.warn('[KspSync] Server schema mendeteksi constraint status, mencoba fallback mode aman...', err);
+                    var fallbackPayload = prepareStoresForPush(opts.getStores(), true);
+                    return rpc('ksp_admin_save_stores', { p_pin: adminPin(), p_stores: fallbackPayload })
+                        .then(function (r2) {
+                            if (!r2 || !r2.ok) throw new Error('Gagal menyimpan');
+                            if (localStorage.getItem(LS_DIRTY) === stamp) setDirty(null);
+                            setStatus('ok', '☁️ Tersinkron');
+                            return r2;
+                        });
+                }
                 console.warn('[KspSync] push gagal:', err);
                 setStatus('err', '⚠️ Cloud: ' + (err.message || 'gagal') + ' (tersimpan lokal)');
                 return { error: err };
@@ -129,7 +206,7 @@
         return rpc('ksp_admin_get_stores', { p_pin: adminPin() })
             .then(function (r) {
                 if (!r || !r.ok) throw new Error(r && r.error === 'unauthorized' ? 'PIN admin ditolak server' : 'Gagal mengambil data');
-                var remote = r.stores || [];
+                var remote = unpackLeaveInfoFromRemote(r.stores || []);
 
                 // Supabase adalah Single Source of Truth (Pusat Kebenaran Mutlak):
                 // Jika database cloud kosong, jangan pernah auto-seeding / upload ulang data lokal!
@@ -203,6 +280,10 @@
 
     function adminTransferEmployee(empId, toStoreId, newShift, reason) {
         if (!enabled() || !adminPin()) return Promise.resolve({ skipped: true });
+        // Lindungi dari target cabang yang tidak valid (seperti 'leave', 'unassigned', atau kosong)
+        if (!toStoreId || toStoreId === 'leave' || toStoreId === 'unassigned') {
+            return Promise.resolve({ skipped: true, reason: 'invalid_store_id' });
+        }
         setStatus('busy', '☁️ Memproses mutasi cabang di cloud…');
         return rpc('ksp_admin_transfer_employee', {
             p_pin: adminPin(),
@@ -242,7 +323,32 @@
 
     function adminGetAllEmployees() {
         if (!enabled() || !adminPin()) return Promise.resolve({ skipped: true });
-        return rpc('ksp_admin_get_all_employees', { p_pin: adminPin() });
+        return rpc('ksp_admin_get_all_employees', { p_pin: adminPin() }).then(function (r) {
+            if (r && Array.isArray(r.employees)) {
+                r.employees.forEach(function (e) {
+                    if (e.notes && typeof e.notes === 'string') {
+                        var m = e.notes.match(/\[LEAVE_INFO:(.*?)\]/);
+                        if (m) {
+                            try {
+                                var rawStr = m[1];
+                                var jsonStr = rawStr.indexOf('%') !== -1 ? decodeURIComponent(rawStr) : rawStr;
+                                var meta = JSON.parse(jsonStr);
+                                if (e.status === 'leave' || e.status === 'inactive') {
+                                    e.status = 'leave';
+                                    e.leave_reason = meta.reason || 'Izin Libur';
+                                    e.leave_notes = meta.notes || '';
+                                    e.leave_date = meta.date || null;
+                                    e.replaced_by = meta.replaced_by || null;
+                                    e.replaced_by_name = meta.replaced_by_name || null;
+                                }
+                            } catch(ex) {}
+                            e.notes = e.notes.replace(/\[LEAVE_INFO:.*?\]/g, '').trim();
+                        }
+                    }
+                });
+            }
+            return r;
+        });
     }
 
     // ---------- KARYAWAN ----------

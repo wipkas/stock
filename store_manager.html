@@ -13,11 +13,11 @@
 
     <!-- CryptoJS (dekripsi config.enc) & modul bersama di js/ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
-    <script src="js/ksp_sync_config.js?v=20261004"></script>
-    <script src="js/ksp_sync.js?v=20261004"></script>
-    <script src="js/ksp_ui.js?v=20261004"></script>
-    <script src="js/ksp_theme.js?v=20261004"></script>
-    <script src="js/ksp_auth.js?v=20261004"></script>
+    <script src="js/ksp_sync_config.js?v=20261005"></script>
+    <script src="js/ksp_sync.js?v=20261005"></script>
+    <script src="js/ksp_ui.js?v=20261005"></script>
+    <script src="js/ksp_theme.js?v=20261005"></script>
+    <script src="js/ksp_auth.js?v=20261005"></script>
 
     <style>
         :root {
@@ -5898,19 +5898,8 @@ _(Buka link di atas untuk langsung masuk ke portal kasir tanpa mengetik PIN)_`;
                 });
             }
 
-            // Simpan dan sinkronkan data
+            // Simpan dan sinkronkan data ke cloud (KspSync otomatis push jadwal dan roster)
             saveStoresData();
-
-            if (window.KspSync && typeof window.KspSync.adminTransferEmployee === 'function') {
-                try {
-                    window.KspSync.adminTransferEmployee(empId, 'leave', shiftNum, `Izin: ${reason}`).catch(() => {});
-                    if (invalEmp) {
-                        window.KspSync.adminTransferEmployee(invalEmp.id, storeId, shiftNum, `Inval Pengganti ${empName}`).catch(() => {});
-                    }
-                } catch(err) {
-                    console.warn('[StoreManager] Sync leave/inval warning:', err);
-                }
-            }
 
             if (btn) {
                 btn.disabled = false;
@@ -5978,6 +5967,9 @@ _(Buka link di atas untuk langsung masuk ke portal kasir tanpa mengetik PIN)_`;
             emp.leave_reason = null;
             emp.leave_notes = null;
             emp.leave_date = null;
+            if (emp.notes) {
+                emp.notes = emp.notes.replace(/\[LEAVE_INFO:.*?\]/g, '').trim();
+            }
 
             // Lepas kasir inval pengganti
             let invalEmp = null;
@@ -6070,13 +6062,8 @@ _(Buka link di atas untuk langsung masuk ke portal kasir tanpa mengetik PIN)_`;
                 transfer_date: new Date().toISOString()
             });
 
+            // Simpan dan sinkronkan data ke cloud
             saveStoresData();
-
-            if (window.KspSync && typeof window.KspSync.adminTransferEmployee === 'function') {
-                try {
-                    window.KspSync.adminTransferEmployee(empId, store.id, emp.shift_num || 1, 'Aktif Kembali').catch(() => {});
-                } catch(e) {}
-            }
 
             // Refresh modal cabang jika buka
             const formModal = document.getElementById('storeFormModal');
