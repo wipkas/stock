@@ -6,10 +6,15 @@
     <title>KSP Check - Portal Karyawan</title>
 
     <!-- Web App Manifest & Favicons -->
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-order.svg">
-    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <link rel="manifest" href="assets/manifests/manifest-karyawan.json">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-karyawan.svg">
+    <link rel="apple-touch-icon" href="assets/icons/icon-karyawan-192.png">
     <meta name="theme-color" content="#0F1117">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Portal Kasir">
+    <meta name="application-name" content="Portal Kasir">
+    <meta name="mobile-web-app-capable" content="yes">
 
     <!-- Clean URL (Hapus .html di address bar browser) -->
     <script>
@@ -509,6 +514,42 @@
             font-weight: 700;
             cursor: pointer;
         }
+
+        /* PWA Toast Notification */
+        .ks-toast {
+            position: fixed;
+            left: 50%;
+            bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+            transform: translate(-50%, 16px);
+            max-width: min(92vw, 460px);
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.4;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+            z-index: 99999;
+            opacity: 0;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        .ks-toast.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .ks-toast-icon {
+            font-size: 16px;
+            flex-shrink: 0;
+            line-height: 1.3;
+        }
     </style>
 </head>
 <body>
@@ -524,6 +565,7 @@
             </div>
 
             <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="btn-nav-action" onclick="showShortcutGuideModal()" title="Tambah Pintasan ke Layar Utama HP">📲</button>
                 <button class="btn-nav-action" id="themeToggleBtn" onclick="toggleTheme()" title="Ubah Tema">🌙</button>
                 <button class="btn-nav-action" id="btnLogoutEmp" onclick="logoutEmployee()" title="Keluar / Ganti Akun" style="display: none;">🚪</button>
             </div>
@@ -557,6 +599,12 @@
                     <span>MASUK</span> ➜
                 </button>
             </form>
+
+            <div style="margin-top: 14px; text-align: center;">
+                <button type="button" onclick="showShortcutGuideModal()" style="background: rgba(79, 142, 247, 0.08); border: 1px dashed rgba(79, 142, 247, 0.35); color: var(--primary); padding: 10px 14px; border-radius: 12px; font-size: 12px; font-weight: 750; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; width: 100%; justify-content: center; transition: all 0.15s ease;">
+                    <span>📲</span> <span>Pasang Pintasan Kasir ke Layar HP</span>
+                </button>
+            </div>
         </section>
 
         <!-- VIEW 2: DASHBOARD KARYAWAN (SETELAH LOGIN) -->
@@ -586,11 +634,17 @@
             <!-- Fitur Kasir & Operasional Karyawan -->
             <h3 style="font-size: 13.5px; font-weight: 800; margin-bottom: 10px; color: var(--text-muted);">MENU KARYAWAN</h3>
             <div class="grid-features">
-                <!-- 2. Transaksi & Usulan Karyawan -->
+                <!-- 1. Rekap Transaksi -->
                 <a href="store_transactions.html" class="feat-box">
                     <div class="feat-icon">📊</div>
                     <div class="feat-title">Rekap Transaksi</div>
                 </a>
+                <!-- 2. Tambah Pintasan ke Layar HP -->
+                <div class="feat-box" onclick="showShortcutGuideModal()">
+                    <div class="feat-icon">📲</div>
+                    <div class="feat-title">Pasang ke Layar Utama</div>
+                    <div class="feat-sub">Pintasan instan di home screen HP</div>
+                </div>
             </div>
 
             <!-- Log Audit Pergantian Shift (Riwayat Verifikasi) -->
@@ -685,6 +739,61 @@
                     <button type="submit" id="btnSaveProfile" class="btn-submit" style="width: auto; padding: 8px 18px; margin: 0; font-size: 12px;">💾 Simpan Foto</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL: PINTASAN LAYAR UTAMA (ADD TO HOME SCREEN) -->
+    <div id="shortcutGuideModal" class="modal-backdrop" onclick="handleShortcutBackdropClose(event)">
+        <div class="modal-card" style="max-width: 440px;">
+            <div class="modal-header">
+                <div>
+                    <h3 style="font-size: 15px; font-weight: 800; margin: 0;">📲 Tambah ke Layar Utama</h3>
+                    <p style="font-size: 11px; color: var(--text-muted); margin: 2px 0 0 0;">Pasang pintasan Portal Kasir di HP / Desktop</p>
+                </div>
+                <button type="button" class="btn-cancel" onclick="closeShortcutGuideModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px; padding: 16px 20px;">
+                <div style="display: flex; align-items: center; gap: 12px; background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.25); padding: 12px 14px; border-radius: 12px;">
+                    <img src="assets/icons/icon-karyawan-192.png" alt="Portal Kasir Icon" style="width: 48px; height: 48px; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 800; font-size: 14px; color: var(--text-main);">Portal Kasir - KSP Check</div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Akses instan pencatatan transaksi kasir langsung dari layar HP</div>
+                    </div>
+                </div>
+
+                <!-- Tombol Install Langsung (Jika Browser Mendukung Native Prompt) -->
+                <button type="button" id="btnDirectInstallKasir" onclick="triggerInstallApp()" style="width: 100%; padding: 12px 16px; background: linear-gradient(135deg, var(--primary) 0%, #2563EB 100%); border: none; border-radius: 10px; color: #FFFFFF; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 14px rgba(79, 142, 247, 0.35);">
+                    <span>📲</span> <span id="btnDirectInstallKasirText">Pasang Sekarang ke Layar Utama</span>
+                </button>
+
+                <!-- Panduan Chrome Android -->
+                <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px;">
+                    <div style="font-weight: 700; color: var(--primary); font-size: 12px; margin-bottom: 4px;">🤖 Di Android (Chrome / Edge):</div>
+                    <ol style="margin: 0; padding-left: 18px; color: var(--text-muted); font-size: 11.5px; line-height: 1.5;">
+                        <li>Ketuk tombol titik tiga (<b>⋮</b>) di pojok kanan atas browser.</li>
+                        <li>Pilih <b>"Tambahkan ke Layar Utama"</b> (<i>Add to Home screen</i>) atau <b>"Instal Aplikasi"</b>.</li>
+                        <li>Ikon Portal Kasir akan langsung muncul di layar depan HP.</li>
+                    </ol>
+                </div>
+
+                <!-- Panduan Safari iOS (iPhone / iPad) -->
+                <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px;">
+                    <div style="font-weight: 700; color: var(--success); font-size: 12px; margin-bottom: 4px;">🍏 Di iPhone / iPad (Safari):</div>
+                    <ol style="margin: 0; padding-left: 18px; color: var(--text-muted); font-size: 11.5px; line-height: 1.5;">
+                        <li>Ketuk tombol <b>Bagikan (Share)</b> 📤 di bilah bawah Safari.</li>
+                        <li>Gulir ke bawah dan pilih <b>"Tambah ke Layar Utama"</b> (<i>Add to Home Screen</i> ➕).</li>
+                        <li>Ketuk <b>Tambah</b> di pojok kanan atas.</li>
+                    </ol>
+                </div>
+
+                <!-- Salin Link Langsung -->
+                <button type="button" class="btn-cancel" onclick="copyCurrentPageUrl()" style="width: 100%; padding: 9px; font-size: 11.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <span>🔗</span> <span>Salin Link URL Halaman Ini</span>
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-submit" onclick="closeShortcutGuideModal()" style="width: auto; padding: 8px 18px; margin: 0; font-size: 12px;">Selesai</button>
+            </div>
         </div>
     </div>
 
@@ -1254,6 +1363,132 @@
 
         // Theme management
         // Tema -> js/ksp_theme.js | escapeHtml -> js/ksp_ui.js
+
+        // ===== PWA Service Worker & Add Shortcut to Home Screen =====
+        let deferredInstallPrompt = null;
+
+        if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => {
+                    console.warn('SW registration failed:', err);
+                });
+            });
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            const btnText = document.getElementById('btnDirectInstallKasirText');
+            if (btnText) btnText.innerText = 'Pasang 1-Klik ke Layar Utama HP';
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredInstallPrompt = null;
+            showToast('Portal Kasir berhasil dipasang ke Layar Utama!', '🎉');
+            const btnText = document.getElementById('btnDirectInstallKasirText');
+            if (btnText) btnText.innerText = '✅ Sudah Terpasang di Layar Utama';
+        });
+
+        function showShortcutGuideModal() {
+            const btnText = document.getElementById('btnDirectInstallKasirText');
+            if (btnText) {
+                if (deferredInstallPrompt) {
+                    btnText.innerText = 'Pasang 1-Klik ke Layar Utama HP';
+                } else {
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                    if (isIOS) {
+                        btnText.innerText = 'Panduan iPhone / iPad (Safari)';
+                    } else {
+                        btnText.innerText = 'Pasang Sekarang ke Layar Utama';
+                    }
+                }
+            }
+            const modal = document.getElementById('shortcutGuideModal');
+            if (modal) modal.classList.add('open');
+        }
+
+        function closeShortcutGuideModal() {
+            const modal = document.getElementById('shortcutGuideModal');
+            if (modal) modal.classList.remove('open');
+        }
+
+        function handleShortcutBackdropClose(e) {
+            if (e.target && e.target.id === 'shortcutGuideModal') {
+                closeShortcutGuideModal();
+            }
+        }
+
+        async function triggerInstallApp() {
+            if (deferredInstallPrompt) {
+                try {
+                    deferredInstallPrompt.prompt();
+                    const choiceResult = await deferredInstallPrompt.userChoice;
+                    if (choiceResult && choiceResult.outcome === 'accepted') {
+                        showToast('Memasang Portal Kasir ke layar utama...', '📲');
+                        closeShortcutGuideModal();
+                    }
+                } catch (err) {
+                    console.warn('Install prompt error:', err);
+                }
+                deferredInstallPrompt = null;
+            } else {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                if (isIOS) {
+                    showToast('Di Safari: Ketuk tombol Share 📤 lalu "Tambah ke Layar Utama" ➕', '🍏', 5000);
+                } else {
+                    showToast('Gunakan menu titik tiga (⋮) browser lalu pilih "Tambahkan ke Layar Utama"', '💡', 5000);
+                }
+            }
+        }
+
+        function copyCurrentPageUrl() {
+            const url = window.location.href;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('Tautan berhasil disalin ke clipboard!', '📋');
+                }).catch(() => {
+                    fallbackCopyUrl(url);
+                });
+            } else {
+                fallbackCopyUrl(url);
+            }
+        }
+
+        function fallbackCopyUrl(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                showToast('Tautan berhasil disalin ke clipboard!', '📋');
+            } catch (e) {
+                showToast('Gagal menyalin tautan', '⚠️');
+            }
+            document.body.removeChild(ta);
+        }
+
+        function showToast(text, icon = '🔄', durationMs = 3500) {
+            let toast = document.getElementById('toastNotice');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toastNotice';
+                toast.className = 'ks-toast';
+                toast.setAttribute('role', 'status');
+                toast.setAttribute('aria-live', 'polite');
+                toast.innerHTML = `<span id="toastIcon" class="ks-toast-icon" aria-hidden="true"></span><span id="toastText"></span>`;
+                document.body.appendChild(toast);
+            }
+            const iconEl = toast.querySelector('#toastIcon');
+            const textEl = toast.querySelector('#toastText');
+            if (iconEl) iconEl.innerText = icon;
+            if (textEl) textEl.innerText = text;
+            toast.classList.add('show');
+            clearTimeout(window.__toastTimeout);
+            window.__toastTimeout = setTimeout(() => toast.classList.remove('show'), durationMs);
+        }
     </script>
 </body>
 </html>

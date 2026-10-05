@@ -72,18 +72,18 @@
       "icons": [{ "src": "../icons/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "🏢 Kelola Toko",
-      "short_name": "Toko",
-      "description": "Kelola cabang, shift, dan karyawan",
+      "name": "🏢 Kelola Cabang",
+      "short_name": "Store Manager",
+      "description": "Kelola cabang, shift, dan transaksi harian",
       "url": "../../store_manager.html",
-      "icons": [{ "src": "../icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "../icons/icon-store-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "👤 Portal Karyawan",
-      "short_name": "Karyawan",
+      "name": "👤 Portal Kasir",
+      "short_name": "Portal Kasir",
       "description": "Login kasir & personel toko",
       "url": "../../karyawan.html",
-      "icons": [{ "src": "../icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "../icons/icon-karyawan-192.png", "sizes": "192x192" }]
     }
   ]
 }

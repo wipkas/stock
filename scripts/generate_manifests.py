@@ -65,11 +65,14 @@ class Tab:
 
 @dataclass(frozen=True)
 class Page:
+    key: str                    # nama file ikon (icon-<key>-*.png)
     emoji: str
     title: str
     short: str
     desc: str
     url: str                    # relatif terhadap root situs
+    app_name: Optional[str] = None
+    app_desc: str = ""
 
 
 # Urutan = urutan shortcut. Android Chrome hanya menampilkan 4 shortcut
@@ -90,10 +93,12 @@ TABS: Tuple[Tab, ...] = (
     Tab("feerule", "⚖️", "Fee Rule", "Fee Rule", "Buka tab Fee Rule (aturan biaya admin)"),
 )
 
-# Halaman non-tab: hanya muncul sebagai shortcut di manifest default.
+# Halaman non-tab: memiliki manifest mandiri dan muncul sebagai shortcut.
 PAGES: Tuple[Page, ...] = (
-    Page("🏢", "Kelola Toko", "Toko", "Kelola cabang, shift, dan karyawan", "store_manager.html"),
-    Page("👤", "Portal Karyawan", "Karyawan", "Login kasir & personel toko", "karyawan.html"),
+    Page("store", "🏢", "Kelola Cabang", "Store Manager", "Kelola cabang, shift, dan transaksi harian", "store_manager.html",
+         "Store Manager - KSP Check", "Kelola Cabang Toko, Shift Kasir & Rekap Transaksi"),
+    Page("karyawan", "👤", "Portal Kasir", "Portal Kasir", "Login kasir & personel toko", "karyawan.html",
+         "Portal Kasir - KSP Check", "Portal Login & Pencatatan Transaksi Kasir Toko"),
 )
 
 
@@ -193,7 +198,7 @@ class Builder:
             "short_name": page.short,
             "description": page.desc,
             "url": ctx.root_prefix + page.url,
-            "icons": self.shortcut_icon(ctx, None),
+            "icons": self.shortcut_icon(ctx, page.key),
         }
 
     # ---- manifest ----
@@ -237,6 +242,27 @@ class Builder:
             "shortcuts": [self.tab_shortcut(ctx, t) for t in TABS if t.key != tab.key],
         }
 
+    def page_manifest(self, ctx: Ctx, page: Page) -> dict:
+        icons = self.dedupe([
+            self.svg_entry(ctx, f"icon-{page.key}.svg"),
+            self.png_entry(ctx, f"icon-{page.key}-192.png"),
+            self.png_entry(ctx, f"icon-{page.key}-512.png"),
+        ])
+        return {
+            "id": f"kspcheck-{page.key}-app",
+            "name": page.app_name or f"{page.title} - KSP Check",
+            "short_name": page.short,
+            "description": page.app_desc or page.desc,
+            "start_url": f"{ctx.root_prefix}{page.url}",
+            "scope": ctx.scope,
+            "display": "standalone",
+            "background_color": THEME_COLOR,
+            "theme_color": THEME_COLOR,
+            "orientation": "any",
+            "icons": icons,
+            "shortcuts": [self.tab_shortcut(ctx, t) for t in TABS[:3]],
+        }
+
     def build_all(self) -> Dict[Path, dict]:
         out: Dict[Path, dict] = {
             self.root / "manifest.json": self.default_manifest(ROOT_CTX),
@@ -246,6 +272,10 @@ class Builder:
             if tab.app_name:
                 out[self.root / "assets" / "manifests" / f"manifest-{tab.key}.json"] = \
                     self.tab_manifest(ASSETS_CTX, tab)
+        for page in PAGES:
+            if page.app_name:
+                out[self.root / "assets" / "manifests" / f"manifest-{page.key}.json"] = \
+                    self.page_manifest(ASSETS_CTX, page)
         return out
 
 

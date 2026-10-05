@@ -6,10 +6,15 @@
     <title>KSP Check - Kelola Cabang &amp; Shift</title>
 
     <!-- Web App Manifest & Favicons -->
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-order.svg">
-    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <link rel="manifest" href="assets/manifests/manifest-store.json">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-store.svg">
+    <link rel="apple-touch-icon" href="assets/icons/icon-store-192.png">
     <meta name="theme-color" content="#0F1117">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Store Manager">
+    <meta name="application-name" content="Store Manager">
+    <meta name="mobile-web-app-capable" content="yes">
 
     <!-- CryptoJS (dekripsi config.enc) & modul bersama di js/ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
@@ -2031,6 +2036,13 @@
                                 <div class="top-menu-sub">Kelola toko &amp; shift</div>
                             </div>
                         </div>
+                        <div class="top-menu-item" role="menuitem" tabindex="0" onclick="closeTopMenu(); showShortcutGuideModal();">
+                            <span class="top-menu-icon">📲</span>
+                            <div style="flex: 1;">
+                                <div class="top-menu-label">Tambah ke Layar Utama</div>
+                                <div class="top-menu-sub" id="pwaInstallStateSub">Pasang ikon aplikasi di HP</div>
+                            </div>
+                        </div>
                         <div class="top-menu-item" role="menuitem" tabindex="0" onclick="toggleTheme();">
                             <span class="top-menu-icon" id="menuThemeIcon">🌙</span>
                             <div style="flex: 1;">
@@ -3161,6 +3173,61 @@
                     <button type="submit" class="btn-primary">💾 Simpan Transaksi</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL 11: PINTASAN LAYAR UTAMA (ADD TO HOME SCREEN) -->
+    <div id="shortcutGuideModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'shortcutGuideModal')">
+        <div class="modal-card" style="max-width: 440px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">📲 Tambah ke Layar Utama</h3>
+                    <p class="modal-subtitle">Pasang pintasan Store Manager di HP / Desktop</p>
+                </div>
+                <button type="button" class="modal-close-btn" aria-label="Tutup" onclick="closeModal('shortcutGuideModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px; padding: 16px 20px;">
+                <div style="display: flex; align-items: center; gap: 12px; background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.25); padding: 12px 14px; border-radius: 12px;">
+                    <img src="assets/icons/icon-store-192.png" alt="Store Manager Icon" style="width: 48px; height: 48px; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 800; font-size: 14px; color: var(--text-main);">Store Manager - KSP Check</div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Akses instan kelola cabang &amp; shift tanpa buka browser manual</div>
+                    </div>
+                </div>
+
+                <!-- Tombol Install Langsung (Jika Browser Mendukung Native Prompt) -->
+                <button type="button" id="btnDirectInstall" onclick="triggerInstallApp()" style="width: 100%; padding: 12px 16px; background: linear-gradient(135deg, var(--primary) 0%, #2563EB 100%); border: none; border-radius: 10px; color: #FFFFFF; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 14px rgba(79, 142, 247, 0.35);">
+                    <span>📲</span> <span id="btnDirectInstallText">Pasang Sekarang ke Layar Utama</span>
+                </button>
+
+                <!-- Panduan Chrome Android -->
+                <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px;">
+                    <div style="font-weight: 700; color: var(--primary); font-size: 12px; margin-bottom: 4px;">🤖 Di Android (Chrome / Edge):</div>
+                    <ol style="margin: 0; padding-left: 18px; color: var(--text-muted); font-size: 11.5px; line-height: 1.5;">
+                        <li>Ketuk tombol titik tiga (<b>⋮</b>) di pojok kanan atas browser.</li>
+                        <li>Pilih <b>"Tambahkan ke Layar Utama"</b> (<i>Add to Home screen</i>) atau <b>"Instal Aplikasi"</b>.</li>
+                        <li>Ikon Store Manager akan muncul di layar utama HP Anda.</li>
+                    </ol>
+                </div>
+
+                <!-- Panduan Safari iOS (iPhone / iPad) -->
+                <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px;">
+                    <div style="font-weight: 700; color: var(--success); font-size: 12px; margin-bottom: 4px;">🍏 Di iPhone / iPad (Safari):</div>
+                    <ol style="margin: 0; padding-left: 18px; color: var(--text-muted); font-size: 11.5px; line-height: 1.5;">
+                        <li>Ketuk tombol <b>Bagikan (Share)</b> 📤 di bagian bawah Safari.</li>
+                        <li>Gulir ke bawah dan pilih <b>"Tambah ke Layar Utama"</b> (<i>Add to Home Screen</i> ➕).</li>
+                        <li>Ketuk <b>Tambah</b> di pojok kanan atas.</li>
+                    </ol>
+                </div>
+
+                <!-- Salin Link Langsung -->
+                <button type="button" class="btn-secondary" onclick="copyCurrentPageUrl()" style="width: 100%; padding: 9px; font-size: 11.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <span>🔗</span> <span>Salin Link URL Halaman Ini</span>
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-primary" onclick="closeModal('shortcutGuideModal')">Selesai</button>
+            </div>
         </div>
     </div>
 
@@ -7251,6 +7318,100 @@ ${portalUrl}
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
             else start();
         })();
+
+        // ===== PWA Service Worker & Add Shortcut to Home Screen =====
+        let deferredInstallPrompt = null;
+
+        if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => {
+                    console.warn('SW registration failed:', err);
+                });
+            });
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            const btnText = document.getElementById('btnDirectInstallText');
+            if (btnText) btnText.innerText = 'Pasang 1-Klik ke Layar Utama HP';
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredInstallPrompt = null;
+            showToast('Store Manager berhasil dipasang ke Layar Utama!', '🎉');
+            const btnText = document.getElementById('btnDirectInstallText');
+            if (btnText) btnText.innerText = '✅ Sudah Terpasang di Layar Utama';
+        });
+
+        function showShortcutGuideModal() {
+            const btnText = document.getElementById('btnDirectInstallText');
+            if (btnText) {
+                if (deferredInstallPrompt) {
+                    btnText.innerText = 'Pasang 1-Klik ke Layar Utama HP';
+                } else {
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                    if (isIOS) {
+                        btnText.innerText = 'Panduan iPhone / iPad (Safari)';
+                    } else {
+                        btnText.innerText = 'Pasang Sekarang ke Layar Utama';
+                    }
+                }
+            }
+            openModal('shortcutGuideModal');
+        }
+
+        async function triggerInstallApp() {
+            if (deferredInstallPrompt) {
+                try {
+                    deferredInstallPrompt.prompt();
+                    const choiceResult = await deferredInstallPrompt.userChoice;
+                    if (choiceResult && choiceResult.outcome === 'accepted') {
+                        showToast('Memasang Store Manager ke layar utama...', '📲');
+                        closeModal('shortcutGuideModal');
+                    }
+                } catch (err) {
+                    console.warn('Install prompt error:', err);
+                }
+                deferredInstallPrompt = null;
+            } else {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                if (isIOS) {
+                    showToast('Di Safari: Ketuk tombol Share 📤 lalu "Tambah ke Layar Utama" ➕', '🍏', 5000);
+                } else {
+                    showToast('Gunakan menu titik tiga (⋮) browser lalu pilih "Tambahkan ke Layar Utama"', '💡', 5000);
+                }
+            }
+        }
+
+        function copyCurrentPageUrl() {
+            const url = window.location.href;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('Tautan berhasil disalin ke clipboard!', '📋');
+                }).catch(() => {
+                    fallbackCopyUrl(url);
+                });
+            } else {
+                fallbackCopyUrl(url);
+            }
+        }
+
+        function fallbackCopyUrl(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                showToast('Tautan berhasil disalin ke clipboard!', '📋');
+            } catch (e) {
+                showToast('Gagal menyalin tautan', '⚠️');
+            }
+            document.body.removeChild(ta);
+        }
     </script>
 </body>
 </html>
