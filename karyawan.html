@@ -1247,14 +1247,26 @@
                 allStores = storesData;
             }
 
-            const cfg = KspLeaderboard.getConfig();
+            // Periksa apakah ada konfigurasi leaderboard yang disinkronkan dari Cloud/storesData
+            let cfg = KspLeaderboard.getConfig();
+            if (Array.isArray(allStores) && allStores.length > 0) {
+                const storeWithCfg = allStores.find(s => s && s.leaderboard_config);
+                if (storeWithCfg && storeWithCfg.leaderboard_config) {
+                    cfg = Object.assign({}, cfg, storeWithCfg.leaderboard_config);
+                    try {
+                        localStorage.setItem('kspcheck_leaderboard_config', JSON.stringify(cfg));
+                    } catch (e) {}
+                }
+            }
+
             const scope = cfg.scope || 'all'; // Antar Seluruh Cabang KSP
             const period = cfg.period || 'today'; // Hari Ini
 
             const employeesList = KspLeaderboard.extractEmployeesFromStores(allStores, {
                 period: period,
                 scope: scope,
-                storeId: currentStore ? currentStore.id : null
+                storeId: currentStore ? currentStore.id : null,
+                config: cfg
             });
 
             KspLeaderboard.mount('#karyawanLeaderboardMount', {
@@ -1263,25 +1275,52 @@
                 scope: scope,
                 currentEmployeeId: currentEmployee ? currentEmployee.id : null,
                 employees: employeesList,
+                scoring: cfg.scoring,
+                rewards: cfg.rewards,
                 ui: {
                     showSummaryBoxes: false,
                     progressStyle: 'store-target-mini-row'
                 }
             });
 
-            // Jika Cloud sync aktif dan allStores hanya ada 1 cabang, request data leaderboard lengkap dari Cloud
-            if (window.KspSync && typeof KspSync.empGetLeaderboard === 'function' && allStores.length <= 1) {
+            // Sinkronisasi data leaderboard & konfigurasi dari Cloud di background
+            if (window.KspSync && typeof KspSync.empGetLeaderboard === 'function') {
                 const cred = sessionStorage.getItem('kspcheck_emp_cred') || localStorage.getItem('kspcheck_emp_cred');
                 KspSync.empGetLeaderboard(cred).then(res => {
-                    if (res && res.ok && Array.isArray(res.stores) && res.stores.length > 1) {
+                    if (res && res.ok && Array.isArray(res.stores) && res.stores.length > 0) {
                         storesData = res.stores;
                         try { localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesData)); } catch(e) {}
+
+                        // Periksa apakah server mengembalikan konfigurasi leaderboard
+                        const cloudStoreWithCfg = res.stores.find(s => s && s.leaderboard_config);
+                        if (cloudStoreWithCfg && cloudStoreWithCfg.leaderboard_config) {
+                            cfg = Object.assign({}, cfg, cloudStoreWithCfg.leaderboard_config);
+                            try { localStorage.setItem('kspcheck_leaderboard_config', JSON.stringify(cfg)); } catch(e) {}
+                        }
+
+                        const updatedPeriod = cfg.period || period;
+                        const updatedScope = cfg.scope || scope;
+
                         const updatedList = KspLeaderboard.extractEmployeesFromStores(storesData, {
-                            period: period,
-                            scope: scope,
-                            storeId: currentStore ? currentStore.id : null
+                            period: updatedPeriod,
+                            scope: updatedScope,
+                            storeId: currentStore ? currentStore.id : null,
+                            config: cfg
                         });
-                        KspLeaderboard.setEmployees('#karyawanLeaderboardMount', updatedList);
+
+                        KspLeaderboard.mount('#karyawanLeaderboardMount', {
+                            title: 'Leaderboard & Target Kasir',
+                            period: updatedPeriod,
+                            scope: updatedScope,
+                            currentEmployeeId: currentEmployee ? currentEmployee.id : null,
+                            employees: updatedList,
+                            scoring: cfg.scoring,
+                            rewards: cfg.rewards,
+                            ui: {
+                                showSummaryBoxes: false,
+                                progressStyle: 'store-target-mini-row'
+                            }
+                        });
                     }
                 }).catch(e => {
                     // Abaikan galat jaringan di background

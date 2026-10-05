@@ -569,9 +569,25 @@
 
         const config = inst.config;
         const employees = inst.employees || [];
+        const primaryMetric = (config.scoring && config.scoring.primaryMetric) || 'total_tx';
 
-        // 1. Sort karyawan
-        const sorted = [...employees].sort((a, b) => (b.todayTx || b.score || 0) - (a.todayTx || a.score || 0));
+        // Pre-kalkulasi targetPct sebelum sorting agar sorting berbasis target_pct akurat
+        employees.forEach(emp => {
+            const score = emp.todayTx || emp.score || 0;
+            const targetVal = emp.target || 50;
+            if (emp.targetPct === undefined || emp.targetPct === null) {
+                emp.targetPct = targetVal > 0 ? Math.round((score / targetVal) * 100) : 0;
+            }
+        });
+
+        // 1. Sort karyawan sesuai primaryMetric (total_tx atau target_pct)
+        const sorted = [...employees].sort((a, b) => {
+            if (primaryMetric === 'target_pct') {
+                const diffPct = (b.targetPct || 0) - (a.targetPct || 0);
+                if (diffPct !== 0) return diffPct;
+            }
+            return (b.todayTx || b.score || 0) - (a.todayTx || a.score || 0);
+        });
 
         // 2. Hitung Agregat Realtime (Berdasarkan Total Transaksi Riil)
         const totalTx = sorted.reduce((sum, e) => sum + (e.todayTx || e.score || 0), 0);
@@ -722,9 +738,14 @@
                             <span>🏆</span>
                             <span>${escapeHtml(config.title)}</span>
                         </div>
-                        <span class="ksp-lb-badge">
-                            Skema Bonus: ${getModeBadgeLabel(config.rewards.mode)}
-                        </span>
+                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                            <span class="ksp-lb-badge" style="background: rgba(16, 185, 129, 0.12); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.25);">
+                                ⏱️ ${getPeriodBadgeLabel(config.period)}
+                            </span>
+                            <span class="ksp-lb-badge">
+                                Skema: ${getModeBadgeLabel(config.rewards.mode)}
+                            </span>
+                        </div>
                     </div>
 
                     ${summaryBoxesHtml}
@@ -790,6 +811,7 @@
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
         const todayKey = `${year}-${month}-${day}`;
+        const currentDayNum = now.getDate();
         const totalDaysInMonth = new Date(year, now.getMonth() + 1, 0).getDate();
 
         const result = [];
@@ -805,9 +827,34 @@
                 .filter(e => e && e.status !== 'inactive');
 
             const shiftCount = employees.length > 0 ? employees.length : (Array.isArray(store.shifts) ? store.shifts.length : 2);
-            const targetPerEmployee = period === 'monthly'
-                ? (shiftCount > 0 ? Math.round(targetMonthly / shiftCount) : targetMonthly)
-                : (shiftCount > 0 ? Math.round(dailyTargetStore / shiftCount) : dailyTargetStore);
+            const dailyTargetPerEmployee = shiftCount > 0 ? Math.round(dailyTargetStore / shiftCount) : dailyTargetStore;
+
+            // Hitung jumlah hari unik yang memiliki data transaksi di bulan ini
+            let recordedDaysCount = 0;
+            if (store.daily_transactions && typeof store.daily_transactions === 'object') {
+                Object.entries(store.daily_transactions).forEach(([dateKey, dayObj]) => {
+                    if (dateKey.startsWith(`${year}-${month}`)) {
+                        const hasTx = dayObj && (Number(dayObj.total) > 0 || (Array.isArray(dayObj.records) && dayObj.records.some(r => Number(r && r.tx) > 0)));
+                        if (hasTx) recordedDaysCount++;
+                    }
+                });
+            }
+            const activeRecordedDays = Math.max(1, recordedDaysCount);
+            const daysToDate = Math.max(1, currentDayNum);
+
+            let targetPerEmployee = 50;
+            if (period === 'monthly') {
+                targetPerEmployee = shiftCount > 0 ? Math.round(targetMonthly / shiftCount) : targetMonthly;
+            } else if (period === 'month_to_date') {
+                // Proporsional dari tanggal 1 s/d hari ini
+                targetPerEmployee = Math.round(dailyTargetPerEmployee * daysToDate);
+            } else if (period === 'recorded_days') {
+                // Proporsional HANYA untuk hari-hari yang tercatat di sistem
+                targetPerEmployee = Math.round(dailyTargetPerEmployee * activeRecordedDays);
+            } else {
+                // 'today' (target shift harian)
+                targetPerEmployee = dailyTargetPerEmployee;
+            }
 
             const todayData = (store.daily_transactions && store.daily_transactions[todayKey]) || null;
             const todayRecords = todayData && Array.isArray(todayData.records) ? todayData.records : [];
@@ -815,18 +862,24 @@
             employees.forEach(emp => {
                 let empTx = 0;
 
-                if (period === 'monthly') {
+                if (period === 'monthly' || period === 'month_to_date' || period === 'recorded_days') {
                     if (store.daily_transactions && typeof store.daily_transactions === 'object') {
                         Object.entries(store.daily_transactions).forEach(([dateKey, dayObj]) => {
                             if (dateKey.startsWith(`${year}-${month}`)) {
+                                // Batasi tanggal hanya sampai hari ini untuk month_to_date
+                                if (period === 'month_to_date' && dateKey > todayKey) return;
+
                                 if (dayObj && Array.isArray(dayObj.records)) {
                                     const rec = dayObj.records.find(r => r && (r.emp_id === emp.id || r.shift_num === emp.shift_num));
                                     if (rec && typeof rec.tx === 'number') empTx += rec.tx;
+                                } else if (dayObj && typeof dayObj.total === 'number' && emp.shift_num === 1) {
+                                    empTx += dayObj.total;
                                 }
                             }
                         });
                     }
                 } else {
+                    // 'today'
                     const rec = todayRecords.find(r => r && (r.emp_id === emp.id || r.shift_num === emp.shift_num));
                     if (rec && typeof rec.tx === 'number') {
                         empTx = rec.tx;
@@ -834,6 +887,9 @@
                         empTx = todayData.total;
                     }
                 }
+
+                const targetVal = targetPerEmployee > 0 ? targetPerEmployee : 50;
+                const targetPct = targetVal > 0 ? Math.round((empTx / targetVal) * 100) : 0;
 
                 result.push({
                     id: emp.id,
@@ -844,7 +900,9 @@
                     shift: emp.shift_num ? `Shift ${emp.shift_num}` : 'Aktif',
                     shiftNum: emp.shift_num,
                     score: empTx,
-                    target: targetPerEmployee > 0 ? targetPerEmployee : 50,
+                    todayTx: empTx,
+                    target: targetVal,
+                    targetPct: targetPct,
                     subMetrics: null
                 });
             });
@@ -860,6 +918,13 @@
             inst.config.onItemClick(emp, rank);
         }
     };
+
+    function getPeriodBadgeLabel(period) {
+        if (period === 'month_to_date') return 'Awal Bulan s/d Hari Ini';
+        if (period === 'recorded_days') return 'Hari Tercatat Saja';
+        if (period === 'monthly') return 'Bulan Penuh';
+        return 'Hari Ini';
+    }
 
     function getModeBadgeLabel(mode) {
         if (mode === 'percentage') return 'Proporsional (% Target)';

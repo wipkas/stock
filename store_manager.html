@@ -3697,7 +3697,7 @@
                     </label>
                 </div>
 
-                <!-- 2. Lingkup & Periode -->
+                <!-- 2. Lingkup, Periode & Tolak Ukur Penentu Juara -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div>
                         <label class="form-label" style="font-size: 11.5px; font-weight: 750; margin-bottom: 5px; display: block;">🌐 Lingkup Peringkat:</label>
@@ -3710,8 +3710,21 @@
                         <label class="form-label" style="font-size: 11.5px; font-weight: 750; margin-bottom: 5px; display: block;">⏱️ Periode Tolak Ukur:</label>
                         <select id="cfgLeaderboardPeriod" class="form-input" style="width: 100%; padding: 8px 10px; font-size: 12px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);">
                             <option value="today" selected>Hari Ini (Shift Harian)</option>
-                            <option value="monthly">Bulan Berjalan (Akumulasi)</option>
+                            <option value="month_to_date">Awal Bulan s/d Hari Ini (Proporsional)</option>
+                            <option value="recorded_days">Akumulasi Hari Tercatat Saja</option>
+                            <option value="monthly">Bulan Penuh (Target 1 Bulan Utuh)</option>
                         </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label" style="font-size: 11.5px; font-weight: 750; margin-bottom: 5px; display: block;">🎯 Dasar Penentu Juara (Tolak Ukur):</label>
+                    <select id="cfgLeaderboardPrimaryMetric" class="form-input" style="width: 100%; padding: 8px 10px; font-size: 12px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                        <option value="total_tx" selected>Total Transaksi Tertinggi (tx)</option>
+                        <option value="target_pct">Persentase Capaian Target Tertinggi (%)</option>
+                    </select>
+                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">
+                        💡 <b>Persentase Target (%)</b> cocok jika target antar cabang berbeda agar persaingan adil.
                     </div>
                 </div>
 
@@ -8750,15 +8763,23 @@ ${portalUrl}
         let currentBonusModalTab = 'percentage';
 
         function openLeaderboardConfigModal() {
-            const cfg = (window.KspLeaderboard && typeof KspLeaderboard.getConfig === 'function')
+            // Prioritas: Toko yang tersimpan -> Modul KspLeaderboard -> localStorage
+            let storeCfg = null;
+            if (Array.isArray(storesData) && storesData.length > 0) {
+                const found = storesData.find(s => s && s.leaderboard_config);
+                if (found) storeCfg = found.leaderboard_config;
+            }
+            const baseCfg = (window.KspLeaderboard && typeof KspLeaderboard.getConfig === 'function')
                 ? KspLeaderboard.getConfig()
                 : JSON.parse(localStorage.getItem('kspcheck_leaderboard_config') || '{}');
+            const cfg = storeCfg ? Object.assign({}, baseCfg, storeCfg) : baseCfg;
 
             const rewards = cfg.rewards || {};
             const enabled = rewards.enabled !== false;
             const mode = rewards.mode || 'percentage';
             const period = cfg.period || 'today';
             const scope = cfg.scope || 'all';
+            const primaryMetric = (cfg.scoring && cfg.scoring.primaryMetric) || 'total_tx';
 
             const chkEnabled = document.getElementById('cfgBonusEnabled');
             if (chkEnabled) chkEnabled.checked = enabled;
@@ -8768,6 +8789,9 @@ ${portalUrl}
 
             const selPeriod = document.getElementById('cfgLeaderboardPeriod');
             if (selPeriod) selPeriod.value = period;
+
+            const selMetric = document.getElementById('cfgLeaderboardPrimaryMetric');
+            if (selMetric) selMetric.value = primaryMetric;
 
             // Mode 1: Percentage
             const pct = rewards.percentage || {};
@@ -8829,6 +8853,7 @@ ${portalUrl}
             const chkEnabled = document.getElementById('cfgBonusEnabled');
             const selScope = document.getElementById('cfgLeaderboardScope');
             const selPeriod = document.getElementById('cfgLeaderboardPeriod');
+            const selMetric = document.getElementById('cfgLeaderboardPrimaryMetric');
 
             const basePool = Math.max(0, parseInt(document.getElementById('cfgPctBasePool')?.value, 10) || 150000);
             const minPct = Math.max(0, parseInt(document.getElementById('cfgPctMinPct')?.value, 10) || 70);
@@ -8845,6 +8870,10 @@ ${portalUrl}
             const newConfig = {
                 scope: selScope?.value || 'all',
                 period: selPeriod?.value || 'today',
+                scoring: {
+                    primaryMetric: selMetric?.value || 'total_tx',
+                    minTxThreshold: 0
+                },
                 rewards: {
                     enabled: chkEnabled ? chkEnabled.checked : true,
                     mode: currentBonusModalTab,
@@ -8869,14 +8898,23 @@ ${portalUrl}
                 }
             };
 
+            // 1. Simpan ke modul KspLeaderboard & localStorage
             if (window.KspLeaderboard && typeof KspLeaderboard.saveConfig === 'function') {
                 KspLeaderboard.saveConfig(newConfig);
             } else {
                 localStorage.setItem('kspcheck_leaderboard_config', JSON.stringify(newConfig));
             }
 
+            // 2. Sematkan ke seluruh data cabang lokal & trigger Cloud push agar HP kasir otomatis tersinkron
+            if (Array.isArray(storesData) && storesData.length > 0) {
+                storesData.forEach(st => {
+                    st.leaderboard_config = newConfig;
+                });
+                saveStoresData();
+            }
+
             closeModal('modalLeaderboardConfig');
-            showToast('🏆 Pengaturan Leaderboard & Bonus berhasil disimpan!', '✅');
+            showToast('🏆 Pengaturan Leaderboard berhasil disimpan & disinkronkan ke Cloud!', '✅');
         }
     </script>
 </body>
