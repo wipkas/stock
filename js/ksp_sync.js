@@ -443,6 +443,11 @@
         });
     }
 
+    function empGetLeaderboard(password) {
+        if (!enabled()) return Promise.reject(new Error('Sinkronisasi cloud tidak dikonfigurasi'));
+        return rpc('ksp_emp_get_leaderboard', { p_password: password || '' });
+    }
+
     // ---------- INIT ----------
     function hookSave() {
         var orig = window.saveStoresData;
@@ -494,6 +499,7 @@
         empLogin: empLogin,
         empSubmitProposal: empSubmitProposal,
         empUpdateProfile: empUpdateProfile,
+        empGetLeaderboard: empGetLeaderboard,
         setStatus: setStatus
     };
 })();

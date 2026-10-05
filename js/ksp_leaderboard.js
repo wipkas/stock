@@ -582,7 +582,10 @@
         sorted.forEach((emp, index) => {
             const rank = index + 1;
             const score = emp.todayTx || emp.score || 0;
-            const targetPct = Number(emp.targetPct || (score > 0 ? Math.min(100, Math.round((score / 200) * 100)) : 0));
+            const targetVal = emp.target || 50;
+            const targetPct = (emp.targetPct !== undefined && emp.targetPct !== null)
+                ? Number(emp.targetPct)
+                : (targetVal > 0 ? Math.round((score / targetVal) * 100) : 0);
             emp.targetPct = targetPct;
 
             const isMe = config.currentEmployeeId && (emp.id === config.currentEmployeeId);

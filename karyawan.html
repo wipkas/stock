@@ -884,7 +884,7 @@
                 try {
                     const r = await KspSync.empLogin(savedCred);
                     if (r && r.ok) {
-                        storesData = [r.store];
+                        updateStoresDataFromLogin(r);
                         const actStr = JSON.stringify({ storeId: r.store.id, empId: r.employee.id });
                         sessionStorage.setItem('kspcheck_emp_cred', savedCred);
                         localStorage.setItem('kspcheck_emp_cred', savedCred);
@@ -977,6 +977,38 @@
             input.focus();
         }
 
+        function updateStoresDataFromLogin(r) {
+            if (!r || !r.store) return;
+
+            // 1. Jika Cloud mengirimkan all_stores, gunakan seluruh cabang tersebut
+            if (Array.isArray(r.all_stores) && r.all_stores.length > 0) {
+                storesData = r.all_stores;
+                try { localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesData)); } catch(e) {}
+                return;
+            }
+
+            // 2. Gabungkan r.store dengan cache storesData lokal agar cabang lain tetap utuh
+            let existing = [];
+            try {
+                const raw = localStorage.getItem('kspcheck_stores_data');
+                if (raw) existing = JSON.parse(raw);
+            } catch(e) {}
+
+            if (!Array.isArray(existing) || existing.length === 0) {
+                existing = (storesData && storesData.length > 0) ? [...storesData] : [];
+            }
+
+            const idx = existing.findIndex(s => s && s.id === r.store.id);
+            if (idx >= 0) {
+                existing[idx] = Object.assign({}, existing[idx], r.store);
+            } else {
+                existing.push(r.store);
+            }
+
+            storesData = existing;
+            try { localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesData)); } catch(e) {}
+        }
+
         function loadStoresData() {
             const raw = localStorage.getItem('kspcheck_stores_data');
             if (raw) {
@@ -1039,7 +1071,7 @@
                 try {
                     const r = await KspSync.empLogin(pass);
                     if (r && r.ok) {
-                        storesData = [r.store];
+                        updateStoresDataFromLogin(r);
                         sessionStorage.setItem('kspcheck_emp_cred', pass);
                         match = { store: r.store, employee: r.employee };
                     } else {
@@ -1134,15 +1166,31 @@
             const mountEl = document.getElementById('karyawanLeaderboardMount');
             if (!mountEl || !window.KspLeaderboard) return;
 
-            if (!storesData || storesData.length === 0) {
+            // Pastikan storesData memuat semua cabang dari cache localStorage
+            let allStores = storesData;
+            try {
+                const raw = localStorage.getItem('kspcheck_stores_data');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        if (!allStores || parsed.length > allStores.length) {
+                            allStores = parsed;
+                            storesData = parsed;
+                        }
+                    }
+                }
+            } catch(e) {}
+
+            if (!allStores || allStores.length === 0) {
                 loadStoresData();
+                allStores = storesData;
             }
 
             const cfg = KspLeaderboard.getConfig();
             const scope = cfg.scope || 'all'; // Antar Seluruh Cabang KSP
             const period = cfg.period || 'today'; // Hari Ini
 
-            const employeesList = KspLeaderboard.extractEmployeesFromStores(storesData, {
+            const employeesList = KspLeaderboard.extractEmployeesFromStores(allStores, {
                 period: period,
                 scope: scope,
                 storeId: currentStore ? currentStore.id : null
@@ -1159,6 +1207,25 @@
                     progressStyle: 'store-target-mini-row'
                 }
             });
+
+            // Jika Cloud sync aktif dan allStores hanya ada 1 cabang, request data leaderboard lengkap dari Cloud
+            if (window.KspSync && typeof KspSync.empGetLeaderboard === 'function' && allStores.length <= 1) {
+                const cred = sessionStorage.getItem('kspcheck_emp_cred') || localStorage.getItem('kspcheck_emp_cred');
+                KspSync.empGetLeaderboard(cred).then(res => {
+                    if (res && res.ok && Array.isArray(res.stores) && res.stores.length > 1) {
+                        storesData = res.stores;
+                        try { localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesData)); } catch(e) {}
+                        const updatedList = KspLeaderboard.extractEmployeesFromStores(storesData, {
+                            period: period,
+                            scope: scope,
+                            storeId: currentStore ? currentStore.id : null
+                        });
+                        KspLeaderboard.setEmployees('#karyawanLeaderboardMount', updatedList);
+                    }
+                }).catch(e => {
+                    // Abaikan galat jaringan di background
+                });
+            }
         }
 
         function renderDashStoreTarget() {
