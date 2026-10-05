@@ -20,12 +20,13 @@
     'use strict';
 
     var KEYS = {
-        ADMIN_PIN: 'kspcheck_viewer_pin',      // localStorage
-        STORES_CACHE: 'kspcheck_stores_data',  // localStorage
-        SYNC_DIRTY: 'kspcheck_sync_dirty',     // localStorage
-        EMP_CRED: 'kspcheck_emp_cred',         // sessionStorage
-        ACTIVE_EMP: 'kspcheck_active_emp',     // sessionStorage
-        AUTH_MODE: 'kspcheck_auth_mode'        // sessionStorage
+        ADMIN_PIN: 'kspcheck_viewer_pin',          // localStorage
+        STORES_CACHE: 'kspcheck_stores_data',      // localStorage
+        SYNC_DIRTY: 'kspcheck_sync_dirty',         // localStorage
+        EMP_CRED: 'kspcheck_emp_cred',             // localStorage & sessionStorage (Persistent login)
+        ACTIVE_EMP: 'kspcheck_active_emp',         // localStorage & sessionStorage (Persistent login)
+        AUTH_MODE: 'kspcheck_auth_mode',           // localStorage & sessionStorage
+        SAVED_ACCOUNTS: 'kspcheck_saved_accounts'  // localStorage (Riwayat akun login di perangkat ini)
     };
 
     // ---------- Akses storage yang aman (tidak melempar) ----------
@@ -38,29 +39,80 @@
 
     // ---------- Getter ----------
     function getAdminPin() { return lsGet(KEYS.ADMIN_PIN) || ''; }
-    function getMode() { return ssGet(KEYS.AUTH_MODE) || ''; }
-    function getEmployeeCredential() { return ssGet(KEYS.EMP_CRED) || ''; }
+    function getMode() { return ssGet(KEYS.AUTH_MODE) || lsGet(KEYS.AUTH_MODE) || ''; }
+    function getEmployeeCredential() { return ssGet(KEYS.EMP_CRED) || lsGet(KEYS.EMP_CRED) || ''; }
 
     function getActiveEmployee() {
-        var raw = ssGet(KEYS.ACTIVE_EMP);
+        var raw = ssGet(KEYS.ACTIVE_EMP) || lsGet(KEYS.ACTIVE_EMP);
         if (!raw) return null;
         try { return JSON.parse(raw); } catch (e) { return null; }
     }
 
     function hasEmployeeSession() {
-        return getMode() === 'employee' || (!!ssGet(KEYS.ACTIVE_EMP) && !getAdminPin());
+        var hasEmp = !!ssGet(KEYS.ACTIVE_EMP) || !!lsGet(KEYS.ACTIVE_EMP);
+        return getMode() === 'employee' || (hasEmp && !getAdminPin());
     }
 
     // ---------- Setter sesi ----------
     function setAdminSession(pin) {
         lsSet(KEYS.ADMIN_PIN, pin);
         ssSet(KEYS.AUTH_MODE, 'admin');
+        lsSet(KEYS.AUTH_MODE, 'admin');
     }
 
-    function setEmployeeSession(credential, storeId, empId) {
+    function setEmployeeSession(credential, storeId, empId, extra) {
+        // Simpan ke sessionStorage & localStorage agar login tetap tersimpan
         ssSet(KEYS.EMP_CRED, credential);
-        ssSet(KEYS.ACTIVE_EMP, JSON.stringify({ storeId: storeId, empId: empId }));
+        lsSet(KEYS.EMP_CRED, credential);
+        var act = JSON.stringify({ storeId: storeId, empId: empId });
+        ssSet(KEYS.ACTIVE_EMP, act);
+        lsSet(KEYS.ACTIVE_EMP, act);
         ssSet(KEYS.AUTH_MODE, 'employee');
+        lsSet(KEYS.AUTH_MODE, 'employee');
+
+        if (extra && extra.name) {
+            addSavedAccount({
+                empId: empId,
+                storeId: storeId,
+                name: extra.name,
+                storeName: extra.storeName || '',
+                shiftNum: extra.shiftNum || 1,
+                photo: extra.photo || '',
+                credential: credential,
+                lastLogin: new Date().toISOString()
+            });
+        }
+    }
+
+    // ---------- Riwayat Akun Tersimpan di Perangkat Ini ----------
+    function getSavedAccounts() {
+        var raw = lsGet(KEYS.SAVED_ACCOUNTS);
+        if (!raw) return [];
+        try {
+            var arr = JSON.parse(raw);
+            return Array.isArray(arr) ? arr : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function addSavedAccount(acc) {
+        try {
+            var list = getSavedAccounts();
+            list = list.filter(function (x) {
+                return x.empId !== acc.empId && String(x.credential).trim() !== String(acc.credential).trim();
+            });
+            list.unshift(acc);
+            if (list.length > 8) list = list.slice(0, 8);
+            lsSet(KEYS.SAVED_ACCOUNTS, JSON.stringify(list));
+        } catch (e) {}
+    }
+
+    function removeSavedAccount(empId) {
+        try {
+            var list = getSavedAccounts().filter(function (x) { return x.empId !== empId; });
+            lsSet(KEYS.SAVED_ACCOUNTS, JSON.stringify(list));
+        } catch (e) {}
     }
 
     // ---------- Admin: dekripsi config.enc ----------
@@ -151,9 +203,15 @@
         var mode = getMode();
 
         if (clearAdmin) lsDel(KEYS.ADMIN_PIN);
-        if (clearEmp) { ssDel(KEYS.EMP_CRED); ssDel(KEYS.ACTIVE_EMP); }
+        if (clearEmp) {
+            ssDel(KEYS.EMP_CRED);
+            lsDel(KEYS.EMP_CRED);
+            ssDel(KEYS.ACTIVE_EMP);
+            lsDel(KEYS.ACTIVE_EMP);
+        }
         if (scope === 'all' || (clearAdmin && mode === 'admin') || (clearEmp && mode === 'employee')) {
             ssDel(KEYS.AUTH_MODE);
+            lsDel(KEYS.AUTH_MODE);
         }
 
         var wiped = false;
@@ -173,6 +231,9 @@
         hasEmployeeSession: hasEmployeeSession,
         setAdminSession: setAdminSession,
         setEmployeeSession: setEmployeeSession,
+        getSavedAccounts: getSavedAccounts,
+        addSavedAccount: addSavedAccount,
+        removeSavedAccount: removeSavedAccount,
         decryptConfig: decryptConfig,
         verifyAdminPin: verifyAdminPin,
         checkEmployeePassword: checkEmployeePassword,

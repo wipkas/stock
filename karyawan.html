@@ -600,6 +600,17 @@
                 </button>
             </form>
 
+            <!-- RIWAYAT AKUN LOGIN DI PERANGKAT INI -->
+            <div id="savedAccountsSection" style="margin-top: 18px; border-top: 1px dashed var(--card-border); padding-top: 14px; display: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-size: 11.5px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">👥 Akun Tersimpan di HP Ini</span>
+                    <span style="font-size: 10.5px; color: var(--primary); font-weight: 700;">Login Cepat</span>
+                </div>
+                <div id="savedAccountsList" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Diisi dinamis via JS -->
+                </div>
+            </div>
+
             <div style="margin-top: 14px; text-align: center;">
                 <button type="button" onclick="showShortcutGuideModal()" style="background: rgba(79, 142, 247, 0.08); border: 1px dashed rgba(79, 142, 247, 0.35); color: var(--primary); padding: 10px 14px; border-radius: 12px; font-size: 12px; font-weight: 750; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; width: 100%; justify-content: center; transition: all 0.15s ease;">
                     <span>📲</span> <span>Pasang Pintasan Kasir ke Layar HP</span>
@@ -786,6 +797,31 @@
                     </ol>
                 </div>
 
+                <!-- KOTAK LINK PINTASAN LENGKAP DENGAN URL PIN (AUTO-LOGIN) -->
+                <div id="pinShortcutBox" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 12px;">
+                    <div style="font-weight: 750; color: var(--success); font-size: 12px; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>🔑 Link Pintasan Otomatis (URL + PIN)</span>
+                        <span id="pinShortcutBadge" style="font-size: 10px; background: rgba(16, 185, 129, 0.2); padding: 2px 6px; border-radius: 6px; color: var(--success); font-weight: 800;">Auto-Login</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); line-height: 1.45; margin-bottom: 8px;">
+                        Link ini berisi parameter PIN. Jika dibuka atau disimpan ke layar utama HP, kasir <b>langsung login otomatis</b> tanpa perlu mengetik PIN lagi.
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <input type="text" id="pinShortcutUrlInput" readonly style="flex: 1; font-size: 11px; padding: 7px 10px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-family: monospace;" value="">
+                        <button type="button" class="btn-cancel" onclick="copyPinShortcutUrl()" style="padding: 7px 12px; font-size: 11px; white-space: nowrap; color: var(--success); font-weight: 800;">
+                            📋 Salin
+                        </button>
+                    </div>
+                    <div style="margin-top: 8px; display: flex; gap: 6px;">
+                        <button type="button" class="btn-cancel" onclick="openPinShortcutInNewTab()" style="flex: 1; padding: 6px 8px; font-size: 11px; font-weight: 700; color: var(--primary); text-align: center;">
+                            🚀 Buka Link PIN di Tab Baru
+                        </button>
+                    </div>
+                    <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">
+                        💡 <b>Tips:</b> Di browser HP (Safari/Chrome), buka link dengan PIN ini lalu pilih <i>"Tambahkan ke Layar Utama"</i>. Pintasan tersebut akan langsung terbuka dengan PIN Anda!
+                    </div>
+                </div>
+
                 <!-- Salin Link Langsung -->
                 <button type="button" class="btn-cancel" onclick="copyCurrentPageUrl()" style="width: 100%; padding: 9px; font-size: 11.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;">
                     <span>🔗</span> <span>Salin Link URL Halaman Ini</span>
@@ -812,34 +848,47 @@
             applySavedTheme();
             loadStoresData();
 
-            // Segarkan data dari cloud bila ada sesi karyawan (offline => data lokal)
-            const savedCred = sessionStorage.getItem('kspcheck_emp_cred');
+            // 1. Cek kredensial karyawan tersimpan: prioritaskan sessionStorage lalu localStorage (Persistent Login)
+            const savedCred = sessionStorage.getItem('kspcheck_emp_cred') || localStorage.getItem('kspcheck_emp_cred');
             if (savedCred && window.KspSync && KspSync.enabled()) {
                 try {
                     const r = await KspSync.empLogin(savedCred);
                     if (r && r.ok) {
                         storesData = [r.store];
-                        sessionStorage.setItem('kspcheck_active_emp', JSON.stringify({ storeId: r.store.id, empId: r.employee.id }));
+                        const actStr = JSON.stringify({ storeId: r.store.id, empId: r.employee.id });
+                        sessionStorage.setItem('kspcheck_emp_cred', savedCred);
+                        localStorage.setItem('kspcheck_emp_cred', savedCred);
+                        sessionStorage.setItem('kspcheck_active_emp', actStr);
+                        localStorage.setItem('kspcheck_active_emp', actStr);
+                        sessionStorage.setItem('kspcheck_auth_mode', 'employee');
+                        localStorage.setItem('kspcheck_auth_mode', 'employee');
                     } else if (r && r.ok === false) {
+                        // Kredensial ditolak eksplisit oleh cloud (misal di-resign-kan/password diubah admin)
                         sessionStorage.removeItem('kspcheck_emp_cred');
+                        localStorage.removeItem('kspcheck_emp_cred');
                         sessionStorage.removeItem('kspcheck_active_emp');
+                        localStorage.removeItem('kspcheck_active_emp');
                     }
                 } catch (err) {
                     console.warn('Cloud tidak terjangkau, memakai data lokal:', err);
                 }
             }
 
-            // Check if employee already logged in
-            const savedSession = sessionStorage.getItem('kspcheck_active_emp');
+            // 2. Pulihkan sesi login aktif karyawan
+            const savedSessionRaw = sessionStorage.getItem('kspcheck_active_emp') || localStorage.getItem('kspcheck_active_emp');
             let sessionRestored = false;
-            if (savedSession) {
+            if (savedSessionRaw) {
                 try {
-                    const session = JSON.parse(savedSession);
+                    const session = JSON.parse(savedSessionRaw);
                     sessionRestored = restoreSession(session);
+                    if (sessionRestored) {
+                        sessionStorage.setItem('kspcheck_active_emp', savedSessionRaw);
+                        if (savedCred) sessionStorage.setItem('kspcheck_emp_cred', savedCred);
+                    }
                 } catch(e) {}
             }
 
-            // Check if ?pin= parameter is provided in URL
+            // 3. Cek parameter ?pin= dari URL (Auto-Login via URL PIN)
             const urlParams = new URLSearchParams(window.location.search);
             const pinFromUrl = urlParams.get('pin');
             if (pinFromUrl) {
@@ -853,7 +902,9 @@
                 }
             }
 
+            // 4. Jika belum login, tampilkan daftar riwayat akun tersimpan & fokus form
             if (!sessionRestored) {
+                renderSavedAccounts();
                 focusPasswordInput();
             }
         });
@@ -983,12 +1034,31 @@
             currentStore = match.store;
             currentEmployee = match.employee;
 
-            // Save active session
-            sessionStorage.setItem('kspcheck_active_emp', JSON.stringify({
+            // Simpan sesi aktif ke sessionStorage & localStorage (Persistent Login agar kasir tidak perlu sering login)
+            const actStr = JSON.stringify({
                 storeId: currentStore.id,
                 empId: currentEmployee.id
-            }));
+            });
+            sessionStorage.setItem('kspcheck_active_emp', actStr);
+            localStorage.setItem('kspcheck_active_emp', actStr);
+            sessionStorage.setItem('kspcheck_emp_cred', pass);
+            localStorage.setItem('kspcheck_emp_cred', pass);
             sessionStorage.setItem('kspcheck_auth_mode', 'employee');
+            localStorage.setItem('kspcheck_auth_mode', 'employee');
+
+            // Simpan riwayat login akun di perangkat ini
+            if (window.KspAuth && typeof KspAuth.addSavedAccount === 'function') {
+                KspAuth.addSavedAccount({
+                    empId: currentEmployee.id,
+                    storeId: currentStore.id,
+                    name: currentEmployee.name,
+                    storeName: currentStore.name || '',
+                    shiftNum: currentEmployee.shift_num || 1,
+                    photo: currentEmployee.photo || '',
+                    credential: pass,
+                    lastLogin: new Date().toISOString()
+                });
+            }
 
             activateDashboard();
         }
@@ -1019,8 +1089,15 @@
         }
 
         function logoutEmployee() {
-            // Hapus sesi + cache data toko (bila aman: cloud aktif & tidak ada data belum tersinkron)
-            KspAuth.clearSession({ scope: 'employee' });
+            // Hapus sesi aktif dari sessionStorage & localStorage
+            if (window.KspAuth && typeof KspAuth.clearSession === 'function') {
+                KspAuth.clearSession({ scope: 'employee' });
+            }
+            sessionStorage.removeItem('kspcheck_emp_cred');
+            localStorage.removeItem('kspcheck_emp_cred');
+            sessionStorage.removeItem('kspcheck_active_emp');
+            localStorage.removeItem('kspcheck_active_emp');
+
             currentStore = null;
             currentEmployee = null;
             const input = document.getElementById('loginPasswordInput');
@@ -1030,6 +1107,9 @@
             document.getElementById('dashboardSection').classList.remove('active');
             document.getElementById('loginSection').style.display = 'block';
             document.getElementById('btnLogoutEmp').style.display = 'none';
+
+            // Segarkan tampilan daftar riwayat akun tersimpan
+            renderSavedAccounts();
             focusPasswordInput();
         }
 
@@ -1403,8 +1483,162 @@
                     }
                 }
             }
+
+            // Perbarui URL Pintasan dengan PIN
+            const pinUrlInput = document.getElementById('pinShortcutUrlInput');
+            const pinUrl = getPinShortcutUrl();
+            if (pinUrlInput) pinUrlInput.value = pinUrl;
+
+            const pinBadge = document.getElementById('pinShortcutBadge');
+            if (pinBadge) {
+                if (pinUrl.includes('?pin=')) {
+                    pinBadge.innerText = '✨ PIN Terpasang (Auto-Login)';
+                    pinBadge.style.background = 'rgba(16, 185, 129, 0.2)';
+                    pinBadge.style.color = 'var(--success)';
+                } else {
+                    pinBadge.innerText = 'Ketik PIN Dahulu';
+                    pinBadge.style.background = 'rgba(245, 158, 11, 0.2)';
+                    pinBadge.style.color = 'var(--warning)';
+                }
+            }
+
             const modal = document.getElementById('shortcutGuideModal');
             if (modal) modal.classList.add('open');
+        }
+
+        function getPinShortcutUrl() {
+            let pin = '';
+            if (currentEmployee && currentEmployee.password) {
+                pin = currentEmployee.password;
+            } else {
+                const savedCred = sessionStorage.getItem('kspcheck_emp_cred') || localStorage.getItem('kspcheck_emp_cred');
+                if (savedCred) {
+                    pin = savedCred;
+                } else {
+                    const input = document.getElementById('loginPasswordInput');
+                    if (input && input.value.trim()) pin = input.value.trim();
+                }
+            }
+
+            const origin = window.location.origin;
+            let path = window.location.pathname;
+            if (path.endsWith('/index.html')) {
+                path = path.slice(0, -10) + 'karyawan.html';
+            } else if (path.endsWith('/karyawan')) {
+                path = path + '.html';
+            } else if (!path.endsWith('karyawan.html')) {
+                path = path.replace(/\/?$/, '/karyawan.html');
+            }
+
+            const base = (window.location.protocol === 'file:') ? window.location.href.split('?')[0] : (origin + path);
+            return pin ? (base + '?pin=' + encodeURIComponent(pin)) : base;
+        }
+
+        function copyPinShortcutUrl() {
+            const input = document.getElementById('pinShortcutUrlInput');
+            const url = input ? input.value : getPinShortcutUrl();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('Link Auto-Login dengan PIN berhasil disalin!', '📋');
+                }).catch(() => {
+                    fallbackCopyUrl(url);
+                });
+            } else {
+                fallbackCopyUrl(url);
+            }
+        }
+
+        function openPinShortcutInNewTab() {
+            const url = getPinShortcutUrl();
+            window.open(url, '_blank');
+        }
+
+        // ===== Manajemen Riwayat Akun Login di HP Ini =====
+        function renderSavedAccounts() {
+            const container = document.getElementById('savedAccountsSection');
+            const listEl = document.getElementById('savedAccountsList');
+            if (!container || !listEl) return;
+
+            const accounts = (window.KspAuth && typeof KspAuth.getSavedAccounts === 'function')
+                ? KspAuth.getSavedAccounts()
+                : [];
+
+            if (!accounts || accounts.length === 0) {
+                container.style.display = 'none';
+                listEl.innerHTML = '';
+                return;
+            }
+
+            container.style.display = 'block';
+            listEl.innerHTML = accounts.map(acc => {
+                const avatar = acc.photo 
+                    ? `<img src="${escapeHtml(acc.photo)}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--primary);">`
+                    : `<div style="width: 36px; height: 36px; border-radius: 50%; background: var(--card-bg); border: 1.5px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 16px;">👤</div>`;
+                
+                const timeStr = formatLastLogin(acc.lastLogin);
+                const safeName = escapeHtml(acc.name);
+                const safeStore = escapeHtml(acc.storeName || 'Cabang');
+                const safeCred = escapeHtml(acc.credential);
+                const empId = escapeHtml(acc.empId);
+
+                return `
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 8px 10px; cursor: pointer; transition: all 0.15s ease;" onclick="quickLoginWithAccount('${safeCred}')" title="Klik untuk masuk sebagai ${safeName}">
+                        <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+                            ${avatar}
+                            <div style="min-width: 0; flex: 1;">
+                                <div style="font-weight: 800; font-size: 13px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${safeName}</div>
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px; display: flex; align-items: center; gap: 6px;">
+                                    <span>🏬 ${safeStore}</span>
+                                    <span>•</span>
+                                    <span style="color: var(--primary); font-weight: 700;">Shift ${acc.shiftNum || 1}</span>
+                                </div>
+                                <div style="font-size: 10px; color: var(--text-muted); margin-top: 1px;">🕒 ${timeStr}</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;" onclick="event.stopPropagation();">
+                            <button type="button" class="btn-cancel" onclick="quickLoginWithAccount('${safeCred}')" style="padding: 6px 10px; font-size: 11px; font-weight: 800; color: var(--primary); background: rgba(79, 142, 247, 0.12); border-color: rgba(79, 142, 247, 0.3);">
+                                Masuk ➜
+                            </button>
+                            <button type="button" onclick="removeSavedAccountCard('${empId}')" style="background: none; border: none; font-size: 14px; color: var(--text-muted); cursor: pointer; padding: 4px;" title="Hapus riwayat akun ini dari HP">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatLastLogin(isoStr) {
+            if (!isoStr) return 'Tersimpan';
+            try {
+                const d = new Date(isoStr);
+                const now = new Date();
+                const isToday = d.toDateString() === now.toDateString();
+                const timeStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                if (isToday) return `Hari ini, ${timeStr}`;
+                const yesterday = new Date(now);
+                yesterday.setDate(yesterday.getDate() - 1);
+                if (d.toDateString() === yesterday.toDateString()) return `Kemarin, ${timeStr}`;
+                return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + `, ${timeStr}`;
+            } catch(e) {
+                return 'Tersimpan';
+            }
+        }
+
+        function quickLoginWithAccount(cred) {
+            const passInput = document.getElementById('loginPasswordInput');
+            if (passInput) {
+                passInput.value = cred;
+                handleEmployeeLogin(new Event('submit'));
+            }
+        }
+
+        function removeSavedAccountCard(empId) {
+            if (window.KspAuth && typeof KspAuth.removeSavedAccount === 'function') {
+                KspAuth.removeSavedAccount(empId);
+            }
+            renderSavedAccounts();
+            showToast('Akun dihapus dari riwayat login HP ini', '🗑️');
         }
 
         function closeShortcutGuideModal() {

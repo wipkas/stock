@@ -2280,7 +2280,8 @@
                 ? KspAuth.getAdminPin() 
                 : localStorage.getItem('kspcheck_viewer_pin');
 
-            if (fromParam === 'manager' || sessionStorage.getItem('kspcheck_auth_mode') === 'admin' || (savedAdminPin && !sessionStorage.getItem('kspcheck_active_emp'))) {
+            const hasEmpSession = !!sessionStorage.getItem('kspcheck_active_emp') || !!localStorage.getItem('kspcheck_active_emp');
+            if (fromParam === 'manager' || sessionStorage.getItem('kspcheck_auth_mode') === 'admin' || (savedAdminPin && !hasEmpSession)) {
                 currentAuthRole = 'admin';
                 sessionStorage.setItem('kspcheck_auth_mode', 'admin');
             } else {
@@ -2289,25 +2290,31 @@
 
             if (currentAuthRole === 'employee') {
                 // Segarkan data karyawan dari cloud (jika ada sesi). Offline => pakai data lokal.
-                const savedCred = sessionStorage.getItem('kspcheck_emp_cred');
+                const savedCred = sessionStorage.getItem('kspcheck_emp_cred') || localStorage.getItem('kspcheck_emp_cred');
                 if (savedCred && window.KspSync && KspSync.enabled()) {
                     try {
                         const r = await KspSync.empLogin(savedCred);
                         if (r && r.ok) {
                             storesData = [r.store];
                             window.__kspEmployeeCloud = true;
-                            sessionStorage.setItem('kspcheck_active_emp', JSON.stringify({ storeId: r.store.id, empId: r.employee.id }));
+                            const actStr = JSON.stringify({ storeId: r.store.id, empId: r.employee.id });
+                            sessionStorage.setItem('kspcheck_active_emp', actStr);
+                            localStorage.setItem('kspcheck_active_emp', actStr);
+                            sessionStorage.setItem('kspcheck_emp_cred', savedCred);
+                            localStorage.setItem('kspcheck_emp_cred', savedCred);
                         } else if (r && r.ok === false) {
                             sessionStorage.removeItem('kspcheck_emp_cred');
+                            localStorage.removeItem('kspcheck_emp_cred');
                             sessionStorage.removeItem('kspcheck_active_emp');
+                            localStorage.removeItem('kspcheck_active_emp');
                         }
                     } catch (err) {
                         console.warn('Cloud karyawan tidak terjangkau, memakai data lokal:', err);
                     }
                 }
 
-                // Periksa sesi karyawan yang tersimpan di sessionStorage
-                const empRaw = sessionStorage.getItem('kspcheck_active_emp');
+                // Periksa sesi karyawan yang tersimpan di sessionStorage atau localStorage
+                const empRaw = sessionStorage.getItem('kspcheck_active_emp') || localStorage.getItem('kspcheck_active_emp');
                 let foundEmp = null;
                 if (empRaw) {
                     try {
@@ -2591,6 +2598,7 @@
                         storesData = [r.store];
                         window.__kspEmployeeCloud = true;
                         sessionStorage.setItem('kspcheck_emp_cred', pass);
+                        localStorage.setItem('kspcheck_emp_cred', pass);
                         match = { store: r.store, employee: r.employee };
                     } else {
                         cloudRejected = true;
@@ -2631,11 +2639,30 @@
             };
             activeStoreId = match.store.id;
 
-            // Simpan sesi karyawan aktif
-            sessionStorage.setItem('kspcheck_active_emp', JSON.stringify({
+            // Simpan sesi karyawan aktif ke sessionStorage & localStorage (Persistent Login)
+            const actStr = JSON.stringify({
                 storeId: match.store.id,
                 empId: match.employee.id
-            }));
+            });
+            sessionStorage.setItem('kspcheck_active_emp', actStr);
+            localStorage.setItem('kspcheck_active_emp', actStr);
+            sessionStorage.setItem('kspcheck_emp_cred', pass);
+            localStorage.setItem('kspcheck_emp_cred', pass);
+            sessionStorage.setItem('kspcheck_auth_mode', 'employee');
+            localStorage.setItem('kspcheck_auth_mode', 'employee');
+
+            if (window.KspAuth && typeof KspAuth.addSavedAccount === 'function') {
+                KspAuth.addSavedAccount({
+                    empId: match.employee.id,
+                    storeId: match.store.id,
+                    name: match.employee.name,
+                    storeName: match.store.name || '',
+                    shiftNum: match.employee.shift_num || 1,
+                    photo: match.employee.photo || '',
+                    credential: pass,
+                    lastLogin: new Date().toISOString()
+                });
+            }
 
             hideEmployeeLoginOverlay();
             const curView = new URLSearchParams(window.location.search).get('view');
@@ -2654,7 +2681,14 @@
             }
             // Hapus sesi + cache data toko (setelah loadStoresData agar state dipulihkan dulu;
             // cache hanya dihapus bila cloud aktif & tidak ada data belum tersinkron)
-            KspAuth.clearSession({ scope: 'employee' });
+            if (window.KspAuth && typeof KspAuth.clearSession === 'function') {
+                KspAuth.clearSession({ scope: 'employee' });
+            }
+            sessionStorage.removeItem('kspcheck_emp_cred');
+            localStorage.removeItem('kspcheck_emp_cred');
+            sessionStorage.removeItem('kspcheck_active_emp');
+            localStorage.removeItem('kspcheck_active_emp');
+
             currentEmployee = null;
             currentAuthRole = 'employee';
             const passInput = document.getElementById('loginPasswordInput');
