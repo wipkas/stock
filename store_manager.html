@@ -1229,6 +1229,46 @@
             background: rgba(16, 185, 129, 0.2);
         }
 
+        .container.container-wide {
+            max-width: 1320px;
+        }
+
+        /* Master Employee View Styling */
+        .master-employees-view {
+            display: none;
+            animation: fadeInMasterView 0.2s ease-out;
+        }
+
+        @keyframes fadeInMasterView {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .master-header-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 18px 22px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 16px var(--shadow-color);
+        }
+
+        .master-tab-bar {
+            display: flex;
+            gap: 8px;
+            padding: 0 4px;
+            border-bottom: 2px solid var(--card-border);
+            margin-bottom: 16px;
+        }
+
+        .master-content-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 16px var(--shadow-color);
+        }
+
         /* Master Employee Tab Buttons & Table */
         .tab-btn-master {
             background: none;
@@ -1706,19 +1746,28 @@
                 min-height: 36px;
             }
 
-            #masterEmployeesModal [style*="overflow-x: auto"]:not(.chip-filter-row) {
+            #masterEmployeesModal [style*="overflow-x: auto"]:not(.chip-filter-row),
+            #masterEmployeesView [style*="overflow-x: auto"]:not(.chip-filter-row) {
                 overflow-x: visible !important;
                 border: none !important;
             }
 
-            #masterEmployeesModal .chip-filter-row {
+            #masterEmployeesModal .chip-filter-row,
+            #masterEmployeesView .chip-filter-row {
                 overflow-x: auto !important;
                 display: flex !important;
                 flex-wrap: nowrap !important;
             }
 
-            #masterEmployeesModal .chip-search-input {
+            #masterEmployeesModal .chip-search-input,
+            #masterEmployeesView .chip-search-input {
                 width: 130px !important;
+            }
+
+            .master-header-card,
+            .master-content-card {
+                padding: 12px 14px;
+                border-radius: 14px;
             }
 
             /* Tabel -> kartu bertumpuk */
@@ -1826,7 +1875,7 @@
             </div>
 
             <div class="top-actions">
-                <button class="btn-primary" onclick="openMasterEmployeesModal()" style="background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.4); color: #0ea5e9;">
+                <button class="btn-primary" id="btnTopMasterEmp" onclick="openMasterEmployeesView()" style="background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.4); color: #0ea5e9;">
                     <span>👥</span> Master Karyawan
                 </button>
                 <div class="top-menu-wrapper" id="topMenuWrapper">
@@ -1918,6 +1967,136 @@
                     </div>
                 </a>
 
+            </div>
+        </section>
+
+        <!-- VIEW 3: HALAMAN MASTER DATA KARYAWAN & RIWAYAT MUTASI -->
+        <section id="masterEmployeesView" class="master-employees-view" style="display: none;">
+            <div class="master-header-card">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <button type="button" class="btn-back-stores" onclick="backFromMasterEmployeesView()">
+                            &larr; <span id="masterBackBtnLabel">Kembali ke Semua Cabang</span>
+                        </button>
+                        <h2 style="font-size: 19px; font-weight: 800; margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+                            <span>👥</span> Master Karyawan &amp; Log Mutasi
+                        </h2>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                            Kelola seluruh personel kasir cabang, mutasi rotasi, dan riwayat penugasan
+                        </p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button type="button" class="btn-primary" onclick="openAddNewEmployeeModal()" style="font-size: 13px; font-weight: 750; padding: 9px 16px; border-radius: 10px;">
+                            <span>➕</span> Tambah Karyawan Baru
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="master-tab-bar">
+                <button type="button" id="tabBtnAllEmployees" class="tab-btn-master active" onclick="switchMasterEmpTab('list')">
+                    📋 Daftar Karyawan (<span id="totalEmpCountBadge">0</span>)
+                </button>
+                <button type="button" id="tabBtnMutationLog" class="tab-btn-master" onclick="switchMasterEmpTab('mutations')">
+                    📜 Log Riwayat Mutasi
+                </button>
+            </div>
+
+            <!-- Main Content Card -->
+            <div class="master-content-card">
+                <!-- TAB 1: LIST KARYAWAN -->
+                <div id="tabMasterEmpList">
+                    <!-- FILTER BAR 2 BARIS CHIP -->
+                    <div class="master-chip-filter-container">
+                        <!-- BARIS 1: SEARCH & STATUS + TOTAL & TAMBAH -->
+                        <div class="chip-filter-row row-status">
+                            <!-- Chip Search Expandable -->
+                            <div id="chipSearchWrapper" style="display: inline-flex; align-items: center; flex-shrink: 0;">
+                                <button type="button" id="btnSearchChip" class="filter-chip chip-search-btn" onclick="toggleSearchChip(true)" title="Cari Nama / Kontak Karyawan">
+                                    <span>🔍</span> <span>Cari</span>
+                                </button>
+                                <div id="searchExpandedContainer" class="search-expanded-container" style="display: none;">
+                                    <span style="font-size: 11.5px;">🔍</span>
+                                    <input type="text" id="searchMasterEmp" placeholder="Cari nama / HP..." oninput="filterMasterEmployeesTable()" class="chip-search-input">
+                                    <button type="button" class="chip-search-close" onclick="toggleSearchChip(false)" title="Tutup Pencarian">&times;</button>
+                                </div>
+                            </div>
+
+                            <!-- Chip Status -->
+                            <button type="button" class="filter-chip chip-status active" data-status="all" onclick="setStatusChip('all')">Semua Status</button>
+                            <button type="button" class="filter-chip chip-status" data-status="active" onclick="setStatusChip('active')">🟢 Aktif</button>
+                            <button type="button" class="filter-chip chip-status" data-status="leave" onclick="setStatusChip('leave')">🏖️ Izin / Libur</button>
+                            <button type="button" class="filter-chip chip-status" data-status="inval" onclick="setStatusChip('inval')">⚡ Inval</button>
+                            <button type="button" class="filter-chip chip-status" data-status="resigned" onclick="setStatusChip('resigned')">🔴 Resign</button>
+
+                            <!-- Counter & Tombol Tambah Karyawan -->
+                            <div class="chip-action-end">
+                                <span class="chip-counter">Total: <b id="filteredEmpCount" style="color: var(--primary);">0</b></span>
+                                <button type="button" class="btn-primary btn-add-emp-chip" onclick="openAddNewEmployeeModal()" title="Tambah Karyawan Baru">
+                                    <span>➕</span> <span>Tambah Karyawan</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- BARIS 2: CABANG TOKO CHIPS -->
+                        <div class="chip-filter-row row-store" id="storeChipFilterRow">
+                            <button type="button" class="filter-chip chip-store active" data-store="all" onclick="setStoreChip('all')">🏢 Semua Cabang</button>
+                            <button type="button" class="filter-chip chip-store" data-store="unassigned" onclick="setStoreChip('unassigned')">🟢 Tanpa Cabang</button>
+                            <!-- Diisi dinamis per cabang -->
+                        </div>
+                    </div>
+
+                    <!-- Table Container -->
+                    <div style="overflow-x: auto; border: 1px solid var(--card-border); border-radius: 12px;">
+                        <table class="emp-master-table">
+                            <thead>
+                                <tr>
+                                    <th>Karyawan</th>
+                                    <th>Cabang Toko</th>
+                                    <th>Kontak &amp; Alamat</th>
+                                    <th>Shift</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>PIN Login</th>
+                                    <th style="text-align: right;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="masterEmpTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 2: LOG MUTASI -->
+                <div id="tabMasterEmpMutations" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div style="font-size: 12.5px; color: var(--text-muted);">
+                            Catatan riwayat pergeseran atau mutasi cabang karyawan yang tercatat di Supabase Cloud:
+                        </div>
+                        <button type="button" class="btn-primary" onclick="loadMutationLogsFromCloud()" style="padding: 4px 10px; font-size: 11px;">
+                            🔄 Muat Ulang Log
+                        </button>
+                    </div>
+                    <div style="overflow-x: auto; border: 1px solid var(--card-border); border-radius: 12px;">
+                        <table class="emp-master-table">
+                            <thead>
+                                <tr>
+                                    <th>Waktu Mutasi</th>
+                                    <th>Nama Karyawan</th>
+                                    <th>Cabang Asal</th>
+                                    <th>Cabang Tujuan</th>
+                                    <th>Shift Baru</th>
+                                    <th>Alasan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mutationLogTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -2507,127 +2686,7 @@
         </div>
     </div>
 
-    <!-- MODAL 7: MASTER DATA KARYAWAN & RIWAYAT MUTASI -->
-    <div id="masterEmployeesModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'masterEmployeesModal')">
-        <div class="modal-card" style="max-width: 980px; width: 95vw; max-height: 90vh; display: flex; flex-direction: column;">
-            <div class="modal-header">
-                <div>
-                    <h3 class="modal-title">👥 Master Karyawan &amp; Log Mutasi</h3>
-                    <p class="modal-subtitle">Kelola seluruh kasir cabang, mutasi rotasi, dan riwayat penugasan</p>
-                </div>
-                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('masterEmployeesModal')">&times;</button>
-            </div>
-
-            <!-- Tab Nav -->
-            <div style="display: flex; gap: 8px; padding: 0 20px; border-bottom: 1px solid var(--card-border); background: var(--bg-color);">
-                <button type="button" id="tabBtnAllEmployees" class="tab-btn-master active" onclick="switchMasterEmpTab('list')">
-                    📋 Daftar Karyawan (<span id="totalEmpCountBadge">0</span>)
-                </button>
-                <button type="button" id="tabBtnMutationLog" class="tab-btn-master" onclick="switchMasterEmpTab('mutations')">
-                    📜 Log Riwayat Mutasi
-                </button>
-            </div>
-
-            <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 18px 20px;">
-                <!-- TAB 1: LIST KARYAWAN -->
-                <div id="tabMasterEmpList">
-                    <!-- FILTER BAR 2 BARIS CHIP -->
-                    <div class="master-chip-filter-container">
-                        <!-- BARIS 1: SEARCH & STATUS + TOTAL & TAMBAH -->
-                        <div class="chip-filter-row row-status">
-                            <!-- Chip Search Expandable -->
-                            <div id="chipSearchWrapper" style="display: inline-flex; align-items: center; flex-shrink: 0;">
-                                <button type="button" id="btnSearchChip" class="filter-chip chip-search-btn" onclick="toggleSearchChip(true)" title="Cari Nama / Kontak Karyawan">
-                                    <span>🔍</span> <span>Cari</span>
-                                </button>
-                                <div id="searchExpandedContainer" class="search-expanded-container" style="display: none;">
-                                    <span style="font-size: 11.5px;">🔍</span>
-                                    <input type="text" id="searchMasterEmp" placeholder="Cari nama / HP..." oninput="filterMasterEmployeesTable()" class="chip-search-input">
-                                    <button type="button" class="chip-search-close" onclick="toggleSearchChip(false)" title="Tutup Pencarian">&times;</button>
-                                </div>
-                            </div>
-
-                            <!-- Chip Status -->
-                            <button type="button" class="filter-chip chip-status active" data-status="all" onclick="setStatusChip('all')">Semua Status</button>
-                            <button type="button" class="filter-chip chip-status" data-status="active" onclick="setStatusChip('active')">🟢 Aktif</button>
-                            <button type="button" class="filter-chip chip-status" data-status="leave" onclick="setStatusChip('leave')">🏖️ Izin / Libur</button>
-                            <button type="button" class="filter-chip chip-status" data-status="inval" onclick="setStatusChip('inval')">⚡ Inval</button>
-                            <button type="button" class="filter-chip chip-status" data-status="resigned" onclick="setStatusChip('resigned')">🔴 Resign</button>
-
-                            <!-- Counter & Tombol Tambah Karyawan -->
-                            <div class="chip-action-end">
-                                <span class="chip-counter">Total: <b id="filteredEmpCount" style="color: var(--primary);">0</b></span>
-                                <button type="button" class="btn-primary btn-add-emp-chip" onclick="openAddNewEmployeeModal()" title="Tambah Karyawan Baru">
-                                    <span>➕</span> <span>Tambah Karyawan</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- BARIS 2: CABANG TOKO CHIPS -->
-                        <div class="chip-filter-row row-store" id="storeChipFilterRow">
-                            <button type="button" class="filter-chip chip-store active" data-store="all" onclick="setStoreChip('all')">🏢 Semua Cabang</button>
-                            <button type="button" class="filter-chip chip-store" data-store="unassigned" onclick="setStoreChip('unassigned')">🟢 Tanpa Cabang</button>
-                            <!-- Diisi dinamis per cabang -->
-                        </div>
-                    </div>
-
-                    <!-- Table Container -->
-                    <div style="overflow-x: auto; border: 1px solid var(--card-border); border-radius: 12px;">
-                        <table class="emp-master-table">
-                            <thead>
-                                <tr>
-                                    <th>Karyawan</th>
-                                    <th>Cabang Toko</th>
-                                    <th>Kontak &amp; Alamat</th>
-                                    <th>Shift</th>
-                                    <th>Role</th>
-                                    <th>Status</th>
-                                    <th>PIN Login</th>
-                                    <th style="text-align: right;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="masterEmpTableBody">
-                                <!-- Populated dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- TAB 2: LOG MUTASI -->
-                <div id="tabMasterEmpMutations" style="display: none;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <div style="font-size: 12.5px; color: var(--text-muted);">
-                            Catatan riwayat pergeseran atau mutasi cabang karyawan yang tercatat di Supabase Cloud:
-                        </div>
-                        <button type="button" class="btn-primary" onclick="loadMutationLogsFromCloud()" style="padding: 4px 10px; font-size: 11px;">
-                            🔄 Muat Ulang Log
-                        </button>
-                    </div>
-                    <div style="overflow-x: auto; border: 1px solid var(--card-border); border-radius: 12px;">
-                        <table class="emp-master-table">
-                            <thead>
-                                <tr>
-                                    <th>Waktu Mutasi</th>
-                                    <th>Nama Karyawan</th>
-                                    <th>Cabang Asal</th>
-                                    <th>Cabang Tujuan</th>
-                                    <th>Shift Baru</th>
-                                    <th>Alasan</th>
-                                </tr>
-                            </thead>
-                            <tbody id="mutationLogTableBody">
-                                <!-- Populated dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-footer" style="justify-content: flex-end;">
-                <button type="button" class="btn-secondary" onclick="closeModal('masterEmployeesModal')">Tutup</button>
-            </div>
-        </div>
-    </div>
+    <!-- (MODAL 7 kini menjadi VIEW 3: masterEmployeesView untuk tampilan luas) -->
 
     <!-- MODAL 9: TAMBAH KARYAWAN BARU (MASTER DATA) -->
     <div id="addNewEmployeeModal" class="modal-backdrop" style="z-index: 1250;" onclick="handleBackdropClose(event, 'addNewEmployeeModal')">
@@ -2911,6 +2970,11 @@
                         renderStoresGrid();
                         const dv2 = document.getElementById('storeDetailView');
                         if (activeStoreId && dv2 && dv2.classList.contains('active')) selectStore(activeStoreId);
+                        const mv = document.getElementById('masterEmployeesView');
+                        if (mv && mv.style.display !== 'none') {
+                            renderStoreFilterChips();
+                            filterMasterEmployeesTable();
+                        }
                     }
                 });
             }
@@ -2953,15 +3017,14 @@
                 // Sinkronisasi dengan Supabase (data cabang, karyawan, transaksi, usulan)
                 if (window.KspSync) KspSync.adminPull();
 
-                // Check URL parameter ?store= or localStorage
+                // Check URL parameter ?store=, ?view= or localStorage
                 const urlParams = new URLSearchParams(window.location.search);
                 const storeParam = urlParams.get('store');
-                const savedStoreId = localStorage.getItem('kspcheck_active_store_id');
-                const targetStoreId = (storeParam && storesData.some(s => s.id === storeParam))
-                    ? storeParam
-                    : (savedStoreId && storesData.some(s => s.id === savedStoreId) ? savedStoreId : (storesData[0] ? storesData[0].id : ''));
+                const viewParam = urlParams.get('view');
 
-                if (storeParam && storesData.some(s => s.id === storeParam)) {
+                if (viewParam === 'master' || viewParam === 'employees') {
+                    openMasterEmployeesView(storeParam);
+                } else if (storeParam && storesData.some(s => s.id === storeParam)) {
                     selectStore(storeParam);
                 }
 
@@ -2982,6 +3045,10 @@
             // Hapus sesi admin + cache data toko (bila aman: cloud aktif & tidak ada data belum tersinkron)
             KspAuth.clearSession({ scope: 'admin' });
             document.getElementById('pinInput').value = '';
+            const masterView = document.getElementById('masterEmployeesView');
+            if (masterView) masterView.style.display = 'none';
+            const mainContainer = document.getElementById('mainApp');
+            if (mainContainer) mainContainer.classList.remove('container-wide');
             document.getElementById('pinModal').style.display = 'flex';
             document.getElementById('mainApp').style.display = 'none';
         }
@@ -3240,6 +3307,10 @@
             } catch(e) {}
 
             document.getElementById('storesListView').style.display = 'none';
+            const masterView = document.getElementById('masterEmployeesView');
+            if (masterView) masterView.style.display = 'none';
+            const mainContainer = document.getElementById('mainApp');
+            if (mainContainer) mainContainer.classList.remove('container-wide');
             const detailView = document.getElementById('storeDetailView');
             detailView.classList.add('active');
 
@@ -3297,12 +3368,20 @@
                 const currentUrl = new URL(window.location.href);
                 if (currentUrl.searchParams.has('store')) {
                     currentUrl.searchParams.delete('store');
-                    window.history.replaceState({}, '', currentUrl.pathname + (currentUrl.search ? currentUrl.search : ''));
                 }
+                if (currentUrl.searchParams.has('view')) {
+                    currentUrl.searchParams.delete('view');
+                }
+                window.history.replaceState({}, '', currentUrl.pathname + (currentUrl.search ? currentUrl.search : ''));
             } catch(e) {}
 
             const savedStoreId = localStorage.getItem('kspcheck_active_store_id') || (storesData[0] ? storesData[0].id : '');
-            document.getElementById('storeDetailView').classList.remove('active');
+            const detailView = document.getElementById('storeDetailView');
+            if (detailView) detailView.classList.remove('active');
+            const masterView = document.getElementById('masterEmployeesView');
+            if (masterView) masterView.style.display = 'none';
+            const mainContainer = document.getElementById('mainApp');
+            if (mainContainer) mainContainer.classList.remove('container-wide');
             document.getElementById('storesListView').style.display = 'block';
             renderStoresGrid();
         }
@@ -4183,8 +4262,47 @@
         let activeMasterEmpTab = 'list';
         let currentMasterStatusFilter = 'all';
         let currentMasterStoreFilter = 'all';
+        let previousViewBeforeMaster = 'storesList';
 
-        function openMasterEmployeesModal(filterStoreId = null) {
+        function openMasterEmployeesView(filterStoreId = null) {
+            // Tentukan view asal sebelum masuk ke Master Data
+            const detailView = document.getElementById('storeDetailView');
+            if (detailView && detailView.classList.contains('active')) {
+                previousViewBeforeMaster = 'storeDetail';
+            } else {
+                previousViewBeforeMaster = 'storesList';
+            }
+
+            // Atur teks label tombol kembali
+            const backLabel = document.getElementById('masterBackBtnLabel');
+            if (backLabel) {
+                if (previousViewBeforeMaster === 'storeDetail') {
+                    const curStore = storesData.find(s => s.id === activeStoreId);
+                    backLabel.innerText = curStore ? `Kembali ke Cabang ${curStore.name}` : 'Kembali ke Detail Cabang';
+                } else {
+                    backLabel.innerText = 'Kembali ke Semua Cabang';
+                }
+            }
+
+            // Sembunyikan view lainnya
+            const storesList = document.getElementById('storesListView');
+            if (storesList) storesList.style.display = 'none';
+            if (detailView) detailView.classList.remove('active');
+
+            // Tampilkan masterEmployeesView dan lebarkan container ke mode wide
+            const masterView = document.getElementById('masterEmployeesView');
+            if (masterView) masterView.style.display = 'block';
+            const mainContainer = document.getElementById('mainApp');
+            if (mainContainer) mainContainer.classList.add('container-wide');
+
+            // Update URL search parameters
+            try {
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('view', 'employees');
+                if (filterStoreId) currentUrl.searchParams.set('store', filterStoreId);
+                window.history.replaceState({}, '', currentUrl.toString());
+            } catch(e) {}
+
             if (filterStoreId) {
                 currentMasterStoreFilter = filterStoreId;
             } else {
@@ -4193,7 +4311,9 @@
             renderStoreFilterChips();
             switchMasterEmpTab('list');
             filterMasterEmployeesTable();
-            openModal('masterEmployeesModal');
+
+            // Scroll mulus ke posisi atas halaman
+            window.scrollTo({ top: 0, behavior: 'smooth' });
 
             // Selalu ambil data master karyawan terbaru dari cloud Supabase (ksp_employees)
             if (window.KspSync && window.KspSync.enabled()) {
@@ -4204,6 +4324,32 @@
                     console.warn('[StoreManager] Auto-fetch master employees warning:', e);
                 });
             }
+        }
+
+        function backFromMasterEmployeesView() {
+            const masterView = document.getElementById('masterEmployeesView');
+            if (masterView) masterView.style.display = 'none';
+            const mainContainer = document.getElementById('mainApp');
+            if (mainContainer) mainContainer.classList.remove('container-wide');
+
+            try {
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.delete('view');
+                if (previousViewBeforeMaster !== 'storeDetail') {
+                    currentUrl.searchParams.delete('store');
+                }
+                window.history.replaceState({}, '', currentUrl.pathname + (currentUrl.search ? currentUrl.search : ''));
+            } catch(e) {}
+
+            if (previousViewBeforeMaster === 'storeDetail' && activeStoreId) {
+                selectStore(activeStoreId);
+            } else {
+                backToStoresList();
+            }
+        }
+
+        function openMasterEmployeesModal(filterStoreId = null) {
+            openMasterEmployeesView(filterStoreId);
         }
 
         function renderStoreFilterChips() {
@@ -6269,6 +6415,10 @@ _(Buka link di atas untuk langsung masuk ke portal kasir tanpa mengetik PIN)_`;
         }
 
         function closeModal(id) {
+            if (id === 'masterEmployeesModal') {
+                backFromMasterEmployeesView();
+                return;
+            }
             const el = document.getElementById(id);
             if (!el) return;
             el.classList.remove('open');
