@@ -4874,17 +4874,15 @@
             const pathParts = window.location.pathname.split('/');
             pathParts.pop(); // buang store_manager.html
             const basePath = pathParts.join('/');
-            const portalUrl = `${baseOrigin}${basePath}/karyawan.html${emp.password ? '?pin=' + encodeURIComponent(emp.password) : ''}`;
+            const portalUrl = `${baseOrigin}${basePath}/karyawan${emp.password ? '?pin=' + encodeURIComponent(emp.password) : ''}`;
 
-            const textToCopy = `📋 *Akses Portal Kasir KSP Check*
+            const textToCopy = `
 👤 Nama: ${emp.name}
 🏬 Cabang: ${emp.store_name || 'Tanpa Cabang'}
-🔑 PIN / Password: ${emp.password ? emp.password : '(Belum diatur)'}
 
-🔗 *Link Akses Langsung:*
+🔗 *Link Akses:*
 ${portalUrl}
-
-_(Buka link di atas untuk langsung masuk ke portal kasir tanpa mengetik PIN)_`;
+`;
 
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(textToCopy).then(() => {
