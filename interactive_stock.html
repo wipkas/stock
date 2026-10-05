@@ -7786,7 +7786,137 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     }
                 }
             });
+            computeExtraIncomingItems();
             saveRestockOrdersToStorage();
+        }
+
+        /**
+         * Barang masuk yang TIDAK ada di daftar order manapun (mis. beli dadakan / bonus).
+         * Sumber: laporan harian (restocked + added) dan audit trail Supabase (stock_diff > 0).
+         * Tiap kejadian dicatat ke order terbaru di perangkat itu yang tanggalnya <= tanggal barang masuk.
+         * Hasil disimpan di order.extra_items (tidak mengubah actual_cost order).
+         */
+        function computeExtraIncomingItems() {
+            const active = allRestockOrders.filter(o => o.status !== 'cancelled');
+            active.forEach(o => { o.extra_items = []; });
+
+            // Kelompokkan order per perangkat
+            const byDev = new Map();
+            active.forEach(o => {
+                const devs = new Set();
+                if (o.device_id && o.device_id !== 'all') devs.add(o.device_id);
+                else (o.items || []).forEach(it => { if (it.device_id && it.device_id !== 'all') devs.add(it.device_id); });
+                devs.forEach(d => {
+                    if (!byDev.has(d)) byDev.set(d, []);
+                    byDev.get(d).push(o);
+                });
+            });
+            byDev.forEach(list => list.sort((a, b) => parseDateSafe(a.created_at) - parseDateSafe(b.created_at)));
+
+            // Order terbaru yang sudah ada saat kejadian; eligible = semua order yang sudah ada saat itu
+            function pickOrders(devId, eventTime, eventDateStr) {
+                const list = byDev.get(devId) || [];
+                const eligible = list.filter(o => {
+                    const t = parseDateSafe(o.created_at);
+                    if (eventDateStr) return getLocalDateString(new Date(t)) <= eventDateStr;
+                    return (t - 600000) <= eventTime;
+                });
+                return { ord: eligible.length ? eligible[eligible.length - 1] : null, eligible };
+            }
+
+            function isListed(eligible, devId, candId, name, prov, cat) {
+                return eligible.some(o => (o.items || []).some(it => {
+                    const itId = parseInt(it.product_id || 0, 10);
+                    return isSameOrderProduct(it, itId, devId, devId, candId, name, prov, cat);
+                }));
+            }
+
+            const acc = new Map(); // key: orderId||pid -> data
+            function addExtra(ord, kind, pid, name, prov, cat, qty, cost) {
+                if (!ord || qty <= 0) return;
+                const key = ord.id + '||' + (pid > 0 ? pid : cleanProdName(name) + '|' + normCategoryName(cat));
+                let e = acc.get(key);
+                if (!e) {
+                    e = { order: ord, product_id: pid, product_name: name, provider_name: prov, category_name: cat, rep: 0, aud: 0, cost: 0 };
+                    acc.set(key, e);
+                }
+                e[kind] += qty;
+                if (cost > 0) e.cost = cost;
+            }
+
+            // 1. Laporan harian
+            if (allDailyReports && allDailyReports.size > 0) {
+                allDailyReports.forEach((rep, devId) => {
+                    if (!byDev.has(devId) || !rep || !Array.isArray(rep.items)) return;
+                    const repDateStr = rep.dateStr || getLocalDateString(new Date());
+                    const p = repDateStr.split('-');
+                    if (p.length !== 3) return;
+                    const bd3 = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+                    const bd2 = new Date(bd3); bd2.setDate(bd2.getDate() - 1);
+                    const bd1 = new Date(bd3); bd1.setDate(bd1.getDate() - 2);
+                    const days = [
+                        { s: getLocalDateString(bd1), k: 'D1' },
+                        { s: getLocalDateString(bd2), k: 'D2' },
+                        { s: getLocalDateString(bd3), k: 'D3' }
+                    ];
+                    rep.items.forEach(ri => {
+                        if (!ri || ri.type !== 'product') return;
+                        const rPId = parseInt(ri.productId || ri.product_id || 0, 10);
+                        const cost = parseInt(String(ri.cost || '').replace(/[^\d]/g, ''), 10) || 0;
+                        days.forEach(d => {
+                            const qty = parseInt(ri['restocked' + d.k] || 0, 10) + parseInt(ri['added' + d.k] || 0, 10);
+                            if (qty <= 0) return;
+                            const { ord, eligible } = pickOrders(devId, 0, d.s);
+                            if (!ord) return;
+                            const cat = ri.categoryName || ri.category_name || '';
+                            if (isListed(eligible, devId, rPId, ri.productName, ri.providerName, cat)) return;
+                            addExtra(ord, 'rep', rPId, ri.productName, ri.providerName || '', cat, qty, cost);
+                        });
+                    });
+                });
+            }
+
+            // 2. Audit trail Supabase
+            (allVouchers || []).forEach(v => {
+                const devId = v.device_id;
+                if (!byDev.has(devId)) return;
+                const history = v.change_history;
+                if (!Array.isArray(history)) return;
+                const vId = parseInt(v.product_id || v.id || 0, 10);
+                history.forEach(entry => {
+                    const diff = parseInt(entry.stock_diff || 0, 10);
+                    if (diff <= 0) return;
+                    const t = parseDateSafe(entry.timestamp);
+                    if (!t) return;
+                    const { ord, eligible } = pickOrders(devId, t, null);
+                    if (!ord) return;
+                    const cat = v.category_name || v.category || '';
+                    if (isListed(eligible, devId, vId, v.product_name, v.provider_name, cat)) return;
+                    const c = parseInt(entry.new_cost_price || 0, 10) || parseInt(v.cost_price || 0, 10) || 0;
+                    addExtra(ord, 'aud', vId, v.product_name, v.provider_name || '', cat, diff, c);
+                });
+            });
+
+            // Gabungkan: ambil nilai terbesar antara laporan & audit (hindari hitung ganda)
+            acc.forEach(e => {
+                const qty = Math.max(e.rep, e.aud);
+                if (qty <= 0) return;
+                e.order.extra_items.push({
+                    product_id: e.product_id,
+                    product_name: e.product_name,
+                    provider_name: e.provider_name,
+                    category_name: e.category_name,
+                    received_qty: qty,
+                    actual_unit_cost: e.cost,
+                    item_actual_cost: qty * e.cost
+                });
+            });
+            active.forEach(o => {
+                o.extra_items.sort((a, b) => (a.provider_name || '').localeCompare(b.provider_name || '') ||
+                    (a.product_name || '').localeCompare(b.product_name || ''));
+                o.extra_received_pcs = o.extra_items.reduce((s, x) => s + x.received_qty, 0);
+                o.extra_cost = o.extra_items.reduce((s, x) => s + x.item_actual_cost, 0);
+            });
         }
 
         let historySelectedDateStr = getLocalDateString(new Date());
@@ -8116,6 +8246,42 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                             <td class="right"><b>Rp ${itSubtotalAct.toLocaleString('id-ID')}</b></td>
                         </tr>`;
                 });
+
+                // Barang masuk yang tidak ada di daftar order
+                const extraItems = order.extra_items || [];
+                if (extraItems.length > 0) {
+                    html += `
+                        <tr>
+                            <td colspan="7" style="background:rgba(245,166,35,0.12); color:var(--warning); font-weight:700; font-size:11.5px; padding:6px 10px;">
+                                ➕ Barang masuk di luar daftar order (${extraItems.length} item • ${order.extra_received_pcs || 0} pcs)
+                            </td>
+                        </tr>`;
+                    extraItems.forEach(ex => {
+                        const exInfo = getProductTitleAndCategoryBadge(ex.product_name, ex.category_name, ex.provider_name);
+                        const exCost = ex.actual_unit_cost || 0;
+                        html += `
+                        <tr>
+                            <td>
+                                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                    <b>${escapeHtml(exInfo.cleanTitle)}</b>
+                                    ${exInfo.badgeHtml}
+                                </div>
+                                ${ex.provider_name ? `<div style="font-size:10px; color:var(--text-muted); margin-top:2px;">${escapeHtml(ex.provider_name)}</div>` : ''}
+                            </td>
+                            <td class="center" style="color:var(--text-muted);">—</td>
+                            <td class="center"><b style="color:var(--warning);">${ex.received_qty}</b> pcs</td>
+                            <td class="center"><span style="color:var(--warning); font-weight:700;">🆕 Tidak di order</span></td>
+                            <td class="right" style="color:var(--text-muted);">—</td>
+                            <td class="right">Rp ${exCost.toLocaleString('id-ID')}</td>
+                            <td class="right"><b>Rp ${(ex.item_actual_cost || 0).toLocaleString('id-ID')}</b></td>
+                        </tr>`;
+                    });
+                    html += `
+                        <tr>
+                            <td colspan="6" class="right" style="font-size:11px; color:var(--text-muted);">Total di luar order (tidak termasuk Biaya Riil Masuk)</td>
+                            <td class="right"><b style="color:var(--warning);">Rp ${(order.extra_cost || 0).toLocaleString('id-ID')}</b></td>
+                        </tr>`;
+                }
 
                 html += `
                             </tbody>
