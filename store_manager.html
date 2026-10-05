@@ -329,6 +329,13 @@
             align-items: center;
             justify-content: space-between;
             gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .shift-roster-box:hover {
+            border-color: rgba(79, 142, 247, 0.45);
+            background: rgba(79, 142, 247, 0.03);
         }
 
         .shift-col {
@@ -340,12 +347,26 @@
             border-radius: 9px;
             border: 1.5px solid transparent;
             transition: all 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .shift-col:hover {
+            border-color: rgba(79, 142, 247, 0.4);
+            background: rgba(79, 142, 247, 0.08);
+            transform: translateY(-1px);
         }
 
         .shift-col.active-shift-col {
             background: rgba(16, 185, 129, 0.12);
             border-color: #10B981;
             box-shadow: 0 0 10px rgba(16, 185, 129, 0.18);
+        }
+
+        .shift-col.active-shift-col:hover {
+            background: rgba(16, 185, 129, 0.18);
+            border-color: #10B981;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.28);
         }
 
         .shift-col.active-shift-col .emp-name-badge {
@@ -355,6 +376,9 @@
 
         .shift-col.inactive-shift-col {
             opacity: 0.62;
+        }
+        .shift-col.inactive-shift-col:hover {
+            opacity: 0.95;
         }
 
         .active-shift-pill {
@@ -433,6 +457,254 @@
 
         .btn-roll-shift:hover .roll-icon { transform: rotate(180deg); }
         .btn-roll-shift:active { transform: scale(0.95); }
+
+        /* Shift Roster Employee Card Modal Styling */
+        .shift-roster-modal-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 10px 18px 0 18px;
+            border-bottom: 1px solid var(--card-border);
+            background: var(--bg-color);
+        }
+
+        .tab-shift-modal {
+            background: none;
+            border: none;
+            border-bottom: 2.5px solid transparent;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 750;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab-shift-modal:hover {
+            color: var(--text-main);
+        }
+
+        .tab-shift-modal.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .emp-card-roster {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px 18px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .emp-card-roster-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .emp-card-roster-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2.5px solid var(--primary);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+            flex-shrink: 0;
+        }
+
+        .emp-card-roster-avatar-placeholder {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: rgba(79, 142, 247, 0.12);
+            border: 2px dashed rgba(79, 142, 247, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .emp-card-roster-title-wrap {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .emp-card-roster-name {
+            font-size: 16px;
+            font-weight: 850;
+            color: var(--text-main);
+            line-height: 1.25;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .emp-card-roster-badges {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        .emp-card-roster-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px 14px;
+            font-size: 12px;
+            margin-bottom: 16px;
+        }
+
+        .emp-card-info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .emp-card-info-label {
+            font-size: 10.5px;
+            color: var(--text-muted);
+            font-weight: 650;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .emp-card-info-value {
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .emp-card-roster-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 8px;
+            padding-top: 14px;
+            border-top: 1px dashed var(--card-border);
+        }
+
+        .btn-roster-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 10px;
+            border-radius: 9px;
+            font-size: 11.5px;
+            font-weight: 750;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-main);
+            text-decoration: none;
+            user-select: none;
+        }
+
+        .btn-roster-action:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-roster-action:active {
+            transform: translateY(0);
+        }
+
+        .btn-roster-action.btn-action-copy {
+            background: rgba(79, 142, 247, 0.12);
+            border-color: rgba(79, 142, 247, 0.35);
+            color: var(--primary);
+        }
+        .btn-roster-action.btn-action-copy:hover {
+            background: var(--primary);
+            color: #FFFFFF;
+        }
+
+        .btn-roster-action.btn-action-edit {
+            background: rgba(245, 158, 11, 0.12);
+            border-color: rgba(245, 158, 11, 0.35);
+            color: #F59E0B;
+        }
+        .btn-roster-action.btn-action-edit:hover {
+            background: #F59E0B;
+            color: #FFFFFF;
+        }
+
+        .btn-roster-action.btn-action-leave {
+            background: rgba(14, 165, 233, 0.12);
+            border-color: rgba(14, 165, 233, 0.35);
+            color: #0EA5E9;
+        }
+        .btn-roster-action.btn-action-leave:hover {
+            background: #0EA5E9;
+            color: #FFFFFF;
+        }
+
+        .btn-roster-action.btn-action-transfer {
+            background: rgba(139, 92, 246, 0.12);
+            border-color: rgba(139, 92, 246, 0.35);
+            color: #8B5CF6;
+        }
+        .btn-roster-action.btn-action-transfer:hover {
+            background: #8B5CF6;
+            color: #FFFFFF;
+        }
+
+        .btn-roster-action.btn-action-resign {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: var(--danger);
+        }
+        .btn-roster-action.btn-action-resign:hover {
+            background: var(--danger);
+            color: #FFFFFF;
+        }
+
+        .btn-roster-action.btn-action-return {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.4);
+            color: var(--success);
+        }
+        .btn-roster-action.btn-action-return:hover {
+            background: var(--success);
+            color: #FFFFFF;
+        }
+
+        .pin-peek-box {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            padding: 2px 6px;
+        }
+
+        .pin-peek-btn {
+            background: none;
+            border: none;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 0 2px;
+            line-height: 1;
+            color: var(--text-muted);
+        }
+        .pin-peek-btn:hover {
+            color: var(--primary);
+        }
 
 
 
@@ -2541,6 +2813,35 @@
         </div>
     </div>
 
+    <!-- MODAL: DETAIL KARYAWAN SHIFT ROSTER -->
+    <div id="shiftRosterEmployeeModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'shiftRosterEmployeeModal')">
+        <div class="modal-card" style="max-width: 580px; width: 95vw; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="shiftRosterModalTitle">👤 Detail Karyawan Shift</h3>
+                    <p class="modal-subtitle" id="shiftRosterModalSubtitle">Informasi dan kelola kasir bertugas di cabang ini</p>
+                </div>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('shiftRosterEmployeeModal')">&times;</button>
+            </div>
+
+            <!-- Tab Nav Shift (jika multi-shift) -->
+            <div id="shiftRosterModalTabs" class="shift-roster-modal-tabs" style="display: none;">
+                <!-- Diisi dinamis via JS -->
+            </div>
+
+            <div class="modal-body" id="shiftRosterModalContent" style="padding: 16px 20px; overflow-y: auto; flex: 1;">
+                <!-- Diisi dinamis via JS: Card Karyawan beserta semua fiturnya -->
+            </div>
+
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                <button type="button" class="btn-secondary" id="btnRosterJumpMaster" onclick="jumpFromRosterToMaster()" style="font-size: 12px; display: inline-flex; align-items: center; gap: 5px;" title="Lihat daftar master karyawan lengkap">
+                    <span>👥</span> <span>Master Karyawan</span>
+                </button>
+                <button type="button" class="btn-primary" onclick="closeModal('shiftRosterEmployeeModal')">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <!-- APP SCRIPT LOGIC -->
     <script>
         let storesData = [];
@@ -2834,8 +3135,11 @@
                             </div>
                         </div>
 
-                        <div class="shift-roster-box" onclick="event.stopPropagation();"${multiShift ? '' : ' style="justify-content: flex-start;"'}>
-                            <div class="shift-col ${multiShift ? (isS1Active ? 'active-shift-col' : 'inactive-shift-col') : 'active-shift-col'}">
+                        <div class="shift-roster-box" onclick="openShiftRosterEmployeeModal(event, '${store.id}', ${isS2Active ? 2 : 1});"${multiShift ? '' : ' style="justify-content: flex-start;"'} title="Klik untuk lihat detail &amp; kelola kasir shift cabang ini">
+                            <div class="shift-col ${multiShift ? (isS1Active ? 'active-shift-col' : 'inactive-shift-col') : 'active-shift-col'}"
+                                 role="button" tabindex="0"
+                                 onclick="openShiftRosterEmployeeModal(event, '${store.id}', 1)"
+                                 title="Klik untuk detail &amp; kelola kasir ${multiShift ? 'Shift 1 (Pagi)' : 'Full Shift'}">
                                 <div class="shift-tag morning">
                                     <span>🌅 ${multiShift ? 'Pagi' : 'Full Shift'}</span>
                                     ${(!multiShift || isS1Active) ? '<span class="active-shift-pill">🟢 AKTIF</span>' : ''}
@@ -2847,7 +3151,10 @@
                                 <span class="roll-icon">⇄</span>
                                 <span>Roll Shift</span>
                             </button>
-                            <div class="shift-col right ${isS2Active ? 'active-shift-col' : 'inactive-shift-col'}">
+                            <div class="shift-col right ${isS2Active ? 'active-shift-col' : 'inactive-shift-col'}"
+                                 role="button" tabindex="0"
+                                 onclick="openShiftRosterEmployeeModal(event, '${store.id}', 2)"
+                                 title="Klik untuk detail &amp; kelola kasir Shift 2 (Malam)">
                                 <div class="shift-tag night">
                                     ${isS2Active ? '<span class="active-shift-pill">🟢 AKTIF</span>' : ''}
                                     <span>🌙 Malam</span>
@@ -3974,6 +4281,255 @@ _(Buka link di atas untuk langsung masuk ke portal kasir tanpa mengetik PIN)_`;
             document.body.removeChild(ta);
         }
 
+        // ==========================================
+        // DIALOG CARD KARYAWAN SHIFT ROSTER
+        // ==========================================
+
+        let currentRosterModalStoreId = null;
+        let currentRosterModalShiftNum = 1;
+
+        function openShiftRosterEmployeeModal(event, storeId, shiftNum) {
+            if (event) event.stopPropagation();
+            currentRosterModalStoreId = storeId;
+            currentRosterModalShiftNum = shiftNum || 1;
+            renderShiftRosterModal();
+            openModal('shiftRosterEmployeeModal');
+        }
+
+        function switchShiftRosterModalTab(shiftNum) {
+            currentRosterModalShiftNum = shiftNum;
+            renderShiftRosterModal();
+        }
+
+        function jumpFromRosterToMaster() {
+            const storeId = currentRosterModalStoreId;
+            closeModal('shiftRosterEmployeeModal');
+            openMasterEmployeesModal(storeId);
+        }
+
+        function toggleRosterPinPeek(empId, pinVal) {
+            const el = document.getElementById('rosterEmpPinText_' + empId);
+            if (!el) return;
+            if (el.innerText === '••••') {
+                el.innerText = pinVal || '(Belum diset)';
+                el.style.letterSpacing = 'normal';
+            } else {
+                el.innerText = '••••';
+                el.style.letterSpacing = '2px';
+            }
+        }
+
+        function copyDirectPin(pinVal) {
+            if (!pinVal) {
+                showToast('⚠️ PIN belum diatur untuk karyawan ini.', '⚠️');
+                return;
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(pinVal).then(() => {
+                    showToast('✅ PIN berhasil disalin ke clipboard!', '🔑');
+                });
+            } else {
+                showToast(`PIN: ${pinVal}`, '🔑');
+            }
+        }
+
+        function renderShiftRosterModal() {
+            const store = storesData.find(s => s.id === currentRosterModalStoreId);
+            const container = document.getElementById('shiftRosterModalContent');
+            const titleEl = document.getElementById('shiftRosterModalTitle');
+            const subTitleEl = document.getElementById('shiftRosterModalSubtitle');
+            const tabsContainer = document.getElementById('shiftRosterModalTabs');
+            if (!store || !container) return;
+
+            const multiShift = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) > 1;
+            const shiftCount = parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1);
+
+            // Tab navigation
+            if (multiShift && tabsContainer) {
+                tabsContainer.style.display = 'flex';
+                let tabHtml = '';
+                for (let sNum = 1; sNum <= shiftCount; sNum++) {
+                    const isCurrent = (currentRosterModalShiftNum === sNum);
+                    const sInfo = (store.shifts || []).find(s => s.shift_num === sNum) || { name: (sNum === 1 ? 'Pagi' : 'Malam') };
+                    const sIcon = sNum === 1 ? '🌅' : (sNum === 2 ? '🌙' : '⏰');
+                    tabHtml += `
+                        <button type="button" class="tab-shift-modal ${isCurrent ? 'active' : ''}" onclick="switchShiftRosterModalTab(${sNum})">
+                            <span>${sIcon}</span> <span>${escapeHtml(sInfo.name || ('Shift ' + sNum))}</span>
+                        </button>
+                    `;
+                }
+                tabsContainer.innerHTML = tabHtml;
+            } else if (tabsContainer) {
+                tabsContainer.style.display = 'none';
+            }
+
+            const currentShiftInfo = (store.shifts || []).find(s => s.shift_num === currentRosterModalShiftNum) || { start: '07:00', end: '15:00' };
+            const shiftTitle = multiShift ? (currentRosterModalShiftNum === 1 ? 'Shift 1 (Pagi)' : 'Shift 2 (Malam)') : 'Full Shift';
+
+            if (titleEl) titleEl.innerHTML = `👤 Kasir ${shiftTitle} • ${escapeHtml(store.name)}`;
+            if (subTitleEl) subTitleEl.innerText = `${store.name} • Jam Kerja: ${currentShiftInfo.start || '-'} - ${currentShiftInfo.end || '-'} WIB`;
+
+            const shiftEmps = (store.employees || []).filter(e => e.shift_num === currentRosterModalShiftNum);
+            const liveStatus = getShiftStatus(store);
+            const isShiftActiveNow = (liveStatus.currentShift && liveStatus.currentShift.shift_num === currentRosterModalShiftNum);
+
+            if (shiftEmps.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 36px 16px; background: var(--input-bg); border: 1.5px dashed var(--card-border); border-radius: 16px;">
+                        <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
+                        <h4 style="margin: 0 0 6px 0; font-size: 16px; font-weight: 850; color: var(--text-main);">Belum Ada Kasir di ${shiftTitle}</h4>
+                        <p style="margin: 0 0 20px 0; font-size: 12.5px; color: var(--text-muted); max-width: 380px; margin-inline: auto; line-height: 1.45;">
+                            Saat ini belum ada karyawan yang ditugaskan untuk shift ini di cabang <b>${escapeHtml(store.name)}</b>.
+                        </p>
+                        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                            <button type="button" class="btn-primary" onclick="closeModal('shiftRosterEmployeeModal'); openAddNewEmployeeModal('${store.id}', ${currentRosterModalShiftNum});" style="font-size: 12px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
+                                <span>➕</span> <span>Tambah Karyawan Baru</span>
+                            </button>
+                            <button type="button" class="btn-secondary" onclick="closeModal('shiftRosterEmployeeModal'); openMasterEmployeesModal('${store.id}');" style="font-size: 12px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
+                                <span>👥</span> <span>Pilih dari Master Data</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            shiftEmps.forEach(emp => {
+                const empStatus = emp.status || 'active';
+                const empRole = emp.role || 'kasir';
+                const isLeave = (empStatus === 'leave');
+                const isActive = (empStatus === 'active');
+
+                let photoHtml = '';
+                if (emp.photo) {
+                    photoHtml = `<img src="${emp.photo}" class="emp-card-roster-avatar" alt="${escapeHtml(emp.name)}">`;
+                } else {
+                    photoHtml = `<div class="emp-card-roster-avatar-placeholder">👤</div>`;
+                }
+
+                let roleBadge = (empRole === 'inval')
+                    ? '<span class="badge-status badge-role-inval" title="Kasir Inval / Pengganti">⚡ Inval Pengganti</span>'
+                    : '<span class="badge-status badge-role-kasir">👤 Kasir Tetap</span>';
+
+                let statusBadge = '<span class="badge-status badge-active">🟢 Aktif</span>';
+                if (empStatus === 'resigned') statusBadge = '<span class="badge-status badge-status-resigned">🔴 Resign</span>';
+                else if (empStatus === 'inactive') statusBadge = '<span class="badge-status badge-status-inactive">🟡 Nonaktif</span>';
+                else if (empStatus === 'leave') statusBadge = '<span class="badge-status badge-status-leave" title="Sedang Izin / Cuti">🏖️ Izin Libur</span>';
+
+                const activeNowBadge = isShiftActiveNow
+                    ? '<span class="badge-status" style="background: rgba(16, 185, 129, 0.18); color: var(--success); font-weight: 850; border: 1px solid rgba(16, 185, 129, 0.4);">🟢 Bertugas Sekarang</span>'
+                    : '';
+
+                const cleanPhone = emp.phone ? String(emp.phone).replace(/[^0-9]/g, '') : '';
+                const waPhone = cleanPhone.startsWith('0') ? ('62' + cleanPhone.slice(1)) : cleanPhone;
+                const phoneHtml = emp.phone
+                    ? `<a href="https://wa.me/${waPhone}" target="_blank" rel="noopener" style="color: var(--primary); font-weight: 750; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Chat WhatsApp / Telepon">
+                         <span>📱</span> ${escapeHtml(emp.phone)}
+                         <span style="font-size: 9.5px; background: rgba(16, 185, 129, 0.15); color: var(--success); padding: 1px 5px; border-radius: 4px; font-weight: 800;">Chat WA ↗</span>
+                       </a>`
+                    : '<span style="color: var(--text-muted); font-style: italic;">Belum diatur</span>';
+
+                html += `
+                    <div class="emp-card-roster">
+                        <div class="emp-card-roster-header">
+                            ${photoHtml}
+                            <div class="emp-card-roster-title-wrap">
+                                <div class="emp-card-roster-name">
+                                    <span>${escapeHtml(emp.name)}</span>
+                                    <span style="font-size: 11px; font-family: monospace; color: var(--text-muted); font-weight: 600;">(${escapeHtml(emp.id)})</span>
+                                </div>
+                                <div class="emp-card-roster-badges">
+                                    ${roleBadge}
+                                    ${statusBadge}
+                                    ${activeNowBadge}
+                                </div>
+                            </div>
+                        </div>
+
+                        ${isLeave ? `
+                            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; font-size: 12px; line-height: 1.45;">
+                                <div style="font-weight: 800; color: #f59e0b; margin-bottom: 2px;">🏖️ Status Izin / Cuti Kasir:</div>
+                                <div>Alasan: <b>${escapeHtml(emp.leave_reason || 'Izin Libur')}</b></div>
+                                ${emp.leave_notes ? `<div>Catatan: ${escapeHtml(emp.leave_notes)}</div>` : ''}
+                                ${emp.leave_date ? `<div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Sejak: ${escapeHtml(emp.leave_date)}</div>` : ''}
+                            </div>
+                        ` : ''}
+
+                        <div class="emp-card-roster-grid">
+                            <div class="emp-card-info-item">
+                                <span class="emp-card-info-label">🏬 Cabang Toko</span>
+                                <span class="emp-card-info-value">${escapeHtml(store.name)}</span>
+                            </div>
+                            <div class="emp-card-info-item">
+                                <span class="emp-card-info-label">⏰ Shift Kerja</span>
+                                <span class="emp-card-info-value">${shiftTitle} (${currentShiftInfo.start || '-'} - ${currentShiftInfo.end || '-'})</span>
+                            </div>
+                            <div class="emp-card-info-item">
+                                <span class="emp-card-info-label">📱 Kontak &amp; WA</span>
+                                <div class="emp-card-info-value">${phoneHtml}</div>
+                            </div>
+                            <div class="emp-card-info-item">
+                                <span class="emp-card-info-label">🔑 PIN Login Portal</span>
+                                <div class="pin-peek-box">
+                                    <span id="rosterEmpPinText_${emp.id}" style="font-family: monospace; font-weight: 800; font-size: 13px; letter-spacing: 2px;">••••</span>
+                                    <button type="button" class="pin-peek-btn" onclick="toggleRosterPinPeek('${emp.id}', '${escapeHtml(emp.password || '')}')" title="Lihat PIN">👁️</button>
+                                    <button type="button" class="pin-peek-btn" onclick="copyDirectPin('${escapeHtml(emp.password || '')}')" title="Salin PIN">📋</button>
+                                </div>
+                            </div>
+                            <div class="emp-card-info-item" style="grid-column: 1 / -1;">
+                                <span class="emp-card-info-label">🏠 Alamat</span>
+                                <span class="emp-card-info-value" style="font-weight: 500; color: var(--text-main); font-size: 12px;">${escapeHtml(emp.address || 'Belum diatur')}</span>
+                            </div>
+                            ${emp.notes ? `
+                            <div class="emp-card-info-item" style="grid-column: 1 / -1;">
+                                <span class="emp-card-info-label">📝 Catatan</span>
+                                <span class="emp-card-info-value" style="font-weight: 500; font-style: italic; color: var(--text-muted); font-size: 12px;">${escapeHtml(emp.notes)}</span>
+                            </div>` : ''}
+                        </div>
+
+                        <div class="emp-card-roster-actions">
+                            <!-- 1. Salin Akses WhatsApp -->
+                            <button type="button" class="btn-roster-action btn-action-copy" onclick="copyEmployeeAccess('${emp.id}')" title="Salin Format Pesan WhatsApp & Link Login Langsung">
+                                <span>📋</span> <span>Salin Akses</span>
+                            </button>
+
+                            <!-- 2. Edit Data & Profil -->
+                            <button type="button" class="btn-roster-action btn-action-edit" onclick="closeModal('shiftRosterEmployeeModal'); openEditEmployeeModal('${emp.id}', '${store.id}')" title="Edit Data, Profil, dan Kontak">
+                                <span>✏️</span> <span>Edit Data</span>
+                            </button>
+
+                            <!-- 3. Tombol Aksi Sesuai Status Karyawan -->
+                            ${isLeave ? `
+                                <button type="button" class="btn-roster-action btn-action-return" onclick="closeModal('shiftRosterEmployeeModal'); handleReturnFromLeave('${emp.id}', '${escapeHtml(emp.name)}', '${store.id}')" title="Selesai Cuti & Aktifkan Kembali Kasir">
+                                    <span>✅</span> <span>Selesai Izin</span>
+                                </button>
+                                <button type="button" class="btn-roster-action btn-action-resign" onclick="closeModal('shiftRosterEmployeeModal'); openDeactivateEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${store.id}')" title="Nonaktifkan / Resign">
+                                    <span>🚪</span> <span>Resign</span>
+                                </button>
+                            ` : isActive ? `
+                                <button type="button" class="btn-roster-action btn-action-leave" onclick="closeModal('shiftRosterEmployeeModal'); openLeaveInvalModal('${emp.id}', '${escapeHtml(emp.name)}', '${store.id}', ${emp.shift_num || currentRosterModalShiftNum})" title="Berikan Izin Libur & Tugaskan Kasir Pengganti (Inval)">
+                                    <span>🏖️</span> <span>Izin / Inval</span>
+                                </button>
+                                <button type="button" class="btn-roster-action btn-action-transfer" onclick="closeModal('shiftRosterEmployeeModal'); openTransferEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${store.id}')" title="Mutasi ke Cabang Toko Lain">
+                                    <span>🔄</span> <span>Mutasi</span>
+                                </button>
+                                <button type="button" class="btn-roster-action btn-action-resign" onclick="closeModal('shiftRosterEmployeeModal'); openDeactivateEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${store.id}')" title="Nonaktifkan / Resign">
+                                    <span>🚪</span> <span>Resign</span>
+                                </button>
+                            ` : `
+                                <button type="button" class="btn-roster-action btn-action-return" onclick="closeModal('shiftRosterEmployeeModal'); openRehireEmpModal('${emp.id}', '${escapeHtml(emp.name)}', '${store.id}')" title="Aktifkan Kembali Kasir">
+                                    <span>♻️</span> <span>Aktifkan</span>
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
         function switchMasterEmpTab(tabName) {
             activeMasterEmpTab = tabName;
             const tabList = document.getElementById('tabMasterEmpList');
@@ -4319,7 +4875,7 @@ _(Buka link di atas untuk langsung masuk ke portal kasir tanpa mengetik PIN)_`;
         // MODAL TAMBAH KARYAWAN BARU (MASTER DATA) LOGIC
         // ==========================================
 
-        function openAddNewEmployeeModal() {
+        function openAddNewEmployeeModal(defaultStoreId = null, defaultShiftNum = null) {
             const storeSel = document.getElementById('newMasterEmpStoreSelect');
             if (!storeSel) return;
             storeSel.innerHTML = `
@@ -4332,12 +4888,16 @@ _(Buka link di atas untuk langsung masuk ke portal kasir tanpa mengetik PIN)_`;
                 storeSel.appendChild(opt);
             });
 
-            // Ambil default dari filter jika sedang memilih cabang tertentu
-            const currentFilterStore = document.getElementById('filterMasterEmpStore')?.value;
-            if (currentFilterStore && currentFilterStore !== 'all' && currentFilterStore !== 'unassigned') {
-                storeSel.value = currentFilterStore;
-            } else if (currentFilterStore === 'unassigned') {
-                storeSel.value = 'unassigned';
+            if (defaultStoreId) {
+                storeSel.value = defaultStoreId;
+            } else {
+                // Ambil default dari filter jika sedang memilih cabang tertentu
+                const currentFilterStore = currentMasterStoreFilter;
+                if (currentFilterStore && currentFilterStore !== 'all' && currentFilterStore !== 'unassigned') {
+                    storeSel.value = currentFilterStore;
+                } else if (currentFilterStore === 'unassigned') {
+                    storeSel.value = 'unassigned';
+                }
             }
 
             document.getElementById('newMasterEmpNameInput').value = '';
@@ -4348,6 +4908,12 @@ _(Buka link di atas untuk langsung masuk ke portal kasir tanpa mengetik PIN)_`;
             document.getElementById('newMasterEmpRoleSelect').value = 'kasir';
 
             updateNewEmpShiftOptions();
+
+            if (defaultShiftNum) {
+                const shiftSel = document.getElementById('newMasterEmpShiftSelect');
+                if (shiftSel) shiftSel.value = String(defaultShiftNum);
+            }
+
             openModal('addNewEmployeeModal');
         }
 
