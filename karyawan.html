@@ -550,6 +550,11 @@
             flex-shrink: 0;
             line-height: 1.3;
         }
+
+        /* Sembunyikan summary strip leaderboard di dashboard karyawan */
+        #karyawanLeaderboardMount .ksp-lb-summary-strip {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -671,6 +676,17 @@
                 <div id="dashTargetMotivation" style="font-size: 10.5px; color: var(--text-muted); text-align: center; font-weight: 600;">
                     🌟 Semangat shift hari ini!
                 </div>
+
+                <!-- Tombol Set Transaksi Hari Ini Langsung -->
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(139, 92, 246, 0.25); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <div style="font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                        <span>⚡</span>
+                        <span>Transaksi Hari Ini: <b id="dashTodayTxNum" style="color: #10B981; font-size: 12.5px;">0 tx</b></span>
+                    </div>
+                    <button type="button" onclick="openEmpDailyTxModal()" style="width: auto; margin: 0; padding: 6px 14px; font-size: 11.5px; font-weight: 750; border-radius: 8px; border: none; color: #FFFFFF; display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35); cursor: pointer; transition: transform 0.15s ease;">
+                        <span>✏️</span> Set Transaksi Hari Ini
+                    </button>
+                </div>
             </div>
 
             <!-- WIDGET LEADERBOARD PERFORMA & BONUS KASIR -->
@@ -735,6 +751,51 @@
                 <div class="modal-footer">
                     <button type="button" class="btn-cancel" onclick="closeTransitionModal()">Batal</button>
                     <button type="submit" class="btn-submit" style="width: auto; padding: 8px 16px; margin: 0; font-size: 12px;">Validasi &amp; Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DIALOG: SET TRANSAKSI HARIAN KARYAWAN -->
+    <div id="empDailyTxModal" class="modal-backdrop" onclick="if (event.target === this) closeEmpDailyTxModal();">
+        <div class="modal-card" style="max-width: 420px; width: 100%;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="empDailyTxModalTitle" style="font-size: 15px; font-weight: 800;">✏️ Set Transaksi Harian</h3>
+                    <p class="modal-subtitle" id="empDailyTxModalSubtitle" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Update catatan transaksi kasir shift hari ini</p>
+                </div>
+                <button type="button" class="btn-cancel" aria-label="Tutup dialog" onclick="closeEmpDailyTxModal()">&times;</button>
+            </div>
+            <form onsubmit="handleSaveEmpDailyTx(event)">
+                <div class="modal-body" style="padding: 16px 20px;">
+                    <div id="empDailyTxModalInfo" style="margin-bottom: 14px; background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 12px; padding: 12px 14px;">
+                        <!-- Diisi via JS: Nama Cabang, Nama Kasir, Shift -->
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label class="form-label" style="font-size: 12px; font-weight: 750; margin-bottom: 6px; display: block;">Jumlah Transaksi (tx):</label>
+                        <input type="number" 
+                               id="empDailyTxInput" 
+                               class="form-input" 
+                               min="0" 
+                               inputmode="numeric"
+                               pattern="[0-9]*"
+                               autocomplete="off"
+                               required 
+                               style="font-size: 26px; font-weight: 850; text-align: center; height: 52px; letter-spacing: -0.5px; border-radius: 12px; width: 100%;">
+                    </div>
+
+                    <!-- Quick Add Buttons -->
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button type="button" class="btn-cancel" style="flex: 1; padding: 7px 0; font-size: 12px; font-weight: 800;" onclick="quickAddEmpDailyTx(5)">+5</button>
+                        <button type="button" class="btn-cancel" style="flex: 1; padding: 7px 0; font-size: 12px; font-weight: 800;" onclick="quickAddEmpDailyTx(10)">+10</button>
+                        <button type="button" class="btn-cancel" style="flex: 1; padding: 7px 0; font-size: 12px; font-weight: 800;" onclick="quickAddEmpDailyTx(25)">+25</button>
+                        <button type="button" class="btn-cancel" style="flex: 1; padding: 7px 0; font-size: 12px; font-weight: 800;" onclick="quickAddEmpDailyTx(50)">+50</button>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn-cancel" onclick="closeEmpDailyTxModal()">Batal</button>
+                    <button type="submit" id="btnSubmitEmpDailyTx" class="btn-submit" style="width: auto; padding: 8px 18px; margin: 0; font-size: 12px; font-weight: 800;">💾 Simpan Transaksi</button>
                 </div>
             </form>
         </div>
@@ -1203,7 +1264,7 @@
                 currentEmployeeId: currentEmployee ? currentEmployee.id : null,
                 employees: employeesList,
                 ui: {
-                    showSummaryBoxes: true,
+                    showSummaryBoxes: false,
                     progressStyle: 'store-target-mini-row'
                 }
             });
@@ -1245,6 +1306,7 @@
             const fill = document.getElementById('dashTargetBarFill');
             const badge = document.getElementById('dashTargetBadgeStatus');
             const motiv = document.getElementById('dashTargetMotivation');
+            const todayTxEl = document.getElementById('dashTodayTxNum');
 
             if (numT) numT.innerText = `${m.target.toLocaleString('id-ID')} tx`;
             if (numR) numR.innerText = `${m.realization.toLocaleString('id-ID')} tx (${m.percentage.toFixed(1)}%)`;
@@ -1269,6 +1331,201 @@
                 } else {
                     motiv.innerText = `🔥 Kejar target harian ${m.requiredPerDay} tx/hari bersama tim shift!`;
                 }
+            }
+
+            // Hitung Transaksi Hari Ini
+            if (todayTxEl) {
+                const todayKey = getTodayKey();
+                const dayData = (currentStore.daily_transactions && currentStore.daily_transactions[todayKey]) ? currentStore.daily_transactions[todayKey] : null;
+                let myTx = 0;
+                let storeTodayTotal = 0;
+                if (dayData) {
+                    if (Array.isArray(dayData.records)) {
+                        const myRec = currentEmployee ? dayData.records.find(r => r.emp_id === currentEmployee.id) : null;
+                        if (myRec) myTx = Number(myRec.tx) || 0;
+                        storeTodayTotal = dayData.records.reduce((sum, r) => sum + (Number(r.tx) || 0), 0);
+                    } else if (typeof dayData.total === 'number') {
+                        storeTodayTotal = dayData.total;
+                        myTx = storeTodayTotal;
+                    }
+                }
+                if (storeTodayTotal > myTx && myTx > 0) {
+                    todayTxEl.innerText = `${myTx.toLocaleString('id-ID')} tx (Toko: ${storeTodayTotal.toLocaleString('id-ID')} tx)`;
+                } else if (myTx > 0) {
+                    todayTxEl.innerText = `${myTx.toLocaleString('id-ID')} tx`;
+                } else if (storeTodayTotal > 0) {
+                    todayTxEl.innerText = `${storeTodayTotal.toLocaleString('id-ID')} tx`;
+                } else {
+                    todayTxEl.innerText = '0 tx';
+                }
+            }
+        }
+
+        // ==========================================
+        // HANDLER SET TRANSAKSI HARIAN KARYAWAN
+        // ==========================================
+        function getTodayKey() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function openEmpDailyTxModal() {
+            if (!currentStore || !currentEmployee) return;
+
+            const modal = document.getElementById('empDailyTxModal');
+            if (!modal) return;
+
+            const todayKey = getTodayKey();
+            const shiftNum = currentEmployee.shift_num || 1;
+            const shiftName = shiftNum === 1 ? 'Shift 1 (Pagi)' : 'Shift 2 (Malam)';
+            
+            const infoEl = document.getElementById('empDailyTxModalInfo');
+            const inputEl = document.getElementById('empDailyTxInput');
+            const titleEl = document.getElementById('empDailyTxModalTitle');
+
+            if (titleEl) {
+                titleEl.innerText = `✏️ Set Transaksi · ${shiftName}`;
+            }
+
+            if (infoEl) {
+                infoEl.innerHTML = `
+                    <div style="font-size: 13.5px; font-weight: 850; color: var(--text-main); margin-bottom: 3px;">
+                        🏬 ${escapeHtml(currentStore.name)}
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-muted);">
+                        Kasir: <b>${escapeHtml(currentEmployee.name)}</b> &middot; Shift: <b>${shiftName}</b>
+                    </div>
+                `;
+            }
+
+            let currentTx = 0;
+            if (currentStore.daily_transactions && currentStore.daily_transactions[todayKey]) {
+                const dayData = currentStore.daily_transactions[todayKey];
+                if (Array.isArray(dayData.records)) {
+                    const rec = dayData.records.find(r => r.emp_id === currentEmployee.id || r.shift_num === shiftNum);
+                    if (rec) currentTx = Number(rec.tx) || 0;
+                } else if (typeof dayData.total === 'number') {
+                    currentTx = dayData.total;
+                }
+            }
+
+            if (inputEl) {
+                inputEl.value = currentTx;
+                setTimeout(() => {
+                    inputEl.focus();
+                    try { inputEl.select(); } catch (e) {}
+                }, 150);
+            }
+
+            modal.classList.add('open');
+        }
+
+        function closeEmpDailyTxModal() {
+            const modal = document.getElementById('empDailyTxModal');
+            if (modal) modal.classList.remove('open');
+        }
+
+        function quickAddEmpDailyTx(delta) {
+            const inputEl = document.getElementById('empDailyTxInput');
+            if (!inputEl) return;
+            const cur = parseInt(inputEl.value, 10) || 0;
+            inputEl.value = Math.max(0, cur + delta);
+        }
+
+        async function handleSaveEmpDailyTx(e) {
+            e.preventDefault();
+            if (!currentStore || !currentEmployee) return;
+
+            const inputEl = document.getElementById('empDailyTxInput');
+            const txVal = parseInt(inputEl ? inputEl.value : 0, 10) || 0;
+            const todayKey = getTodayKey();
+            const nowTimeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+            if (!currentStore.daily_transactions || typeof currentStore.daily_transactions !== 'object') {
+                currentStore.daily_transactions = {};
+            }
+            if (!currentStore.daily_transactions[todayKey]) {
+                currentStore.daily_transactions[todayKey] = {
+                    date: todayKey,
+                    recorded_time: nowTimeStr,
+                    total: 0,
+                    records: []
+                };
+            }
+            const dayData = currentStore.daily_transactions[todayKey];
+            if (!Array.isArray(dayData.records)) dayData.records = [];
+
+            const shiftNum = currentEmployee.shift_num || 1;
+            const shiftName = shiftNum === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
+
+            const recIdx = dayData.records.findIndex(r => r.emp_id === currentEmployee.id || r.shift_num === shiftNum);
+            const recordObj = {
+                emp_id: currentEmployee.id,
+                emp_name: currentEmployee.name,
+                shift_num: shiftNum,
+                shift_name: shiftName,
+                tx: txVal,
+                recorded_at: nowTimeStr + ' (Input Kasir)'
+            };
+
+            if (recIdx >= 0) {
+                dayData.records[recIdx] = recordObj;
+            } else {
+                dayData.records.push(recordObj);
+            }
+
+            dayData.total = dayData.records.reduce((sum, r) => sum + (Number(r.tx) || 0), 0);
+            dayData.recorded_time = nowTimeStr;
+
+            currentStore.monthly_tx = Object.values(currentStore.daily_transactions).reduce((sum, d) => sum + (d.total || 0), 0);
+
+            // Simpan ke state global storesData & localStorage
+            const stIdx = storesData.findIndex(s => s.id === currentStore.id);
+            if (stIdx >= 0) {
+                storesData[stIdx] = currentStore;
+            }
+            try {
+                localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesData));
+            } catch (err) {}
+
+            closeEmpDailyTxModal();
+            renderDashStoreTarget();
+            renderKaryawanLeaderboard();
+            showToast(`✅ Transaksi hari ini (${txVal} tx) berhasil disimpan!`, '💾');
+
+            // Sinkronisasi ke Cloud via empSubmitProposal jika aktif
+            const cred = sessionStorage.getItem('kspcheck_emp_cred') || localStorage.getItem('kspcheck_emp_cred');
+            if (window.KspSync && typeof KspSync.empSubmitProposal === 'function' && cred) {
+                const btnSubmit = document.getElementById('btnSubmitEmpDailyTx');
+                if (btnSubmit) btnSubmit.disabled = true;
+
+                const payloadToday = {
+                    store_id: currentStore.id,
+                    date: todayKey,
+                    proposed_tx: txVal,
+                    direct_today: true
+                };
+
+                KspSync.empSubmitProposal(cred, payloadToday)
+                    .then(r => {
+                        if (r && r.ok && r.store) {
+                            currentStore = r.store;
+                            const sIdx = storesData.findIndex(s => s.id === r.store.id);
+                            if (sIdx >= 0) storesData[sIdx] = r.store;
+                            try { localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesData)); } catch(e) {}
+                            renderDashStoreTarget();
+                            renderKaryawanLeaderboard();
+                        }
+                    })
+                    .catch(err => {
+                        console.warn('Sync cloud direct_today gagal:', err);
+                    })
+                    .finally(() => {
+                        if (btnSubmit) btnSubmit.disabled = false;
+                    });
             }
         }
 
