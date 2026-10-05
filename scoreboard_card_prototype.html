@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <title>Prototype: Scoreboard Shift Roster di Store Manager (Revisi v5 - Wrap Chips)</title>
     <style>
         :root {
@@ -724,6 +724,21 @@
             transform: translateX(-50%) translateY(0);
             opacity: 1;
         }
+
+        @media (max-width: 640px) {
+            #modalDailyTx.modal-overlay {
+                align-items: flex-start !important;
+                padding: 16px 12px calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+                padding-top: max(20px, env(safe-area-inset-top, 20px)) !important;
+                overflow-y: auto !important;
+            }
+            #modalDailyTx .modal-card {
+                max-width: 420px !important;
+                border-radius: 18px !important;
+                margin: 0 auto !important;
+                box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65) !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -809,6 +824,9 @@
                     <input type="number" 
                            id="inputTxCount" 
                            min="0" 
+                           inputmode="numeric"
+                           pattern="[0-9]*"
+                           autocomplete="off"
                            required 
                            style="width: 100%; padding: 12px 14px; font-size: 20px; font-weight: 850; border-radius: 12px; border: 1.5px solid var(--border-card); background: var(--input-bg); color: var(--text-main); text-align: center; outline: none; transition: border-color 0.15s ease;"
                            onfocus="this.style.borderColor='var(--primary)'"
@@ -1207,7 +1225,13 @@
             inputEl.value = currentTx;
 
             openModal('modalDailyTx');
-            setTimeout(() => inputEl.focus(), 120);
+            setTimeout(() => {
+                inputEl.focus();
+                try { inputEl.select(); } catch (err) {}
+                if (typeof inputEl.scrollIntoView === 'function') {
+                    inputEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 120);
         }
 
         // Simpan Transaksi dari Modal
