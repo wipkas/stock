@@ -673,6 +673,9 @@
                 </div>
             </div>
 
+            <!-- WIDGET LEADERBOARD PERFORMA & BONUS KASIR -->
+            <div id="karyawanLeaderboardMount" style="margin-bottom: 16px;"></div>
+
             <!-- Fitur Kasir & Operasional Karyawan -->
             <h3 style="font-size: 13.5px; font-weight: 800; margin-bottom: 10px; color: var(--text-muted);">MENU KARYAWAN</h3>
             <div class="grid-features">
@@ -864,6 +867,7 @@
     <script src="js/ksp_theme.js?v=20261005"></script>
     <script src="js/ksp_auth.js?v=20261005"></script>
     <script src="js/ksp_target_card.js?v=20261005"></script>
+    <script src="js/ksp_leaderboard.js?v=20261005"></script>
     <script>
         let storesData = [];
         let currentStore = null;
@@ -948,6 +952,16 @@
                 }
             }, 120);
         }
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'kspcheck_stores_data' || e.key === 'kspcheck_leaderboard_config') {
+                loadStoresData();
+                if (currentEmployee) {
+                    renderDashStoreTarget();
+                    renderKaryawanLeaderboard();
+                }
+            }
+        });
 
         function togglePasswordVisibility() {
             const input = document.getElementById('loginPasswordInput');
@@ -1113,6 +1127,38 @@
             renderDashboardAvatar();
             updateShiftStatusBanner();
             renderDashStoreTarget();
+            renderKaryawanLeaderboard();
+        }
+
+        function renderKaryawanLeaderboard() {
+            const mountEl = document.getElementById('karyawanLeaderboardMount');
+            if (!mountEl || !window.KspLeaderboard) return;
+
+            if (!storesData || storesData.length === 0) {
+                loadStoresData();
+            }
+
+            const cfg = KspLeaderboard.getConfig();
+            const scope = cfg.scope || 'all'; // Antar Seluruh Cabang KSP
+            const period = cfg.period || 'today'; // Hari Ini
+
+            const employeesList = KspLeaderboard.extractEmployeesFromStores(storesData, {
+                period: period,
+                scope: scope,
+                storeId: currentStore ? currentStore.id : null
+            });
+
+            KspLeaderboard.mount('#karyawanLeaderboardMount', {
+                title: 'Leaderboard & Target Kasir',
+                period: period,
+                scope: scope,
+                currentEmployeeId: currentEmployee ? currentEmployee.id : null,
+                employees: employeesList,
+                ui: {
+                    showSummaryBoxes: true,
+                    progressStyle: 'store-target-mini-row'
+                }
+            });
         }
 
         function renderDashStoreTarget() {
@@ -1498,6 +1544,7 @@
 
             // Update dashboard avatar & header
             renderDashboardAvatar();
+            renderKaryawanLeaderboard();
 
             btnSave.disabled = false;
             btnSave.innerText = '💾 Simpan Foto';

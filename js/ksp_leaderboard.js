@@ -769,6 +769,87 @@
         instances.delete(selector);
     };
 
+    /**
+     * Ekstraksi & Kalkulasi Data Karyawan dari storesData KSP
+     * @param {Array} storesData - Array toko dari localStorage 'kspcheck_stores_data'
+     * @param {Object} options - { period: 'today'|'monthly', scope: 'all'|'store', storeId: string }
+     */
+    KspLeaderboard.extractEmployeesFromStores = function (storesData, options) {
+        if (!Array.isArray(storesData) || storesData.length === 0) return [];
+
+        const opt = options || {};
+        const period = opt.period || 'today';
+        const scope = opt.scope || 'all';
+        const targetStoreId = opt.storeId;
+
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayKey = `${year}-${month}-${day}`;
+        const totalDaysInMonth = new Date(year, now.getMonth() + 1, 0).getDate();
+
+        const result = [];
+
+        storesData.forEach(store => {
+            if (!store) return;
+            if (scope === 'store' && targetStoreId && store.id !== targetStoreId) return;
+
+            const targetMonthly = Number(store.target_monthly) || 0;
+            const dailyTargetStore = targetMonthly > 0 ? Math.round(targetMonthly / totalDaysInMonth) : 0;
+
+            const employees = (Array.isArray(store.employees) ? store.employees : [])
+                .filter(e => e && e.status !== 'inactive');
+
+            const shiftCount = employees.length > 0 ? employees.length : (Array.isArray(store.shifts) ? store.shifts.length : 2);
+            const targetPerEmployee = period === 'monthly'
+                ? (shiftCount > 0 ? Math.round(targetMonthly / shiftCount) : targetMonthly)
+                : (shiftCount > 0 ? Math.round(dailyTargetStore / shiftCount) : dailyTargetStore);
+
+            const todayData = (store.daily_transactions && store.daily_transactions[todayKey]) || null;
+            const todayRecords = todayData && Array.isArray(todayData.records) ? todayData.records : [];
+
+            employees.forEach(emp => {
+                let empTx = 0;
+
+                if (period === 'monthly') {
+                    if (store.daily_transactions && typeof store.daily_transactions === 'object') {
+                        Object.entries(store.daily_transactions).forEach(([dateKey, dayObj]) => {
+                            if (dateKey.startsWith(`${year}-${month}`)) {
+                                if (dayObj && Array.isArray(dayObj.records)) {
+                                    const rec = dayObj.records.find(r => r && (r.emp_id === emp.id || r.shift_num === emp.shift_num));
+                                    if (rec && typeof rec.tx === 'number') empTx += rec.tx;
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    const rec = todayRecords.find(r => r && (r.emp_id === emp.id || r.shift_num === emp.shift_num));
+                    if (rec && typeof rec.tx === 'number') {
+                        empTx = rec.tx;
+                    } else if (todayRecords.length === 0 && emp.shift_num === 1 && todayData && typeof todayData.total === 'number') {
+                        empTx = todayData.total;
+                    }
+                }
+
+                result.push({
+                    id: emp.id,
+                    name: emp.name || 'Kasir',
+                    photo: emp.photo || '',
+                    storeId: store.id,
+                    storeName: store.name || 'Cabang KSP',
+                    shift: emp.shift_num ? `Shift ${emp.shift_num}` : 'Aktif',
+                    shiftNum: emp.shift_num,
+                    score: empTx,
+                    target: targetPerEmployee > 0 ? targetPerEmployee : 50,
+                    subMetrics: null
+                });
+            });
+        });
+
+        return result;
+    };
+
     KspLeaderboard._handleClick = function (selector, empId, rank) {
         const inst = instances.get(selector);
         if (inst && typeof inst.config.onItemClick === 'function') {
