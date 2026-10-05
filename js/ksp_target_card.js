@@ -596,46 +596,130 @@
         await navigator.clipboard.write([item]);
     };
 
-    /**
-     * Format teks pesan WhatsApp untuk Single Branch Card
-     */
-    KspTarget.formatSingleBranchCaption = function (store, metrics) {
-        const storeName = (store.name || 'CABANG').toUpperCase();
-        return `📊 *UPDATE TARGET & REALISASI BULAN ${metrics.monthName.toUpperCase()} ${metrics.year}*
-🏢 *Cabang:* ${storeName}
-📅 *Periode:* ${metrics.updatePeriodText} (Sisa ${metrics.remainingDays} hari lagi)
+    // =========================================================================
+    // TEMPLATE TEKS WHATSAPP & PENYIMPANAN LOKAL (LOCALSTORAGE)
+    // =========================================================================
 
-🎯 *Target Bulanan:* ${metrics.target.toLocaleString('id-ID')} Trx
-📈 *Realisasi:* ${metrics.realization.toLocaleString('id-ID')} Trx (${metrics.percentage.toFixed(1)}%)
-⏳ *Sisa Target:* ${metrics.remainingTarget.toLocaleString('id-ID')} Trx
+    KspTarget.DEFAULT_TEMPLATE_SINGLE = `📊 *UPDATE TARGET & REALISASI BULAN {BULAN} {TAHUN}*
+🏢 *Cabang:* {CABANG}
+📅 *Periode:* {PERIODE} (Sisa {SISA_HARI} hari lagi)
 
-🚨 *TARGET HARIAN WAJIB:* ${metrics.requiredPerDay.toLocaleString('id-ID')} Trx/hari
-📊 *Rata-rata Saat Ini:* ${metrics.currentAveragePerDay.toLocaleString('id-ID')} Trx/hari
-⚡ *Status:* *${metrics.status}* ${metrics.gap > 0 ? `(Butuh naik +${metrics.gap} Trx/hari)` : '(Aman & On Track)'}
+🎯 *Target Bulanan:* {TARGET} Trx
+📈 *Realisasi:* {REALISASI} Trx ({PERSEN}%)
+⏳ *Sisa Target:* {SISA_TARGET} Trx
+
+🚨 *TARGET HARIAN WAJIB:* {WAJIB_HARI} Trx/hari
+📊 *Rata-rata Saat Ini:* {RATA2_SKRG} Trx/hari
+⚡ *Status:* *{STATUS}* {GAP_INFO}
 
 🌟 *SEMANGAT! PASTI BISA CAPAI!* 🚀`;
+
+    KspTarget.DEFAULT_TEMPLATE_SUMMARY = `🏆 *REKAP TARGET & PROGRESS CABANG - {BULAN} {TAHUN}*
+📊 Update Realisasi: {PERIODE}
+🎯 Total Realisasi: *{TOTAL_REAL} / {TOTAL_TARGET} Trx* ({PERSEN}%)
+
+{LIST_CABANG}
+
+📌 *Catatan Kenaikan:*
+{CATATAN_NAIK}
+
+🔥 *{BULAN} {TAHUN} - Semangat Tim! {FOKUS}*`;
+
+    /**
+     * Dapatkan Template Tersimpan dari LocalStorage atau Default
+     */
+    KspTarget.getTemplate = function (mode) {
+        try {
+            const key = (mode === 'single') ? 'ksp_target_tpl_single' : 'ksp_target_tpl_summary';
+            if (typeof localStorage !== 'undefined') {
+                const saved = localStorage.getItem(key);
+                if (saved && saved.trim()) return saved;
+            }
+        } catch (e) {
+            console.warn('Gagal membaca template dari localStorage:', e);
+        }
+        return (mode === 'single') ? KspTarget.DEFAULT_TEMPLATE_SINGLE : KspTarget.DEFAULT_TEMPLATE_SUMMARY;
     };
 
     /**
-     * Format teks pesan WhatsApp untuk Rekap Semua Cabang
+     * Simpan Template Kustom ke LocalStorage
      */
-    KspTarget.formatAllBranchesCaption = function (summary) {
-        let text = `🏆 *REKAP TARGET & PROGRESS CABANG - ${summary.monthName.toUpperCase()} ${summary.year}*
-📊 Update Realisasi: ${summary.updatePeriodText}
-🎯 Total Realisasi: *${summary.grandRealization.toLocaleString('id-ID')} / ${summary.grandTarget.toLocaleString('id-ID')} Trx* (${summary.grandPercentage.toFixed(1)}%)\n\n`;
+    KspTarget.saveTemplate = function (mode, templateStr) {
+        try {
+            const key = (mode === 'single') ? 'ksp_target_tpl_single' : 'ksp_target_tpl_summary';
+            if (typeof localStorage !== 'undefined') {
+                localStorage.setItem(key, templateStr);
+            }
+            return true;
+        } catch (e) {
+            console.warn('Gagal menyimpan template ke localStorage:', e);
+            return false;
+        }
+    };
 
+    /**
+     * Reset Template ke Nilai Default Asli
+     */
+    KspTarget.resetTemplate = function (mode) {
+        try {
+            const key = (mode === 'single') ? 'ksp_target_tpl_single' : 'ksp_target_tpl_summary';
+            if (typeof localStorage !== 'undefined') {
+                localStorage.removeItem(key);
+            }
+        } catch (e) {}
+        return (mode === 'single') ? KspTarget.DEFAULT_TEMPLATE_SINGLE : KspTarget.DEFAULT_TEMPLATE_SUMMARY;
+    };
+
+    /**
+     * Format teks pesan WhatsApp untuk Single Branch Card (Mendukung Template Kustom)
+     */
+    KspTarget.formatSingleBranchCaption = function (store, metrics, customTemplate) {
+        const storeName = (store.name || 'CABANG').toUpperCase();
+        const tpl = customTemplate || KspTarget.getTemplate('single');
+        const gapInfo = metrics.gap > 0 ? `(Butuh naik +${metrics.gap} Trx/hari)` : '(Aman & On Track)';
+        const gapSign = metrics.gap >= 0 ? `+${metrics.gap}` : `${metrics.gap}`;
+
+        return tpl
+            .replace(/\{CABANG\}/g, storeName)
+            .replace(/\{BULAN\}/g, metrics.monthName.toUpperCase())
+            .replace(/\{TAHUN\}/g, String(metrics.year))
+            .replace(/\{PERIODE\}/g, metrics.updatePeriodText)
+            .replace(/\{SISA_HARI\}/g, String(metrics.remainingDays))
+            .replace(/\{TARGET\}/g, metrics.target.toLocaleString('id-ID'))
+            .replace(/\{REALISASI\}/g, metrics.realization.toLocaleString('id-ID'))
+            .replace(/\{PERSEN\}/g, metrics.percentage.toFixed(1))
+            .replace(/\{SISA_TARGET\}/g, metrics.remainingTarget.toLocaleString('id-ID'))
+            .replace(/\{WAJIB_HARI\}/g, metrics.requiredPerDay.toLocaleString('id-ID'))
+            .replace(/\{RATA2_SKRG\}/g, metrics.currentAveragePerDay.toLocaleString('id-ID'))
+            .replace(/\{STATUS\}/g, metrics.status)
+            .replace(/\{GAP_NAIK\}/g, gapSign)
+            .replace(/\{GAP_INFO\}/g, gapInfo);
+    };
+
+    /**
+     * Format teks pesan WhatsApp untuk Rekap Semua Cabang (Mendukung Template Kustom)
+     */
+    KspTarget.formatAllBranchesCaption = function (summary, customTemplate) {
+        const tpl = customTemplate || KspTarget.getTemplate('summary');
+
+        let listText = '';
         summary.items.forEach((item, idx) => {
             const m = item.metrics;
             const bName = item.store.name.toUpperCase().replace(/^(KONTER|TOKO|CABANG)\s+/i, '');
             const badgeEmoji = m.status === 'TERCAPAI' ? '🏆' : (m.status === 'HAMPIR' ? '⚡' : '🔥');
-            text += `${idx + 1}. *${bName}*: Real ${m.realization.toLocaleString('id-ID')} / ${m.target.toLocaleString('id-ID')} (${m.percentage.toFixed(1)}%) | Wajib: *${m.requiredPerDay}/hr* | Skrg: ${m.currentAveragePerDay} [${badgeEmoji} ${m.status}]\n`;
+            listText += `${idx + 1}. *${bName}*: Real ${m.realization.toLocaleString('id-ID')} / ${m.target.toLocaleString('id-ID')} (${m.percentage.toFixed(1)}%) | Wajib: *${m.requiredPerDay}/hr* | Skrg: ${m.currentAveragePerDay} [${badgeEmoji} ${m.status}]\n`;
         });
 
-        text += `\n📌 *Catatan Kenaikan:*
-${summary.gapNotes}
-
-🔥 *${summary.monthName} ${summary.year} - Semangat Tim! ${summary.focusText}*`;
-        return text;
+        return tpl
+            .replace(/\{BULAN\}/g, summary.monthName.toUpperCase())
+            .replace(/\{TAHUN\}/g, String(summary.year))
+            .replace(/\{PERIODE\}/g, summary.updatePeriodText)
+            .replace(/\{TOTAL_REAL\}/g, summary.grandRealization.toLocaleString('id-ID'))
+            .replace(/\{TOTAL_TARGET\}/g, summary.grandTarget.toLocaleString('id-ID'))
+            .replace(/\{PERSEN\}/g, summary.grandPercentage.toFixed(1))
+            .replace(/\{LIST_CABANG\}/g, listText.trimEnd())
+            .replace(/\{CATATAN_NAIK\}/g, summary.gapNotes)
+            .replace(/\{FOKUS\}/g, summary.focusText);
     };
 
     /**

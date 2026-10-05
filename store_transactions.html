@@ -1431,6 +1431,25 @@
             background: #1EBE5D !important;
             transform: translateY(-1px);
         }
+        .tpl-tag-pill {
+            background: var(--chip-bg);
+            border: 1px solid var(--card-border);
+            color: var(--primary);
+            font-size: 11px;
+            font-weight: 750;
+            padding: 3px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: monospace;
+            user-select: none;
+            transition: all 0.15s ease;
+        }
+        .tpl-tag-pill:hover {
+            background: var(--primary);
+            color: #FFFFFF;
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -2051,26 +2070,41 @@
                         <!-- Bulan -->
                         <div style="flex: 1 1 140px;">
                             <label class="form-hint" style="margin-bottom: 4px; font-weight: 700; color: var(--text-main);">📅 Periode Bulan:</label>
-                            <input type="month" id="targetPeriodMonth" class="form-input" style="padding: 6px 10px; font-size: 12px; min-height: 36px;" onchange="renderTargetModalCanvas()">
+                            <input type="month" id="targetPeriodMonth" class="form-input" style="padding: 6px 10px; font-size: 12px; min-height: 36px;" onchange="onTargetFilterChange()">
                         </div>
 
                         <!-- Cut-off Hari -->
                         <div style="flex: 0 0 100px;">
                             <label class="form-hint" style="margin-bottom: 4px; font-weight: 700; color: var(--text-main);">⏱️ Cut-Off Tgl:</label>
-                            <input type="number" id="targetPeriodCutOff" class="form-input" style="padding: 6px 8px; font-size: 12px; min-height: 36px; text-align: center;" min="1" max="31" placeholder="Hari ini" onchange="renderTargetModalCanvas()">
+                            <input type="number" id="targetPeriodCutOff" class="form-input" style="padding: 6px 8px; font-size: 12px; min-height: 36px; text-align: center;" min="1" max="31" placeholder="Hari ini" onchange="onTargetFilterChange()">
                         </div>
 
                         <!-- Cabang Selector (hanya aktif di tab Single) -->
                         <div id="targetStoreSelectorWrap" style="flex: 1 1 180px; display: none;">
                             <label class="form-hint" style="margin-bottom: 4px; font-weight: 700; color: var(--text-main);">🏬 Pilih Cabang:</label>
-                            <select id="targetSelectStore" class="form-select" style="padding: 6px 10px; font-size: 12px; min-height: 36px;" onchange="renderTargetModalCanvas()"></select>
+                            <select id="targetSelectStore" class="form-select" style="padding: 6px 10px; font-size: 12px; min-height: 36px;" onchange="onTargetFilterChange()"></select>
                         </div>
                     </div>
                 </div>
 
-                <!-- Preview Canvas Card -->
-                <div class="target-canvas-preview-wrap">
-                    <div id="targetCanvasLoading" style="display: none; text-align: center; color: var(--text-muted); padding: 40px;">
+                <!-- Bar Ringkasan Metrik Cepat (Nyaman di Mobile tanpa scroll) -->
+                <div id="targetQuickMetricsBar" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px;">
+                    <!-- Diisi dinamis via JS -->
+                </div>
+
+                <!-- Tombol Cek / Sembunyikan Preview Gambar Card -->
+                <div style="margin-bottom: 12px;">
+                    <button type="button" id="btnTogglePreviewCanvas" class="btn-cancel" onclick="toggleTargetPreviewCanvas()" style="width: 100%; padding: 10px 14px; font-size: 12.5px; font-weight: 750; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 10px; border: 1px solid var(--card-border);">
+                        <span>👁️</span> Cek Preview Gambar Card
+                    </button>
+                    <div style="font-size: 10.5px; color: var(--text-muted); text-align: center; margin-top: 4px;">
+                        💡 <i>Kirim WA / Unduh PNG tetap otomatis memproses gambar walau preview ditutup.</i>
+                    </div>
+                </div>
+
+                <!-- Preview Canvas Card (Default Tersembunyi untuk Mobile) -->
+                <div id="targetCanvasPreviewContainer" class="target-canvas-preview-wrap" style="display: none; margin-bottom: 14px;">
+                    <div id="targetCanvasLoading" style="display: none; text-align: center; color: var(--text-muted); padding: 30px;">
                         <span>⏳ Membuat gambar pratinjau...</span>
                     </div>
                     <div id="targetCanvasMountPoint" style="text-align: center; width: 100%;">
@@ -2078,13 +2112,48 @@
                     </div>
                 </div>
 
-                <!-- Teks Ringkasan Pesan WhatsApp (Pratinjau) -->
-                <div style="margin-top: 10px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <span style="font-size: 11px; font-weight: 750; color: var(--text-muted);">💬 Teks Pesan WhatsApp (Caption Otomatis):</span>
-                        <button type="button" class="btn-cancel" onclick="copyTargetCaptionText()" style="padding: 3px 8px; font-size: 10.5px;">📋 Salin Teks</button>
+                <!-- Teks Ringkasan Pesan WhatsApp & Editor Template -->
+                <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; margin-bottom: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                        <span style="font-size: 11.5px; font-weight: 750; color: var(--text-main);">💬 Teks Pesan WhatsApp:</span>
+                        <div style="display: flex; gap: 6px;">
+                            <button type="button" class="btn-cancel" onclick="toggleTemplateEditor()" style="padding: 4px 9px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                                <span>✏️</span> Edit Template
+                            </button>
+                            <button type="button" class="btn-cancel" onclick="copyTargetCaptionText()" style="padding: 4px 9px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                                <span>📋</span> Salin Teks
+                            </button>
+                        </div>
                     </div>
-                    <textarea id="targetCaptionPreview" class="form-input" readonly rows="3" style="font-size: 11px; font-family: monospace; background: var(--input-bg); line-height: 1.4; resize: none;"></textarea>
+                    <textarea id="targetCaptionPreview" class="form-input" readonly rows="4" style="font-size: 11px; font-family: monospace; background: var(--input-bg); line-height: 1.45; resize: vertical;"></textarea>
+
+                    <!-- Panel Editor Template Pesan WhatsApp (Disimpan di Local Storage) -->
+                    <div id="targetTemplateEditorPanel" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--card-border);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
+                            <span style="font-size: 11.5px; font-weight: 750; color: var(--text-main);">⚙️ Edit Format Template (<span id="targetTemplateModeLabel">Per Cabang</span>):</span>
+                            <span style="font-size: 10px; color: var(--text-muted); background: var(--input-bg); padding: 2px 6px; border-radius: 4px;">💾 Tersimpan di perangkat ini</span>
+                        </div>
+                        <div style="font-size: 10.5px; color: var(--text-muted); margin-bottom: 6px;">
+                            Klik tag berikut untuk menyisipkan ke pesan:
+                        </div>
+                        <div id="targetTemplatePlaceholderTags" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px;">
+                            <!-- Tag pills dinamis via JS -->
+                        </div>
+                        <textarea id="targetTemplateEditorInput" class="form-input" rows="6" style="font-size: 11px; font-family: monospace; background: var(--input-bg); line-height: 1.4; resize: vertical; margin-bottom: 8px;"></textarea>
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <button type="button" class="btn-cancel" onclick="resetTargetTemplateToDefault()" style="padding: 6px 10px; font-size: 11px; color: var(--danger, #ef4444);">
+                                ↺ Reset ke Standar
+                            </button>
+                            <div style="display: flex; gap: 6px;">
+                                <button type="button" class="btn-cancel" onclick="toggleTemplateEditor(false)" style="padding: 6px 10px; font-size: 11px;">
+                                    Tutup
+                                </button>
+                                <button type="button" class="btn-action-primary" onclick="saveTargetTemplateFromEditor()" style="padding: 6px 12px; font-size: 11px;">
+                                    💾 Simpan Perubahan (Lokal)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -5747,6 +5816,8 @@
         let currentTargetTab = 'single'; // 'summary' atau 'single'
         let currentGeneratedCanvas = null;
         let currentTargetCaptionText = '';
+        let isTargetPreviewOpen = false;
+        let currentTargetMetrics = null;
 
         function renderTargetProgressCard(store) {
             if (!store || !window.KspTarget) return;
@@ -5834,6 +5905,16 @@
                 }
             }
 
+            // Reset preview toggle & template editor state (Compact di Mobile)
+            isTargetPreviewOpen = false;
+            currentGeneratedCanvas = null;
+            const previewContainer = document.getElementById('targetCanvasPreviewContainer');
+            if (previewContainer) previewContainer.style.display = 'none';
+            const btnTogglePreview = document.getElementById('btnTogglePreviewCanvas');
+            if (btnTogglePreview) btnTogglePreview.innerHTML = '<span>👁️</span> Cek Preview Gambar Card';
+            const tplPanel = document.getElementById('targetTemplateEditorPanel');
+            if (tplPanel) tplPanel.style.display = 'none';
+
             if (targetStoreId) {
                 switchTargetTab('single');
             } else {
@@ -5841,11 +5922,11 @@
             }
 
             openModal('branchTargetModal');
-            renderTargetModalCanvas();
         }
 
         function switchTargetTab(tabName) {
             currentTargetTab = tabName;
+            currentGeneratedCanvas = null;
             const btnSummary = document.getElementById('tabBtnTargetSummary');
             const btnSingle = document.getElementById('tabBtnTargetSingle');
             const storeSelectorWrap = document.getElementById('targetStoreSelectorWrap');
@@ -5860,7 +5941,134 @@
                 if (storeSelectorWrap) storeSelectorWrap.style.display = 'none';
             }
 
-            renderTargetModalCanvas();
+            updateTargetModalView();
+
+            if (isTargetPreviewOpen) {
+                renderTargetModalCanvas();
+            }
+
+            // Update template editor jika sedang terbuka
+            const tplPanel = document.getElementById('targetTemplateEditorPanel');
+            if (tplPanel && tplPanel.style.display === 'block') {
+                toggleTemplateEditor(true);
+            }
+        }
+
+        function onTargetFilterChange() {
+            currentGeneratedCanvas = null;
+            updateTargetModalView();
+            if (isTargetPreviewOpen) {
+                renderTargetModalCanvas();
+            }
+        }
+
+        function updateTargetModalView() {
+            if (!window.KspTarget) return;
+
+            const monthVal = document.getElementById('targetPeriodMonth')?.value;
+            const cutOffVal = parseInt(document.getElementById('targetPeriodCutOff')?.value) || null;
+            const storeIdVal = document.getElementById('targetSelectStore')?.value || activeStoreId;
+            const captionEl = document.getElementById('targetCaptionPreview');
+
+            try {
+                if (currentTargetTab === 'single') {
+                    const store = storesData.find(s => s.id === storeIdVal) || storesData[0];
+                    if (!store) return;
+                    currentTargetMetrics = KspTarget.calculateStoreMetrics(store, monthVal, cutOffVal);
+                    currentTargetCaptionText = KspTarget.formatSingleBranchCaption(store, currentTargetMetrics);
+                    if (captionEl) captionEl.value = currentTargetCaptionText;
+                    updateTargetQuickMetricsBarSingle(store, currentTargetMetrics);
+                } else {
+                    currentTargetMetrics = KspTarget.calculateAllStoresSummary(storesData, monthVal, cutOffVal);
+                    currentTargetCaptionText = KspTarget.formatAllBranchesCaption(currentTargetMetrics);
+                    if (captionEl) captionEl.value = currentTargetCaptionText;
+                    updateTargetQuickMetricsBarSummary(currentTargetMetrics);
+                }
+            } catch (err) {
+                console.error('Error updating target view:', err);
+            }
+        }
+
+        function updateTargetQuickMetricsBarSingle(store, m) {
+            const bar = document.getElementById('targetQuickMetricsBar');
+            if (!bar || !m) return;
+            bar.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
+                    <div style="font-size: 12.5px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                        <span>🏬</span> <span>${escapeHtml(store.name)}</span>
+                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">(${m.updatePeriodText})</span>
+                    </div>
+                    <div>
+                        <span style="font-size: 11px; font-weight: 800; color: ${m.statusColor}; background: ${m.statusBg}; padding: 3px 8px; border-radius: 6px; border: 1px solid ${m.statusColor}33;">
+                            ${m.status} ${m.gap > 0 ? `(+${m.gap}/hr)` : ''}
+                        </span>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px;">
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 6px 8px; text-align: center;">
+                        <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">TARGET BULAN</div>
+                        <div style="font-size: 13.5px; font-weight: 850; color: var(--text-main); margin-top: 2px;">${m.target > 0 ? m.target.toLocaleString('id-ID') : '-'}</div>
+                    </div>
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 6px 8px; text-align: center;">
+                        <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">REALISASI</div>
+                        <div style="font-size: 13.5px; font-weight: 850; color: #10B981; margin-top: 2px;">${m.realization.toLocaleString('id-ID')} <span style="font-size: 10.5px; font-weight: 700;">(${m.percentage.toFixed(1)}%)</span></div>
+                    </div>
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 6px 8px; text-align: center;">
+                        <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">SISA TARGET</div>
+                        <div style="font-size: 13.5px; font-weight: 850; color: var(--text-main); margin-top: 2px;">${m.remainingTarget.toLocaleString('id-ID')} <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">(${m.remainingDays} hr)</span></div>
+                    </div>
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 6px 8px; text-align: center;">
+                        <div style="font-size: 10px; color: ${m.statusColor}; font-weight: 750;">WAJIB / HARI</div>
+                        <div style="font-size: 13.5px; font-weight: 850; color: ${m.statusColor}; margin-top: 2px;">${m.requiredPerDay.toLocaleString('id-ID')} <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">(skrg: ${m.currentAveragePerDay})</span></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateTargetQuickMetricsBarSummary(s) {
+            const bar = document.getElementById('targetQuickMetricsBar');
+            if (!bar || !s) return;
+            bar.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
+                    <div style="font-size: 12.5px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                        <span>🏢</span> <span>Rekap ${s.items ? s.items.length : 0} Cabang</span>
+                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">(${s.updatePeriodText} • Sisa ${s.remainingDays} hari)</span>
+                    </div>
+                    <div style="font-size: 11.5px; font-weight: 800; color: var(--primary);">
+                        Pencapaian: ${s.grandPercentage.toFixed(1)}%
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px;">
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 6px 8px; text-align: center;">
+                        <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">TOTAL TARGET</div>
+                        <div style="font-size: 13.5px; font-weight: 850; color: var(--text-main); margin-top: 2px;">${s.grandTarget.toLocaleString('id-ID')} Trx</div>
+                    </div>
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 6px 8px; text-align: center;">
+                        <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">TOTAL REALISASI</div>
+                        <div style="font-size: 13.5px; font-weight: 850; color: #10B981; margin-top: 2px;">${s.grandRealization.toLocaleString('id-ID')} Trx</div>
+                    </div>
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 6px 8px; text-align: center;">
+                        <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">SISA TARGET</div>
+                        <div style="font-size: 13.5px; font-weight: 850; color: var(--text-main); margin-top: 2px;">${(s.grandTarget - s.grandRealization).toLocaleString('id-ID')} Trx</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleTargetPreviewCanvas() {
+            isTargetPreviewOpen = !isTargetPreviewOpen;
+            const container = document.getElementById('targetCanvasPreviewContainer');
+            const btn = document.getElementById('btnTogglePreviewCanvas');
+            if (!container || !btn) return;
+
+            if (isTargetPreviewOpen) {
+                container.style.display = 'block';
+                btn.innerHTML = '<span>🙈</span> Sembunyikan Preview Gambar Card';
+                renderTargetModalCanvas();
+            } else {
+                container.style.display = 'none';
+                btn.innerHTML = '<span>👁️</span> Cek Preview Gambar Card';
+            }
         }
 
         function renderTargetModalCanvas() {
@@ -5869,9 +6077,7 @@
             const monthVal = document.getElementById('targetPeriodMonth')?.value;
             const cutOffVal = parseInt(document.getElementById('targetPeriodCutOff')?.value) || null;
             const storeIdVal = document.getElementById('targetSelectStore')?.value || activeStoreId;
-
             const mountPoint = document.getElementById('targetCanvasMountPoint');
-            const captionEl = document.getElementById('targetCaptionPreview');
             if (!mountPoint) return;
 
             mountPoint.innerHTML = '';
@@ -5883,21 +6089,19 @@
                         mountPoint.innerHTML = '<div style="padding: 24px; color: var(--text-muted);">Tidak ada cabang dipilih.</div>';
                         return;
                     }
-                    const metrics = KspTarget.calculateStoreMetrics(store, monthVal, cutOffVal);
-                    const canvas = KspTarget.renderSingleBranchCanvas(store, metrics);
+                    if (!currentTargetMetrics) {
+                        currentTargetMetrics = KspTarget.calculateStoreMetrics(store, monthVal, cutOffVal);
+                    }
+                    const canvas = KspTarget.renderSingleBranchCanvas(store, currentTargetMetrics);
                     currentGeneratedCanvas = canvas;
-                    currentTargetCaptionText = KspTarget.formatSingleBranchCaption(store, metrics);
-
                     mountPoint.appendChild(canvas);
-                    if (captionEl) captionEl.value = currentTargetCaptionText;
                 } else {
-                    const summary = KspTarget.calculateAllStoresSummary(storesData, monthVal, cutOffVal);
-                    const canvas = KspTarget.renderAllBranchesCanvas(storesData, summary);
+                    if (!currentTargetMetrics) {
+                        currentTargetMetrics = KspTarget.calculateAllStoresSummary(storesData, monthVal, cutOffVal);
+                    }
+                    const canvas = KspTarget.renderAllBranchesCanvas(storesData, currentTargetMetrics);
                     currentGeneratedCanvas = canvas;
-                    currentTargetCaptionText = KspTarget.formatAllBranchesCaption(summary);
-
                     mountPoint.appendChild(canvas);
-                    if (captionEl) captionEl.value = currentTargetCaptionText;
                 }
             } catch (err) {
                 console.error('Error rendering target canvas:', err);
@@ -5905,15 +6109,102 @@
             }
         }
 
-        async function shareCurrentTargetToWhatsApp() {
-            if (!currentGeneratedCanvas || !window.KspTarget) {
-                alert('⚠️ Gambar target belum siap.');
+        async function ensureTargetCanvasReady() {
+            if (currentGeneratedCanvas) return currentGeneratedCanvas;
+            if (!window.KspTarget) throw new Error('Modul KspTarget belum dimuat.');
+
+            const monthVal = document.getElementById('targetPeriodMonth')?.value;
+            const cutOffVal = parseInt(document.getElementById('targetPeriodCutOff')?.value) || null;
+            const storeIdVal = document.getElementById('targetSelectStore')?.value || activeStoreId;
+
+            if (currentTargetTab === 'single') {
+                const store = storesData.find(s => s.id === storeIdVal) || storesData[0];
+                if (!store) throw new Error('Tidak ada cabang yang dipilih.');
+                const metrics = currentTargetMetrics || KspTarget.calculateStoreMetrics(store, monthVal, cutOffVal);
+                currentTargetMetrics = metrics;
+                currentGeneratedCanvas = KspTarget.renderSingleBranchCanvas(store, metrics);
+            } else {
+                const summary = currentTargetMetrics || KspTarget.calculateAllStoresSummary(storesData, monthVal, cutOffVal);
+                currentTargetMetrics = summary;
+                currentGeneratedCanvas = KspTarget.renderAllBranchesCanvas(storesData, summary);
+            }
+            return currentGeneratedCanvas;
+        }
+
+        // --- TEMPLATE PESAN WHATSAPP (LOCAL STORAGE) ---
+        function toggleTemplateEditor(forceState) {
+            const panel = document.getElementById('targetTemplateEditorPanel');
+            if (!panel) return;
+            const isVisible = (forceState !== undefined) ? forceState : (panel.style.display !== 'block');
+            panel.style.display = isVisible ? 'block' : 'none';
+
+            if (isVisible) {
+                const modeLabel = document.getElementById('targetTemplateModeLabel');
+                if (modeLabel) {
+                    modeLabel.innerText = currentTargetTab === 'single' ? 'Per Cabang' : 'Rekap Semua Cabang';
+                }
+
+                const tagsContainer = document.getElementById('targetTemplatePlaceholderTags');
+                if (tagsContainer) {
+                    const tags = (currentTargetTab === 'single')
+                        ? ['{CABANG}', '{PERIODE}', '{TARGET}', '{REALISASI}', '{PERSEN}', '{SISA_TARGET}', '{SISA_HARI}', '{WAJIB_HARI}', '{RATA2_SKRG}', '{STATUS}', '{GAP_NAIK}', '{GAP_INFO}']
+                        : ['{PERIODE}', '{TOTAL_TARGET}', '{TOTAL_REAL}', '{PERSEN}', '{LIST_CABANG}', '{CATATAN_NAIK}', '{FOKUS}'];
+                    
+                    tagsContainer.innerHTML = tags.map(t => `
+                        <button type="button" class="tpl-tag-pill" onclick="insertTemplateTag('${t}')" title="Klik untuk menyisipkan tag ${t}">
+                            ${t}
+                        </button>
+                    `).join('');
+                }
+
+                const input = document.getElementById('targetTemplateEditorInput');
+                if (input && window.KspTarget) {
+                    input.value = KspTarget.getTemplate(currentTargetTab);
+                }
+            }
+        }
+
+        function insertTemplateTag(tag) {
+            const input = document.getElementById('targetTemplateEditorInput');
+            if (!input) return;
+            const start = input.selectionStart || input.value.length;
+            const end = input.selectionEnd || input.value.length;
+            const current = input.value;
+            input.value = current.substring(0, start) + tag + current.substring(end);
+            input.focus();
+            input.setSelectionRange(start + tag.length, start + tag.length);
+        }
+
+        function saveTargetTemplateFromEditor() {
+            const input = document.getElementById('targetTemplateEditorInput');
+            if (!input || !window.KspTarget) return;
+            const val = input.value.trim();
+            if (!val) {
+                showToast('⚠️ Template tidak boleh kosong!', '⚠️');
                 return;
             }
+            KspTarget.saveTemplate(currentTargetTab, val);
+            updateTargetModalView();
+            showToast('💾 Format template berhasil disimpan di browser lokal!', '✅');
+            toggleTemplateEditor(false);
+        }
+
+        function resetTargetTemplateToDefault() {
+            if (!window.KspTarget) return;
+            const defTpl = KspTarget.resetTemplate(currentTargetTab);
+            const input = document.getElementById('targetTemplateEditorInput');
+            if (input) input.value = defTpl;
+            updateTargetModalView();
+            showToast('↺ Template dikembalikan ke format standar!', 'ℹ️');
+        }
+
+        // --- AKSI EKSPOR GAMBAR & WHATSAPP ---
+        async function shareCurrentTargetToWhatsApp() {
             try {
+                const canvas = await ensureTargetCanvasReady();
                 const monthVal = document.getElementById('targetPeriodMonth')?.value || 'Bulan';
                 const filename = `Target_KSP_${currentTargetTab}_${monthVal}.png`;
-                const res = await KspTarget.shareToWhatsApp(currentGeneratedCanvas, currentTargetCaptionText, filename);
+                const res = await KspTarget.shareToWhatsApp(canvas, currentTargetCaptionText, filename);
                 if (res.mode === 'fallback') {
                     showToast('✅ Gambar PNG diunduh & teks WA dibuka. Silakan kirim!', '💬');
                 } else if (res.mode === 'web_share') {
@@ -5921,32 +6212,31 @@
                 }
             } catch (err) {
                 console.error('Share to WA error:', err);
-                alert('Gagal membagikan ke WhatsApp: ' + err.message);
+                showToast('Gagal membagikan ke WhatsApp: ' + err.message, '⚠️');
             }
         }
 
-        function downloadCurrentTargetImage() {
-            if (!currentGeneratedCanvas || !window.KspTarget) {
-                alert('⚠️ Gambar target belum siap.');
-                return;
+        async function downloadCurrentTargetImage() {
+            try {
+                const canvas = await ensureTargetCanvasReady();
+                const monthVal = document.getElementById('targetPeriodMonth')?.value || 'Bulan';
+                const filename = `Target_KSP_${currentTargetTab}_${monthVal}.png`;
+                KspTarget.downloadCanvasImage(canvas, filename);
+                showToast('✅ File gambar PNG berhasil diunduh!', '📥');
+            } catch (err) {
+                console.error('Download error:', err);
+                showToast('Gagal mengunduh gambar: ' + err.message, '⚠️');
             }
-            const monthVal = document.getElementById('targetPeriodMonth')?.value || 'Bulan';
-            const filename = `Target_KSP_${currentTargetTab}_${monthVal}.png`;
-            KspTarget.downloadCanvasImage(currentGeneratedCanvas, filename);
-            showToast('✅ File gambar PNG berhasil diunduh!', '📥');
         }
 
         async function copyTargetImageToClipboard() {
-            if (!currentGeneratedCanvas || !window.KspTarget) {
-                alert('⚠️ Gambar target belum siap.');
-                return;
-            }
             try {
-                await KspTarget.copyCanvasToClipboard(currentGeneratedCanvas);
+                const canvas = await ensureTargetCanvasReady();
+                await KspTarget.copyCanvasToClipboard(canvas);
                 showToast('📋 Gambar berhasil disalin! Silakan paste (Ctrl+V) di WhatsApp.', '✅');
             } catch (err) {
                 console.warn('Copy to clipboard failed:', err);
-                alert('Browser ini tidak mendukung salin gambar langsung ke clipboard. Silakan gunakan tombol "Unduh PNG" atau "Kirim ke WhatsApp".');
+                showToast('Browser ini tidak mendukung salin clipboard gambar', '⚠️');
             }
         }
 
