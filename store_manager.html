@@ -23,6 +23,7 @@
     <script src="js/ksp_ui.js?v=20261005"></script>
     <script src="js/ksp_theme.js?v=20261005"></script>
     <script src="js/ksp_auth.js?v=20261005"></script>
+    <script src="js/ksp_target_card.js?v=20261005"></script>
 
     <style>
         :root {
@@ -1992,6 +1993,70 @@
                 flex: 1 1 90px;
             }
         }
+
+        /* TARGET & PROGRESS CABANG STYLING */
+        .tab-target-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent !important;
+        }
+        .tab-target-btn.active {
+            background: var(--input-bg);
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary) !important;
+        }
+        .target-canvas-preview-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            margin: 12px 0;
+            overflow-x: auto;
+            max-height: 520px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .target-canvas-preview-wrap canvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 14px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            background: #FFFFFF;
+        }
+        .btn-whatsapp-share {
+            background: #25D366 !important;
+            color: #FFFFFF !important;
+            font-weight: 800 !important;
+            border: none !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            padding: 10px 18px !important;
+            border-radius: 10px !important;
+            cursor: pointer !important;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35) !important;
+            transition: all 0.2s ease !important;
+        }
+        .btn-whatsapp-share:hover {
+            background: #1EBE5D !important;
+            transform: translateY(-1px);
+        }
+        .store-target-mini-row {
+            margin: 8px 0 10px 0;
+            padding: 7px 10px;
+            background: rgba(139, 92, 246, 0.05);
+            border: 1px solid rgba(139, 92, 246, 0.18);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .store-target-mini-row:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.35);
+        }
     </style>
 </head>
 <body>
@@ -2021,6 +2086,9 @@
             </div>
 
             <div class="top-actions">
+                <button class="btn-primary" id="btnTopBranchTarget" onclick="openBranchTargetModal()" style="background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.4); color: #8b5cf6;">
+                    <span>🎯</span> Target Cabang
+                </button>
                 <button class="btn-primary" id="btnTopMasterEmp" onclick="openMasterEmployeesView()" style="background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.4); color: #0ea5e9;">
                     <span>👥</span> Kelola Karyawan
                 </button>
@@ -2029,6 +2097,13 @@
                         ⚙️
                     </button>
                     <div class="top-menu-dropdown" id="topMenuDropdown" role="menu">
+                        <div class="top-menu-item" role="menuitem" tabindex="0" onclick="closeTopMenu(); openBranchTargetModal();">
+                            <span class="top-menu-icon">🎯</span>
+                            <div style="flex: 1;">
+                                <div class="top-menu-label">Target &amp; Progress Cabang</div>
+                                <div class="top-menu-sub">Lihat, ekspor gambar &amp; kirim WA</div>
+                            </div>
+                        </div>
                         <div class="top-menu-item" role="menuitem" tabindex="0" onclick="closeTopMenu(); openManageStoresModal();">
                             <span class="top-menu-icon">🏢</span>
                             <div style="flex: 1;">
@@ -2122,6 +2197,21 @@
                         <span>&rarr;</span>
                     </div>
                 </a>
+
+                <!-- Target & Progress Cabang -->
+                <div class="feature-card" style="--feature-accent: #8B5CF6; cursor: pointer;" onclick="openBranchTargetModal(activeStoreId)">
+                    <div>
+                        <div class="feature-card-top">
+                            <div class="feature-icon">🎯</div>
+                            <div class="feature-title">Target &amp; Progress Cabang</div>
+                        </div>
+                        <p class="feature-desc">Lihat target bulanan, wajib harian, kartu motivasi, dan bagikan gambar rekap ke WhatsApp.</p>
+                    </div>
+                    <div class="feature-action">
+                        <span>Buka Kartu &amp; Ekspor WA</span>
+                        <span>&rarr;</span>
+                    </div>
+                </div>
 
             </div>
         </section>
@@ -2305,7 +2395,26 @@
                         <input type="text" id="formStoreName" class="form-input" placeholder="Misal: KSP Check Cabang Utama" required>
                     </div>
 
-
+                    <!-- Target Transaksi Cabang (Bulanan & Rata-rata Harian) -->
+                    <div class="form-group" style="background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 12px; padding: 12px;">
+                        <label class="form-label" style="color: #8b5cf6; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                            <span>🎯 Target Transaksi Cabang</span>
+                            <span style="font-size: 10.5px; font-weight: 600; color: var(--text-muted);">Bulanan / Harian</span>
+                        </label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label class="form-hint" style="margin-bottom: 4px; font-weight: 700;">Target Bulanan (Trx):</label>
+                                <input type="number" id="formStoreMonthlyTarget" class="form-input" placeholder="Misal: 5100" min="0" oninput="syncTargetFromMonthly()">
+                            </div>
+                            <div>
+                                <label class="form-hint" style="margin-bottom: 4px; font-weight: 700;">Target Harian (Trx/hari):</label>
+                                <input type="number" id="formStoreDailyTarget" class="form-input" placeholder="Misal: 165" min="0" oninput="syncTargetFromDaily()">
+                            </div>
+                        </div>
+                        <div class="form-hint" style="margin-top: 6px; font-size: 10.5px; color: var(--text-muted);">
+                            💡 Angka bulanan dan harian otomatis disinkronkan sesuai jumlah hari bulan ini.
+                        </div>
+                    </div>
 
                     <!-- Pengaturan Shift -->
                     <div class="form-group">
@@ -3231,6 +3340,111 @@
         </div>
     </div>
 
+    <!-- MODAL DIALOG: TARGET HARIAN & EKSPOR GAMBAR PROGRESS CABANG (WA) -->
+    <div id="branchTargetModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'branchTargetModal')">
+        <div class="modal-card" style="max-width: 650px; max-height: 94vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                        <span>🎯</span> Target &amp; Progress Cabang
+                    </h3>
+                    <p class="modal-subtitle">Visualisasi pencapaian, kalkulasi wajib harian &amp; ekspor gambar ke WhatsApp</p>
+                </div>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('branchTargetModal')">&times;</button>
+            </div>
+
+            <!-- Tab Switcher -->
+            <div style="padding: 10px 16px 0 16px; display: flex; gap: 8px; border-bottom: 1px solid var(--card-border); background: var(--card-bg);">
+                <button type="button" id="tabBtnTargetSummary" class="tab-target-btn active" onclick="switchTargetTab('summary')" style="flex: 1; padding: 10px 12px; font-size: 13px; font-weight: 750; border-radius: 8px 8px 0 0; cursor: pointer; transition: all 0.2s;">
+                    🏢 Rekap Semua Cabang
+                </button>
+                <button type="button" id="tabBtnTargetSingle" class="tab-target-btn" onclick="switchTargetTab('single')" style="flex: 1; padding: 10px 12px; font-size: 13px; font-weight: 750; border-radius: 8px 8px 0 0; cursor: pointer; transition: all 0.2s;">
+                    📌 Kartu Per Cabang
+                </button>
+            </div>
+
+            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 14px 16px;">
+                <!-- Filter & Kontrol Bar -->
+                <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; margin-bottom: 12px;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                        <!-- Bulan -->
+                        <div style="flex: 1 1 140px;">
+                            <label class="form-hint" style="margin-bottom: 4px; font-weight: 700; color: var(--text-main);">📅 Periode Bulan:</label>
+                            <input type="month" id="targetPeriodMonth" class="form-input" style="padding: 6px 10px; font-size: 12px; min-height: 36px;" onchange="renderTargetModalCanvas()">
+                        </div>
+
+                        <!-- Cut-off Hari -->
+                        <div style="flex: 0 0 100px;">
+                            <label class="form-hint" style="margin-bottom: 4px; font-weight: 700; color: var(--text-main);">⏱️ Cut-Off Tgl:</label>
+                            <input type="number" id="targetPeriodCutOff" class="form-input" style="padding: 6px 8px; font-size: 12px; min-height: 36px; text-align: center;" min="1" max="31" placeholder="Hari ini" onchange="renderTargetModalCanvas()">
+                        </div>
+
+                        <!-- Cabang Selector (hanya aktif di tab Single) -->
+                        <div id="targetStoreSelectorWrap" style="flex: 1 1 180px; display: none;">
+                            <label class="form-hint" style="margin-bottom: 4px; font-weight: 700; color: var(--text-main);">🏬 Pilih Cabang:</label>
+                            <select id="targetSelectStore" class="form-select" style="padding: 6px 10px; font-size: 12px; min-height: 36px;" onchange="renderTargetModalCanvas()"></select>
+                        </div>
+
+                        <!-- Tombol Atur Target Cepat -->
+                        <button type="button" class="btn-secondary" onclick="toggleQuickEditTargets()" style="padding: 7px 12px; font-size: 11.5px; height: 36px; display: inline-flex; align-items: center; gap: 4px;">
+                            <span>⚙️</span> Atur Angka
+                        </button>
+                    </div>
+
+                    <!-- Panel Cepat Edit Target Cabang (Expandable) -->
+                    <div id="targetQuickEditPanel" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--card-border);">
+                        <div style="font-size: 12px; font-weight: 800; color: var(--text-main); margin-bottom: 8px;">
+                            🎯 Atur Target Transaksi Bulanan Per Cabang:
+                        </div>
+                        <div id="targetQuickEditList" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto;">
+                            <!-- Dinamis via JS -->
+                        </div>
+                        <div style="margin-top: 10px; display: flex; justify-content: flex-end; gap: 8px;">
+                            <button type="button" class="btn-primary" onclick="saveQuickTargets()" style="padding: 6px 14px; font-size: 11.5px;">
+                                💾 Simpan Target Cabang
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Canvas Card -->
+                <div class="target-canvas-preview-wrap">
+                    <div id="targetCanvasLoading" style="display: none; text-align: center; color: var(--text-muted); padding: 40px;">
+                        <span>⏳ Membuat gambar pratinjau...</span>
+                    </div>
+                    <div id="targetCanvasMountPoint" style="text-align: center; width: 100%;">
+                        <!-- Canvas dimount di sini -->
+                    </div>
+                </div>
+
+                <!-- Teks Ringkasan Pesan WhatsApp (Pratinjau) -->
+                <div style="margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-size: 11px; font-weight: 750; color: var(--text-muted);">💬 Teks Pesan WhatsApp (Caption Otomatis):</span>
+                        <button type="button" class="btn-secondary" onclick="copyTargetCaptionText()" style="padding: 3px 8px; font-size: 10.5px;">📋 Salin Teks</button>
+                    </div>
+                    <textarea id="targetCaptionPreview" class="form-input" readonly rows="3" style="font-size: 11px; font-family: monospace; background: var(--input-bg); line-height: 1.4; resize: none;"></textarea>
+                </div>
+            </div>
+
+            <!-- Footer Action Buttons -->
+            <div class="modal-footer" style="display: flex; gap: 8px; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <button type="button" class="btn-secondary" onclick="closeModal('branchTargetModal')" style="padding: 9px 16px;">Tutup</button>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-secondary" onclick="copyTargetImageToClipboard()" title="Salin Gambar ke Clipboard (Ctrl+V di WA Web)">
+                        📋 Salin Gambar
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="downloadCurrentTargetImage()" title="Unduh File Gambar PNG">
+                        📥 Unduh PNG
+                    </button>
+                    <button type="button" class="btn-whatsapp-share" onclick="shareCurrentTargetToWhatsApp()" title="Kirim ke WhatsApp (Gambar + Teks Langsung)">
+                        <span>💬</span> Kirim ke WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- APP SCRIPT LOGIC -->
     <script>
         let storesData = [];
@@ -3241,6 +3455,7 @@
             {
                 id: 'store_pusat',
                 name: 'KSP Check - Cabang Utama',
+                monthly_target: 3000,
                 monthly_tx: 1850,
                 shift_count: 2,
                 shifts: [
@@ -3256,6 +3471,7 @@
             {
                 id: 'store_pasar',
                 name: 'KSP Check - Cabang Pasar',
+                monthly_target: 2000,
                 monthly_tx: 1120,
                 shift_count: 2,
                 shifts: [
@@ -3597,6 +3813,30 @@
                 const shift1Info = (store.shifts || []).find(s => s.shift_num === 1) || { start: '07:00', end: '15:00' };
                 const shift2Info = (store.shifts || []).find(s => s.shift_num === 2) || { start: '15:00', end: '23:00' };
 
+                // Metrik Target Toko
+                let targetMiniHtml = '';
+                if (window.KspTarget) {
+                    const tm = KspTarget.calculateStoreMetrics(store);
+                    const targetDisplay = tm.target > 0 ? `${tm.target.toLocaleString('id-ID')} tx` : 'Belum diset';
+                    const progressPct = Math.min(100, Math.round(tm.percentage));
+                    const statusText = tm.target > 0 ? `${tm.status} (Wajib: ${tm.requiredPerDay}/hr)` : 'Set Target 🎯';
+                    
+                    targetMiniHtml = `
+                    <div class="store-target-mini-row" role="button" tabindex="0" onclick="event.stopPropagation(); openBranchTargetModal('${store.id}')" title="Klik untuk lihat detail Target, buat gambar &amp; kirim WA">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-bottom: 4px;">
+                            <span style="font-weight: 750; color: var(--text-main); display: flex; align-items: center; gap: 4px;">
+                                <span>🎯</span> Target: <b>${targetDisplay}</b>
+                            </span>
+                            <span style="font-weight: 800; color: ${tm.statusColor}; font-size: 10px; background: ${tm.statusBg}; padding: 1.5px 6px; border-radius: 6px; border: 1px solid ${tm.statusColor}33;">
+                                ${statusText}
+                            </span>
+                        </div>
+                        <div style="width: 100%; height: 6px; background: var(--input-bg); border-radius: 3px; overflow: hidden; border: 1px solid var(--card-border);">
+                            <div style="height: 100%; width: ${progressPct}%; background: ${tm.statusColor}; border-radius: 3px; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>`;
+                }
+
                 html += `
                 <div class="store-card" role="button" tabindex="0" onclick="selectStore('${store.id}')">
                     <div>
@@ -3614,6 +3854,8 @@
                                 <span class="stat-arrow">Cek &rarr;</span>
                             </div>
                         </div>
+
+                        ${targetMiniHtml}
 
                         <!-- SCOREBOARD CONTAINER PENGGANTI SHIFT-ROSTER-BOX -->
                         <div class="scoreboard-container" onclick="event.stopPropagation()">
@@ -4048,6 +4290,8 @@
             document.getElementById('formStoreName').value = '';
             document.getElementById('formShiftCount').value = '2';
             document.getElementById('formShiftBuffer').value = '30';
+            document.getElementById('formStoreMonthlyTarget').value = '';
+            document.getElementById('formStoreDailyTarget').value = '';
             document.getElementById('s1Start').value = '07:00';
             document.getElementById('s1End').value = '15:00';
             document.getElementById('s2Start').value = '15:00';
@@ -4078,6 +4322,10 @@
             document.getElementById('formStoreName').value = store.name;
             document.getElementById('formShiftCount').value = store.shift_count || 2;
             document.getElementById('formShiftBuffer').value = store.buffer_minutes || 30;
+
+            const mTarget = store.monthly_target || 0;
+            document.getElementById('formStoreMonthlyTarget').value = mTarget > 0 ? mTarget : '';
+            syncTargetFromMonthly();
 
             const delBtn = document.getElementById('btnDeleteStore');
             if (delBtn) delBtn.style.display = 'inline-flex';
@@ -4938,10 +5186,12 @@
             });
 
             const currentMonthlyTx = existingStore ? calculateStoreMonthlyTx(existingStore) : 0;
+            const monthlyTarget = parseInt(document.getElementById('formStoreMonthlyTarget').value) || 0;
 
             const newStore = {
                 id: storeId,
                 name: name,
+                monthly_target: monthlyTarget,
                 monthly_tx: currentMonthlyTx,
                 shift_count: shiftCount,
                 shifts: shifts,
@@ -7410,6 +7660,230 @@ ${portalUrl}
                 showToast('Gagal menyalin tautan', '⚠️');
             }
             document.body.removeChild(ta);
+        }
+
+        // ==========================================
+        // FITUR TARGET HARIAN & PROGRESS WA SHARING
+        // ==========================================
+        let currentTargetTab = 'summary'; // 'summary' atau 'single'
+        let currentGeneratedCanvas = null;
+        let currentTargetCaptionText = '';
+
+        function syncTargetFromMonthly() {
+            const mInput = document.getElementById('formStoreMonthlyTarget');
+            const dInput = document.getElementById('formStoreDailyTarget');
+            if (!mInput || !dInput) return;
+            const mVal = parseInt(mInput.value) || 0;
+            const now = new Date();
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            dInput.value = mVal > 0 ? Math.round(mVal / daysInMonth) : '';
+        }
+
+        function syncTargetFromDaily() {
+            const mInput = document.getElementById('formStoreMonthlyTarget');
+            const dInput = document.getElementById('formStoreDailyTarget');
+            if (!mInput || !dInput) return;
+            const dVal = parseInt(dInput.value) || 0;
+            const now = new Date();
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            mInput.value = dVal > 0 ? Math.round(dVal * daysInMonth) : '';
+        }
+
+        function openBranchTargetModal(targetStoreId = null) {
+            const now = new Date();
+            const yearMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            
+            const monthInput = document.getElementById('targetPeriodMonth');
+            if (monthInput && !monthInput.value) {
+                monthInput.value = yearMonthStr;
+            }
+
+            const cutOffInput = document.getElementById('targetPeriodCutOff');
+            if (cutOffInput && !cutOffInput.value) {
+                cutOffInput.value = now.getDate();
+            }
+
+            // Populate store selector dropdown
+            const storeSelect = document.getElementById('targetSelectStore');
+            if (storeSelect) {
+                storeSelect.innerHTML = storesData.map(s => `
+                    <option value="${s.id}">${escapeHtml(s.name)}</option>
+                `).join('');
+                if (targetStoreId && storesData.some(s => s.id === targetStoreId)) {
+                    storeSelect.value = targetStoreId;
+                }
+            }
+
+            if (targetStoreId) {
+                switchTargetTab('single');
+            } else {
+                switchTargetTab('summary');
+            }
+
+            openModal('branchTargetModal');
+            renderTargetModalCanvas();
+        }
+
+        function switchTargetTab(tabName) {
+            currentTargetTab = tabName;
+            const btnSummary = document.getElementById('tabBtnTargetSummary');
+            const btnSingle = document.getElementById('tabBtnTargetSingle');
+            const storeSelectorWrap = document.getElementById('targetStoreSelectorWrap');
+
+            if (tabName === 'single') {
+                if (btnSingle) btnSingle.classList.add('active');
+                if (btnSummary) btnSummary.classList.remove('active');
+                if (storeSelectorWrap) storeSelectorWrap.style.display = 'block';
+            } else {
+                if (btnSummary) btnSummary.classList.add('active');
+                if (btnSingle) btnSingle.classList.remove('active');
+                if (storeSelectorWrap) storeSelectorWrap.style.display = 'none';
+            }
+
+            renderTargetModalCanvas();
+        }
+
+        function renderTargetModalCanvas() {
+            if (!window.KspTarget) return;
+
+            const monthVal = document.getElementById('targetPeriodMonth')?.value;
+            const cutOffVal = parseInt(document.getElementById('targetPeriodCutOff')?.value) || null;
+            const storeIdVal = document.getElementById('targetSelectStore')?.value;
+
+            const mountPoint = document.getElementById('targetCanvasMountPoint');
+            const captionEl = document.getElementById('targetCaptionPreview');
+            if (!mountPoint) return;
+
+            mountPoint.innerHTML = '';
+
+            try {
+                if (currentTargetTab === 'single') {
+                    const store = storesData.find(s => s.id === storeIdVal) || storesData[0];
+                    if (!store) {
+                        mountPoint.innerHTML = '<div style="padding: 24px; color: var(--text-muted);">Tidak ada cabang dipilih.</div>';
+                        return;
+                    }
+                    const metrics = KspTarget.calculateStoreMetrics(store, monthVal, cutOffVal);
+                    const canvas = KspTarget.renderSingleBranchCanvas(store, metrics);
+                    currentGeneratedCanvas = canvas;
+                    currentTargetCaptionText = KspTarget.formatSingleBranchCaption(store, metrics);
+
+                    mountPoint.appendChild(canvas);
+                    if (captionEl) captionEl.value = currentTargetCaptionText;
+                } else {
+                    const summary = KspTarget.calculateAllStoresSummary(storesData, monthVal, cutOffVal);
+                    const canvas = KspTarget.renderAllBranchesCanvas(storesData, summary);
+                    currentGeneratedCanvas = canvas;
+                    currentTargetCaptionText = KspTarget.formatAllBranchesCaption(summary);
+
+                    mountPoint.appendChild(canvas);
+                    if (captionEl) captionEl.value = currentTargetCaptionText;
+                }
+            } catch (err) {
+                console.error('Error rendering target canvas:', err);
+                mountPoint.innerHTML = `<div style="padding: 20px; color: var(--danger);">Gagal menggambar target card: ${escapeHtml(err.message)}</div>`;
+            }
+        }
+
+        function toggleQuickEditTargets() {
+            const panel = document.getElementById('targetQuickEditPanel');
+            if (!panel) return;
+            const isVisible = panel.style.display !== 'none';
+            if (isVisible) {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'block';
+                const listEl = document.getElementById('targetQuickEditList');
+                if (listEl) {
+                    listEl.innerHTML = storesData.map(s => {
+                        const curTarget = s.monthly_target || 0;
+                        return `
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--card-bg); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--card-border);">
+                            <span style="font-size: 12px; font-weight: 750; flex: 1;">${escapeHtml(s.name)}</span>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <input type="number" id="quickTarget_${s.id}" class="form-input" style="width: 100px; padding: 4px 8px; font-size: 12px; text-align: right;" value="${curTarget > 0 ? curTarget : ''}" placeholder="Misal 5100">
+                                <span style="font-size: 11px; color: var(--text-muted);">Trx</span>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+            }
+        }
+
+        function saveQuickTargets() {
+            let updatedCount = 0;
+            storesData.forEach(s => {
+                const input = document.getElementById(`quickTarget_${s.id}`);
+                if (input) {
+                    const val = parseInt(input.value) || 0;
+                    s.monthly_target = val;
+                    updatedCount++;
+                }
+            });
+
+            saveStoresData();
+            renderStoresGrid();
+            renderTargetModalCanvas();
+            document.getElementById('targetQuickEditPanel').style.display = 'none';
+            showToast(`✅ Target berhasil disimpan untuk ${updatedCount} cabang!`, '🎯');
+        }
+
+        async function shareCurrentTargetToWhatsApp() {
+            if (!currentGeneratedCanvas || !window.KspTarget) {
+                uiAlert('⚠️ Gambar target belum siap.');
+                return;
+            }
+            try {
+                const monthVal = document.getElementById('targetPeriodMonth')?.value || 'Bulan';
+                const filename = `Target_KSP_${currentTargetTab}_${monthVal}.png`;
+                const res = await KspTarget.shareToWhatsApp(currentGeneratedCanvas, currentTargetCaptionText, filename);
+                if (res.mode === 'fallback') {
+                    showToast('✅ Gambar PNG diunduh & teks WA dibuka. Silakan kirim!', '💬');
+                } else if (res.mode === 'web_share') {
+                    showToast('✅ WhatsApp dibuka!', '💬');
+                }
+            } catch (err) {
+                console.error('Share to WA error:', err);
+                uiAlert('Gagal membagikan ke WhatsApp: ' + err.message);
+            }
+        }
+
+        function downloadCurrentTargetImage() {
+            if (!currentGeneratedCanvas || !window.KspTarget) {
+                uiAlert('⚠️ Gambar target belum siap.');
+                return;
+            }
+            const monthVal = document.getElementById('targetPeriodMonth')?.value || 'Bulan';
+            const filename = `Target_KSP_${currentTargetTab}_${monthVal}.png`;
+            KspTarget.downloadCanvasImage(currentGeneratedCanvas, filename);
+            showToast('✅ File gambar PNG berhasil diunduh!', '📥');
+        }
+
+        async function copyTargetImageToClipboard() {
+            if (!currentGeneratedCanvas || !window.KspTarget) {
+                uiAlert('⚠️ Gambar target belum siap.');
+                return;
+            }
+            try {
+                await KspTarget.copyCanvasToClipboard(currentGeneratedCanvas);
+                showToast('📋 Gambar berhasil disalin! Silakan paste (Ctrl+V) di WhatsApp.', '✅');
+            } catch (err) {
+                console.warn('Copy to clipboard failed:', err);
+                uiAlert('Browser ini tidak mendukung salin gambar langsung ke clipboard. Silakan gunakan tombol "Unduh PNG" atau "Kirim ke WhatsApp".');
+            }
+        }
+
+        function copyTargetCaptionText() {
+            const captionEl = document.getElementById('targetCaptionPreview');
+            if (captionEl && captionEl.value) {
+                navigator.clipboard.writeText(captionEl.value).then(() => {
+                    showToast('📋 Teks pesan WhatsApp berhasil disalin!', '✅');
+                }).catch(() => {
+                    captionEl.select();
+                    document.execCommand('copy');
+                    showToast('📋 Teks disalin!', '✅');
+                });
+            }
         }
     </script>
 </body>

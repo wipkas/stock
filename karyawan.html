@@ -642,6 +642,37 @@
             <!-- Realtime Shift Status Banner (Mendeteksi 30 Menit Transisi) -->
             <div id="shiftStatusBanner" class="shift-status-banner"></div>
 
+            <!-- BANNER TARGET TOKO CABANG -->
+            <div id="dashStoreTargetBanner" style="display: none; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.08) 100%); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 14px; padding: 12px 14px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 16px;">🎯</span>
+                        <span style="font-size: 12.5px; font-weight: 800; color: var(--text-main);">Target Toko Bulan Ini</span>
+                    </div>
+                    <span id="dashTargetBadgeStatus" style="font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 6px;">-</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; margin-bottom: 10px;">
+                    <div style="background: var(--input-bg); padding: 6px 4px; border-radius: 8px; border: 1px solid var(--card-border);">
+                        <div style="font-size: 9.5px; color: var(--text-muted); font-weight: 700;">TARGET</div>
+                        <div id="dashTargetNum" style="font-size: 13px; font-weight: 800; color: var(--text-main);">-</div>
+                    </div>
+                    <div style="background: var(--input-bg); padding: 6px 4px; border-radius: 8px; border: 1px solid var(--card-border);">
+                        <div style="font-size: 9.5px; color: var(--text-muted); font-weight: 700;">REALISASI</div>
+                        <div id="dashRealNum" style="font-size: 13px; font-weight: 800; color: #10B981;">-</div>
+                    </div>
+                    <div style="background: var(--input-bg); padding: 6px 4px; border-radius: 8px; border: 1px solid var(--card-border);">
+                        <div style="font-size: 9.5px; color: #8B5CF6; font-weight: 800;">WAJIB/HARI</div>
+                        <div id="dashRequiredNum" style="font-size: 13px; font-weight: 800; color: #8B5CF6;">-</div>
+                    </div>
+                </div>
+                <div style="width: 100%; height: 6px; background: var(--input-bg); border-radius: 3px; overflow: hidden; border: 1px solid var(--card-border); margin-bottom: 6px;">
+                    <div id="dashTargetBarFill" style="height: 100%; width: 0%; background: #10B981; border-radius: 3px; transition: width 0.4s ease;"></div>
+                </div>
+                <div id="dashTargetMotivation" style="font-size: 10.5px; color: var(--text-muted); text-align: center; font-weight: 600;">
+                    🌟 Semangat shift hari ini!
+                </div>
+            </div>
+
             <!-- Fitur Kasir & Operasional Karyawan -->
             <h3 style="font-size: 13.5px; font-weight: 800; margin-bottom: 10px; color: var(--text-muted);">MENU KARYAWAN</h3>
             <div class="grid-features">
@@ -838,6 +869,7 @@
     <script src="js/ksp_ui.js?v=20261005"></script>
     <script src="js/ksp_theme.js?v=20261005"></script>
     <script src="js/ksp_auth.js?v=20261005"></script>
+    <script src="js/ksp_target_card.js?v=20261005"></script>
     <script>
         let storesData = [];
         let currentStore = null;
@@ -1086,6 +1118,51 @@
 
             renderDashboardAvatar();
             updateShiftStatusBanner();
+            renderDashStoreTarget();
+        }
+
+        function renderDashStoreTarget() {
+            const banner = document.getElementById('dashStoreTargetBanner');
+            if (!banner || !currentStore || !window.KspTarget) return;
+
+            const m = KspTarget.calculateStoreMetrics(currentStore);
+            if (!m || m.target <= 0) {
+                banner.style.display = 'none';
+                return;
+            }
+
+            banner.style.display = 'block';
+            const numT = document.getElementById('dashTargetNum');
+            const numR = document.getElementById('dashRealNum');
+            const numW = document.getElementById('dashRequiredNum');
+            const fill = document.getElementById('dashTargetBarFill');
+            const badge = document.getElementById('dashTargetBadgeStatus');
+            const motiv = document.getElementById('dashTargetMotivation');
+
+            if (numT) numT.innerText = `${m.target.toLocaleString('id-ID')} tx`;
+            if (numR) numR.innerText = `${m.realization.toLocaleString('id-ID')} tx (${m.percentage.toFixed(1)}%)`;
+            if (numW) numW.innerText = `${m.requiredPerDay.toLocaleString('id-ID')} tx`;
+
+            const pct = Math.min(100, Math.round(m.percentage));
+            if (fill) {
+                fill.style.width = `${pct}%`;
+                fill.style.background = m.statusColor;
+            }
+            if (badge) {
+                badge.innerText = m.status;
+                badge.style.color = m.statusColor;
+                badge.style.background = m.statusBg;
+                badge.style.border = `1px solid ${m.statusColor}33`;
+            }
+            if (motiv) {
+                if (m.status === 'TERCAPAI') {
+                    motiv.innerText = '🏆 Luar biasa! Target toko bulan ini sudah tercapai!';
+                } else if (m.status === 'HAMPIR') {
+                    motiv.innerText = `⚡ Target sangat dekat! Sisa ${m.remainingDays} hari lagi, push sedikit lagi!`;
+                } else {
+                    motiv.innerText = `🔥 Kejar target harian ${m.requiredPerDay} tx/hari bersama tim shift!`;
+                }
+            }
         }
 
         function logoutEmployee() {
