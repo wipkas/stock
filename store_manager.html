@@ -213,30 +213,25 @@
 
         .store-card-header {
             display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 10px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
             margin-bottom: 12px;
         }
 
         .store-card-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            background: rgba(79, 142, 247, 0.12);
-            border: 1px solid rgba(79, 142, 247, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            flex-shrink: 0;
+            display: none !important;
         }
 
         .store-name {
-            font-size: 16px;
-            font-weight: 800;
+            font-size: 16.5px;
+            font-weight: 850;
             color: var(--text-main);
             margin-bottom: 3px;
+            text-align: center;
+            width: 100%;
+            letter-spacing: -0.2px;
         }
 
         .badge-status {
@@ -318,145 +313,255 @@
             font-weight: 750;
         }
 
-        /* Shift Schedule Box with Roll Button */
-        .shift-roster-box {
-            background: var(--input-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 14px;
-            padding: 10px 12px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
+        /* Chip Filter Row with Flex-Wrap (Membuat baris baru) */
+        .chip-filter-row.wrap-chips {
+            flex-wrap: wrap !important;
+            overflow-x: visible !important;
+            margin-bottom: 16px;
         }
 
-        .shift-roster-box:hover {
-            border-color: rgba(79, 142, 247, 0.45);
-            background: rgba(79, 142, 247, 0.03);
+        /* -------------------------------------------------------------------------
+           SCOREBOARD CONTAINER INTEGRATED DIRECTLY INTO STORE CARD
+           ------------------------------------------------------------------------- */
+        .scoreboard-container {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            align-items: stretch;
+            margin-bottom: 0;
+            cursor: default;
         }
 
-        .shift-col {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-            padding: 5px 8px;
-            border-radius: 9px;
-            border: 1.5px solid transparent;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            user-select: none;
+        .scoreboard-roll-btn-wrap {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
         }
 
-        .shift-col:hover {
-            border-color: rgba(79, 142, 247, 0.4);
-            background: rgba(79, 142, 247, 0.08);
-            transform: translateY(-1px);
-        }
-
-        .shift-col.active-shift-col {
-            background: rgba(16, 185, 129, 0.12);
-            border-color: #10B981;
-            box-shadow: 0 0 10px rgba(16, 185, 129, 0.18);
-        }
-
-        .shift-col.active-shift-col:hover {
-            background: rgba(16, 185, 129, 0.18);
-            border-color: #10B981;
-            box-shadow: 0 0 12px rgba(16, 185, 129, 0.28);
-        }
-
-        .shift-col.active-shift-col .emp-name-badge {
-            color: #10B981;
-            font-weight: 850;
-        }
-
-        .shift-col.inactive-shift-col {
-            opacity: 0.62;
-        }
-        .shift-col.inactive-shift-col:hover {
-            opacity: 0.95;
-        }
-
-        .active-shift-pill {
-            background: #10B981;
-            color: #FFFFFF;
-            font-size: 8.5px;
-            font-weight: 850;
-            padding: 1px 5px;
-            border-radius: 999px;
-            margin-left: 4px;
-            letter-spacing: 0.3px;
-            display: inline-flex;
-            align-items: center;
-        }
-
-        .shift-col.right {
-            text-align: right;
-            align-items: flex-end;
-        }
-
-        .shift-tag {
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .scoreboard-roll-btn {
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            margin-bottom: 3px;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            color: var(--text-main);
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            font-size: 10.5px;
+            font-weight: 850;
+            user-select: none;
         }
 
-        .shift-tag.morning { color: #F59E0B; }
-        .shift-tag.night { color: #10B981; }
+        .scoreboard-roll-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: scale(1.08);
+            box-shadow: 0 6px 18px rgba(79, 142, 247, 0.35);
+        }
 
-        .emp-name-badge {
-            font-size: 12.5px;
-            font-weight: 750;
+        .scoreboard-roll-btn:active {
+            transform: scale(0.95);
+        }
+
+        .scoreboard-roll-btn .roll-icon {
+            font-size: 13px;
+            transition: transform 0.3s ease;
+        }
+
+        .scoreboard-roll-btn:hover .roll-icon {
+            transform: rotate(180deg);
+        }
+
+        .scoreboard-col {
+            border-radius: 14px;
+            padding: 11px 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+            position: relative;
+            background: var(--input-bg);
+            border: 1.5px solid var(--card-border);
+        }
+
+        /* Highlight hijau pada shift yang aktif */
+        .scoreboard-col.active-shift-col {
+            background: rgba(16, 185, 129, 0.12) !important;
+            border: 1.5px solid #10B981 !important;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.22);
+        }
+
+        .scoreboard-col.active-shift-col:hover {
+            background: rgba(16, 185, 129, 0.18) !important;
+            border-color: #10B981 !important;
+            box-shadow: 0 0 14px rgba(16, 185, 129, 0.32);
+        }
+
+        .scoreboard-col.active-shift-col .emp-name-text {
+            color: #10B981 !important;
+            font-weight: 850 !important;
+        }
+
+        .scoreboard-col.inactive-shift-col {
+            opacity: 0.65;
+            border-color: var(--card-border);
+        }
+
+        .scoreboard-col.inactive-shift-col:hover {
+            opacity: 0.95;
+            border-color: rgba(79, 142, 247, 0.4);
+        }
+
+        .scoreboard-emp-area {
+            cursor: pointer;
+            border-radius: 10px;
+            padding: 4px 6px;
+            margin: -2px -4px 0 -4px;
+            transition: background 0.15s ease;
+        }
+
+        .scoreboard-emp-area:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .shift-header-mini {
+            display: flex;
+            align-items: center;
+            margin-bottom: 7px;
+        }
+
+        .shift-title {
+            font-size: 11.5px;
+            font-weight: 850;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .shift-title.s1 { color: #f59e0b; }
+        .shift-title.s2 { color: #10b981; }
+
+        .emp-profile-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .emp-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 850;
+            font-size: 12px;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1.5px solid var(--card-border);
             color: var(--text-main);
+        }
+
+        .scoreboard-col.active-shift-col .emp-avatar {
+            background: rgba(16, 185, 129, 0.22);
+            color: #10b981;
+            border-color: rgba(16, 185, 129, 0.5);
+        }
+
+        .emp-meta {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .emp-name-text {
+            font-size: 12px;
+            font-weight: 800;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 100%;
+            color: var(--text-main);
+            transition: color 0.15s ease;
         }
 
-        .btn-roll-shift {
-            background: var(--chip-bg);
-            border: 1px solid var(--card-border);
-            color: var(--text-main);
-            border-radius: 10px;
-            padding: 8px 10px;
+        .emp-time-text {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .emp-action-hint {
             font-size: 11px;
-            font-weight: 800;
+            opacity: 0.45;
+            flex-shrink: 0;
+            transition: opacity 0.15s;
+        }
+
+        .scoreboard-emp-area:hover .emp-action-hint {
+            opacity: 1;
+        }
+
+        .scoreboard-tx-field {
+            background: var(--card-bg);
+            border-radius: 11px;
+            padding: 9px 8px;
+            text-align: center;
             cursor: pointer;
+            transition: all 0.18s ease;
+            margin-top: 10px;
+            position: relative;
+            border: 1.5px solid var(--card-border);
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 3px;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            flex-shrink: 0;
         }
 
-        .btn-roll-shift .roll-icon {
-            font-size: 14px;
-            line-height: 1;
-            display: inline-block;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .scoreboard-col.active-shift-col .scoreboard-tx-field {
+            border-color: rgba(16, 185, 129, 0.45);
+            background: rgba(16, 185, 129, 0.06);
         }
 
-        .btn-roll-shift:hover {
+        .scoreboard-tx-field:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             border-color: var(--primary);
-            background: var(--primary-glow);
-            color: var(--primary);
-            transform: scale(1.05);
         }
 
-        .btn-roll-shift:hover .roll-icon { transform: rotate(180deg); }
-        .btn-roll-shift:active { transform: scale(0.95); }
+        .scoreboard-col.active-shift-col .scoreboard-tx-field:hover {
+            border-color: #10b981;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        }
+
+        .scoreboard-tx-num {
+            font-size: 24px;
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -0.5px;
+            color: var(--text-main);
+        }
+
+        .scoreboard-col.active-shift-col .scoreboard-tx-num {
+            color: #10b981;
+        }
+
+        .scoreboard-tx-field.s1 .scoreboard-tx-num {
+            color: #f59e0b;
+        }
+
+        .scoreboard-tx-field.s2 .scoreboard-tx-num {
+            color: #10b981;
+        }
+
+        .scoreboard-col.active-shift-col .scoreboard-tx-field.s1 .scoreboard-tx-num,
+        .scoreboard-col.active-shift-col .scoreboard-tx-field.s2 .scoreboard-tx-num {
+            color: #10b981;
+        }
 
         /* Shift Roster Employee Card Modal Styling */
         .shift-roster-modal-tabs {
@@ -709,14 +814,7 @@
 
 
         .store-card-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding-top: 10px;
-            border-top: 1px solid var(--card-border);
-            font-size: 11.5px;
-            font-weight: 750;
-            color: var(--primary);
+            display: none !important;
         }
 
         /* Detail Sub-Dashboard (When a Store is Clicked) */
@@ -1920,6 +2018,9 @@
                 <div class="clock-badge">
                     <span>⏱️</span> <span id="liveClockDisplay">--:--:-- WIB</span>
                 </div>
+            <!-- CHIP FILTER CABANG (MEMBUAT BARIS BARU JIKA TIDAK CUKUP DI LAYAR) -->
+            <div class="chip-filter-row wrap-chips" id="mainStoreChipFilterRow" style="display: none;">
+                <!-- Dinamis via JS -->
             </div>
 
             <!-- Stores Cards Grid -->
@@ -2891,13 +2992,56 @@
             <div class="modal-body" id="shiftRosterModalContent" style="padding: 16px 20px; overflow-y: auto; flex: 1;">
                 <!-- Diisi dinamis via JS: Card Karyawan beserta semua fiturnya -->
             </div>
-
             <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
                 <button type="button" class="btn-secondary" id="btnRosterJumpMaster" onclick="jumpFromRosterToMaster()" style="font-size: 12px; display: inline-flex; align-items: center; gap: 5px;" title="Lihat daftar master karyawan lengkap">
                     <span>👥</span> <span>Master Karyawan</span>
                 </button>
                 <button type="button" class="btn-primary" onclick="closeModal('shiftRosterEmployeeModal')">Tutup</button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL: SET TRANSAKSI HARIAN KASIR -->
+    <div id="dailyTxModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'dailyTxModal')">
+        <div class="modal-card" style="max-width: 420px; width: 95vw;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="dailyTxModalTitle">✏️ Set Transaksi Harian</h3>
+                    <p class="modal-subtitle" id="dailyTxModalSubtitle">Update catatan transaksi kasir shift hari ini</p>
+                </div>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('dailyTxModal')">&times;</button>
+            </div>
+            <form onsubmit="handleSaveDailyTx(event)">
+                <input type="hidden" id="dailyTxStoreId">
+                <input type="hidden" id="dailyTxShiftNum">
+                <div class="modal-body" style="padding: 16px 20px;">
+                    <div id="dailyTxModalStoreInfo" style="margin-bottom: 14px; background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.25); border-radius: 12px; padding: 12px 14px;">
+                        <!-- Diisi via JS -->
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label class="form-label" style="font-size: 12px; font-weight: 750;">Jumlah Transaksi (tx):</label>
+                        <input type="number" 
+                               id="dailyTxInput" 
+                               class="form-control" 
+                               min="0" 
+                               required 
+                               style="font-size: 24px; font-weight: 850; text-align: center; height: 52px; letter-spacing: -0.5px; border-radius: 12px;">
+                    </div>
+
+                    <!-- Quick Add Buttons -->
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button type="button" class="btn-secondary" style="flex: 1; padding: 6px 0; font-size: 12px; font-weight: 800;" onclick="quickAddDailyTx(5)">+5</button>
+                        <button type="button" class="btn-secondary" style="flex: 1; padding: 6px 0; font-size: 12px; font-weight: 800;" onclick="quickAddDailyTx(10)">+10</button>
+                        <button type="button" class="btn-secondary" style="flex: 1; padding: 6px 0; font-size: 12px; font-weight: 800;" onclick="quickAddDailyTx(25)">+25</button>
+                        <button type="button" class="btn-secondary" style="flex: 1; padding: 6px 0; font-size: 12px; font-weight: 800;" onclick="quickAddDailyTx(50)">+50</button>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn-secondary" onclick="closeModal('dailyTxModal')">Batal</button>
+                    <button type="submit" class="btn-primary">💾 Simpan Transaksi</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -3161,8 +3305,64 @@
             return 0;
         }
 
+        function getStoreShiftTodayTx(store, shiftNum) {
+            if (!store || !store.daily_transactions || typeof store.daily_transactions !== 'object') return 0;
+            const todayKey = getTodayKey();
+            const todayData = store.daily_transactions[todayKey];
+            if (!todayData) return 0;
+            if (Array.isArray(todayData.records)) {
+                const rec = todayData.records.find(r => r.shift_num === shiftNum);
+                if (rec && typeof rec.tx === 'number') return rec.tx;
+            }
+            if (shiftNum === 1 && typeof todayData.total === 'number') {
+                return todayData.total;
+            }
+            return 0;
+        }
+
+        let currentMainStoreFilter = 'all';
+
+        function renderMainStoreFilterChips() {
+            const row = document.getElementById('mainStoreChipFilterRow');
+            if (!row) return;
+
+            if (!storesData || storesData.length <= 1) {
+                row.style.display = 'none';
+                return;
+            }
+            row.style.display = 'flex';
+
+            let html = `
+                <button type="button" 
+                        class="filter-chip ${currentMainStoreFilter === 'all' ? 'active' : ''}" 
+                        onclick="setMainStoreFilterChip('all')">
+                    🏢 Semua Cabang (${storesData.length})
+                </button>
+            `;
+
+            storesData.forEach(st => {
+                const isAct = (currentMainStoreFilter === st.id);
+                html += `
+                    <button type="button" 
+                            class="filter-chip ${isAct ? 'active' : ''}" 
+                            onclick="setMainStoreFilterChip('${st.id}')">
+                        🏬 ${escapeHtml(st.name)}
+                    </button>
+                `;
+            });
+
+            row.innerHTML = html;
+        }
+
+        function setMainStoreFilterChip(storeId) {
+            currentMainStoreFilter = storeId;
+            renderMainStoreFilterChips();
+            renderStoresGrid();
+        }
+
         // 5. Render Stores Cards Grid (Admin View)
         function renderStoresGrid() {
+            renderMainStoreFilterChips();
             const container = document.getElementById('storesGridContainer');
             if (!container) return;
 
@@ -3174,33 +3374,53 @@
                 return;
             }
 
+            const filteredStores = (currentMainStoreFilter === 'all')
+                ? storesData
+                : storesData.filter(s => s.id === currentMainStoreFilter);
+
+            if (filteredStores.length === 0 && currentMainStoreFilter !== 'all') {
+                currentMainStoreFilter = 'all';
+                renderMainStoreFilterChips();
+                renderStoresGrid();
+                return;
+            }
+
             let html = '';
-            storesData.forEach(store => {
+            filteredStores.forEach(store => {
                 const status = getShiftStatus(store);
-                const empCount = (store.employees || []).length;
                 const todayTx = calculateStoreTodayTx(store).toLocaleString('id-ID');
 
                 let badgeHtml = '';
                 if (status.inTransition) {
-                    badgeHtml = `<span class="badge-status badge-transition">⚠️ Transisi Shift (${store.buffer_minutes}m)</span>`;
+                    badgeHtml = `<span class="badge-status badge-transition" style="margin-top: 4px;">⚠️ Transisi Shift (${store.buffer_minutes}m)</span>`;
                 }
 
-                const empS1 = (store.employees || []).filter(e => (e.status === 'active' || !e.status) && e.shift_num === 1).map(e => e.name).join(', ') || '(Kosong)';
-                const empS2 = (store.employees || []).filter(e => (e.status === 'active' || !e.status) && e.shift_num === 2).map(e => e.name).join(', ') || '(Kosong)';
+                const s1EmpObj = (store.employees || []).find(e => (e.status === 'active' || !e.status) && e.shift_num === 1);
+                const s2EmpObj = (store.employees || []).find(e => (e.status === 'active' || !e.status) && e.shift_num === 2);
+                const empS1 = s1EmpObj ? s1EmpObj.name : '(Kosong)';
+                const empS2 = s2EmpObj ? s2EmpObj.name : '(Kosong)';
+
+                const s1Tx = getStoreShiftTodayTx(store, 1);
+                const s2Tx = getStoreShiftTodayTx(store, 2);
+
                 const multiShift = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) > 1;
                 const activeShiftNum = (status.currentShift && status.currentShift.shift_num) ? status.currentShift.shift_num : 1;
                 const isS1Active = (activeShiftNum === 1);
                 const isS2Active = (activeShiftNum === 2);
 
+                const shift1Info = (store.shifts || []).find(s => s.shift_num === 1) || { start: '07:00', end: '15:00' };
+                const shift2Info = (store.shifts || []).find(s => s.shift_num === 2) || { start: '15:00', end: '23:00' };
+
                 html += `
                 <div class="store-card" role="button" tabindex="0" onclick="selectStore('${store.id}')">
                     <div>
+                        <!-- Header Cabang: Judul Posisi di Tengah (Tanpa Icon & Tanpa Subtitle) -->
                         <div class="store-card-header">
-                            <div class="store-card-icon">🏬</div>
+                            <h3 class="store-name">${escapeHtml(store.name)}</h3>
                             ${badgeHtml}
                         </div>
-                        <h3 class="store-name">${escapeHtml(store.name)}</h3>
                         
+                        <!-- store-stat-row (Transaksi Hari Ini & Cek) -->
                         <div class="store-stat-row" role="button" tabindex="0" onclick="openStoreTransactions(event, '${store.id}')" title="Klik untuk buka Transaksi &amp; Analisa Cabang">
                             <span class="stat-label"><span>📊</span> Transaksi Hari Ini:</span>
                             <div class="stat-val-wrap">
@@ -3209,43 +3429,208 @@
                             </div>
                         </div>
 
-                        <div class="shift-roster-box" onclick="openShiftRosterEmployeeModal(event, '${store.id}', ${isS2Active ? 2 : 1});"${multiShift ? '' : ' style="justify-content: flex-start;"'} title="Klik untuk lihat detail &amp; kelola kasir shift cabang ini">
-                            <div class="shift-col ${multiShift ? (isS1Active ? 'active-shift-col' : 'inactive-shift-col') : 'active-shift-col'}"
-                                 role="button" tabindex="0"
-                                 onclick="openShiftRosterEmployeeModal(event, '${store.id}', 1)"
-                                 title="Klik untuk detail &amp; kelola kasir ${multiShift ? 'Shift 1 (Pagi)' : 'Full Shift'}">
-                                <div class="shift-tag morning">
-                                    <span>🌅 ${multiShift ? 'Pagi' : 'Full Shift'}</span>
-                                    ${(!multiShift || isS1Active) ? '<span class="active-shift-pill">🟢 AKTIF</span>' : ''}
-                                </div>
-                                <div class="emp-name-badge" title="${escapeHtml(empS1)}">👤 ${escapeHtml(empS1)}</div>
-                            </div>
+                        <!-- SCOREBOARD CONTAINER PENGGANTI SHIFT-ROSTER-BOX -->
+                        <div class="scoreboard-container" onclick="event.stopPropagation()">
+                            
+                            <!-- Central Roll Shift Button (Hanya jika Multi-shift) -->
                             ${multiShift ? `
-                            <button type="button" class="btn-roll-shift" onclick="rollStoreShifts(event, '${store.id}')" title="Tukar Shift Karyawan (Pagi ⇄ Malam)">
-                                <span class="roll-icon">⇄</span>
-                                <span>Roll Shift</span>
-                            </button>
-                            <div class="shift-col right ${isS2Active ? 'active-shift-col' : 'inactive-shift-col'}"
-                                 role="button" tabindex="0"
-                                 onclick="openShiftRosterEmployeeModal(event, '${store.id}', 2)"
-                                 title="Klik untuk detail &amp; kelola kasir Shift 2 (Malam)">
-                                <div class="shift-tag night">
-                                    ${isS2Active ? '<span class="active-shift-pill">🟢 AKTIF</span>' : ''}
-                                    <span>🌙 Malam</span>
-                                </div>
-                                <div class="emp-name-badge" title="${escapeHtml(empS2)}">👤 ${escapeHtml(empS2)}</div>
+                            <div class="scoreboard-roll-btn-wrap">
+                                <button type="button" 
+                                        class="scoreboard-roll-btn" 
+                                        onclick="rollStoreShifts(event, '${store.id}')" 
+                                        title="Tukar Shift Karyawan (Pagi ⇄ Malam)">
+                                    <span class="roll-icon">⇄</span>
+                                    <span>Roll</span>
+                                </button>
                             </div>` : ''}
-                        </div>
-                    </div>
 
-                    <div class="store-card-footer">
-                        <span>Kelola Fitur Toko</span>
-                        <span>Buka &rarr;</span>
+                            <!-- KOLOM SHIFT 1 (PAGI) -->
+                            <div class="scoreboard-col ${multiShift ? (isS1Active ? 'active-shift-col' : 'inactive-shift-col') : 'active-shift-col'}"
+                                 title="${(!multiShift || isS1Active) ? 'Shift 1 sedang AKTIF' : 'Shift 1 tidak aktif'}">
+                                
+                                <!-- Zona 1: Klik Area Karyawan -> Modal Shift Roster -->
+                                <div class="scoreboard-emp-area" 
+                                     role="button" tabindex="0"
+                                     onclick="openShiftRosterEmployeeModal(event, '${store.id}', 1)"
+                                     title="Klik untuk detail &amp; kelola kasir ${multiShift ? 'Shift 1 (Pagi)' : 'Full Shift'}">
+                                    <div class="shift-header-mini">
+                                        <span class="shift-title s1">🌅 ${multiShift ? 'Pagi' : 'Full Shift'}</span>
+                                    </div>
+                                    <div class="emp-profile-row">
+                                        <div class="emp-avatar">${escapeHtml(empS1.charAt(0))}</div>
+                                        <div class="emp-meta">
+                                            <div class="emp-name-text">${escapeHtml(empS1)}</div>
+                                            <div class="emp-time-text">${shift1Info.start || '07:00'} - ${shift1Info.end || '15:00'} WIB</div>
+                                        </div>
+                                        <span class="emp-action-hint">⚙️</span>
+                                    </div>
+                                </div>
+
+                                <!-- Zona 2: Klik Field Score -> Modal Set Transaksi Langsung -->
+                                <div class="scoreboard-tx-field s1" 
+                                     role="button" tabindex="0"
+                                     onclick="openDailyTxModal(event, '${store.id}', 1)"
+                                     title="Klik untuk set transaksi ${multiShift ? 'Shift 1 (Pagi)' : 'Full Shift'}">
+                                    <div style="display: flex; align-items: baseline; justify-content: center; gap: 4px;">
+                                        <span class="scoreboard-tx-num" id="score_${store.id}_1">${s1Tx}</span>
+                                        <span style="font-size: 11.5px; font-weight: 800; color: var(--text-muted);">tx</span>
+                                        <span style="font-size: 10px; opacity: 0.6; margin-left: 2px;">✏️</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- KOLOM SHIFT 2 (MALAM) (Hanya jika Multi-shift) -->
+                            ${multiShift ? `
+                            <div class="scoreboard-col ${isS2Active ? 'active-shift-col' : 'inactive-shift-col'}"
+                                 title="${isS2Active ? 'Shift 2 sedang AKTIF' : 'Shift 2 tidak aktif'}">
+                                
+                                <!-- Zona 1: Klik Area Karyawan -> Modal Shift Roster -->
+                                <div class="scoreboard-emp-area" 
+                                     role="button" tabindex="0"
+                                     onclick="openShiftRosterEmployeeModal(event, '${store.id}', 2)"
+                                     title="Klik untuk detail &amp; kelola kasir Shift 2 (Malam)">
+                                    <div class="shift-header-mini" style="justify-content: flex-end;">
+                                        <span class="shift-title s2">🌙 Malam</span>
+                                    </div>
+                                    <div class="emp-profile-row">
+                                        <div class="emp-avatar">${escapeHtml(empS2.charAt(0))}</div>
+                                        <div class="emp-meta">
+                                            <div class="emp-name-text">${escapeHtml(empS2)}</div>
+                                            <div class="emp-time-text">${shift2Info.start || '15:00'} - ${shift2Info.end || '23:00'} WIB</div>
+                                        </div>
+                                        <span class="emp-action-hint">⚙️</span>
+                                    </div>
+                                </div>
+
+                                <!-- Zona 2: Klik Field Score -> Modal Set Transaksi Langsung -->
+                                <div class="scoreboard-tx-field s2" 
+                                     role="button" tabindex="0"
+                                     onclick="openDailyTxModal(event, '${store.id}', 2)"
+                                     title="Klik untuk set transaksi Shift 2 (Malam)">
+                                    <div style="display: flex; align-items: baseline; justify-content: center; gap: 4px;">
+                                        <span class="scoreboard-tx-num" id="score_${store.id}_2">${s2Tx}</span>
+                                        <span style="font-size: 11.5px; font-weight: 800; color: var(--text-muted);">tx</span>
+                                        <span style="font-size: 10px; opacity: 0.6; margin-left: 2px;">✏️</span>
+                                    </div>
+                                </div>
+                            </div>` : ''}
+
+                        </div>
                     </div>
                 </div>`;
             });
 
             container.innerHTML = html;
+        }
+
+        // ==========================================
+        // MODAL SET TRANSAKSI HARIAN KASIR
+        // ==========================================
+        function openDailyTxModal(e, storeId, shiftNum) {
+            if (e) e.stopPropagation();
+            const store = storesData.find(s => s.id === storeId);
+            if (!store) return;
+
+            const shiftName = shiftNum === 1 ? 'Shift 1 (Pagi)' : 'Shift 2 (Malam)';
+            const currentTx = getStoreShiftTodayTx(store, shiftNum);
+            const emp = (store.employees || []).find(e => (e.status === 'active' || !e.status) && e.shift_num === shiftNum);
+
+            const storeIdInput = document.getElementById('dailyTxStoreId');
+            const shiftNumInput = document.getElementById('dailyTxShiftNum');
+            const titleEl = document.getElementById('dailyTxModalTitle');
+            const infoEl = document.getElementById('dailyTxModalStoreInfo');
+            const inputEl = document.getElementById('dailyTxInput');
+
+            if (storeIdInput) storeIdInput.value = storeId;
+            if (shiftNumInput) shiftNumInput.value = shiftNum;
+            if (titleEl) titleEl.innerText = `✏️ Set Transaksi · ${shiftName}`;
+
+            if (infoEl) {
+                infoEl.innerHTML = `
+                    <div style="font-size: 13.5px; font-weight: 850; color: var(--text-main); margin-bottom: 3px;">
+                        🏬 ${escapeHtml(store.name)}
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-muted);">
+                        Kasir Bertugas: <b>${escapeHtml(emp ? emp.name : '(Belum diatur)')}</b> &middot; Target: <b>${shiftName}</b>
+                    </div>
+                `;
+            }
+
+            if (inputEl) {
+                inputEl.value = currentTx;
+                setTimeout(() => {
+                    inputEl.focus();
+                    inputEl.select();
+                }, 100);
+            }
+
+            openModal('dailyTxModal');
+        }
+
+        function quickAddDailyTx(delta) {
+            const inputEl = document.getElementById('dailyTxInput');
+            if (!inputEl) return;
+            const cur = parseInt(inputEl.value, 10) || 0;
+            inputEl.value = Math.max(0, cur + delta);
+        }
+
+        async function handleSaveDailyTx(e) {
+            e.preventDefault();
+            const storeId = document.getElementById('dailyTxStoreId').value;
+            const shiftNum = parseInt(document.getElementById('dailyTxShiftNum').value, 10);
+            const inputVal = parseInt(document.getElementById('dailyTxInput').value, 10) || 0;
+
+            const store = storesData.find(s => s.id === storeId);
+            if (!store) return;
+
+            const todayKey = getTodayKey();
+            const nowTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+            if (!store.daily_transactions || typeof store.daily_transactions !== 'object') {
+                store.daily_transactions = {};
+            }
+            if (!store.daily_transactions[todayKey]) {
+                store.daily_transactions[todayKey] = {
+                    date: todayKey,
+                    recorded_time: nowTime,
+                    total: 0,
+                    records: []
+                };
+            }
+            const dayData = store.daily_transactions[todayKey];
+            if (!Array.isArray(dayData.records)) dayData.records = [];
+
+            const emp = (store.employees || []).find(e => (e.status === 'active' || !e.status) && e.shift_num === shiftNum);
+            const empId = emp ? emp.id : `shift_${shiftNum}`;
+            const empName = emp ? emp.name : (shiftNum === 1 ? 'Kasir Shift 1' : 'Kasir Shift 2');
+            const shiftName = shiftNum === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
+
+            const existingIdx = dayData.records.findIndex(r => r.shift_num === shiftNum);
+            const recordObj = {
+                emp_id: empId,
+                emp_name: empName,
+                shift_num: shiftNum,
+                shift_name: shiftName,
+                tx: inputVal,
+                recorded_at: nowTime
+            };
+
+            if (existingIdx >= 0) {
+                dayData.records[existingIdx] = recordObj;
+            } else {
+                dayData.records.push(recordObj);
+            }
+
+            dayData.total = dayData.records.reduce((sum, r) => sum + (Number(r.tx) || 0), 0);
+            dayData.recorded_time = nowTime;
+
+            const totalAllDays = Object.values(store.daily_transactions).reduce((sum, d) => sum + (d.total || 0), 0);
+            store.monthly_tx = totalAllDays;
+
+            saveStoresData();
+            closeModal('dailyTxModal');
+            renderStoresGrid();
+            showToast(`✅ Transaksi ${shiftName} di ${store.name} berhasil disimpan: ${inputVal} tx!`, '💾');
         }
 
         // Buka halaman Transaksi & Analisa cabang
