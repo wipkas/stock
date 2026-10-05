@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Leaderboard Dashboard Prototype</title>
+    <title>Leaderboard &amp; Bonus Manager Prototype - KSP Check</title>
     <link rel="icon" type="image/svg+xml" href="assets/icons/icon-karyawan.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,31 +23,6 @@
             --primary-blue-hover: #3E6AE6;
             --card-shadow: 0 4px 18px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02);
             --card-shadow-hover: 0 10px 25px rgba(15, 23, 42, 0.08);
-            
-            /* Status Colors (Menyesuaikan KspTarget / store-target-mini-row) */
-            --status-tercapai: #10B981;
-            --status-hampir: #3B82F6;
-            --status-kejar: #F59E0B;
-            --status-kurang: #EF4444;
-
-            /* Podium & Highlight Colors */
-            --gold-border: rgba(255, 215, 0, 0.55);
-            --gold-bg: linear-gradient(90deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.02) 100%);
-            --gold-tag-bg: rgba(255, 215, 0, 0.2);
-            --gold-tag-text: #B45309;
-            --gold-glow: rgba(255, 215, 0, 0.35);
-
-            --silver-border: rgba(148, 163, 184, 0.55);
-            --silver-bg: linear-gradient(90deg, rgba(148, 163, 184, 0.09) 0%, rgba(148, 163, 184, 0.02) 100%);
-            --silver-tag-bg: rgba(148, 163, 184, 0.2);
-            --silver-tag-text: #475569;
-            --silver-glow: rgba(148, 163, 184, 0.3);
-
-            --bronze-border: rgba(217, 119, 6, 0.45);
-            --bronze-bg: linear-gradient(90deg, rgba(217, 119, 6, 0.08) 0%, rgba(217, 119, 6, 0.02) 100%);
-            --bronze-tag-bg: rgba(217, 119, 6, 0.18);
-            --bronze-tag-text: #92400E;
-            --bronze-glow: rgba(217, 119, 6, 0.25);
         }
 
         body.dark-theme {
@@ -63,21 +38,6 @@
             --primary-blue-hover: #4F7BF7;
             --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             --card-shadow-hover: 0 12px 30px rgba(0, 0, 0, 0.55);
-
-            --gold-border: rgba(255, 215, 0, 0.5);
-            --gold-bg: linear-gradient(90deg, rgba(255, 215, 0, 0.14) 0%, rgba(21, 28, 44, 0.95) 100%);
-            --gold-tag-bg: rgba(255, 215, 0, 0.22);
-            --gold-tag-text: #FBBF24;
-
-            --silver-border: rgba(148, 163, 184, 0.45);
-            --silver-bg: linear-gradient(90deg, rgba(148, 163, 184, 0.12) 0%, rgba(21, 28, 44, 0.95) 100%);
-            --silver-tag-bg: rgba(148, 163, 184, 0.22);
-            --silver-tag-text: #E2E8F0;
-
-            --bronze-border: rgba(217, 119, 6, 0.45);
-            --bronze-bg: linear-gradient(90deg, rgba(217, 119, 6, 0.12) 0%, rgba(21, 28, 44, 0.95) 100%);
-            --bronze-tag-bg: rgba(217, 119, 6, 0.2);
-            --bronze-tag-text: #FCD34D;
         }
 
         * {
@@ -92,7 +52,7 @@
             background-color: var(--bg-page);
             color: var(--text-heading);
             min-height: 100vh;
-            padding: 24px 20px 48px 20px;
+            padding: 20px 16px 48px 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -100,30 +60,38 @@
         }
 
         /* -------------------------------------------------------------
-           TOOLBAR CONTROLLER PROTOTIPE (DI BAGIAN PALING ATAS)
+           TOOLBAR CONTROLLER PROTOTIPE
            ------------------------------------------------------------- */
         .proto-toolbar {
             width: 100%;
-            max-width: 1140px;
+            max-width: 1080px;
             background: var(--bg-card);
             border: 1px solid var(--border-card);
-            border-radius: 14px;
-            padding: 10px 16px;
+            border-radius: 16px;
+            padding: 12px 18px;
             margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .proto-toolbar-top {
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 12px;
-            box-shadow: var(--card-shadow);
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-subtle);
         }
 
         .proto-badge-title {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 13px;
-            font-weight: 800;
+            font-size: 13.5px;
+            font-weight: 850;
         }
 
         .proto-pill {
@@ -136,11 +104,27 @@
             letter-spacing: 0.4px;
         }
 
-        .proto-controls {
+        .proto-actions-row {
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: space-between;
             flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .proto-mode-selector {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .proto-mode-label {
+            font-size: 11px;
+            font-weight: 750;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
         }
 
         .proto-btn {
@@ -154,7 +138,7 @@
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             transition: all 0.15s ease;
         }
 
@@ -169,498 +153,80 @@
             border-color: var(--primary-blue);
         }
 
+        .proto-btn-accent {
+            background: rgba(16, 185, 129, 0.12);
+            color: #10B981;
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+        .proto-btn-accent:hover {
+            background: #10B981;
+            color: #FFFFFF;
+        }
+
         /* -------------------------------------------------------------
            CONTAINER UTAMA LEADERBOARD
            ------------------------------------------------------------- */
         .dashboard-container {
             width: 100%;
-            max-width: 1140px;
+            max-width: 1080px;
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            gap: 16px;
             transition: max-width 0.3s ease;
         }
 
         .dashboard-container.mode-mobile {
-            max-width: 480px;
+            max-width: 440px;
         }
 
-        /* -------------------------------------------------------------
-           1. TOP HEADER (LEADERBOARD TITLE & DROPDOWNS)
-           ------------------------------------------------------------- */
-        .leaderboard-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 14px;
-        }
-
-        .header-title-wrap {
-            display: flex;
-            align-items: baseline;
-            gap: 10px;
-        }
-
-        .header-title {
-            font-size: 24px;
-            font-weight: 850;
-            color: var(--text-heading);
-            letter-spacing: -0.5px;
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .select-filter-btn {
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
-            color: var(--text-heading);
-            padding: 8px 14px;
-            border-radius: 9px;
-            font-size: 13px;
-            font-weight: 650;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-            transition: all 0.15s ease;
-            position: relative;
-        }
-
-        .select-filter-btn:hover {
-            border-color: var(--text-sub);
-        }
-
-        .icon-btn-fullscreen {
-            width: 38px;
-            height: 38px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
-            color: var(--text-sub);
-            border-radius: 9px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-        }
-
-        .icon-btn-fullscreen:hover {
-            color: var(--text-heading);
-            border-color: var(--text-sub);
-        }
-
-        /* -------------------------------------------------------------
-           2. HORIZONTAL AGGREGATE SUMMARY STRIP (5 BOXES)
-           ------------------------------------------------------------- */
-        .summary-boxes-strip {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
-        }
-
-        .summary-box {
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
+        /* Notice Box Penjelasan Data */
+        .info-callout {
+            background: rgba(79, 123, 247, 0.08);
+            border: 1px solid rgba(79, 123, 247, 0.25);
             border-radius: 12px;
-            padding: 14px 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            box-shadow: var(--card-shadow);
-            transition: all 0.15s ease;
-        }
-
-        .summary-box:hover {
-            border-color: var(--primary-blue);
-            transform: translateY(-2px);
-        }
-
-        .sum-icon-wrap {
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .sum-text-wrap {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-
-        .sum-number-row {
-            display: flex;
-            align-items: baseline;
-            gap: 4px;
-        }
-
-        .sum-main-val {
-            font-size: 19px;
-            font-weight: 850;
+            padding: 12px 16px;
+            font-size: 12px;
+            line-height: 1.5;
             color: var(--text-heading);
-            line-height: 1.15;
-            letter-spacing: -0.4px;
-        }
-
-        .sum-sub-val {
-            font-size: 11px;
-            font-weight: 650;
-            color: var(--text-muted);
-            white-space: nowrap;
-        }
-
-        .sum-label {
-            font-size: 10.5px;
-            font-weight: 750;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* -------------------------------------------------------------
-           3. UNIFIED LEADERBOARD LIST CARD (TOP 3 + ALL RANKS TOGETHER)
-           ------------------------------------------------------------- */
-        .leaderboard-list-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
-            border-radius: 16px;
-            padding: 14px 18px;
-            box-shadow: var(--card-shadow);
             display: flex;
-            flex-direction: column;
+            align-items: flex-start;
             gap: 10px;
         }
 
-        .list-section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 4px 6px 10px 6px;
-            border-bottom: 1px solid var(--border-subtle);
-        }
-
-        .list-section-title {
-            font-size: 12px;
-            font-weight: 800;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        /* Item Baris Klasemen */
-        .list-row-item {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 14px 16px;
-            border-radius: 14px;
-            border: 1px solid var(--border-card);
-            background: var(--bg-card);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-
-        .list-row-item:hover {
-            border-color: var(--primary-blue);
-            transform: translateX(2px);
-            box-shadow: var(--card-shadow);
-        }
-
-        /* Highlight Khusus Top 1 (Emas 🏆) */
-        .list-row-item.rank-gold {
-            background: var(--gold-bg);
-            border: 1.5px solid var(--gold-border);
-            box-shadow: 0 4px 14px var(--gold-glow);
-        }
-        .list-row-item.rank-gold:hover {
-            border-color: #F59E0B;
-        }
-
-        /* Highlight Khusus Top 2 (Perak 🥈) */
-        .list-row-item.rank-silver {
-            background: var(--silver-bg);
-            border: 1.5px solid var(--silver-border);
-            box-shadow: 0 4px 14px var(--silver-glow);
-        }
-        .list-row-item.rank-silver:hover {
-            border-color: #64748B;
-        }
-
-        /* Highlight Khusus Top 3 (Perunggu 🥉) */
-        .list-row-item.rank-bronze {
-            background: var(--bronze-bg);
-            border: 1.5px solid var(--bronze-border);
-            box-shadow: 0 4px 14px var(--bronze-glow);
-        }
-        .list-row-item.rank-bronze:hover {
-            border-color: #D97706;
-        }
-
-        /* Avatar Container dengan Badge Peringkat */
-        .list-avatar-wrap {
-            position: relative;
-            flex-shrink: 0;
-        }
-
-        .list-avatar {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            overflow: hidden;
-            background: #E2E8F0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #FFFFFF;
-            transition: transform 0.2s ease;
-        }
-
-        body.dark-theme .list-avatar {
-            border-color: #222B3E;
-        }
-
-        .list-avatar.ring-gold {
-            border-color: #F59E0B;
-            box-shadow: 0 0 10px var(--gold-glow);
-        }
-        .list-avatar.ring-silver {
-            border-color: #94A3B8;
-            box-shadow: 0 0 10px var(--silver-glow);
-        }
-        .list-avatar.ring-bronze {
-            border-color: #D97706;
-            box-shadow: 0 0 10px var(--bronze-glow);
-        }
-
-        .list-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Badge Peringkat Melayang di Bawah Avatar */
-        .list-rank-badge {
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            font-size: 11px;
-            font-weight: 900;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
-            border: 1.5px solid var(--bg-card);
-            background: #1E293B;
-            color: #FFFFFF;
-        }
-
-        body.dark-theme .list-rank-badge {
-            background: #F8FAFC;
-            color: #0B0F19;
-        }
-
-        .badge-gold {
-            background: linear-gradient(135deg, #FFE066, #F59E0B) !important;
-            color: #78350F !important;
-            border-color: #FFFFFF !important;
-        }
-        .badge-silver {
-            background: linear-gradient(135deg, #F1F5F9, #94A3B8) !important;
-            color: #1E293B !important;
-            border-color: #FFFFFF !important;
-        }
-        .badge-bronze {
-            background: linear-gradient(135deg, #FCD34D, #B45309) !important;
-            color: #FFFFFF !important;
-            border-color: #FFFFFF !important;
-        }
-
-        /* Kolom Info, Progress Bar, & Metrics */
-        .list-info-col {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            min-width: 0;
-        }
-
-        /* Baris Nama Kasir, Tag Juara/Piala, & Angka Skor */
-        .list-name-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .name-trophy-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-width: 0;
-        }
-
-        .list-person-name {
-            font-size: 14.5px;
-            font-weight: 800;
-            color: var(--text-heading);
-            letter-spacing: -0.2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* Tag Piala / Juara Podium */
-        .trophy-tag {
-            font-size: 10px;
-            font-weight: 850;
-            padding: 2px 7px;
-            border-radius: 6px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            letter-spacing: 0.3px;
-            flex-shrink: 0;
-        }
-
-        .trophy-gold {
-            background: var(--gold-tag-bg);
-            color: var(--gold-tag-text);
-            border: 1px solid rgba(255, 215, 0, 0.45);
-        }
-        .trophy-silver {
-            background: var(--silver-tag-bg);
-            color: var(--silver-tag-text);
-            border: 1px solid rgba(148, 163, 184, 0.4);
-        }
-        .trophy-bronze {
-            background: var(--bronze-tag-bg);
-            color: var(--bronze-tag-text);
-            border: 1px solid rgba(217, 119, 6, 0.35);
-        }
-
-        .list-store-tag {
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--text-muted);
-            background: var(--input-bg);
-            border: 1px solid var(--border-card);
-            padding: 1.5px 6px;
-            border-radius: 5px;
-            flex-shrink: 0;
-        }
-
-        /* Skor & Status Badge di Kanan Atas */
-        .score-status-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
-        }
-
-        .score-display-val {
-            font-size: 16px;
-            font-weight: 900;
-            color: var(--primary-blue);
-            letter-spacing: -0.3px;
-        }
-
-        .score-status-badge {
-            font-size: 10px;
-            font-weight: 800;
-            padding: 2px 7px;
-            border-radius: 6px;
-            letter-spacing: 0.3px;
-        }
-
         /* -------------------------------------------------------------
-           PROGRESS-BAR-FILL PERSIS SEPERTI store-target-mini-row
+           MODAL PENGATURAN SKEMA BONUS
            ------------------------------------------------------------- */
-        .store-target-progress-wrap {
-            width: 100%;
-            height: 6px;
-            background: var(--input-bg);
-            border-radius: 3px;
-            overflow: hidden;
-            border: 1px solid var(--border-card);
-            margin: 2px 0 4px 0;
-        }
-
-        .store-target-progress-fill {
-            height: 100%;
-            border-radius: 3px;
-            transition: width 0.4s ease;
-        }
-
-        /* Breakdown Metrics Strip di Bawah Progress Bar */
-        .list-metrics-row {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            flex-wrap: wrap;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-sub);
-            margin-top: 1px;
-        }
-
-        .metric-mini-item {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        /* -------------------------------------------------------------
-           MODAL DETAIL PERFORMER
-           ------------------------------------------------------------- */
-        .modal-overlay {
+        .modal-backdrop {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(4px);
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 2000;
             opacity: 0;
             visibility: hidden;
             transition: all 0.2s ease;
-            padding: 16px;
+            padding: 14px;
         }
 
-        .modal-overlay.open {
+        .modal-backdrop.open {
             opacity: 1;
             visibility: visible;
         }
 
-        .modal-box {
+        .modal-card {
             background: var(--bg-card);
             border: 1px solid var(--border-card);
             border-radius: 20px;
-            max-width: 440px;
+            max-width: 520px;
             width: 100%;
-            padding: 22px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+            overflow: hidden;
             animation: modalScale 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
@@ -669,589 +235,516 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* -------------------------------------------------------------
-           RESPONSIVE MOBILE BREAKPOINTS
-           ------------------------------------------------------------- */
-        @media (max-width: 900px) {
-            .summary-boxes-strip {
-                grid-template-columns: repeat(3, 1fr);
-            }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-card);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        @media (max-width: 768px) {
-            body {
-                padding: 14px 10px 40px 10px;
-            }
-
-            .summary-boxes-strip {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .header-title {
-                font-size: 20px;
-            }
-
-            .list-row-item {
-                padding: 12px 12px;
-                gap: 12px;
-            }
-
-            .list-avatar {
-                width: 46px;
-                height: 46px;
-            }
-
-            .score-display-val {
-                font-size: 15px;
-            }
+        .modal-body {
+            padding: 18px 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
         }
 
-        @media (max-width: 480px) {
-            .summary-boxes-strip {
-                grid-template-columns: 1fr;
-            }
+        .modal-footer {
+            padding: 14px 20px;
+            border-top: 1px solid var(--border-card);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            background: var(--input-bg);
+        }
 
-            .list-metrics-row {
-                gap: 8px;
-                font-size: 11px;
-            }
+        /* Radio Tabs untuk 3 Skema Bonus */
+        .scheme-tab-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            background: var(--input-bg);
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid var(--border-card);
+        }
+
+        .scheme-tab-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 6px;
+            font-size: 11.5px;
+            font-weight: 750;
+            color: var(--text-muted);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: center;
+        }
+
+        .scheme-tab-btn.active {
+            background: var(--bg-card);
+            color: var(--primary-blue);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-label {
+            font-size: 11.5px;
+            font-weight: 750;
+            color: var(--text-heading);
+        }
+
+        .form-input {
+            background: var(--input-bg);
+            border: 1px solid var(--border-card);
+            color: var(--text-heading);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary-blue);
+        }
+
+        .btn-submit {
+            background: var(--primary-blue);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 18px;
+            font-size: 12.5px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            background: var(--bg-page);
+            border: 1px solid var(--border-card);
+            color: var(--text-heading);
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* Toast */
+        .proto-toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translate(-50%, 20px);
+            background: #1E293B;
+            color: #FFFFFF;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 12.5px;
+            font-weight: 750;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s ease;
+            z-index: 9999;
+        }
+
+        .proto-toast.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
         }
     </style>
 </head>
 <body>
 
     <!-- =============================================================
-         TOOLBAR KONTROL PROTOTIPE
+         1. TOOLBAR KONTROL PROTOTIPE & PENGATURAN SKEMA BONUS
          ============================================================= -->
     <header class="proto-toolbar">
-        <div class="proto-badge-title">
-            <span>🏆</span>
-            <span>Prototype: Leaderboard (Unified Rows + Target Progress Fill)</span>
-            <span class="proto-pill">Design v2</span>
+        <div class="proto-toolbar-top">
+            <div class="proto-badge-title">
+                <span>🏆</span>
+                <span>Leaderboard Kasir &amp; Manager Bonus</span>
+                <span class="proto-pill">Module Ready</span>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button class="proto-btn proto-btn-accent" onclick="openBonusConfigModal()" title="Buka Pengaturan Bonus">
+                    <span>⚙️</span> Atur Skema Bonus &amp; Hadiah
+                </button>
+                <button class="proto-btn" id="btnViewMobile" onclick="toggleMobileView()">
+                    📱 Mode HP
+                </button>
+                <button class="proto-btn" onclick="toggleTheme()">
+                    🌓 Tema
+                </button>
+            </div>
         </div>
 
-        <div class="proto-controls">
-            <!-- Mode Dataset: Original vs KSP Check -->
-            <button class="proto-btn active" id="btnDataOriginal" onclick="switchDataset('original')">
-                🖼️ Mockup Asli
-            </button>
-            <button class="proto-btn" id="btnDataKsp" onclick="switchDataset('ksp')">
-                🏬 Kasir KSP Check
-            </button>
+        <!-- Pemilih Cepat Mode Bonus (Live Switcher) -->
+        <div class="proto-actions-row">
+            <div class="proto-mode-selector">
+                <span class="proto-mode-label">🎁 Pilih Skema Bonus:</span>
+                <button class="proto-btn active" id="btnModePercentage" onclick="quickSwitchBonusMode('percentage')">
+                    1. Proporsional (% Target)
+                </button>
+                <button class="proto-btn" id="btnModeFixed" onclick="quickSwitchBonusMode('fixed')">
+                    2. Nilai Tetap (Peringkat 1-3)
+                </button>
+                <button class="proto-btn" id="btnModeFlat" onclick="quickSwitchBonusMode('flat_target')">
+                    3. Sama Rata (Target Tercapai)
+                </button>
+            </div>
 
-            <!-- Mode Layar: Desktop vs HP -->
-            <button class="proto-btn" id="btnViewMobile" onclick="toggleMobileView()">
-                📱 Mode HP
-            </button>
-
-            <!-- Mode Tema: Light vs Dark -->
-            <button class="proto-btn" onclick="toggleTheme()">
-                🌓 Tema
-            </button>
+            <div style="display: flex; gap: 6px; align-items: center;">
+                <button class="proto-btn" id="btnToggleFutureMetrics" onclick="toggleFutureMetricsPreview()">
+                    <span>🔌</span> Slot Metrik Perkategori (Masa Depan)
+                </button>
+            </div>
         </div>
     </header>
 
     <!-- =============================================================
-         KONTEN DASHBOARD UTAMA
+         2. KONTEN DASHBOARD UTAMA
          ============================================================= -->
     <main class="dashboard-container" id="dashboardContainer">
 
-        <!-- 1. HEADER (TITLE & FILTER CONTROLS) -->
-        <div class="leaderboard-header">
-            <div class="header-title-wrap">
-                <h1 class="header-title">Leaderboard</h1>
-            </div>
-
-            <div class="header-actions">
-                <!-- Dropdown Scope (Everyone / Store) -->
-                <button class="select-filter-btn" id="scopeDropdownBtn" onclick="cycleScopeFilter()">
-                    <span id="scopeLabel">Everyone</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
-
-                <!-- Dropdown Period (This Week, Today, Month) -->
-                <button class="select-filter-btn" id="periodDropdownBtn" onclick="cyclePeriodFilter()">
-                    <span id="periodLabel">This Week (Mon - Sun)</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
-
-                <!-- Fullscreen Button -->
-                <button class="icon-btn-fullscreen" onclick="toggleFullscreen()" title="Toggle Fullscreen">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
-                    </svg>
-                </button>
+        <!-- Info Callout: Fokus pada Total Transaksi Riil -->
+        <div class="info-callout">
+            <span style="font-size: 18px;">💡</span>
+            <div>
+                <b>Fokus Data Transaksi Keseluruhan:</b> Metrik breakdown perkategori (TopUp, Pulsa, PLN) ditunda sementara karena data riil di sistem saat ini berbasis <b>Jumlah Transaksi Keseluruhan (`total_tx`)</b>. Modul telah dilengkapi *slot adapter* sehingga metrik perkategori siap diaktifkan kapan saja di masa depan tanpa mengubah tata letak.
             </div>
         </div>
 
-        <!-- 2. STRIP AGREGAT 5 METRIC BOXES -->
-        <section class="summary-boxes-strip" id="summaryBoxesStrip">
-            <!-- Diisi dinamis oleh JavaScript -->
-        </section>
-
-        <!-- 3. DAFTAR PERINGKAT LENGKAP DALAM SATU KONTENER BARIS (TOP 1, 2, 3 BERPIALA + LAINNYA) -->
-        <section class="leaderboard-list-card">
-            <div class="list-section-header">
-                <div class="list-section-title">
-                    <span>👑</span>
-                    <span>PAPAN KLASEMEN &amp; TARGET PERFORMA</span>
-                </div>
-                <span id="totalMembersBadge" style="font-size: 11px; font-weight: 750; color: var(--primary-blue); background: rgba(79, 123, 247, 0.1); padding: 2px 8px; border-radius: 6px;">
-                    10 Anggota Tim
-                </span>
-            </div>
-
-            <!-- List Baris Klasemen Terpadu -->
-            <div id="unifiedLeaderboardList" style="display: flex; flex-direction: column; gap: 8px;">
-                <!-- Diisi dinamis oleh JavaScript -->
-            </div>
-        </section>
+        <!-- Penampung Modul Leaderboard (Di-render Dinamis oleh ksp_leaderboard.js) -->
+        <div id="leaderboardMount"></div>
 
     </main>
 
     <!-- =============================================================
-         MODAL DETAIL PERFORMER
+         3. MODAL PENGATURAN SKEMA BONUS & TOLAK UKUR
          ============================================================= -->
-    <div class="modal-overlay" id="detailModal" onclick="closeDetailModal(event)">
-        <div class="modal-box" onclick="event.stopPropagation()">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                <h3 style="font-size: 16px; font-weight: 800;">Detail Performa Kasir</h3>
-                <button onclick="closeDetailModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);">&times;</button>
+    <div id="bonusConfigModal" class="modal-backdrop">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h3 style="font-size: 15px; font-weight: 850;">⚙️ Pengaturan Tolak Ukur &amp; Skema Bonus</h3>
+                    <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Tentukan bagaimana bonus dan juara dihitung</p>
+                </div>
+                <button onclick="closeBonusConfigModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);">&times;</button>
             </div>
-            <div id="modalContent"></div>
+
+            <div class="modal-body">
+                <!-- Tab Pemilih Skema -->
+                <div class="form-group">
+                    <label class="form-label">Pilih Model Perhitungan Bonus:</label>
+                    <div class="scheme-tab-group">
+                        <button type="button" class="scheme-tab-btn active" id="tabBtnPercentage" onclick="setModalSchemeTab('percentage')">
+                            % Target
+                        </button>
+                        <button type="button" class="scheme-tab-btn" id="tabBtnFixed" onclick="setModalSchemeTab('fixed')">
+                            Nilai Tetap
+                        </button>
+                        <button type="button" class="scheme-tab-btn" id="tabBtnFlat" onclick="setModalSchemeTab('flat_target')">
+                            Sama Rata
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 1. PENGATURAN SKEMA: PERCENTAGE -->
+                <div id="configSectionPercentage" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="background: rgba(79, 123, 247, 0.08); border-radius: 10px; padding: 10px; font-size: 11.5px; line-height: 1.45; color: var(--text-heading);">
+                        📈 <b>Model Proporsional (% Target):</b> Bonus kasir dihitung proporsional sesuai persentase tercapainya target toko. Jika tembus 120%, dapat 120% dari Base Pool.
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Base Bonus Pool (100% Target) *</label>
+                        <input type="number" id="cfgPctBasePool" class="form-input" value="150000" placeholder="Contoh: 150000">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Minimal % Capaian Agar Bonus Aktif (%) *</label>
+                        <input type="number" id="cfgPctMinPct" class="form-input" value="70" placeholder="Contoh: 70">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Maksimal Cap Bonus (Rp) *</label>
+                        <input type="number" id="cfgPctMaxCap" class="form-input" value="250000" placeholder="Contoh: 250000">
+                    </div>
+                </div>
+
+                <!-- 2. PENGATURAN SKEMA: FIXED -->
+                <div id="configSectionFixed" style="display: none; flex-direction: column; gap: 12px;">
+                    <div style="background: rgba(245, 158, 11, 0.08); border-radius: 10px; padding: 10px; font-size: 11.5px; line-height: 1.45; color: var(--text-heading);">
+                        🏆 <b>Model Nilai Tetap (Peringkat 1-3):</b> Juara 1, 2, dan 3 mendapatkan nominal pasti, asalkan mencapai syarat minimal % target toko.
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Bonus Juara 1 (Emas 🏆) *</label>
+                        <input type="number" id="cfgFixedP1" class="form-input" value="150000" placeholder="Contoh: 150000">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Bonus Juara 2 (Perak 🥈) *</label>
+                        <input type="number" id="cfgFixedP2" class="form-input" value="100000" placeholder="Contoh: 100000">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Bonus Juara 3 (Perunggu 🥉) *</label>
+                        <input type="number" id="cfgFixedP3" class="form-input" value="50000" placeholder="Contoh: 50000">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Syarat Minimal % Target Agar Cair (%) *</label>
+                        <input type="number" id="cfgFixedMinPct" class="form-input" value="80" placeholder="Contoh: 80">
+                    </div>
+                </div>
+
+                <!-- 3. PENGATURAN SKEMA: FLAT_TARGET -->
+                <div id="configSectionFlat" style="display: none; flex-direction: column; gap: 12px;">
+                    <div style="background: rgba(16, 185, 129, 0.08); border-radius: 10px; padding: 10px; font-size: 11.5px; line-height: 1.45; color: var(--text-heading);">
+                        🤝 <b>Model Sama Rata (Target Tercapai):</b> Adil untuk semua cabang besar maupun kecil. Semua kasir yang target tokonya tercapai berhak mendapatkan nominal bonus yang sama.
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Syarat Target Tercapai (%) *</label>
+                        <input type="number" id="cfgFlatThreshold" class="form-input" value="100" placeholder="Contoh: 100">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nominal Bonus Sama Rata (Rp) *</label>
+                        <input type="number" id="cfgFlatAmount" class="form-input" value="100000" placeholder="Contoh: 100000">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeBonusConfigModal()">Batal</button>
+                <button type="button" class="btn-submit" onclick="saveBonusConfigFromModal()">Simpan &amp; Terapkan</button>
+            </div>
         </div>
     </div>
 
-    <!-- =============================================================
-         JAVASCRIPT & DATA CONTROLLER
-         ============================================================= -->
+    <!-- TOAST -->
+    <div id="protoToast" class="proto-toast">Berhasil diperbarui!</div>
+
+    <!-- SCRIPT MODUL LEADERBOARD -->
+    <script src="js/ksp_leaderboard.js?v=20261005"></script>
+
     <script>
-        // DATASET 1: MOCKUP ASLI (SEPERTI PADA GAMBAR REFERENSI DENGAN HIGHLIGHT PIALA)
-        const ORIGINAL_DATASET = {
-            metricLabels: [
-                { id: 'app', label: 'APPOINTMENTS', icon: '📅' },
-                { id: 'conv', label: 'CONVERSATIONS', icon: '📞' },
-                { id: 'calls', label: 'CALL ATTEMPTS', icon: '📲' },
-                { id: 'texts', label: 'TEXT MESSAGES', icon: '💬' },
-                { id: 'emails', label: 'EMAILS', icon: '✉️' }
-            ],
-            summaryValues: [
-                { val: '5', sub: '', label: 'APPOINTMENTS', icon: '📅' },
-                { val: '56', sub: '(10 hrs 35m)', label: 'CONVERSATIONS', icon: '📞' },
-                { val: '205', sub: '', label: 'CALL ATTEMPTS', icon: '📲' },
-                { val: '259', sub: '', label: 'TEXT MESSAGES', icon: '💬' },
-                { val: '1700', sub: '', label: 'EMAILS', icon: '✉️' }
-            ],
-            performers: [
-                {
-                    rank: 1,
-                    name: 'Meghan Porter',
-                    score: 736,
-                    progressPct: 100,
-                    statusText: 'TERCAPAI (100%)',
-                    statusColor: '#10B981',
-                    statusBg: 'rgba(16, 185, 129, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-                    tag: null,
-                    m1: '8', m2: '9 (2m 47s)', m3: '6', m4: '7', m5: '12'
-                },
-                {
-                    rank: 2,
-                    name: 'Steve Hines',
-                    score: 337,
-                    progressPct: 46,
-                    statusText: 'RUNNER UP (46%)',
-                    statusColor: '#3B82F6',
-                    statusBg: 'rgba(59, 130, 246, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-                    tag: null,
-                    m1: '6', m2: '7', m3: '8', m4: '8', m5: '10'
-                },
-                {
-                    rank: 3,
-                    name: 'Paul Drozdowski',
-                    score: 191,
-                    progressPct: 26,
-                    statusText: 'TOP 3 (26%)',
-                    statusColor: '#8B5CF6',
-                    statusBg: 'rgba(139, 92, 246, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-                    tag: null,
-                    m1: '9', m2: '8 (52m 44s)', m3: '37', m4: '70', m5: '11'
-                },
-                {
-                    rank: 4,
-                    name: 'Ashley Mielcarek',
-                    score: 190,
-                    progressPct: 26,
-                    statusText: 'ON TRACK (26%)',
-                    statusColor: '#06B6D4',
-                    statusBg: 'rgba(6, 182, 212, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-                    tag: null,
-                    m1: '2', m2: '5 (1 hr 43m)', m3: '6', m4: '55', m5: '84'
-                },
-                {
-                    rank: 5,
-                    name: 'Tim Erickson',
-                    score: 164,
-                    progressPct: 22,
-                    statusText: 'PROGRES (22%)',
-                    statusColor: '#F59E0B',
-                    statusBg: 'rgba(245, 158, 11, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
-                    tag: null,
-                    m1: '2', m2: '10 (1 hr 49m)', m3: '13', m4: '29', m5: '52'
-                },
-                {
-                    rank: 6,
-                    name: 'Brooke Fletcher',
-                    score: 151,
-                    progressPct: 21,
-                    statusText: 'PROGRES (21%)',
-                    statusColor: '#F59E0B',
-                    statusBg: 'rgba(245, 158, 11, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-                    tag: null,
-                    m1: '0', m2: '0', m3: '0', m4: '0', m5: '151'
-                },
-                {
-                    rank: 7,
-                    name: 'Jon Wright',
-                    score: 148,
-                    progressPct: 20,
-                    statusText: 'PROGRES (20%)',
-                    statusColor: '#F59E0B',
-                    statusBg: 'rgba(245, 158, 11, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80',
-                    tag: null,
-                    m1: '3', m2: '4 (38m 10s)', m3: '15', m4: '42', m5: '84'
-                },
-                {
-                    rank: 8,
-                    name: 'Sarah Jenkins',
-                    score: 132,
-                    progressPct: 18,
-                    statusText: 'KEJAR TARGET (18%)',
-                    statusColor: '#EF4444',
-                    statusBg: 'rgba(239, 68, 68, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-                    tag: null,
-                    m1: '2', m2: '3 (22m)', m3: '12', m4: '35', m5: '80'
-                },
-                {
-                    rank: 9,
-                    name: 'David Miller',
-                    score: 115,
-                    progressPct: 16,
-                    statusText: 'KEJAR TARGET (16%)',
-                    statusColor: '#EF4444',
-                    statusBg: 'rgba(239, 68, 68, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80',
-                    tag: null,
-                    m1: '1', m2: '2 (14m)', m3: '10', m4: '28', m5: '74'
-                },
-                {
-                    rank: 10,
-                    name: 'Linda Ross',
-                    score: 98,
-                    progressPct: 13,
-                    statusText: 'KEJAR TARGET (13%)',
-                    statusColor: '#EF4444',
-                    statusBg: 'rgba(239, 68, 68, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-                    tag: null,
-                    m1: '1', m2: '1 (8m)', m3: '8', m4: '22', m5: '66'
-                }
-            ]
-        };
+        // DATA KARYAWAN SIMULASI (BERBASIS TOTAL TRANSAKSI KESELURUHAN & TARGET TOKO)
+        const SAMPLE_EMPLOYEES = [
+            {
+                id: 'emp_siti',
+                name: 'Siti Rahma',
+                storeName: 'KSP Mahang',
+                shift: 'Shift 1',
+                todayTx: 248,
+                targetPct: 124, // 124% Tercapai
+                photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+                subMetrics: { topup: 120, tarik: 45, pulsa: 40, pln: 25, qris: 18 }
+            },
+            {
+                id: 'emp_budi',
+                name: 'Budi Santoso',
+                storeName: 'KSP Gading',
+                shift: 'Shift 1',
+                todayTx: 224,
+                targetPct: 112, // 112% Tercapai
+                photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+                subMetrics: { topup: 98, tarik: 42, pulsa: 36, pln: 28, qris: 20 }
+            },
+            {
+                id: 'emp_rian',
+                name: 'Rian Hidayat',
+                storeName: 'KSP Marpoyan',
+                shift: 'Shift 1',
+                todayTx: 204,
+                targetPct: 102, // 102% Tercapai
+                photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+                subMetrics: { topup: 88, tarik: 38, pulsa: 32, pln: 26, qris: 20 }
+            },
+            {
+                id: 'emp_ahmad',
+                name: 'Ahmad Fauzi',
+                storeName: 'KSP Mahang',
+                shift: 'Shift 1',
+                todayTx: 190,
+                targetPct: 95, // 95% On Track
+                photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+                subMetrics: { topup: 82, tarik: 35, pulsa: 30, pln: 25, qris: 18 }
+            },
+            {
+                id: 'emp_dewi',
+                name: 'Dewi Lestari',
+                storeName: 'KSP Gading',
+                shift: 'Shift 2',
+                todayTx: 176,
+                targetPct: 88, // 88%
+                photo: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
+                subMetrics: { topup: 75, tarik: 32, pulsa: 28, pln: 23, qris: 18 }
+            },
+            {
+                id: 'emp_ilham',
+                name: 'Ilham Saputra',
+                storeName: 'KSP Karya 1',
+                shift: 'Shift 1',
+                todayTx: 164,
+                targetPct: 82, // 82%
+                photo: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
+                subMetrics: { topup: 70, tarik: 30, pulsa: 26, pln: 22, qris: 16 }
+            },
+            {
+                id: 'emp_doni',
+                name: 'Doni Pratama',
+                storeName: 'KSP Karya 2',
+                shift: 'Shift 1',
+                todayTx: 158,
+                targetPct: 79, // 79%
+                photo: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80',
+                subMetrics: { topup: 68, tarik: 28, pulsa: 25, pln: 22, qris: 15 }
+            },
+            {
+                id: 'emp_putri',
+                name: 'Putri Ananda',
+                storeName: 'KSP Karya 1',
+                shift: 'Shift 2',
+                todayTx: 142,
+                targetPct: 71, // 71%
+                photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+                subMetrics: { topup: 60, tarik: 26, pulsa: 22, pln: 20, qris: 14 }
+            },
+            {
+                id: 'emp_nurul',
+                name: 'Nurul Aini',
+                storeName: 'KSP Marpoyan',
+                shift: 'Shift 2',
+                todayTx: 124,
+                targetPct: 62, // 62%
+                photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80',
+                subMetrics: { topup: 52, tarik: 22, pulsa: 20, pln: 18, qris: 12 }
+            },
+            {
+                id: 'emp_fajar',
+                name: 'Fajar Siddiq',
+                storeName: 'KSP Mahang',
+                shift: 'Inval Rolling',
+                todayTx: 106,
+                targetPct: 53, // 53%
+                photo: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+                subMetrics: { topup: 45, tarik: 18, pulsa: 18, pln: 15, qris: 10 }
+            }
+        ];
 
-        // DATASET 2: ADAPTASI KHUSUS KSP CHECK (KASIR & CABANG TOKO KSP)
-        const KSP_DATASET = {
-            metricLabels: [
-                { id: 'topup', label: 'TOPUP EWALLET', icon: '💳' },
-                { id: 'tarik', label: 'TARIK TUNAI', icon: '💵' },
-                { id: 'pulsa', label: 'VOUCHER / PULSA', icon: '🎟️' },
-                { id: 'pln', label: 'TOKEN PLN', icon: '⚡' },
-                { id: 'qris', label: 'QRIS & LAINNYA', icon: '📱' }
-            ],
-            summaryValues: [
-                { val: '142', sub: '', label: 'TOPUP EWALLET', icon: '💳' },
-                { val: '98', sub: '(Rp 42.5 Jt)', label: 'TARIK TUNAI', icon: '💵' },
-                { val: '315', sub: '', label: 'VOUCHER / PULSA', icon: '🎟️' },
-                { val: '86', sub: '', label: 'TOKEN PLN', icon: '⚡' },
-                { val: '1840', sub: '', label: 'TOTAL TRANSAKSI', icon: '📊' }
-            ],
-            performers: [
-                {
-                    rank: 1,
-                    name: 'Siti Rahma',
-                    tag: 'KSP Mahang',
-                    score: 736,
-                    progressPct: 100,
-                    statusText: 'TERCAPAI (124%)',
-                    statusColor: '#10B981',
-                    statusBg: 'rgba(16, 185, 129, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-                    m1: '148', m2: '42', m3: '86', m4: '35', m5: '425'
-                },
-                {
-                    rank: 2,
-                    name: 'Budi Santoso',
-                    tag: 'KSP Gading',
-                    score: 337,
-                    progressPct: 46,
-                    statusText: 'RUNNER UP (112%)',
-                    statusColor: '#3B82F6',
-                    statusBg: 'rgba(59, 130, 246, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-                    m1: '84', m2: '28', m3: '45', m4: '19', m5: '161'
-                },
-                {
-                    rank: 3,
-                    name: 'Rian Hidayat',
-                    tag: 'KSP Marpoyan',
-                    score: 191,
-                    progressPct: 26,
-                    statusText: 'TOP 3 (102%)',
-                    statusColor: '#8B5CF6',
-                    statusBg: 'rgba(139, 92, 246, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-                    m1: '45', m2: '16', m3: '38', m4: '12', m5: '80'
-                },
-                {
-                    rank: 4,
-                    name: 'Ahmad Fauzi',
-                    tag: 'KSP Mahang',
-                    score: 190,
-                    progressPct: 26,
-                    statusText: 'ON TRACK (95%)',
-                    statusColor: '#06B6D4',
-                    statusBg: 'rgba(6, 182, 212, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-                    m1: '42', m2: '15', m3: '36', m4: '11', m5: '86'
-                },
-                {
-                    rank: 5,
-                    name: 'Dewi Lestari',
-                    tag: 'KSP Gading',
-                    score: 164,
-                    progressPct: 22,
-                    statusText: 'PROGRES (88%)',
-                    statusColor: '#F59E0B',
-                    statusBg: 'rgba(245, 158, 11, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
-                    m1: '38', m2: '14', m3: '29', m4: '9', m5: '74'
-                },
-                {
-                    rank: 6,
-                    name: 'Ilham Saputra',
-                    tag: 'KSP Karya 1',
-                    score: 151,
-                    progressPct: 21,
-                    statusText: 'PROGRES (82%)',
-                    statusColor: '#F59E0B',
-                    statusBg: 'rgba(245, 158, 11, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-                    m1: '32', m2: '12', m3: '24', m4: '8', m5: '75'
-                },
-                {
-                    rank: 7,
-                    name: 'Doni Pratama',
-                    tag: 'KSP Karya 2',
-                    score: 148,
-                    progressPct: 20,
-                    statusText: 'PROGRES (79%)',
-                    statusColor: '#F59E0B',
-                    statusBg: 'rgba(245, 158, 11, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80',
-                    m1: '30', m2: '11', m3: '22', m4: '7', m5: '78'
-                },
-                {
-                    rank: 8,
-                    name: 'Putri Ananda',
-                    tag: 'KSP Karya 1',
-                    score: 132,
-                    progressPct: 18,
-                    statusText: 'KEJAR TARGET (71%)',
-                    statusColor: '#EF4444',
-                    statusBg: 'rgba(239, 68, 68, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-                    m1: '28', m2: '10', m3: '20', m4: '6', m5: '68'
-                },
-                {
-                    rank: 9,
-                    name: 'Nurul Aini',
-                    tag: 'KSP Marpoyan',
-                    score: 115,
-                    progressPct: 16,
-                    statusText: 'KEJAR TARGET (62%)',
-                    statusColor: '#EF4444',
-                    statusBg: 'rgba(239, 68, 68, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80',
-                    m1: '24', m2: '9', m3: '18', m4: '5', m5: '59'
-                },
-                {
-                    rank: 10,
-                    name: 'Fajar Siddiq',
-                    tag: 'KSP Mahang (Inval)',
-                    score: 98,
-                    progressPct: 13,
-                    statusText: 'KEJAR TARGET (53%)',
-                    statusColor: '#EF4444',
-                    statusBg: 'rgba(239, 68, 68, 0.12)',
-                    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-                    m1: '20', m2: '8', m3: '16', m4: '4', m5: '50'
-                }
-            ]
-        };
-
-        let currentDatasetKey = 'original';
-        let currentDataset = ORIGINAL_DATASET;
+        let selectedModalScheme = 'percentage';
+        let showFutureMetricsFlag = false;
 
         document.addEventListener('DOMContentLoaded', () => {
-            renderDashboard();
+            mountLeaderboardInstance();
         });
 
-        // =============================================================
-        // RENDER METHOD UTAMA
-        // =============================================================
-        function renderDashboard() {
-            renderSummaryBoxes();
-            renderUnifiedList();
-        }
+        function mountLeaderboardInstance() {
+            const currentCfg = KspLeaderboard.getConfig();
+            currentCfg.currentEmployeeId = 'emp_ahmad'; // Simulasi login sebagai Ahmad
+            currentCfg.ui.showBreakdownMetrics = showFutureMetricsFlag;
 
-        // 1. Render 5 Summary Boxes Strip
-        function renderSummaryBoxes() {
-            const container = document.getElementById('summaryBoxesStrip');
-            let html = '';
-
-            currentDataset.summaryValues.forEach(box => {
-                html += `
-                    <div class="summary-box">
-                        <div class="sum-icon-wrap">${box.icon}</div>
-                        <div class="sum-text-wrap">
-                            <div class="sum-number-row">
-                                <span class="sum-main-val">${box.val}</span>
-                                ${box.sub ? `<span class="sum-sub-val">${box.sub}</span>` : ''}
-                            </div>
-                            <div class="sum-label">${box.label}</div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
-
-        // 2. Render Unified Leaderboard List (Top 1, 2, 3 ber-piala + baris lain)
-        function renderUnifiedList() {
-            const container = document.getElementById('unifiedLeaderboardList');
-            let html = '';
-
-            document.getElementById('totalMembersBadge').innerText = `${currentDataset.performers.length} Anggota Tim`;
-
-            currentDataset.performers.forEach(p => {
-                // Class & Trophy styling khusus untuk Top 3
-                let rowHighlightClass = '';
-                let avatarRingClass = '';
-                let rankBadgeClass = '';
-                let trophyTagHtml = '';
-
-                if (p.rank === 1) {
-                    rowHighlightClass = 'rank-gold';
-                    avatarRingClass = 'ring-gold';
-                    rankBadgeClass = 'badge-gold';
-                    trophyTagHtml = `<span class="trophy-tag trophy-gold">🏆 JUARA 1</span>`;
-                } else if (p.rank === 2) {
-                    rowHighlightClass = 'rank-silver';
-                    avatarRingClass = 'ring-silver';
-                    rankBadgeClass = 'badge-silver';
-                    trophyTagHtml = `<span class="trophy-tag trophy-silver">🥈 JUARA 2</span>`;
-                } else if (p.rank === 3) {
-                    rowHighlightClass = 'rank-bronze';
-                    avatarRingClass = 'ring-bronze';
-                    rankBadgeClass = 'badge-bronze';
-                    trophyTagHtml = `<span class="trophy-tag trophy-bronze">🥉 JUARA 3</span>`;
+            KspLeaderboard.mount('#leaderboardMount', {
+                ...currentCfg,
+                employees: SAMPLE_EMPLOYEES,
+                onItemClick: (emp, rank) => {
+                    const bonus = KspLeaderboard.calculateBonus(emp, rank, currentCfg);
+                    alert(`👤 ${emp.name} (#${rank})\nTotal Transaksi: ${emp.todayTx} tx\nCapaian Target: ${emp.targetPct}%\nStatus Hadiah: ${bonus.statusText}`);
                 }
-
-                // Tag Cabang (jika ada)
-                const storeTagHtml = p.tag ? `<span class="list-store-tag">🏬 ${escapeHtml(p.tag)}</span>` : '';
-
-                html += `
-                    <div class="list-row-item ${rowHighlightClass}" onclick="openDetailModal('${escapeHtml(p.name)}', ${p.score}, ${p.rank})">
-                        <!-- Avatar dengan Badge Peringkat -->
-                        <div class="list-avatar-wrap">
-                            <div class="list-avatar ${avatarRingClass}">
-                                <img src="${p.avatar}" alt="${p.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=334155&color=fff'">
-                            </div>
-                            <div class="list-rank-badge ${rankBadgeClass}">${p.rank}</div>
-                        </div>
-
-                        <!-- Info Kolom, Progress Bar & Metrics -->
-                        <div class="list-info-col">
-                            <!-- Baris Nama, Tag Piala, & Nilai Skor -->
-                            <div class="list-name-row">
-                                <div class="name-trophy-group">
-                                    <span class="list-person-name">${escapeHtml(p.name)}</span>
-                                    ${trophyTagHtml}
-                                    ${storeTagHtml}
-                                </div>
-                                <div class="score-status-group">
-                                    <span class="score-display-val">${p.score}</span>
-                                    <span class="score-status-badge" style="background: ${p.statusBg}; color: ${p.statusColor}; border: 1px solid ${p.statusColor}44;">
-                                        ${p.statusText}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- Progress Bar Persis store-target-mini-row -->
-                            <div class="store-target-progress-wrap" title="Progress: ${p.progressPct}%">
-                                <div class="store-target-progress-fill" style="width: ${p.progressPct}%; background: ${p.statusColor};"></div>
-                            </div>
-
-                            <!-- Breakdown Metrics Mini Strip -->
-                            <div class="list-metrics-row">
-                                <div class="metric-mini-item" title="${currentDataset.metricLabels[0].label}">
-                                    <span>${currentDataset.metricLabels[0].icon}</span>
-                                    <span>${p.m1}</span>
-                                </div>
-                                <div class="metric-mini-item" title="${currentDataset.metricLabels[1].label}">
-                                    <span>${currentDataset.metricLabels[1].icon}</span>
-                                    <span>${p.m2}</span>
-                                </div>
-                                <div class="metric-mini-item" title="${currentDataset.metricLabels[2].label}">
-                                    <span>${currentDataset.metricLabels[2].icon}</span>
-                                    <span>${p.m3}</span>
-                                </div>
-                                <div class="metric-mini-item" title="${currentDataset.metricLabels[3].label}">
-                                    <span>${currentDataset.metricLabels[3].icon}</span>
-                                    <span>${p.m4}</span>
-                                </div>
-                                <div class="metric-mini-item" title="${currentDataset.metricLabels[4].label}">
-                                    <span>${currentDataset.metricLabels[4].icon}</span>
-                                    <span>${p.m5}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
             });
 
-            container.innerHTML = html;
+            updateToolbarButtons(currentCfg.rewards.mode);
         }
 
-        // =============================================================
-        // KONTROL PROTOTIPE & HANDLER
-        // =============================================================
-        function switchDataset(type) {
-            currentDatasetKey = type;
-            currentDataset = type === 'ksp' ? KSP_DATASET : ORIGINAL_DATASET;
+        // Quick switch mode bonus
+        function quickSwitchBonusMode(mode) {
+            const cfg = KspLeaderboard.getConfig();
+            cfg.rewards.mode = mode;
+            KspLeaderboard.saveConfig(cfg);
+            updateToolbarButtons(mode);
+            showToast(`Skema bonus diubah: ${mode.toUpperCase()}`);
+        }
 
-            document.getElementById('btnDataOriginal').classList.toggle('active', type === 'original');
-            document.getElementById('btnDataKsp').classList.toggle('active', type === 'ksp');
+        function updateToolbarButtons(activeMode) {
+            document.getElementById('btnModePercentage').classList.toggle('active', activeMode === 'percentage');
+            document.getElementById('btnModeFixed').classList.toggle('active', activeMode === 'fixed');
+            document.getElementById('btnModeFlat').classList.toggle('active', activeMode === 'flat_target');
+        }
 
-            renderDashboard();
+        function toggleFutureMetricsPreview() {
+            showFutureMetricsFlag = !showFutureMetricsFlag;
+            const btn = document.getElementById('btnToggleFutureMetrics');
+            btn.classList.toggle('active', showFutureMetricsFlag);
+            mountLeaderboardInstance();
+            showToast(showFutureMetricsFlag ? '🔌 Slot Metrik Perkategori Diaktifkan (Uji Coba)' : 'Metrik Perkategori Disembunyikan (Fokus Total Tx)');
+        }
+
+        // Modal Settings Handlers
+        function openBonusConfigModal() {
+            const cfg = KspLeaderboard.getConfig();
+            selectedModalScheme = cfg.rewards.mode || 'percentage';
+            setModalSchemeTab(selectedModalScheme);
+
+            // Populate form values
+            document.getElementById('cfgPctBasePool').value = cfg.rewards.percentage.basePool || 150000;
+            document.getElementById('cfgPctMinPct').value = cfg.rewards.percentage.minTargetPct || 70;
+            document.getElementById('cfgPctMaxCap').value = cfg.rewards.percentage.maxBonusCap || 250000;
+
+            document.getElementById('cfgFixedP1').value = cfg.rewards.fixed.prizes[1]?.amount || 150000;
+            document.getElementById('cfgFixedP2').value = cfg.rewards.fixed.prizes[2]?.amount || 100000;
+            document.getElementById('cfgFixedP3').value = cfg.rewards.fixed.prizes[3]?.amount || 50000;
+            document.getElementById('cfgFixedMinPct').value = cfg.rewards.fixed.minTargetPct || 80;
+
+            document.getElementById('cfgFlatThreshold').value = cfg.rewards.flat_target.targetThresholdPct || 100;
+            document.getElementById('cfgFlatAmount').value = cfg.rewards.flat_target.bonusAmount || 100000;
+
+            document.getElementById('bonusConfigModal').classList.add('open');
+        }
+
+        function closeBonusConfigModal() {
+            document.getElementById('bonusConfigModal').classList.remove('open');
+        }
+
+        function setModalSchemeTab(scheme) {
+            selectedModalScheme = scheme;
+            document.getElementById('tabBtnPercentage').classList.toggle('active', scheme === 'percentage');
+            document.getElementById('tabBtnFixed').classList.toggle('active', scheme === 'fixed');
+            document.getElementById('tabBtnFlat').classList.toggle('active', scheme === 'flat_target');
+
+            document.getElementById('configSectionPercentage').style.display = scheme === 'percentage' ? 'flex' : 'none';
+            document.getElementById('configSectionFixed').style.display = scheme === 'fixed' ? 'flex' : 'none';
+            document.getElementById('configSectionFlat').style.display = scheme === 'flat_target' ? 'flex' : 'none';
+        }
+
+        function saveBonusConfigFromModal() {
+            const cfg = KspLeaderboard.getConfig();
+            cfg.rewards.mode = selectedModalScheme;
+
+            // Save Percentage values
+            cfg.rewards.percentage.basePool = Number(document.getElementById('cfgPctBasePool').value) || 150000;
+            cfg.rewards.percentage.minTargetPct = Number(document.getElementById('cfgPctMinPct').value) || 70;
+            cfg.rewards.percentage.maxBonusCap = Number(document.getElementById('cfgPctMaxCap').value) || 250000;
+
+            // Save Fixed values
+            cfg.rewards.fixed.prizes[1].amount = Number(document.getElementById('cfgFixedP1').value) || 150000;
+            cfg.rewards.fixed.prizes[2].amount = Number(document.getElementById('cfgFixedP2').value) || 100000;
+            cfg.rewards.fixed.prizes[3].amount = Number(document.getElementById('cfgFixedP3').value) || 50000;
+            cfg.rewards.fixed.minTargetPct = Number(document.getElementById('cfgFixedMinPct').value) || 80;
+
+            // Save Flat values
+            cfg.rewards.flat_target.targetThresholdPct = Number(document.getElementById('cfgFlatThreshold').value) || 100;
+            cfg.rewards.flat_target.bonusAmount = Number(document.getElementById('cfgFlatAmount').value) || 100000;
+
+            KspLeaderboard.saveConfig(cfg);
+            updateToolbarButtons(selectedModalScheme);
+            closeBonusConfigModal();
+            showToast('✅ Pengaturan skema bonus berhasil disimpan & diterapkan!');
         }
 
         function toggleMobileView() {
@@ -1266,65 +759,11 @@
             document.body.classList.toggle('dark-theme');
         }
 
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(() => {});
-            } else {
-                if (document.exitFullscreen) document.exitFullscreen();
-            }
-        }
-
-        let scopeIndex = 0;
-        const scopes = ['Everyone', 'Mahang Team', 'Gading Team', 'Marpoyan Team'];
-        function cycleScopeFilter() {
-            scopeIndex = (scopeIndex + 1) % scopes.length;
-            document.getElementById('scopeLabel').innerText = scopes[scopeIndex];
-        }
-
-        let periodIndex = 0;
-        const periods = ['This Week (Mon - Sun)', 'Today', 'This Month', 'All-Time'];
-        function cyclePeriodFilter() {
-            periodIndex = (periodIndex + 1) % periods.length;
-            document.getElementById('periodLabel').innerText = periods[periodIndex];
-        }
-
-        // Detail Modal
-        function openDetailModal(name, score, rank) {
-            const modal = document.getElementById('detailModal');
-            const content = document.getElementById('modalContent');
-
-            let rankLabel = `#${rank}`;
-            let rankColor = 'var(--primary-blue)';
-            if (rank === 1) { rankLabel = '🏆 #1'; rankColor = '#F59E0B'; }
-            else if (rank === 2) { rankLabel = '🥈 #2'; rankColor = '#94A3B8'; }
-            else if (rank === 3) { rankLabel = '🥉 #3'; rankColor = '#D97706'; }
-
-            content.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
-                    <div style="width: 54px; height: 54px; border-radius: 50%; background: ${rankColor}; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                        ${rankLabel}
-                    </div>
-                    <div>
-                        <div style="font-size: 17px; font-weight: 850;">${name}</div>
-                        <div style="font-size: 13px; color: var(--text-sub); margin-top: 2px;">Skor Transaksi: <b style="color: ${rankColor};">${score} Poin</b></div>
-                    </div>
-                </div>
-                <div style="background: var(--input-bg); border: 1px solid var(--border-card); border-radius: 12px; padding: 14px; font-size: 12.5px; line-height: 1.6; color: var(--text-sub);">
-                    🚀 Seluruh metrik progres shift kasir tervalidasi otomatis. Capaian target dihitung proporsional terhadap target harian dan mingguan masing-masing cabang.
-                </div>
-            `;
-            modal.classList.add('open');
-        }
-
-        function closeDetailModal(e) {
-            document.getElementById('detailModal').classList.remove('open');
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/[&<>"']/g, m => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
-            }[m]));
+        function showToast(msg) {
+            const toast = document.getElementById('protoToast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 2600);
         }
     </script>
 </body>
