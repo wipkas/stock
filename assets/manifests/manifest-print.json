@@ -1,0 +1,53 @@
+{
+  "id": "kspcheck-print-app",
+  "name": "Cetak & Display Stok - KSP Check",
+  "short_name": "Cetak Stok",
+  "description": "Cetak Daftar Harga & Display Katalog Voucher Internet",
+  "start_url": "../../stock_print.html",
+  "scope": "../../",
+  "display": "standalone",
+  "background_color": "#0F1117",
+  "theme_color": "#0F1117",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "../icons/icon-print.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-print-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "../icons/icon-print-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "💳 Saldo Realtime",
+      "short_name": "Saldo",
+      "description": "Buka tab Saldo Realtime",
+      "url": "../../interactive_stock.html?tab=balance",
+      "icons": [{ "src": "../icons/icon-balance-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "🛍️ Stok Produk",
+      "short_name": "Produk",
+      "description": "Buka tab Stok Produk & Aksesoris",
+      "url": "../../interactive_stock.html?tab=produk",
+      "icons": [{ "src": "../icons/icon-produk-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "🌅 Order Restok",
+      "short_name": "Order",
+      "description": "Buka tab Order Restok",
+      "url": "../../interactive_stock.html?tab=order",
+      "icons": [{ "src": "../icons/icon-order-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

@@ -15,6 +15,7 @@ stock/
 ├── store_manager.html            # Admin: kelola cabang, jam shift, karyawan, usulan karyawan
 ├── store_transactions.html       # Analitik & input transaksi per toko (dibuka dari store_manager / karyawan)
 ├── karyawan.html                 # Portal kasir/karyawan (login password, profil, usulan)
+├── stock_print.html              # Cetak A4 1 lembar & display katalog voucher (Supabase & JSON manual)
 ├── prototype_store_analytics.html# Prototipe analitik toko (tidak ditaut dari menu)
 ├── stock_margin.html             # Kalkulator margin mandiri versi lama (tidak ditaut dari menu)
 ├── config.enc                    # Kredensial Supabase (stok) terenkripsi AES-256-CBC
@@ -43,6 +44,7 @@ stock/
 |---|---|---|
 | `index.html` | PIN admin **atau** password karyawan | Menu 9 kartu. Admin melihat semua modul; karyawan langsung diarahkan ke `karyawan.html` |
 | `interactive_stock.html` | Lewat menu | Aplikasi stok multi-tab (tabel di bawah) |
+| `stock_print.html` | Lewat menu | Cetak daftar harga voucher 1 lembar A4 & katalog display etalase |
 | `store_manager.html` | PIN admin | Cabang, shift, karyawan, persetujuan usulan, mutasi/nonaktif karyawan |
 | `store_transactions.html` | Admin atau karyawan | Analitik dan transaksi per toko |
 | `karyawan.html` | Password karyawan | Portal kasir: profil, foto, usulan ke admin |

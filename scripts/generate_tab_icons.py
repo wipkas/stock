@@ -66,6 +66,17 @@ def create_tab_icon(tab_type, size):
         pill_border = (129, 140, 248, 140)
         pill_text = "PRODUK"
         accent_light = (238, 242, 255)
+    elif tab_type == 'print':
+        bg_top = (8, 47, 73, 255)
+        bg_bot = (3, 30, 48, 255)
+        border_col = (2, 132, 199, 180)
+        accent_1 = (56, 189, 248)
+        accent_2 = (2, 132, 199)
+        badge_bg = (2, 132, 199)
+        pill_bg = (2, 132, 199, 50)
+        pill_border = (56, 189, 248, 140)
+        pill_text = "CETAK"
+        accent_light = (224, 242, 254)
     else: # margin
         bg_top = (15, 43, 29, 255)
         bg_bot = (15, 17, 23, 255)
@@ -268,6 +279,39 @@ def create_tab_icon(tab_type, size):
             star_pts.append((sb_x + int(radius * math.cos(angle)), sb_y + int(radius * math.sin(angle))))
         draw.polygon(star_pts, fill=(255, 255, 255, 255))
 
+    elif tab_type == 'print':
+        cx = int(256 * scale)
+        # Top sheet feeding into printer
+        draw.rectangle([cx - int(75*scale), int(115*scale), cx + int(75*scale), int(190*scale)], fill=(241, 245, 249, 255), outline=(148, 163, 184, 255), width=max(1, int(2*scale)))
+        draw.line([(cx - int(55*scale), int(140*scale)), (cx + int(55*scale), int(140*scale))], fill=(56, 189, 248, 255), width=max(1, int(3*scale)))
+        draw.line([(cx - int(55*scale), int(160*scale)), (cx + int(35*scale), int(160*scale))], fill=(148, 163, 184, 255), width=max(1, int(3*scale)))
+
+        # Printer body
+        draw.rounded_rectangle([cx - int(130*scale), int(185*scale), cx + int(130*scale), int(310*scale)], radius=int(18*scale), fill=(30, 41, 59, 255), outline=(56, 189, 248, 255), width=max(2, int(4*scale)))
+        # Slot
+        draw.rounded_rectangle([cx - int(95*scale), int(260*scale), cx + int(95*scale), int(278*scale)], radius=int(6*scale), fill=(2, 21, 38, 255), outline=(2, 132, 199, 255), width=max(1, int(2*scale)))
+        # Bottom emerging paper
+        draw.rectangle([cx - int(80*scale), int(270*scale), cx + int(80*scale), int(355*scale)], fill=(248, 250, 252, 255), outline=(203, 213, 225, 255), width=max(1, int(2*scale)))
+        draw.line([(cx - int(65*scale), int(295*scale)), (cx + int(65*scale), int(295*scale))], fill=(2, 132, 199, 255), width=max(1, int(3*scale)))
+        draw.line([(cx - int(65*scale), int(315*scale)), (cx + int(10*scale), int(315*scale))], fill=(100, 116, 139, 255), width=max(1, int(2*scale)))
+        draw.line([(cx + int(25*scale), int(315*scale)), (cx + int(65*scale), int(315*scale))], fill=(16, 185, 129, 255), width=max(1, int(2*scale)))
+        draw.line([(cx - int(65*scale), int(335*scale)), (cx + int(10*scale), int(335*scale))], fill=(100, 116, 139, 255), width=max(1, int(2*scale)))
+        draw.line([(cx + int(25*scale), int(335*scale)), (cx + int(65*scale), int(335*scale))], fill=(16, 185, 129, 255), width=max(1, int(2*scale)))
+
+        # Printer LEDs
+        draw.ellipse([cx - int(105*scale), int(220*scale), cx - int(95*scale), int(230*scale)], fill=(16, 185, 129, 255))
+        draw.ellipse([cx - int(85*scale), int(220*scale), cx - int(75*scale), int(230*scale)], fill=(56, 189, 248, 255))
+        # Top-right badge
+        bx = int(375 * scale)
+        by = int(140 * scale)
+        br = int(46 * scale)
+        draw.ellipse([bx - br, by - br, bx + br, by + br], fill=(2, 132, 199, 255), outline=(255, 255, 255, 255), width=max(2, int(4*scale)))
+        # Doc icon in badge
+        draw.rectangle([bx - int(16*scale), by - int(20*scale), bx + int(16*scale), by + int(20*scale)], fill=(255, 255, 255, 255))
+        draw.line([(bx - int(10*scale), by - int(10*scale)), (bx + int(10*scale), by - int(10*scale))], fill=(2, 132, 199, 255), width=max(1, int(2*scale)))
+        draw.line([(bx - int(10*scale), by), (bx + int(10*scale), by)], fill=(2, 132, 199, 255), width=max(1, int(2*scale)))
+        draw.line([(bx - int(10*scale), by + int(10*scale)), (bx + int(6*scale), by + int(10*scale))], fill=(2, 132, 199, 255), width=max(1, int(2*scale)))
+
     else: # margin
         base_y = int(310 * scale)
         bw = int(38 * scale)
@@ -325,7 +369,7 @@ if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
     output_dir = os.path.normpath(os.path.join(script_dir, "..", "assets", "icons"))
     os.makedirs(output_dir, exist_ok=True)
-    tabs = ['order', 'history', 'daily', 'margin', 'balance', 'produk']
+    tabs = ['order', 'history', 'daily', 'margin', 'balance', 'produk', 'print']
     for tab in tabs:
         img192 = create_tab_icon(tab, 192)
         p192 = os.path.join(output_dir, f"icon-{tab}-192.png")

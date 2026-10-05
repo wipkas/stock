@@ -84,6 +84,13 @@
       "description": "Login kasir & personel toko",
       "url": "../../karyawan.html",
       "icons": [{ "src": "../icons/icon-karyawan-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "🖨️ Cetak & Display",
+      "short_name": "Cetak Stok",
+      "description": "Cetak daftar harga & display etalase",
+      "url": "../../stock_print.html",
+      "icons": [{ "src": "../icons/icon-print-192.png", "sizes": "192x192" }]
     }
   ]
 }

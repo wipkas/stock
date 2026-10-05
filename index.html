@@ -266,6 +266,7 @@
         .card-feerule { --card-accent: #3B82F6; --icon-bg: rgba(59, 130, 246, 0.14); --icon-border: rgba(59, 130, 246, 0.35); }
         .card-store { --card-accent: #059669; --icon-bg: rgba(5, 150, 105, 0.14); --icon-border: rgba(5, 150, 105, 0.35); }
         .card-karyawan { --card-accent: #6366F1; --icon-bg: rgba(99, 102, 241, 0.14); --icon-border: rgba(99, 102, 241, 0.35); }
+        .card-print { --card-accent: #0284C7; --icon-bg: rgba(2, 132, 199, 0.14); --icon-border: rgba(2, 132, 199, 0.35); }
 
         /* Modal Dialog */
         .modal-backdrop {
@@ -706,6 +707,12 @@
                 <div class="menu-card-title">Kelola Toko</div>
             </a>
 
+            <!-- 9. CETAK & DISPLAY STOK -->
+            <a href="stock_print.html" class="menu-card card-print" title="Cetak Daftar Harga & Display Katalog">
+                <div class="menu-card-icon">🖨️</div>
+                <div class="menu-card-title">Cetak &amp; Display</div>
+            </a>
+
         </main>
     </div>
 
@@ -826,6 +833,18 @@
                             <span style="color: #6366F1; font-size: 11px;">Buka &rarr;</span>
                         </div>
                         <p class="modal-item-desc">Halaman khusus login kasir &amp; personel toko dengan validasi shift mandiri dan konfirmasi password saat masa pergantian shift aktif.</p>
+                    </div>
+                </a>
+
+                <!-- 10. Cetak & Display Stok -->
+                <a href="stock_print.html" class="modal-item">
+                    <div class="modal-item-icon">🖨️</div>
+                    <div>
+                        <div class="modal-item-title">
+                            <span>Cetak &amp; Display Stok</span>
+                            <span style="color: #0284C7; font-size: 11px;">Buka &rarr;</span>
+                        </div>
+                        <p class="modal-item-desc">Cetak daftar harga voucher 1 lembar A4 (Mode Ringkas) atau etalase per provider (Mode Display Katalog) langsung dari cloud atau file JSON.</p>
                     </div>
                 </a>
 

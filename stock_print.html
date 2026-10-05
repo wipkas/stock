@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cetak &amp; Display Stok - KSP Check</title>
+
+<!-- Web App Manifest & Favicons -->
+<link rel="manifest" href="assets/manifests/manifest-print.json">
+<link rel="icon" type="image/svg+xml" href="assets/icons/icon-print.svg">
+<link rel="apple-touch-icon" href="assets/icons/icon-print-192.png">
+<meta name="theme-color" content="#0F1117">
+
+<!-- Google Fonts -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+
+<!-- CryptoJS (dekripsi config.enc) & Modul Bersama KSP Check -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/ksp_sync_config.js?v=20261005"></script>
+<script src="js/ksp_auth.js?v=20261005"></script>
+<script src="js/ksp_ui.js?v=20261005"></script>
+<script src="js/ksp_theme.js?v=20261005"></script>
+
+<style>
+/* ================================================================
+   1. CSS VARIABLES (MODE RINGKAS & MODE DISPLAY)
+   ================================================================ */
+:root {
+  /* ── Mode Ringkas (1 Halaman A4) ────────────────────────── */
+  --font-header-title   : 16pt;
+  --font-header-sub     : 8pt;
+  --font-category       : 9pt;
+  --font-item           : 11.8pt;
+  --font-footer         : 7pt;
+
+  --gap-item-v          : 2.2px;
+  --gap-category-mb     : 3px;
+  --page-padding        : 5mm;
+  --col-gap             : 3.5mm;
+  --num-columns         : 3;
+
+  --color-header-bg     : #0f172a;
+  --color-header-fg     : #f8fafc;
+  --color-cat-fg        : #ffffff;
+  --color-border        : #e2e8f0;
+  --color-footer        : #94a3b8;
+
+  /* ── Mode Katalog Display (Multi-Halaman) ────────────────── */
+  --page-w              : 210mm;
+  --page-h              : 297mm;
+  --margin              : 6mm;
+  --size-xl-name        : 26pt;
+  --size-xl-price       : 24pt;
+  --size-lg-name        : 23pt;
+  --size-lg-price       : 21.5pt;
+  --size-md-name        : 18pt;
+  --size-md-price       : 17pt;
+  --size-sm-name        : 14pt;
+  --size-sm-price       : 13pt;
+}
+
+/* ── Reset ────────────────────────────────────────────────── */
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+@page { size: a4; margin: 0; }
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #cbd5e1;
+  color: #1e293b;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ================================================================
+   2. STICKY ACTION BAR & CONTROLS
+   ================================================================ */
+#controls {
+  position: sticky;
+  top: 8px;
+  z-index: 1000;
+  width: 210mm;
+  margin: 8px auto 10px;
+  background: #f1f5f9;
+  border: 1px solid #94a3b8;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+  padding: 10px 14px;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+#controls select { font-size: 11px; padding: 3px 5px; border-radius: 4px; border: 1px solid #94a3b8; }
+
+.ctrl-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+}
+.ctrl-input {
+  font-size: 11px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  border: 1px solid #94a3b8;
+  background: #fff;
+  color: #1e293b;
+  box-sizing: border-box;
+}
+.ctrl-input:focus {
+  outline: none;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 1px #0284c7;
+}
+
+[contenteditable]:focus {
+  outline: 1px dashed #0284c7;
+}
+
+.col-ctrl-group {
+  display: inline-flex; align-items: center; gap: 2px;
+  background: #e2e8f0; border-radius: 5px; padding: 2px 5px;
+}
+.col-ctrl-label {
+  font-weight: 700; color: #475569; font-size: 10px;
+  margin-right: 1px; min-width: 16px;
+}
+.col-scale-display {
+  font-size: 10px; font-weight: 600; color: #334155;
+  min-width: 32px; text-align: center;
+}
+
+/* Mode Switcher Tabs */
+.mode-switch-group {
+  display: inline-flex;
+  background: #cbd5e1;
+  padding: 2px;
+  border-radius: 6px;
+  gap: 2px;
+}
+.mode-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 11px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #475569;
+  transition: all 0.15s ease;
+}
+.mode-btn:hover { color: #0f172a; }
+.mode-btn.active {
+  background: #0f172a;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.status-pill {
+  background: #0f172a;
+  color: #fff;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn { padding: 3px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+.btn-back  { background: #e2e8f0; color: #334155; }
+.btn-back:hover { background: #cbd5e1; }
+.btn-cloud { background: #0284c7; color: #fff; }
+.btn-cloud:hover { background: #0369a1; }
+.btn-sz    { background: #cbd5e1; color: #1e293b; padding: 2px 7px; font-size: 13px; line-height: 1; }
+.btn-sz:hover { background: #94a3b8; }
+.btn-reset { background: #e2e8f0; color: #475569; }
+.btn-reset:hover { background: #cbd5e1; }
+.btn-print { background: #0f172a; color: #fff; }
+.btn-print:hover { background: #f97316; }
+.btn-settings { background: #475569; color: #fff; }
+.btn-settings:hover { background: #334155; }
+#msg { font-size: 11px; color: #dc2626; width: 100%; }
+
+/* ================================================================
+   3. MODE RINGKAS (1 HALAMAN A4) STYLES
+   ================================================================ */
+#page {
+  width: 210mm;
+  height: 297mm;
+  margin: 0 auto;
+  padding: var(--page-padding);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+#header {
+  background: var(--color-header-bg);
+  color: var(--color-header-fg);
+  text-align: center;
+  padding: 4mm 4mm 3.5mm;
+  margin-bottom: 3mm;
+}
+#header h1 {
+  font-family: Arial Black, Arial, sans-serif;
+  font-size: var(--font-header-title);
+  letter-spacing: 3px;
+  font-weight: 900;
+  line-height: 1;
+}
+#header h1 em { color: #f97316; font-style: normal; }
+#header p {
+  font-size: var(--font-header-sub);
+  opacity: .65;
+  margin-top: 2px;
+  letter-spacing: 1.5px;
+}
+
+#columns {
+  flex: 1;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(var(--num-columns), 1fr);
+  gap: var(--col-gap);
+  align-items: start;
+}
+.col-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-category-mb);
+  --col-font-scale: 1;
+  --col-gap-scale : 1;
+}
+
+.col-wrapper .cat-header    { font-size: calc(var(--font-category) * var(--col-font-scale)); }
+.col-wrapper .item-name     { font-size: calc(var(--font-item)     * var(--col-font-scale)); }
+.col-wrapper .item-sub      { font-size: calc(var(--font-item) * .78 * var(--col-font-scale)); }
+.col-wrapper .item-price    { font-size: calc(var(--font-item)     * var(--col-font-scale)); }
+.col-wrapper .dur-sep-label { font-size: calc(5pt * var(--col-font-scale)); }
+.col-wrapper .item-row    {
+  padding-top:    calc(var(--gap-item-v) * var(--col-font-scale) * var(--col-gap-scale));
+  padding-bottom: calc(var(--gap-item-v) * var(--col-font-scale) * var(--col-gap-scale));
+}
+
+.category {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  width: 100%;
+  border-radius: 1px;
+  overflow: hidden;
+}
+.cat-header {
+  display: block;
+  text-align: center;
+  padding: 3px 5px;
+  font-size: var(--font-category);
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.item-row {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: var(--gap-item-v) 4px;
+  border-bottom: .3px solid var(--color-border);
+}
+#page .item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-item);
+  font-weight: 700;
+  line-height: 1.25;
+}
+.item-sub {
+  font-size: calc(var(--font-item) * .78);
+  font-weight: 600;
+  opacity: .7;
+  margin-left: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+#page .item-price {
+  flex-shrink: 0;
+  font-size: var(--font-item);
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: right;
+}
+
+.dur-sep {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1.5px 4px 0.5px;
+}
+.dur-sep::before,
+.dur-sep::after {
+  content: '';
+  flex: 1;
+  height: .4px;
+}
+.dur-sep-label {
+  font-size: 5pt;
+  font-weight: 800;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: .6;
+}
+
+#footer {
+  flex-shrink: 0;
+  margin-top: 2.5mm;
+  padding-top: 2mm;
+  border-top: .6px solid var(--color-border);
+  font-size: var(--font-footer);
+  color: var(--color-footer);
+  text-align: center;
+  line-height: 1.8;
+}
+#footer .footer-line1 {
+  font-weight: 600;
+  letter-spacing: .5px;
+  color: #475569;
+}
+#footer .footer-line2 { opacity: .75; font-size: calc(var(--font-footer) * .92); }
+
+/* ================================================================
+   4. MODE KATALOG DISPLAY (PER PROVIDER) STYLES
+   ================================================================ */
+#catalogRoot {
+  width: 210mm;
+  margin: 0 auto;
+}
+#catalogRoot .page {
+  width: var(--page-w);
+  min-height: var(--page-h);
+  margin: 12px auto;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  break-after: page;
+  page-break-after: always;
+  font-family: Inter, sans-serif;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+#catalogRoot .page:last-of-type { break-after: auto; page-break-after: auto; }
+#catalogRoot .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 18mm;
+  padding: 0 6mm;
+  flex-shrink: 0;
+  background: var(--t-main);
+}
+#catalogRoot .provider-logo-text {
+  font-weight: 700;
+  font-size: 26pt;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+#catalogRoot .provider-logo-text small {
+  display: block;
+  font-size: 9pt;
+  font-weight: 400;
+  letter-spacing: 0.6px;
+  opacity: 0.8;
+  margin-top: 1.5mm;
+  text-transform: uppercase;
+}
+#catalogRoot .page-body {
+  flex: 1 1 0%;
+  padding: 4mm 0 2mm;
+  display: flex;
+  flex-direction: column;
+}
+#catalogRoot .category-block {
+  margin: 3mm var(--margin);
+}
+#catalogRoot .category-title {
+  display: inline-flex;
+  align-items: center;
+  font-size: 8.5pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  padding: 1.8mm 4mm;
+  border-radius: 4px;
+  margin-bottom: 1.5mm;
+  border: 1px solid transparent;
+  background: var(--t-accent);
+  color: var(--t-main);
+  border-color: var(--t-border);
+}
+#catalogRoot .items-grid {
+  display: grid;
+  gap: 2.5mm;
+}
+#catalogRoot .items-grid.cols-1 { grid-template-columns: repeat(1, minmax(0,1fr)); }
+#catalogRoot .items-grid.cols-2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+#catalogRoot .items-grid.cols-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+#catalogRoot .item-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 3mm;
+  padding: 2mm 5mm;
+  border-radius: 6px;
+  border-width: 1px 1px 1px 3.5px;
+  border-style: solid;
+  border-color: transparent;
+  min-height: 12mm;
+  background: var(--t-tint);
+  border-left-color: var(--t-main);
+}
+#catalogRoot .item-name {
+  font-weight: 500;
+  color: #374151;
+  text-transform: uppercase;
+  line-height: 1.3;
+  flex: 1 1 0%;
+  letter-spacing: 0.2px;
+}
+#catalogRoot .item-price {
+  font-weight: 700;
+  white-space: nowrap;
+  line-height: 1;
+  color: var(--t-main);
+}
+#catalogRoot .text-xl .item-name { font-size: var(--size-xl-name); }
+#catalogRoot .text-xl .item-price { font-size: var(--size-xl-price); }
+#catalogRoot .text-lg .item-name { font-size: var(--size-lg-name); }
+#catalogRoot .text-lg .item-price { font-size: var(--size-lg-price); }
+#catalogRoot .text-md .item-name { font-size: var(--size-md-name); }
+#catalogRoot .text-md .item-price { font-size: var(--size-md-price); }
+#catalogRoot .text-sm .item-name { font-size: var(--size-sm-name); }
+#catalogRoot .text-sm .item-price { font-size: var(--size-sm-price); }
+
+#catalogRoot .section-divider {
+  height: 0.3mm;
+  margin: 3.5mm var(--margin);
+  border-radius: 999px;
+  opacity: 0.12;
+  background: var(--t-main);
+}
+#catalogRoot .page-footer {
+  margin-top: auto;
+  padding: 3mm var(--margin);
+  border-top: 0.3mm solid #f3f4f6;
+  text-align: center;
+  flex-shrink: 0;
+}
+#catalogRoot .footer-notice {
+  font-size: 9pt;
+  color: #6b7280;
+  line-height: 1.6;
+}
+#catalogRoot .footer-notice strong { font-weight: 700; color: #374151; }
+#catalogRoot .footer-phone { font-weight: 700; color: var(--t-main); }
+
+/* Settings Panel (Mode Display) */
+.settings-panel {
+  position: fixed;
+  top: 64px;
+  right: 16px;
+  z-index: 1001;
+  width: 360px;
+  max-height: 82vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.25);
+  font-family: Inter, sans-serif;
+  display: none;
+}
+.settings-panel.open { display: block; }
+.settings-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  font-weight: 700;
+  font-size: 13px;
+  color: #111827;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: #fff;
+}
+.settings-header button { background: none; border: none; font-size: 16px; cursor: pointer; color: #6b7280; }
+.settings-section { padding: 12px 16px; border-bottom: 1px solid #f3f4f6; }
+.settings-section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #9ca3af; margin-bottom: 8px; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; }
+.toggle-switch { position: relative; width: 44px; height: 24px; background: #d1d5db; border-radius: 999px; cursor: pointer; transition: background .15s; flex-shrink: 0; }
+.toggle-switch.on { background: #7C3AED; }
+.toggle-knob { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: left .15s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.toggle-switch.on .toggle-knob { left: 22px; }
+.provider-row-label { font-size: 12px; font-weight: 600; color: #374151; }
+
+.provider-block { padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+.provider-block:last-child { border-bottom: none; }
+.provider-block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.theme-swatch { width: 11px; height: 11px; border-radius: 3px; display: inline-block; margin-right: 6px; vertical-align: -1px; }
+.theme-select { font-size: 11px; font-family: Inter, sans-serif; border: 1px solid #e5e7eb; border-radius: 6px; padding: 3px 6px; color: #374151; background: #f9fafb; }
+.control-group { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+.control-label { font-size: 10.5px; color: #9ca3af; font-weight: 600; }
+.pill-picker { display: flex; gap: 3px; }
+.pill-btn { min-width: 24px; height: 24px; padding: 0 4px; border-radius: 6px; border: 1px solid #e5e7eb; background: #f9fafb; font-size: 9px; font-weight: 700; color: #6b7280; cursor: pointer; }
+.pill-btn.active { background: #111827; color: #fff; border-color: #111827; }
+
+.slider-row { margin-bottom: 10px; }
+.slider-row:last-child { margin-bottom: 0; }
+.slider-row-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
+.slider-row-top .label { font-size: 11.5px; font-weight: 700; color: #374151; }
+.slider-row-top .value { font-size: 10.5px; color: #9ca3af; font-variant-numeric: tabular-nums; }
+.slider-row input[type=range] { width: 100%; accent-color: #7C3AED; }
+
+.settings-footer { padding: 12px 16px; display: flex; gap: 8px; position: sticky; bottom: 0; background: #fff; border-top: 1px solid #f3f4f6; }
+.settings-footer .btn { flex: 1; padding: 7px 12px; font-size: 11px; }
+.save-hint { font-size: 10px; color: #9ca3af; padding: 0 16px 12px; line-height: 1.4; }
+
+/* Empty state */
+.empty-state { max-width: 560px; margin: 80px auto; background: #fff; border-radius: 12px; padding: 32px; text-align: center; font-family: Inter, sans-serif; color: #374151; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
+.empty-state h2 { margin-bottom: 10px; }
+.empty-state p { margin-bottom: 18px; line-height: 1.5; color: #6b7280; }
+
+/* ================================================================
+   5. MODE VISIBILITY & PRINT RULES
+   ================================================================ */
+body.mode-ringkas #page { display: flex; }
+body.mode-ringkas #catalogRoot { display: none !important; }
+body.mode-ringkas .mode-ringkas-ctrl { display: flex !important; }
+body.mode-ringkas .mode-display-ctrl { display: none !important; }
+
+body.mode-display #page { display: none !important; }
+body.mode-display #catalogRoot { display: block !important; }
+body.mode-display .mode-ringkas-ctrl { display: none !important; }
+body.mode-display .mode-display-ctrl { display: flex !important; }
+
+@media print {
+  body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
+  #controls, #msg, .settings-panel { display: none !important; }
+
+  body.mode-ringkas #catalogRoot { display: none !important; }
+  body.mode-ringkas #page {
+    display: flex !important;
+    margin: 0 !important;
+    padding: 5mm !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    box-sizing: border-box !important;
+  }
+  body.mode-ringkas .category { break-inside: avoid; page-break-inside: avoid; }
+
+  body.mode-display #page { display: none !important; }
+  body.mode-display #catalogRoot { display: block !important; }
+  body.mode-display .page {
+    margin: 0 !important;
+    box-shadow: none !important;
+    break-after: page;
+    page-break-after: always;
+  }
+  body.mode-display .page:last-of-type {
+    break-after: auto;
+    page-break-after: auto;
+  }
+}
+</style>
+</head>
+<body class="mode-ringkas">
+
+<!-- ================================================================
+     PANEL KONTROL (STICKY ACTION BAR)
+     ================================================================ -->
+<div id="controls">
+  <!-- Baris 1: Navigasi, Mode Switcher, Sumber Data, Status, Cetak -->
+  <div class="ctrl-row">
+    <a href="index.html" class="btn btn-back" title="Kembali ke Menu Utama">← Menu</a>
+
+    <!-- Mode Toggle Tabs -->
+    <div class="mode-switch-group">
+      <button type="button" class="mode-btn active" id="btnModeRingkas">📄 Mode Ringkas (1 Lembar)</button>
+      <button type="button" class="mode-btn" id="btnModeDisplay">📑 Mode Katalog Display (Per Provider)</button>
+    </div>
+
+    <!-- Sumber Data Cloud & JSON -->
+    <button type="button" class="btn btn-cloud" id="btnCloudFetch" onclick="loadDataFromSupabase(true)" title="Tarik data voucher terbaru dari cloud Supabase">☁️ Tarik Cloud</button>
+
+    <label style="margin-left:4px; font-weight:600;">📂 JSON:</label>
+    <input type="file" id="sharedFileInput" accept=".json,application/json" style="max-width: 140px;"/>
+
+    <span id="statusPill" class="status-pill">Memuat data...</span>
+
+    <button class="btn btn-print" style="margin-left:auto;" onclick="window.print()">🖨️ Cetak / PDF</button>
+  </div>
+
+  <!-- Baris 2: Kontrol Khusus Mode Ringkas (1 Lembar) -->
+  <div class="ctrl-row mode-ringkas-ctrl">
+    <label>Kolom:</label>
+    <select id="colSelect">
+      <option value="2">2 Kolom</option>
+      <option value="3" selected>3 Kolom</option>
+    </select>
+
+    <!-- Toggle Klasifikasi Durasi & Separator Grup -->
+    <label class="col-ctrl-group" style="cursor:pointer; margin-left:4px; padding:2px 7px;">
+      <input type="checkbox" id="toggleDuration" checked style="cursor:pointer; margin-right:4px;"/>
+      <span style="font-weight:700; color:#334155;">Grup Durasi &amp; Separator</span>
+    </label>
+
+    <span style="margin-left:6px; color:#64748b; font-weight:600">Font kolom:</span>
+    <span class="col-ctrl-group">
+      <span class="col-ctrl-label">K1</span>
+      <button class="btn btn-sz" onclick="adjustColScale(0, -0.01, event)" title="Kurangi 1% (Shift+Klik: 5%)">−</button>
+      <span class="col-scale-display" id="scale-0" title="Klik untuk ketik nilai atau scroll mouse">100%</span>
+      <button class="btn btn-sz" onclick="adjustColScale(0, +0.01, event)" title="Tambah 1% (Shift+Klik: 5%)">+</button>
+    </span>
+    <span class="col-ctrl-group">
+      <span class="col-ctrl-label">K2</span>
+      <button class="btn btn-sz" onclick="adjustColScale(1, -0.01, event)" title="Kurangi 1% (Shift+Klik: 5%)">−</button>
+      <span class="col-scale-display" id="scale-1" title="Klik untuk ketik nilai atau scroll mouse">100%</span>
+      <button class="btn btn-sz" onclick="adjustColScale(1, +0.01, event)" title="Tambah 1% (Shift+Klik: 5%)">+</button>
+    </span>
+    <span class="col-ctrl-group" id="col3-ctrl">
+      <span class="col-ctrl-label">K3</span>
+      <button class="btn btn-sz" onclick="adjustColScale(2, -0.01, event)" title="Kurangi 1% (Shift+Klik: 5%)">−</button>
+      <span class="col-scale-display" id="scale-2" title="Klik untuk ketik nilai atau scroll mouse">100%</span>
+      <button class="btn btn-sz" onclick="adjustColScale(2, +0.01, event)" title="Tambah 1% (Shift+Klik: 5%)">+</button>
+    </span>
+
+    <span style="margin-left:6px; color:#64748b; font-weight:600">Gap item:</span>
+    <span class="col-ctrl-group">
+      <span class="col-ctrl-label" style="color:#0369a1">K1</span>
+      <button class="btn btn-sz" onclick="adjustColGap(0, -0.05, event)" title="Kurangi 0.05× (Shift+Klik: 0.25×)">−</button>
+      <span class="col-scale-display" id="gap-0" title="Klik untuk ketik nilai atau scroll mouse">1×</span>
+      <button class="btn btn-sz" onclick="adjustColGap(0, +0.05, event)" title="Tambah 0.05× (Shift+Klik: 0.25×)">+</button>
+    </span>
+    <span class="col-ctrl-group">
+      <span class="col-ctrl-label" style="color:#0369a1">K2</span>
+      <button class="btn btn-sz" onclick="adjustColGap(1, -0.05, event)" title="Kurangi 0.05× (Shift+Klik: 0.25×)">−</button>
+      <span class="col-scale-display" id="gap-1" title="Klik untuk ketik nilai atau scroll mouse">1×</span>
+      <button class="btn btn-sz" onclick="adjustColGap(1, +0.05, event)" title="Tambah 0.05× (Shift+Klik: 0.25×)">+</button>
+    </span>
+    <span class="col-ctrl-group" id="col3-gap-ctrl">
+      <span class="col-ctrl-label" style="color:#0369a1">K3</span>
+      <button class="btn btn-sz" onclick="adjustColGap(2, -0.05, event)" title="Kurangi 0.05× (Shift+Klik: 0.25×)">−</button>
+      <span class="col-scale-display" id="gap-2" title="Klik untuk ketik nilai atau scroll mouse">1×</span>
+      <button class="btn btn-sz" onclick="adjustColGap(2, +0.05, event)" title="Tambah 0.05× (Shift+Klik: 0.25×)">+</button>
+    </span>
+
+    <button class="btn btn-reset" onclick="resetAllScales()">↺ Reset Skala</button>
+  </div>
+
+  <!-- Baris 3: Header & Footer Kustomisasi (Khusus Mode Ringkas) -->
+  <div class="ctrl-row mode-ringkas-ctrl" style="border-top:1px dashed #cbd5e1; padding-top:5px;">
+    <span style="font-weight:700; color:#0f172a;">🏷️ Header:</span>
+    <input type="text" id="inputHeaderTitle" class="ctrl-input" style="flex:2; min-width:180px;" value="HARGA KARTU &amp; VOUCHER INTERNET" placeholder="Judul Header"/>
+    <input type="text" id="inputHeaderSub" class="ctrl-input" style="flex:1.2; min-width:120px;" value="" placeholder="Sub-judul (opsional)"/>
+
+    <span style="font-weight:700; color:#0f172a; margin-left:6px;">📝 Footer:</span>
+    <input type="text" id="inputFooterLine1" class="ctrl-input" style="flex:2.5; min-width:220px;" value="Harga dapat berubah sewaktu-waktu · Stok terbatas, hubungi kami untuk ketersediaan" placeholder="Catatan footer baris 1"/>
+    <input type="text" id="inputFooterInfo" class="ctrl-input" style="flex:1.2; min-width:120px;" value="" placeholder="Info baris 2 (kosong=otomatis)"/>
+  </div>
+
+  <!-- Baris 2: Kontrol Khusus Mode Katalog Display -->
+  <div class="ctrl-row mode-display-ctrl" style="display:none; align-items:center; gap:10px;">
+    <span style="font-weight:700; color:#475569;">Format Harga:</span>
+    <div class="toggle-row" style="display:inline-flex; align-items:center; gap:6px;">
+      <span class="provider-row-label" id="formatToggleLabel" style="font-size:11px;">8.000</span>
+      <div class="toggle-switch" id="priceFormatToggle"><div class="toggle-knob"></div></div>
+      <span class="provider-row-label" style="font-size:11px;">8K</span>
+    </div>
+
+    <button class="btn btn-settings" id="settingsBtn" style="padding:4px 10px; font-size:11px;">⚙️ Pengaturan Tampilan Katalog</button>
+    <span style="font-size:10.5px; color:#64748b;">(Warna tema, kolom 1-3, dan ukuran kartu per provider)</span>
+  </div>
+
+  <div id="msg"></div>
+</div>
+
+<!-- ================================================================
+     SETTINGS PANEL (KHUSUS MODE DISPLAY)
+     ================================================================ -->
+<div class="settings-panel" id="settingsPanel">
+  <div class="settings-header">
+    <span>Pengaturan Tampilan Katalog</span>
+    <button id="closeSettingsBtn">✕</button>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">Format Harga</div>
+    <div class="toggle-row">
+      <span class="provider-row-label" id="formatToggleLabelPanel">8.000</span>
+      <div class="toggle-switch" id="priceFormatTogglePanel"><div class="toggle-knob"></div></div>
+      <span class="provider-row-label">8K</span>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">Ukuran Font (pt) — berlaku untuk semua provider dengan preset ini</div>
+    <div id="sizeSliderList"></div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">Tema, Kolom &amp; Ukuran per Provider</div>
+    <div id="providerSettingsList"></div>
+  </div>
+
+  <div class="save-hint">Perubahan langsung terlihat. Klik "Simpan" agar pengaturan ini tetap dipakai saat file dibuka lagi.</div>
+
+  <div class="settings-footer">
+    <button class="btn btn-reset" id="resetSettingsBtn">Reset</button>
+    <button class="btn btn-print" id="saveSettingsBtn">💾 Simpan</button>
+  </div>
+</div>
+
+<!-- ================================================================
+     CONTAINER TAMPILAN 1: MODE RINGKAS (1 LEMBAR A4)
+     ================================================================ -->
+<div id="page">
+  <div id="header">
+    <h1 id="header-title"><em>HARGA KARTU &amp; VOUCHER INTERNET</em></h1>
+    <p id="header-sub" style="display:none;"></p>
+  </div>
+  <div id="columns"></div>
+  <div id="footer">
+    <div class="footer-line1" id="footer-line1">Harga dapat berubah sewaktu-waktu &nbsp;·&nbsp; Stok terbatas, hubungi kami untuk ketersediaan</div>
+    <div class="footer-line2" id="footer-info">—</div>
+  </div>
+</div>
+
+<!-- ================================================================
+     CONTAINER TAMPILAN 2: MODE KATALOG DISPLAY (PER PROVIDER)
+     ================================================================ -->
+<div id="catalogRoot"></div>
+
+<!-- ================================================================
+     DATA EMBEDDED DEFAULT
+     ================================================================ -->
+<script id="embedded-data" type="application/json">
+{"type":"stock","date":"2026-06-12","categories":[{"id":52,"name":"AXIS — VCR AX","provider":"AXIS","category":"VCR AX","items":[{"name":"5 GB 1H","price":8000},{"name":"5 GB 2 H","price":10000},{"name":"3 GB 3H","price":11000},{"name":"5 GB 3H","price":13000},{"name":"8.5 GB 3H","price":15000},{"name":"12,5 GB 3H","price":17000},{"name":"15GB 3H","price":24000},{"name":"4 GB 5H","price":14000},{"name":"5 GB 5H","price":16000},{"name":"16 GB 5H","price":24000},{"name":"24 GB 5H","price":29000},{"name":"10 GB 7H","price":24000},{"name":"17 GB 7H","price":30000},{"name":"23 GB 7H","price":34000},{"name":"24 GB 7H","price":41000},{"name":"8 GB 14H","price":29000},{"name":"25 GB 14H","price":47000},{"name":"10 GB 28H","price":39000},{"name":"16 GB 28H","price":47000},{"name":"26 GB 28H","price":62000},{"name":"40 GB 28H","price":75000}]},{"id":51,"name":"AXIS — KARTU AX","provider":"AXIS","category":"KARTU AX","items":[{"name":"Kartu Axis 3GB","price":16000}]},{"id":48,"name":"THREE — VCR TRI","provider":"THREE","category":"VCR TRI","items":[{"name":"6 GB 1H","price":8000},{"name":"7 GB 2H","price":11000},{"name":"5,5 GB 3H","price":13000},{"name":"10 GB 3H","price":15000},{"name":"20 GB 3H","price":18000},{"name":"10 GB 5H","price":19000},{"name":"12 GB 5H","price":22000},{"name":"30 GB 5H","price":28000},{"name":"15 GB 7H","price":25000},{"name":"5 GB 14H","price":22000},{"name":"7 GB 28H","price":33000},{"name":"10 GB 28H","price":39000},{"name":"16 GB 28H","price":51000},{"name":"42 GB 30H","price":78000},{"name":"AON 5GB","price":31000},{"name":"AON 8 GB","price":34000},{"name":"AON 12 GB","price":50000}]},{"id":47,"name":"THREE — KARTU","provider":"THREE","category":"KARTU","items":[{"name":"Kartu Tri 3GB","price":13000}]},{"id":50,"name":"XL — VCR XL","provider":"XL","category":"VCR XL","items":[{"name":"4 GB 3H","price":13000},{"name":"6 GB 3H","price":16000},{"name":"4 GB 5H","price":16000},{"name":"6 GB 5H","price":18000},{"name":"8 GB 5H","price":20000},{"name":"2,5 GB + 7H","price":19000},{"name":"4 GB + 7H","price":23000},{"name":"6,5 GB + 7H","price":29000},{"name":"7 GB 7H","price":23000},{"name":"12 GB 7H","price":35000},{"name":"3,5 GB 30H","price":31000},{"name":"6,5 GB 30H","price":33000},{"name":"16 GB 28H","price":48000},{"name":"22 GB 30H","price":57000},{"name":"31GB 28H","price":65000},{"name":"40 GB 30H","price":75000},{"name":"50 GB 28H","price":85000},{"name":"65 GB 28H","price":94000}]},{"id":49,"name":"XL — KARTU","provider":"XL","category":"KARTU","items":[{"name":"Kartu XL 3GB","price":18000}]},{"id":41,"name":"INDOSAT — VCR ISAT","provider":"INDOSAT","category":"VCR ISAT","items":[{"name":"5 GB 2H","price":11000},{"name":"2.5GB 5H","price":15000},{"name":"3.5GB 5H","price":17000},{"name":"5GB 5H FULL","price":18000},{"name":"7 GB 7H FULL","price":25000},{"name":"4 GB 28H","price":27000}]},{"id":40,"name":"INDOSAT — KARTU","provider":"INDOSAT","category":"KARTU","items":[{"name":"Kartu Indosat 3GB","price":27000}]},{"id":43,"name":"SMARTFREN — VCR SM","provider":"SMARTFREN","category":"VCR SM","items":[{"name":"4 GB 3H","price":11000},{"name":"6 GB 7H","price":17000},{"name":"10 GB 6H","price":22000},{"name":"15 GB 10H","price":29000},{"name":"4 GB 14H FULL","price":21000},{"name":"25 GB 14H","price":35000},{"name":"6GB+15GB UNL 30H","price":41000},{"name":"Unli Mini 21GB 7H","price":32000},{"name":"10 GB 28H","price":45000},{"name":"Unli Lite 1GB/1H","price":80000},{"name":"Unli Max 2GB/H","price":94000}]},{"id":42,"name":"SMARTFREN — KARTU","provider":"SMARTFREN","category":"KARTU","items":[{"name":"Kartu Smartfren 3GB","price":18000}]},{"id":39,"name":"BY U — VCR BYU","provider":"BY U","category":"VCR BYU","items":[{"name":"9GB 3H","price":15000},{"name":"7.5 GB 5H","price":17000},{"name":"3 GB 7H","price":12000},{"name":"5 GB 7H","price":14000},{"name":"4 GB 14H","price":19000},{"name":"Kartu ByU 3GB","price":29000}]},{"id":53,"name":"BY U — KARTU","provider":"BY U","category":"KARTU","items":[{"name":"KARTU 3 GB 30H","price":30000}]},{"id":46,"name":"TELKOMSEL — VCR TSEL PKU","provider":"TELKOMSEL","category":"VCR TSEL PKU","items":[{"name":"4 GB 1H","price":8000},{"name":"6 GB 2H","price":12000},{"name":"7 GB 2H","price":15000},{"name":"5 GB 3H","price":15000},{"name":"7 GB 3H","price":17000},{"name":"6 GB 5H","price":17000},{"name":"7 GB 5H","price":19000},{"name":"9 GB 5H","price":24000},{"name":"9 GB 7H","price":29000},{"name":"10 GB 28H","price":44000},{"name":"18 GB 28H","price":54000}]},{"id":45,"name":"TELKOMSEL — VCR TSEL KAMPAR","provider":"TELKOMSEL","category":"VCR TSEL KAMPAR","items":[{"name":"5 GB 2H","price":11000},{"name":"6 GB 3H","price":15000},{"name":"4 GB 5H","price":14000},{"name":"5 GB 7H","price":21000},{"name":"10 GB 7H","price":29000},{"name":"12 GB 30H","price":44000},{"name":"20 GB 30H","price":54000}]},{"id":44,"name":"TELKOMSEL — KARTU","provider":"TELKOMSEL","category":"KARTU","items":[{"name":"Kartu Telkomsel 3GB","price":27000}]}],"totalProducts":104,"totalStock":290}
+</script>
+
+<script>
+// =========================================================================
+//  GLOBAL STATE (SHARED ANATAR KEDUA MODE)
+// =========================================================================
+let currentMode = 'ringkas'; // 'ringkas' | 'display'
+let activeData = null;       // Data stok terpusat — upload sekali untuk kedua mode!
+let dataSource = 'embedded'; // 'cloud' | 'file' | 'embedded'
+
+// =========================================================================
+//  MODE 1: LOGIKA & KONFIGURASI MODE RINGKAS (1 HALAMAN)
+// =========================================================================
+const BRAND = {
+  'TELKOMSEL' : { bg:'#FF0025', text:'#ffffff', zebraA:'#fff5f5', zebraB:'#ffe0e3', item:'#b30000' },
+  'XL'        : { bg:'#003087', text:'#ffffff', zebraA:'#f0f5ff', zebraB:'#dce8ff', item:'#003087' },
+  'AXIS'      : { bg:'#E4002B', text:'#ffffff', zebraA:'#fff0f3', zebraB:'#ffd6de', item:'#b3001f' },
+  'INDOSAT'   : { bg:'#1A73E8', text:'#ffffff', zebraA:'#f0f6ff', zebraB:'#d6e8ff', item:'#0d47a1' },
+  'THREE'     : { bg:'#6B2D8B', text:'#ffffff', zebraA:'#f8f0ff', zebraB:'#ead6ff', item:'#4a1070' },
+  'SMARTFREN' : { bg:'#00A651', text:'#ffffff', zebraA:'#f0fff5', zebraB:'#c6f0d8', item:'#006b34' },
+  'BY U'      : { bg:'#1a1a2e', text:'#ffffff', zebraA:'#f5f0ff', zebraB:'#e0d4f7', item:'#3b1f7a' },
+};
+const DEFAULT_BRAND = { bg:'#334155', text:'#f8fafc', zebraA:'#f8fafc', zebraB:'#e2e8f0', item:'#334155' };
+
+function getBrand(providerRaw) {
+  const key = (providerRaw || '').trim().toUpperCase();
+  if (BRAND[key]) return BRAND[key];
+  for (const k of Object.keys(BRAND))
+    if (key.includes(k) || k.includes(key)) return BRAND[k];
+  return DEFAULT_BRAND;
+}
+
+function fmtK(n) {
+  const v = n / 1000;
+  return (Number.isInteger(v) ? v : v.toFixed(1).replace('.', ',')) + 'k';
+}
+
+function extractSubLabel(categoryStr) {
+  if (!categoryStr) return '';
+  const c = categoryStr.toUpperCase().trim();
+  if (c.startsWith('KARTU')) return 'kartu';
+  const parts = c.split(/\s+/);
+  const skip = new Set(['VCR','TSEL','TRI','XL','AX','SM','ISAT','BYU','AXIS','THREE','INDOSAT','SMARTFREN','BY','U']);
+  const meaningful = parts.filter(p => !skip.has(p) && p.length > 1);
+  if (meaningful.length === 0) return '';
+  return meaningful.join(' ').toLowerCase();
+}
+
+function mergeByProvider(categories) {
+  const map   = new Map();
+  const order = [];
+  categories.forEach(cat => {
+    const prov = (cat.provider || 'LAINNYA').trim().toUpperCase();
+    const sub  = extractSubLabel(cat.category);
+    if (!map.has(prov)) {
+      map.set(prov, { provider: prov, items: [] });
+      order.push(prov);
+    }
+    (cat.items || []).forEach(item => {
+      map.get(prov).items.push({ ...item, sub });
+    });
+  });
+  return order.map(p => map.get(p));
+}
+
+function binPack(providers, numCols) {
+  const cols = Array.from({ length: numCols }, () => ({ weight: 0, items: [] }));
+  const sorted = [...providers].sort((a, b) => b.items.length - a.items.length);
+  sorted.forEach(prov => {
+    const col = cols.reduce((min, c) => c.weight < min.weight ? c : min, cols[0]);
+    col.items.push(prov);
+    col.weight += prov.items.length + 1.5;
+  });
+  return cols.map(c => c.items);
+}
+
+function parseDurHour(name) {
+  const m = name.match(/(\d+(?:[.,]\d+)?)\s*H\b/i);
+  return m ? parseFloat(m[1].replace(',', '.')) : null;
+}
+
+function getDurGroup(name) {
+  const h = parseDurHour(name);
+  if (h === null)  return 'KARTU';
+  if (h <= 6)      return 'HARIAN';
+  if (h <= 13)     return 'MINGGUAN';
+  return 'BULANAN';
+}
+
+const DUR_ORDER = ['HARIAN', 'MINGGUAN', 'BULANAN', 'KARTU'];
+
+function renderItemRow(item, zebraIndex, brand) {
+  const row = document.createElement('div');
+  row.className = 'item-row';
+  row.style.background = (zebraIndex % 2 === 0) ? brand.zebraA : brand.zebraB;
+
+  const nm = document.createElement('span');
+  nm.className   = 'item-name';
+  nm.style.color = brand.item;
+  nm.textContent = item.name.toUpperCase();
+  row.appendChild(nm);
+
+  if (item.sub) {
+    const sub = document.createElement('span');
+    sub.className   = 'item-sub';
+    sub.style.color = brand.item;
+    sub.textContent = `(${item.sub})`;
+    row.appendChild(sub);
+  }
+
+  const pr = document.createElement('span');
+  pr.className   = 'item-price';
+  pr.style.color = brand.item;
+  pr.textContent = fmtK(item.price);
+  row.appendChild(pr);
+
+  return row;
+}
+
+let showDurationGroups = true;
+
+function buildBlock(provObj) {
+  const brand = getBrand(provObj.provider);
+  const wrapper = document.createElement('div');
+  wrapper.className = 'category';
+
+  const hdr = document.createElement('div');
+  hdr.className = 'cat-header';
+  hdr.style.background = brand.bg;
+  hdr.style.color      = brand.text;
+  hdr.textContent      = provObj.provider;
+  wrapper.appendChild(hdr);
+
+  let globalZebra = 0;
+
+  if (showDurationGroups) {
+    const groups = {};
+    provObj.items.forEach(item => {
+      const g = getDurGroup(item.name);
+      if (!groups[g]) groups[g] = [];
+      groups[g].push(item);
+    });
+
+    const activeGroups = DUR_ORDER.filter(g => groups[g] && groups[g].length > 0);
+
+    activeGroups.forEach(grpKey => {
+      const items = groups[grpKey];
+
+      if (activeGroups.length > 1) {
+        const sep = document.createElement('div');
+        sep.className = 'dur-sep';
+
+        const lineL = document.createElement('span');
+        lineL.style.cssText = `flex:1;height:.4px;background:${brand.item};opacity:.25;display:block`;
+        sep.appendChild(lineL);
+
+        const lbl = document.createElement('span');
+        lbl.className = 'dur-sep-label';
+        lbl.style.color = brand.item;
+        lbl.textContent = grpKey;
+        sep.appendChild(lbl);
+
+        const lineR = document.createElement('span');
+        lineR.style.cssText = `flex:1;height:.4px;background:${brand.item};opacity:.25;display:block`;
+        sep.appendChild(lineR);
+
+        wrapper.appendChild(sep);
+      }
+
+      items.forEach(item => {
+        wrapper.appendChild(renderItemRow(item, globalZebra++, brand));
+      });
+    });
+  } else {
+    provObj.items.forEach(item => {
+      wrapper.appendChild(renderItemRow(item, globalZebra++, brand));
+    });
+  }
+
+  return wrapper;
+}
+
+function renderData(data) {
+  const date   = data.date || new Date().toISOString().slice(0, 10);
+  const colsEl = document.getElementById('columns');
+  colsEl.innerHTML = '';
+
+  const providers = mergeByProvider(data.categories || []);
+  const numCols   = parseInt(
+    getComputedStyle(document.documentElement).getPropertyValue('--num-columns').trim()
+  ) || 3;
+
+  const packed = binPack(providers, numCols);
+
+  packed.forEach(colProviders => {
+    const colDiv = document.createElement('div');
+    colDiv.className = 'col-wrapper';
+    colProviders.forEach(prov => colDiv.appendChild(buildBlock(prov)));
+    colsEl.appendChild(colDiv);
+  });
+
+  const totalItems = (data.categories || []).reduce((s, c) => s + (c.items ? c.items.length : 0), 0);
+  const customInfo = document.getElementById('inputFooterInfo').value.trim();
+  if (customInfo) {
+    document.getElementById('footer-info').textContent = customInfo;
+  } else {
+    document.getElementById('footer-info').textContent =
+      `${date}  ·  ${totalItems} produk  ·  ${providers.length} provider`;
+  }
+  document.getElementById('msg').textContent = '';
+  requestAnimationFrame(applyColScales);
+}
+
+// Skala per kolom
+const colScales = [1, 1, 1];
+const MIN_SCALE = 0.6;
+const MAX_SCALE = 1.8;
+
+const colGaps   = [1, 1, 1];
+const MIN_GAP   = 0.25;
+const MAX_GAP   = 5;
+
+function applyColScales() {
+  const wrappers = document.querySelectorAll('#columns .col-wrapper');
+  wrappers.forEach((w, i) => {
+    w.style.setProperty('--col-font-scale', (colScales[i] ?? 1).toFixed(2));
+    w.style.setProperty('--col-gap-scale',  (colGaps[i]   ?? 1).toFixed(2));
+  });
+  colScales.forEach((s, i) => {
+    const el = document.getElementById('scale-' + i);
+    if (el) el.textContent = Math.round(s * 100) + '%';
+  });
+  colGaps.forEach((g, i) => {
+    const el = document.getElementById('gap-' + i);
+    if (el) el.textContent = g.toFixed(2).replace(/\.?0+$/, '') + '×';
+  });
+}
+
+function adjustColScale(colIdx, delta, e) {
+  if (e && e.shiftKey) delta *= 5;
+  const current = colScales[colIdx] ?? 1;
+  const next = Math.round((current + delta) * 100) / 100;
+  colScales[colIdx] = Math.min(MAX_SCALE, Math.max(MIN_SCALE, next));
+  applyColScales();
+}
+
+function adjustColGap(colIdx, delta, e) {
+  if (e && e.shiftKey) delta *= 5;
+  const current = colGaps[colIdx] ?? 1;
+  const next = Math.round((current + delta) * 100) / 100;
+  colGaps[colIdx] = Math.min(MAX_GAP, Math.max(MIN_GAP, next));
+  applyColScales();
+}
+
+function resetAllScales() {
+  colScales[0] = colScales[1] = colScales[2] = 1;
+  colGaps[0]   = colGaps[1]   = colGaps[2]   = 1;
+  applyColScales();
+}
+
+function syncCol3Ctrl(numCols) {
+  ['col3-ctrl', 'col3-gap-ctrl'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = numCols >= 3 ? '' : 'none';
+  });
+}
+
+function updateHeaderView() {
+  const title = document.getElementById('inputHeaderTitle').value;
+  const sub   = document.getElementById('inputHeaderSub').value;
+  const titleEl = document.getElementById('header-title');
+  const subEl   = document.getElementById('header-sub');
+
+  if (!title.trim()) {
+    titleEl.innerHTML = '&nbsp;';
+  } else if (title.includes('<')) {
+    titleEl.innerHTML = title;
+  } else {
+    titleEl.innerHTML = `<em>${title}</em>`;
+  }
+
+  if (sub.trim()) {
+    subEl.textContent = sub;
+    subEl.style.display = 'block';
+  } else {
+    subEl.textContent = '';
+    subEl.style.display = 'none';
+  }
+}
+
+function updateFooterView() {
+  const line1       = document.getElementById('inputFooterLine1').value;
+  const line2Custom = document.getElementById('inputFooterInfo').value;
+  document.getElementById('footer-line1').textContent = line1;
+
+  if (line2Custom.trim()) {
+    document.getElementById('footer-info').textContent = line2Custom;
+  } else if (activeData) {
+    const totalItems = (activeData.categories || []).reduce((s, c) => s + (c.items ? c.items.length : 0), 0);
+    const date       = activeData.date || new Date().toISOString().slice(0, 10);
+    const providers  = mergeByProvider(activeData.categories || []);
+    document.getElementById('footer-info').textContent =
+      `${date}  ·  ${totalItems} produk  ·  ${providers.length} provider`;
+  }
+}
+
+function initMicroControls() {
+  [0, 1, 2].forEach(i => {
+    const scaleEl = document.getElementById('scale-' + i);
+    if (scaleEl && scaleEl.parentElement) {
+      scaleEl.parentElement.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        adjustColScale(i, e.deltaY < 0 ? 0.01 : -0.01, e);
+      }, { passive: false });
+
+      scaleEl.style.cursor = 'pointer';
+      scaleEl.addEventListener('click', () => {
+        const val = prompt(`Masukkan ukuran font K${i+1} dalam % (contoh: 102):`, Math.round(colScales[i] * 100));
+        if (val !== null) {
+          const num = parseFloat(val);
+          if (!isNaN(num)) {
+            colScales[i] = Math.min(MAX_SCALE, Math.max(MIN_SCALE, Math.round(num) / 100));
+            applyColScales();
+          }
+        }
+      });
+    }
+
+    const gapEl = document.getElementById('gap-' + i);
+    if (gapEl && gapEl.parentElement) {
+      gapEl.parentElement.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        adjustColGap(i, e.deltaY < 0 ? 0.05 : -0.05, e);
+      }, { passive: false });
+
+      gapEl.style.cursor = 'pointer';
+      gapEl.addEventListener('click', () => {
+        const val = prompt(`Masukkan skala gap K${i+1} (contoh: 1.05):`, colGaps[i]);
+        if (val !== null) {
+          const num = parseFloat(val);
+          if (!isNaN(num)) {
+            colGaps[i] = Math.min(MAX_GAP, Math.max(MIN_GAP, Math.round(num * 100) / 100));
+            applyColScales();
+          }
+        }
+      });
+    }
+  });
+}
+
+// =========================================================================
+//  MODE 2: LOGIKA & KONFIGURASI MODE KATALOG DISPLAY (PER PROVIDER)
+// =========================================================================
+const PROVIDER_ORDER = ["AXIS", "THREE", "XL", "TELKOMSEL", "BY U", "SMARTFREN", "INDOSAT"];
+
+const PROVIDER_META = {
+  "AXIS":      { label: "AXIS",       subtitle: "Paket Internet",        theme: "axis",  columns: 2, textSize: "md" },
+  "THREE":     { label: "THREE (3)",  subtitle: "Paket Internet",        theme: "three", columns: 2, textSize: "md" },
+  "XL":        { label: "XL",         subtitle: "Paket Internet",        theme: "xl",    columns: 2, textSize: "md" },
+  "TELKOMSEL": { label: "TELKOMSEL",  subtitle: "Voucer Paket Internet", theme: "tsel",  columns: 1, textSize: "lg" },
+  "BY U":      { label: "BY.U",       subtitle: "Paket Internet",        theme: "byu",   columns: 1, textSize: "lg" },
+  "SMARTFREN": { label: "SMARTFREN",  subtitle: "Paket Internet",        theme: "sm",    columns: 1, textSize: "lg" },
+  "INDOSAT":   { label: "INDOSAT",    subtitle: "Paket Internet",        theme: "isat",  columns: 1, textSize: "lg" },
+};
+
+const THEME_PALETTE = {
+  axis:  { label: "Ungu",   main: "#7C3AED", accent: "rgba(124,58,237,.18)", border: "rgba(124,58,237,.35)", tint: "rgba(124,58,237,.04)" },
+  three: { label: "Hijau",  main: "#16A34A", accent: "rgba(22,163,74,.14)",  border: "rgba(22,163,74,.32)",  tint: "rgba(22,163,74,.04)" },
+  xl:    { label: "Biru",   main: "#2563EB", accent: "rgba(37,99,235,.13)",  border: "rgba(37,99,235,.30)",  tint: "rgba(37,99,235,.04)" },
+  tsel:  { label: "Merah",  main: "#E02424", accent: "rgba(224,36,36,.11)",  border: "rgba(224,36,36,.28)",  tint: "rgba(224,36,36,.04)" },
+  byu:   { label: "Oranye", main: "#C2410C", accent: "rgba(194,65,12,.12)",  border: "rgba(194,65,12,.30)",  tint: "rgba(194,65,12,.04)" },
+  sm:    { label: "Pink",   main: "#DB2777", accent: "rgba(219,39,119,.11)", border: "rgba(219,39,119,.28)", tint: "rgba(219,39,119,.04)" },
+  isat:  { label: "Amber",  main: "#D97706", accent: "rgba(217,119,6,.12)",  border: "rgba(217,119,6,.30)",  tint: "rgba(217,119,6,.04)" },
+};
+
+const SIZE_OPTIONS = ["xl", "lg", "md", "sm"];
+const COLUMN_OPTIONS = [1, 2, 3];
+const SIZE_PRESET_DEFAULTS = {
+  xl: { name: 26, price: 24 },
+  lg: { name: 23, price: 21.5 },
+  md: { name: 18, price: 17 },
+  sm: { name: 14, price: 13 },
+};
+const SIZE_SLIDER_LABELS = { xl: "XL", lg: "LG", md: "MD", sm: "SM" };
+const FEW_ITEMS_THRESHOLD = 3;
+const CONTACT_PHONE = "0812-6661-6177";
+const SETTINGS_STORAGE_KEY = "paket-internet-settings-v2";
+
+function defaultSettings() {
+  const textSizes = {}, themes = {}, columns = {};
+  Object.keys(PROVIDER_META).forEach(key => {
+    textSizes[key] = PROVIDER_META[key].textSize || "lg";
+    themes[key] = PROVIDER_META[key].theme;
+    columns[key] = PROVIDER_META[key].columns || 1;
+  });
+  return {
+    textSizes, themes, columns,
+    priceFormat: "full",
+    sizePresets: JSON.parse(JSON.stringify(SIZE_PRESET_DEFAULTS)),
+  };
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (!raw) return defaultSettings();
+    const saved = JSON.parse(raw);
+    const base = defaultSettings();
+    return {
+      textSizes: { ...base.textSizes, ...(saved.textSizes || {}) },
+      themes: { ...base.themes, ...(saved.themes || {}) },
+      columns: { ...base.columns, ...(saved.columns || {}) },
+      priceFormat: saved.priceFormat === "short" ? "short" : "full",
+      sizePresets: { ...base.sizePresets, ...(saved.sizePresets || {}) },
+    };
+  } catch (e) {
+    return defaultSettings();
+  }
+}
+
+function saveSettings(s) {
+  localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(s));
+}
+
+let settings = loadSettings();
+
+function formatRupiahFull(n) {
+  return Number(n || 0).toLocaleString("id-ID");
+}
+
+function formatRupiahShort(n) {
+  const v = Number(n || 0) / 1000;
+  const rounded = Math.round(v * 10) / 10;
+  const text = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(1).replace(".", ",");
+  return text + "K";
+}
+
+function formatPrice(n) {
+  return settings.priceFormat === "short" ? formatRupiahShort(n) : formatRupiahFull(n);
+}
+
+function applySizePresetsToRoot() {
+  Object.keys(SIZE_PRESET_DEFAULTS).forEach(preset => {
+    const p = settings.sizePresets[preset] || SIZE_PRESET_DEFAULTS[preset];
+    document.documentElement.style.setProperty(`--size-${preset}-name`, p.name + "pt");
+    document.documentElement.style.setProperty(`--size-${preset}-price`, p.price + "pt");
+  });
+}
+
+function buildItemCard(item) {
+  const card = document.createElement("div");
+  card.className = "item-card";
+
+  const name = document.createElement("div");
+  name.className = "item-name";
+  name.textContent = item.name;
+
+  const price = document.createElement("div");
+  price.className = "item-price";
+  price.textContent = formatPrice(item.price);
+
+  card.appendChild(name);
+  card.appendChild(price);
+  return card;
+}
+
+function resolveColumns(providerColumns, itemCount) {
+  if (itemCount <= FEW_ITEMS_THRESHOLD) return 1;
+  return providerColumns || 1;
+}
+
+function buildCategoryBlock(category, providerColumns) {
+  const block = document.createElement("div");
+  block.className = "category-block";
+
+  const title = document.createElement("div");
+  title.className = "category-title";
+  title.textContent = category.category;
+  block.appendChild(title);
+
+  const columns = resolveColumns(providerColumns, category.items.length);
+  const grid = document.createElement("div");
+  grid.className = "items-grid cols-" + columns;
+  category.items.forEach(item => grid.appendChild(buildItemCard(item)));
+  block.appendChild(grid);
+
+  return block;
+}
+
+function buildProviderPage(providerKey, categories) {
+  const meta = PROVIDER_META[providerKey] || { label: providerKey, subtitle: "Paket Internet", theme: "axis", columns: 1, textSize: "lg" };
+  const themeKey = settings.themes[providerKey] || meta.theme;
+  const theme = THEME_PALETTE[themeKey] || THEME_PALETTE.axis;
+  const textSize = settings.textSizes[providerKey] || meta.textSize || "lg";
+  const columns = settings.columns[providerKey] || meta.columns || 1;
+
+  const page = document.createElement("div");
+  page.className = `page text-${textSize}`;
+  page.style.setProperty("--t-main", theme.main);
+  page.style.setProperty("--t-accent", theme.accent);
+  page.style.setProperty("--t-border", theme.border);
+  page.style.setProperty("--t-tint", theme.tint);
+
+  const header = document.createElement("div");
+  header.className = "page-header";
+  header.innerHTML = `<div class="provider-logo-text">${meta.label}<small>${meta.subtitle}</small></div>`;
+  page.appendChild(header);
+
+  const body = document.createElement("div");
+  body.className = "page-body";
+  categories.forEach((cat, idx) => {
+    body.appendChild(buildCategoryBlock(cat, columns));
+    if (idx < categories.length - 1) {
+      const divider = document.createElement("div");
+      divider.className = "section-divider";
+      body.appendChild(divider);
+    }
+  });
+  page.appendChild(body);
+
+  const footer = document.createElement("div");
+  footer.className = "page-footer";
+  footer.innerHTML = `<div class="footer-notice">Jika harga tidak sesuai dengan display harga hubungi &nbsp;<span class="footer-phone">${CONTACT_PHONE}</span>&nbsp; &middot; &nbsp;<strong>Selalu Lebih Murah</strong></div>`;
+  page.appendChild(footer);
+
+  return page;
+}
+
+function renderCatalog(data) {
+  const root = document.getElementById("catalogRoot");
+  root.innerHTML = "";
+
+  const byProvider = {};
+  (data.categories || []).forEach(cat => {
+    const key = (cat.provider || "LAINNYA").trim().toUpperCase();
+    if (!byProvider[key]) byProvider[key] = [];
+    byProvider[key].push(cat);
+  });
+
+  const orderedKeys = [
+    ...PROVIDER_ORDER.filter(p => byProvider[p]),
+    ...Object.keys(byProvider).filter(p => !PROVIDER_ORDER.includes(p))
+  ];
+
+  if (orderedKeys.length === 0) {
+    root.innerHTML = `<div class="empty-state">
+      <h2>Data Kosong</h2>
+      <p>Belum ada produk atau format data tidak memiliki kategori.</p>
+    </div>`;
+    return;
+  }
+
+  orderedKeys.forEach(key => {
+    root.appendChild(buildProviderPage(key, byProvider[key]));
+  });
+}
+
+function rerenderCatalog() {
+  if (activeData) renderCatalog(activeData);
+}
+
+function renderSizeSliders() {
+  const list = document.getElementById("sizeSliderList");
+  list.innerHTML = "";
+
+  Object.keys(SIZE_PRESET_DEFAULTS).forEach(preset => {
+    const current = settings.sizePresets[preset] || SIZE_PRESET_DEFAULTS[preset];
+
+    const row = document.createElement("div");
+    row.className = "slider-row";
+
+    const top = document.createElement("div");
+    top.className = "slider-row-top";
+    top.innerHTML = `<span class="label">${SIZE_SLIDER_LABELS[preset]}</span><span class="value" id="sizeVal-${preset}">${current.name}pt</span>`;
+    row.appendChild(top);
+
+    const input = document.createElement("input");
+    input.type = "range";
+    input.min = "8";
+    input.max = "34";
+    input.step = "0.5";
+    input.value = current.name;
+    input.addEventListener("input", (e) => {
+      const nameSize = parseFloat(e.target.value);
+      const priceSize = Math.max(6, Math.round((nameSize - 1.5) * 2) / 2);
+      settings.sizePresets[preset] = { name: nameSize, price: priceSize };
+      document.getElementById(`sizeVal-${preset}`).textContent = nameSize + "pt";
+      applySizePresetsToRoot();
+    });
+    row.appendChild(input);
+
+    list.appendChild(row);
+  });
+}
+
+function renderProviderSettings() {
+  const list = document.getElementById("providerSettingsList");
+  list.innerHTML = "";
+
+  Object.keys(PROVIDER_META).forEach(key => {
+    const meta = PROVIDER_META[key];
+
+    const block = document.createElement("div");
+    block.className = "provider-block";
+
+    const header = document.createElement("div");
+    header.className = "provider-block-header";
+
+    const label = document.createElement("span");
+    label.className = "provider-row-label";
+    const currentTheme = THEME_PALETTE[settings.themes[key]] || THEME_PALETTE.axis;
+    label.innerHTML = `<span class="theme-swatch" style="background:${currentTheme.main}"></span>${meta.label}`;
+    header.appendChild(label);
+
+    const select = document.createElement("select");
+    select.className = "theme-select";
+    Object.keys(THEME_PALETTE).forEach(themeKey => {
+      const opt = document.createElement("option");
+      opt.value = themeKey;
+      opt.textContent = THEME_PALETTE[themeKey].label;
+      if (settings.themes[key] === themeKey) opt.selected = true;
+      select.appendChild(opt);
+    });
+    select.addEventListener("change", (e) => {
+      settings.themes[key] = e.target.value;
+      renderProviderSettings();
+      rerenderCatalog();
+    });
+    header.appendChild(select);
+    block.appendChild(header);
+
+    const colGroup = document.createElement("div");
+    colGroup.className = "control-group";
+    colGroup.innerHTML = `<span class="control-label">Kolom</span>`;
+    const colPicker = document.createElement("div");
+    colPicker.className = "pill-picker";
+    COLUMN_OPTIONS.forEach(n => {
+      const btn = document.createElement("button");
+      btn.className = "pill-btn" + (settings.columns[key] === n ? " active" : "");
+      btn.textContent = n;
+      btn.addEventListener("click", () => {
+        settings.columns[key] = n;
+        renderProviderSettings();
+        rerenderCatalog();
+      });
+      colPicker.appendChild(btn);
+    });
+    colGroup.appendChild(colPicker);
+    block.appendChild(colGroup);
+
+    const sizeGroup = document.createElement("div");
+    sizeGroup.className = "control-group";
+    sizeGroup.innerHTML = `<span class="control-label">Ukuran</span>`;
+    const sizePicker = document.createElement("div");
+    sizePicker.className = "pill-picker";
+    SIZE_OPTIONS.forEach(size => {
+      const btn = document.createElement("button");
+      btn.className = "pill-btn" + (settings.textSizes[key] === size ? " active" : "");
+      btn.textContent = size.toUpperCase();
+      btn.addEventListener("click", () => {
+        settings.textSizes[key] = size;
+        renderProviderSettings();
+        rerenderCatalog();
+      });
+      sizePicker.appendChild(btn);
+    });
+    sizeGroup.appendChild(sizePicker);
+    block.appendChild(sizeGroup);
+
+    list.appendChild(block);
+  });
+}
+
+function syncPriceFormatToggles() {
+  const isShort = settings.priceFormat === "short";
+  ['priceFormatToggle', 'priceFormatTogglePanel'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle("on", isShort);
+  });
+  ['formatToggleLabel', 'formatToggleLabelPanel'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.fontWeight = isShort ? "400" : "700";
+  });
+}
+
+function renderSettingsPanel() {
+  renderSizeSliders();
+  renderProviderSettings();
+  syncPriceFormatToggles();
+}
+
+function initSettingsPanel() {
+  const panel = document.getElementById("settingsPanel");
+  document.getElementById("settingsBtn").addEventListener("click", () => panel.classList.toggle("open"));
+  document.getElementById("closeSettingsBtn").addEventListener("click", () => panel.classList.remove("open"));
+
+  function togglePrice() {
+    settings.priceFormat = settings.priceFormat === "short" ? "full" : "short";
+    syncPriceFormatToggles();
+    rerenderCatalog();
+  }
+
+  document.getElementById("priceFormatToggle").addEventListener("click", togglePrice);
+  document.getElementById("priceFormatTogglePanel").addEventListener("click", togglePrice);
+
+  document.getElementById("saveSettingsBtn").addEventListener("click", (e) => {
+    saveSettings(settings);
+    const btn = e.currentTarget;
+    const original = btn.textContent;
+    btn.textContent = "✅ Tersimpan";
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  });
+
+  document.getElementById("resetSettingsBtn").addEventListener("click", () => {
+    settings = defaultSettings();
+    localStorage.removeItem(SETTINGS_STORAGE_KEY);
+    applySizePresetsToRoot();
+    renderSettingsPanel();
+    rerenderCatalog();
+  });
+
+  applySizePresetsToRoot();
+  renderSettingsPanel();
+}
+
+// =========================================================================
+//  TRANSFORMASI & INTEGRASI SUPABASE CLOUD
+// =========================================================================
+function transformVouchersToStockFormat(vouchers) {
+  const catMap = new Map();
+  vouchers.forEach(v => {
+    const prov = (v.provider_name || 'LAINNYA').trim();
+    const catName = (v.category_name || v.category || prov).trim();
+    const key = prov + ' — ' + catName;
+    if (!catMap.has(key)) {
+      catMap.set(key, {
+        name: key,
+        provider: prov,
+        category: catName,
+        items: []
+      });
+    }
+    const price = parseInt(v.sell_price || v.price || v.user_price || 0);
+    catMap.get(key).items.push({
+      id: v.id,
+      name: v.product_name || '-',
+      price: price
+    });
+  });
+
+  return {
+    type: "stock",
+    date: new Date().toISOString().slice(0, 10),
+    categories: Array.from(catMap.values()),
+    totalProducts: vouchers.length
+  };
+}
+
+async function loadDataFromSupabase(interactive = false) {
+  let pin = '';
+  if (window.KspAuth && typeof window.KspAuth.getAdminPin === 'function') {
+    pin = window.KspAuth.getAdminPin();
+  }
+  if (!pin) {
+    try { pin = localStorage.getItem('kspcheck_viewer_pin') || ''; } catch(e){}
+  }
+
+  if (!pin && interactive) {
+    pin = prompt("Masukkan PIN Admin untuk memuat data dari Supabase Cloud:");
+    if (!pin) return;
+  }
+  if (!pin) {
+    if (interactive) alert("PIN Admin diperlukan untuk mengakses cloud.");
+    return;
+  }
+
+  const pill = document.getElementById("statusPill");
+  if (pill) pill.textContent = "🔄 Menghubungkan Cloud...";
+
+  try {
+    let config = null;
+    if (window.KspAuth && typeof window.KspAuth.decryptConfig === 'function') {
+      config = await window.KspAuth.decryptConfig(pin);
+      window.KspAuth.setAdminSession(pin);
+    } else {
+      throw new Error("Modul autentikasi KspAuth tidak tersedia.");
+    }
+
+    if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+      throw new Error("Pustaka Supabase JS belum siap.");
+    }
+
+    const client = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
+    const { data, error } = await client
+      .from('vouchers')
+      .select('*')
+      .order('sort_order', { ascending: true });
+
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      if (pill) pill.textContent = "⚠️ Cloud: Data voucher kosong";
+      return;
+    }
+
+    const transformed = transformVouchersToStockFormat(data);
+    dataSource = 'cloud';
+    handleDataLoaded(transformed);
+  } catch (err) {
+    console.error("Supabase load error:", err);
+    if (pill) pill.textContent = "⚠️ Gagal Cloud: " + (err.message || 'Error');
+    if (interactive) alert("Gagal memuat dari Supabase: " + (err.message || 'Periksa koneksi atau PIN'));
+  }
+}
+
+// =========================================================================
+//  UNIFIED DATA HANDLER & MODE SWITCHER
+// =========================================================================
+function handleDataLoaded(data) {
+  activeData = data;
+
+  const totalItems = data.totalProducts ?? (data.categories || []).reduce((s, c) => s + (c.items ? c.items.length : 0), 0);
+  const date = data.date || new Date().toISOString().slice(0, 10);
+  const provCount = (data.categories || []).reduce((acc, c) => {
+    const p = (c.provider || '').trim().toUpperCase();
+    if (p && !acc.includes(p)) acc.push(p);
+    return acc;
+  }, []).length;
+
+  const sourceIcon = dataSource === 'cloud' ? '☁️ Cloud' : (dataSource === 'file' ? '📂 File' : '💾 Default');
+  const pill = document.getElementById("statusPill");
+  if (pill) pill.textContent = `✅ ${totalItems} produk · ${provCount} prov (${sourceIcon})`;
+
+  if (currentMode === 'ringkas') {
+    renderData(activeData);
+  } else {
+    renderCatalog(activeData);
+  }
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.body.classList.toggle('mode-ringkas', mode === 'ringkas');
+  document.body.classList.toggle('mode-display', mode === 'display');
+
+  document.getElementById('btnModeRingkas').classList.toggle('active', mode === 'ringkas');
+  document.getElementById('btnModeDisplay').classList.toggle('active', mode === 'display');
+
+  // Jika data sudah diupload sebelumnya, langsung render tampilan baru!
+  if (activeData) {
+    if (mode === 'ringkas') {
+      renderData(activeData);
+    } else {
+      renderCatalog(activeData);
+    }
+  }
+}
+
+// =========================================================================
+//  EVENT LISTENERS & INISIALISASI
+// =========================================================================
+document.getElementById('btnModeRingkas').addEventListener('click', () => switchMode('ringkas'));
+document.getElementById('btnModeDisplay').addEventListener('click', () => switchMode('display'));
+
+// Satu file input yang sama untuk kedua mode
+document.getElementById('sharedFileInput').addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      dataSource = 'file';
+      handleDataLoaded(data);
+    } catch(err) {
+      document.getElementById('msg').textContent = '❌ JSON tidak valid: ' + err.message;
+    }
+  };
+  reader.readAsText(file);
+});
+
+// Listener Mode Ringkas
+document.getElementById('toggleDuration').addEventListener('change', function() {
+  showDurationGroups = this.checked;
+  if (activeData) renderData(activeData);
+});
+
+document.getElementById('colSelect').addEventListener('change', function() {
+  const n = parseInt(this.value);
+  document.documentElement.style.setProperty('--num-columns', n);
+  syncCol3Ctrl(n);
+  if (activeData) renderData(activeData);
+});
+
+document.getElementById('inputHeaderTitle').addEventListener('input', updateHeaderView);
+document.getElementById('inputHeaderSub').addEventListener('input', updateHeaderView);
+document.getElementById('inputFooterLine1').addEventListener('input', updateFooterView);
+document.getElementById('inputFooterInfo').addEventListener('input', updateFooterView);
+
+['header-title', 'header-sub', 'footer-line1', 'footer-info'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.setAttribute('contenteditable', 'true');
+});
+document.getElementById('header-title').addEventListener('input', function() {
+  document.getElementById('inputHeaderTitle').value = this.textContent;
+});
+document.getElementById('header-sub').addEventListener('input', function() {
+  document.getElementById('inputHeaderSub').value = this.textContent;
+});
+document.getElementById('footer-line1').addEventListener('input', function() {
+  document.getElementById('inputFooterLine1').value = this.textContent;
+});
+document.getElementById('footer-info').addEventListener('input', function() {
+  document.getElementById('inputFooterInfo').value = this.textContent;
+});
+
+// Inisialisasi awal saat halaman dibuka
+(function() {
+  syncCol3Ctrl(3);
+  updateHeaderView();
+  initMicroControls();
+  initSettingsPanel();
+
+  // 1. Muat data default tertanam terlebih dahulu agar tampilan langsung terisi
+  try {
+    const embedded = JSON.parse(document.getElementById('embedded-data').textContent);
+    dataSource = 'embedded';
+    handleDataLoaded(embedded);
+  } catch(e) {
+    document.getElementById('msg').textContent = 'Gagal memuat embedded data: ' + e.message;
+  }
+
+  // 2. Jika ada PIN admin tersimpan di localStorage, otomatis tarik data cloud Supabase terbaru
+  const pin = (window.KspAuth && typeof window.KspAuth.getAdminPin === 'function')
+    ? window.KspAuth.getAdminPin()
+    : (localStorage.getItem('kspcheck_viewer_pin') || '');
+
+  if (pin) {
+    loadDataFromSupabase(false);
+  }
+})();
+</script>
+</body>
+</html>

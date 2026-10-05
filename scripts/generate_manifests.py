@@ -99,6 +99,8 @@ PAGES: Tuple[Page, ...] = (
          "Store Manager - KSP Check", "Kelola Cabang Toko, Shift Kasir & Rekap Transaksi"),
     Page("karyawan", "👤", "Portal Kasir", "Portal Kasir", "Login kasir & personel toko", "karyawan.html",
          "Portal Kasir - KSP Check", "Portal Login & Pencatatan Transaksi Kasir Toko"),
+    Page("print", "🖨️", "Cetak & Display", "Cetak Stok", "Cetak daftar harga & display etalase", "stock_print.html",
+         "Cetak & Display Stok - KSP Check", "Cetak Daftar Harga & Display Katalog Voucher Internet"),
 )
 
 
