@@ -7,7 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="assets/icons/icon-karyawan.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -15,25 +15,39 @@
             --bg-card: #FFFFFF;
             --border-card: #E5E7EB;
             --border-subtle: #F0F2F6;
+            --input-bg: #F8FAFC;
             --text-heading: #1E293B;
             --text-sub: #64748B;
             --text-muted: #94A3B8;
             --primary-blue: #4F7BF7;
             --primary-blue-hover: #3E6AE6;
-            --primary-track: #E8EEFF;
-            --pill-badge-bg: #5B82F6;
-            --pill-badge-text: #FFFFFF;
-            --rank-badge-bg: #1E293B;
-            --rank-badge-text: #FFFFFF;
             --card-shadow: 0 4px 18px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02);
             --card-shadow-hover: 0 10px 25px rgba(15, 23, 42, 0.08);
             
-            /* Metric Icon Colors */
-            --icon-calendar: #38BDF8;
-            --icon-phone: #34D399;
-            --icon-outgoing: #FB923C;
-            --icon-chat: #C084FC;
-            --icon-mail: #60A5FA;
+            /* Status Colors (Menyesuaikan KspTarget / store-target-mini-row) */
+            --status-tercapai: #10B981;
+            --status-hampir: #3B82F6;
+            --status-kejar: #F59E0B;
+            --status-kurang: #EF4444;
+
+            /* Podium & Highlight Colors */
+            --gold-border: rgba(255, 215, 0, 0.55);
+            --gold-bg: linear-gradient(90deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.02) 100%);
+            --gold-tag-bg: rgba(255, 215, 0, 0.2);
+            --gold-tag-text: #B45309;
+            --gold-glow: rgba(255, 215, 0, 0.35);
+
+            --silver-border: rgba(148, 163, 184, 0.55);
+            --silver-bg: linear-gradient(90deg, rgba(148, 163, 184, 0.09) 0%, rgba(148, 163, 184, 0.02) 100%);
+            --silver-tag-bg: rgba(148, 163, 184, 0.2);
+            --silver-tag-text: #475569;
+            --silver-glow: rgba(148, 163, 184, 0.3);
+
+            --bronze-border: rgba(217, 119, 6, 0.45);
+            --bronze-bg: linear-gradient(90deg, rgba(217, 119, 6, 0.08) 0%, rgba(217, 119, 6, 0.02) 100%);
+            --bronze-tag-bg: rgba(217, 119, 6, 0.18);
+            --bronze-tag-text: #92400E;
+            --bronze-glow: rgba(217, 119, 6, 0.25);
         }
 
         body.dark-theme {
@@ -41,18 +55,29 @@
             --bg-card: #151C2C;
             --border-card: #222B3E;
             --border-subtle: #1C2436;
+            --input-bg: #101624;
             --text-heading: #F8FAFC;
             --text-sub: #94A3B8;
             --text-muted: #64748B;
             --primary-blue: #638CFF;
             --primary-blue-hover: #4F7BF7;
-            --primary-track: rgba(99, 140, 255, 0.15);
-            --pill-badge-bg: #4F7BF7;
-            --pill-badge-text: #FFFFFF;
-            --rank-badge-bg: #F8FAFC;
-            --rank-badge-text: #0B0F19;
             --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             --card-shadow-hover: 0 12px 30px rgba(0, 0, 0, 0.55);
+
+            --gold-border: rgba(255, 215, 0, 0.5);
+            --gold-bg: linear-gradient(90deg, rgba(255, 215, 0, 0.14) 0%, rgba(21, 28, 44, 0.95) 100%);
+            --gold-tag-bg: rgba(255, 215, 0, 0.22);
+            --gold-tag-text: #FBBF24;
+
+            --silver-border: rgba(148, 163, 184, 0.45);
+            --silver-bg: linear-gradient(90deg, rgba(148, 163, 184, 0.12) 0%, rgba(21, 28, 44, 0.95) 100%);
+            --silver-tag-bg: rgba(148, 163, 184, 0.22);
+            --silver-tag-text: #E2E8F0;
+
+            --bronze-border: rgba(217, 119, 6, 0.45);
+            --bronze-bg: linear-gradient(90deg, rgba(217, 119, 6, 0.12) 0%, rgba(21, 28, 44, 0.95) 100%);
+            --bronze-tag-bg: rgba(217, 119, 6, 0.2);
+            --bronze-tag-text: #FCD34D;
         }
 
         * {
@@ -157,7 +182,7 @@
         }
 
         .dashboard-container.mode-mobile {
-            max-width: 440px;
+            max-width: 480px;
         }
 
         /* -------------------------------------------------------------
@@ -179,7 +204,7 @@
 
         .header-title {
             font-size: 24px;
-            font-weight: 800;
+            font-weight: 850;
             color: var(--text-heading);
             letter-spacing: -0.5px;
         }
@@ -232,137 +257,7 @@
         }
 
         /* -------------------------------------------------------------
-           2. TOP 3 PERFORMERS CARDS (PODIUM ATAS)
-           ------------------------------------------------------------- */
-        .top-three-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-        }
-
-        .top-performer-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
-            border-radius: 16px;
-            padding: 24px 20px 20px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            box-shadow: var(--card-shadow);
-            position: relative;
-            cursor: pointer;
-            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease;
-        }
-
-        .top-performer-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--card-shadow-hover);
-            border-color: rgba(79, 123, 247, 0.4);
-        }
-
-        /* Avatar with Overlapping Rank Badge */
-        .avatar-rank-wrapper {
-            position: relative;
-            margin-bottom: 12px;
-        }
-
-        .performer-avatar {
-            width: 66px;
-            height: 66px;
-            border-radius: 50%;
-            overflow: hidden;
-            background: #E2E8F0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-            border: 2px solid #FFFFFF;
-        }
-
-        body.dark-theme .performer-avatar {
-            border-color: #222B3E;
-        }
-
-        .performer-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .performer-rank-pill {
-            position: absolute;
-            bottom: -6px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #FFFFFF;
-            color: #1E293B;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            font-size: 11.5px;
-            font-weight: 850;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-            border: 1.5px solid #F1F5F9;
-        }
-
-        body.dark-theme .performer-rank-pill {
-            background: #1E293B;
-            color: #FFFFFF;
-            border-color: #334155;
-        }
-
-        .performer-name {
-            font-size: 15px;
-            font-weight: 750;
-            color: var(--text-heading);
-            margin-bottom: 6px;
-            letter-spacing: -0.2px;
-        }
-
-        .performer-score {
-            font-size: 48px;
-            font-weight: 850;
-            color: var(--primary-blue);
-            line-height: 1;
-            margin-bottom: 18px;
-            letter-spacing: -1.5px;
-        }
-
-        /* Breakdown Icons Strip Under Score */
-        .metrics-strip {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            width: 100%;
-            padding-top: 14px;
-            border-top: 1px solid var(--border-subtle);
-        }
-
-        .metric-mini-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 12.5px;
-            font-weight: 600;
-            color: var(--text-sub);
-        }
-
-        .metric-icon-svg {
-            width: 16px;
-            height: 16px;
-            display: inline-block;
-            vertical-align: middle;
-            flex-shrink: 0;
-        }
-
-        /* -------------------------------------------------------------
-           3. HORIZONTAL AGGREGATE SUMMARY STRIP (5 BOXES)
+           2. HORIZONTAL AGGREGATE SUMMARY STRIP (5 BOXES)
            ------------------------------------------------------------- */
         .summary-boxes-strip {
             display: grid;
@@ -435,59 +330,122 @@
         }
 
         /* -------------------------------------------------------------
-           4. LIST OF REMAINING PERFORMERS (#4 S/D SETERUSNYA)
+           3. UNIFIED LEADERBOARD LIST CARD (TOP 3 + ALL RANKS TOGETHER)
            ------------------------------------------------------------- */
         .leaderboard-list-card {
             background: var(--bg-card);
             border: 1px solid var(--border-card);
             border-radius: 16px;
-            padding: 12px 20px;
+            padding: 14px 18px;
             box-shadow: var(--card-shadow);
             display: flex;
             flex-direction: column;
+            gap: 10px;
         }
 
+        .list-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 6px 10px 6px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .list-section-title {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Item Baris Klasemen */
         .list-row-item {
             display: flex;
             align-items: center;
             gap: 16px;
-            padding: 18px 4px;
-            border-bottom: 1px solid var(--border-subtle);
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid var(--border-card);
+            background: var(--bg-card);
             cursor: pointer;
-            transition: background 0.15s ease, padding 0.15s ease;
-        }
-
-        .list-row-item:last-child {
-            border-bottom: none;
+            transition: all 0.2s ease;
+            position: relative;
         }
 
         .list-row-item:hover {
-            background: rgba(79, 123, 247, 0.03);
-            border-radius: 12px;
-            padding-left: 10px;
-            padding-right: 10px;
+            border-color: var(--primary-blue);
+            transform: translateX(2px);
+            box-shadow: var(--card-shadow);
         }
 
-        /* Avatar on the list with bottom rank badge */
+        /* Highlight Khusus Top 1 (Emas 🏆) */
+        .list-row-item.rank-gold {
+            background: var(--gold-bg);
+            border: 1.5px solid var(--gold-border);
+            box-shadow: 0 4px 14px var(--gold-glow);
+        }
+        .list-row-item.rank-gold:hover {
+            border-color: #F59E0B;
+        }
+
+        /* Highlight Khusus Top 2 (Perak 🥈) */
+        .list-row-item.rank-silver {
+            background: var(--silver-bg);
+            border: 1.5px solid var(--silver-border);
+            box-shadow: 0 4px 14px var(--silver-glow);
+        }
+        .list-row-item.rank-silver:hover {
+            border-color: #64748B;
+        }
+
+        /* Highlight Khusus Top 3 (Perunggu 🥉) */
+        .list-row-item.rank-bronze {
+            background: var(--bronze-bg);
+            border: 1.5px solid var(--bronze-border);
+            box-shadow: 0 4px 14px var(--bronze-glow);
+        }
+        .list-row-item.rank-bronze:hover {
+            border-color: #D97706;
+        }
+
+        /* Avatar Container dengan Badge Peringkat */
         .list-avatar-wrap {
             position: relative;
             flex-shrink: 0;
         }
 
         .list-avatar {
-            width: 50px;
-            height: 50px;
+            width: 52px;
+            height: 52px;
             border-radius: 50%;
             overflow: hidden;
             background: #E2E8F0;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1.5px solid #FFFFFF;
+            border: 2px solid #FFFFFF;
+            transition: transform 0.2s ease;
         }
 
         body.dark-theme .list-avatar {
             border-color: #222B3E;
+        }
+
+        .list-avatar.ring-gold {
+            border-color: #F59E0B;
+            box-shadow: 0 0 10px var(--gold-glow);
+        }
+        .list-avatar.ring-silver {
+            border-color: #94A3B8;
+            box-shadow: 0 0 10px var(--silver-glow);
+        }
+        .list-avatar.ring-bronze {
+            border-color: #D97706;
+            box-shadow: 0 0 10px var(--bronze-glow);
         }
 
         .list-avatar img {
@@ -496,95 +454,165 @@
             object-fit: cover;
         }
 
+        /* Badge Peringkat Melayang di Bawah Avatar */
         .list-rank-badge {
             position: absolute;
             bottom: -5px;
             left: 50%;
             transform: translateX(-50%);
-            background: var(--rank-badge-bg);
-            color: var(--rank-badge-text);
-            width: 19px;
-            height: 19px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             font-size: 11px;
-            font-weight: 850;
+            font-weight: 900;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
             border: 1.5px solid var(--bg-card);
+            background: #1E293B;
+            color: #FFFFFF;
         }
 
-        /* Info + Progress Bar + Pill Badge */
+        body.dark-theme .list-rank-badge {
+            background: #F8FAFC;
+            color: #0B0F19;
+        }
+
+        .badge-gold {
+            background: linear-gradient(135deg, #FFE066, #F59E0B) !important;
+            color: #78350F !important;
+            border-color: #FFFFFF !important;
+        }
+        .badge-silver {
+            background: linear-gradient(135deg, #F1F5F9, #94A3B8) !important;
+            color: #1E293B !important;
+            border-color: #FFFFFF !important;
+        }
+        .badge-bronze {
+            background: linear-gradient(135deg, #FCD34D, #B45309) !important;
+            color: #FFFFFF !important;
+            border-color: #FFFFFF !important;
+        }
+
+        /* Kolom Info, Progress Bar, & Metrics */
         .list-info-col {
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 5px;
             min-width: 0;
         }
 
+        /* Baris Nama Kasir, Tag Juara/Piala, & Angka Skor */
         .list-name-row {
             display: flex;
-            align-items: baseline;
+            align-items: center;
             justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .name-trophy-group {
+            display: flex;
+            align-items: center;
             gap: 8px;
+            min-width: 0;
         }
 
         .list-person-name {
             font-size: 14.5px;
-            font-weight: 750;
+            font-weight: 800;
             color: var(--text-heading);
             letter-spacing: -0.2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Tag Piala / Juara Podium */
+        .trophy-tag {
+            font-size: 10px;
+            font-weight: 850;
+            padding: 2px 7px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            letter-spacing: 0.3px;
+            flex-shrink: 0;
+        }
+
+        .trophy-gold {
+            background: var(--gold-tag-bg);
+            color: var(--gold-tag-text);
+            border: 1px solid rgba(255, 215, 0, 0.45);
+        }
+        .trophy-silver {
+            background: var(--silver-tag-bg);
+            color: var(--silver-tag-text);
+            border: 1px solid rgba(148, 163, 184, 0.4);
+        }
+        .trophy-bronze {
+            background: var(--bronze-tag-bg);
+            color: var(--bronze-tag-text);
+            border: 1px solid rgba(217, 119, 6, 0.35);
         }
 
         .list-store-tag {
-            font-size: 11px;
-            font-weight: 650;
+            font-size: 10px;
+            font-weight: 700;
             color: var(--text-muted);
-            background: var(--bg-page);
-            padding: 2px 8px;
-            border-radius: 6px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-card);
+            padding: 1.5px 6px;
+            border-radius: 5px;
+            flex-shrink: 0;
         }
 
-        /* Horizontal Progress Bar with Attached Score Pill */
-        .progress-bar-container {
-            position: relative;
-            width: 100%;
-            height: 8px;
-            background: var(--primary-track);
-            border-radius: 999px;
-            margin: 4px 0 6px 0;
+        /* Skor & Status Badge di Kanan Atas */
+        .score-status-group {
             display: flex;
             align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
         }
 
-        .progress-bar-fill {
+        .score-display-val {
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--primary-blue);
+            letter-spacing: -0.3px;
+        }
+
+        .score-status-badge {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 6px;
+            letter-spacing: 0.3px;
+        }
+
+        /* -------------------------------------------------------------
+           PROGRESS-BAR-FILL PERSIS SEPERTI store-target-mini-row
+           ------------------------------------------------------------- */
+        .store-target-progress-wrap {
+            width: 100%;
+            height: 6px;
+            background: var(--input-bg);
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid var(--border-card);
+            margin: 2px 0 4px 0;
+        }
+
+        .store-target-progress-fill {
             height: 100%;
-            background: var(--primary-blue);
-            border-radius: 999px;
-            position: relative;
-            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-radius: 3px;
+            transition: width 0.4s ease;
         }
 
-        .progress-score-pill {
-            position: absolute;
-            right: 0;
-            top: 50%;
-            transform: translate(50%, -50%);
-            background: var(--pill-badge-bg);
-            color: var(--pill-badge-text);
-            font-size: 11px;
-            font-weight: 850;
-            padding: 2.5px 8px;
-            border-radius: 999px;
-            box-shadow: 0 2px 6px rgba(91, 130, 246, 0.35);
-            white-space: nowrap;
-            letter-spacing: -0.2px;
-            z-index: 2;
-        }
-
-        /* Breakdown Icons Row Under Progress Bar */
+        /* Breakdown Metrics Strip di Bawah Progress Bar */
         .list-metrics-row {
             display: flex;
             align-items: center;
@@ -593,10 +621,17 @@
             font-size: 12px;
             font-weight: 600;
             color: var(--text-sub);
+            margin-top: 1px;
+        }
+
+        .metric-mini-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         /* -------------------------------------------------------------
-           POPUP MODAL DETAIL ORANG / TRANSAKSI
+           MODAL DETAIL PERFORMER
            ------------------------------------------------------------- */
         .modal-overlay {
             position: fixed;
@@ -622,7 +657,7 @@
             background: var(--bg-card);
             border: 1px solid var(--border-card);
             border-radius: 20px;
-            max-width: 420px;
+            max-width: 440px;
             width: 100%;
             padding: 22px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
@@ -648,28 +683,37 @@
                 padding: 14px 10px 40px 10px;
             }
 
-            .top-three-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-
             .summary-boxes-strip {
                 grid-template-columns: repeat(2, 1fr);
             }
 
-            .performer-score {
-                font-size: 38px;
-                margin-bottom: 12px;
-            }
-
             .header-title {
                 font-size: 20px;
+            }
+
+            .list-row-item {
+                padding: 12px 12px;
+                gap: 12px;
+            }
+
+            .list-avatar {
+                width: 46px;
+                height: 46px;
+            }
+
+            .score-display-val {
+                font-size: 15px;
             }
         }
 
         @media (max-width: 480px) {
             .summary-boxes-strip {
                 grid-template-columns: 1fr;
+            }
+
+            .list-metrics-row {
+                gap: 8px;
+                font-size: 11px;
             }
         }
     </style>
@@ -681,9 +725,9 @@
          ============================================================= -->
     <header class="proto-toolbar">
         <div class="proto-badge-title">
-            <span>📊</span>
-            <span>Prototype: Leaderboard Dashboard Design</span>
-            <span class="proto-pill">Pixel-Perfect Replica</span>
+            <span>🏆</span>
+            <span>Prototype: Leaderboard (Unified Rows + Target Progress Fill)</span>
+            <span class="proto-pill">Design v2</span>
         </div>
 
         <div class="proto-controls">
@@ -740,19 +784,27 @@
             </div>
         </div>
 
-        <!-- 2. TOP 3 PERFORMERS (3 KARTU PODIUM ATAS) -->
-        <section class="top-three-grid" id="topThreeGrid">
-            <!-- Diisi dinamis oleh JavaScript -->
-        </section>
-
-        <!-- 3. STRIP AGREGAT 5 METRIC BOXES -->
+        <!-- 2. STRIP AGREGAT 5 METRIC BOXES -->
         <section class="summary-boxes-strip" id="summaryBoxesStrip">
             <!-- Diisi dinamis oleh JavaScript -->
         </section>
 
-        <!-- 4. DAFTAR PERINGKAT LENGKAP (#4 KE BAWAH) -->
-        <section class="leaderboard-list-card" id="leaderboardListCard">
-            <!-- Diisi dinamis oleh JavaScript -->
+        <!-- 3. DAFTAR PERINGKAT LENGKAP DALAM SATU KONTENER BARIS (TOP 1, 2, 3 BERPIALA + LAINNYA) -->
+        <section class="leaderboard-list-card">
+            <div class="list-section-header">
+                <div class="list-section-title">
+                    <span>👑</span>
+                    <span>PAPAN KLASEMEN &amp; TARGET PERFORMA</span>
+                </div>
+                <span id="totalMembersBadge" style="font-size: 11px; font-weight: 750; color: var(--primary-blue); background: rgba(79, 123, 247, 0.1); padding: 2px 8px; border-radius: 6px;">
+                    10 Anggota Tim
+                </span>
+            </div>
+
+            <!-- List Baris Klasemen Terpadu -->
+            <div id="unifiedLeaderboardList" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Diisi dinamis oleh JavaScript -->
+            </div>
         </section>
 
     </main>
@@ -763,7 +815,7 @@
     <div class="modal-overlay" id="detailModal" onclick="closeDetailModal(event)">
         <div class="modal-box" onclick="event.stopPropagation()">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                <h3 style="font-size: 16px; font-weight: 800;">Detail Performa</h3>
+                <h3 style="font-size: 16px; font-weight: 800;">Detail Performa Kasir</h3>
                 <button onclick="closeDetailModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);">&times;</button>
             </div>
             <div id="modalContent"></div>
@@ -774,152 +826,282 @@
          JAVASCRIPT & DATA CONTROLLER
          ============================================================= -->
     <script>
-        // DATASET 1: MOCKUP ASLI (SEPERTI PADA GAMBAR REFERENSI)
+        // DATASET 1: MOCKUP ASLI (SEPERTI PADA GAMBAR REFERENSI DENGAN HIGHLIGHT PIALA)
         const ORIGINAL_DATASET = {
             metricLabels: [
-                { id: 'app', label: 'APPOINTMENTS', icon: '📅', color: '#38BDF8' },
-                { id: 'conv', label: 'CONVERSATIONS', icon: '📞', color: '#34D399' },
-                { id: 'calls', label: 'CALL ATTEMPTS', icon: '📲', color: '#FB923C' },
-                { id: 'texts', label: 'TEXT MESSAGES', icon: '💬', color: '#C084FC' },
-                { id: 'emails', label: 'EMAILS', icon: '✉️', color: '#60A5FA' }
+                { id: 'app', label: 'APPOINTMENTS', icon: '📅' },
+                { id: 'conv', label: 'CONVERSATIONS', icon: '📞' },
+                { id: 'calls', label: 'CALL ATTEMPTS', icon: '📲' },
+                { id: 'texts', label: 'TEXT MESSAGES', icon: '💬' },
+                { id: 'emails', label: 'EMAILS', icon: '✉️' }
             ],
             summaryValues: [
-                { val: '5', sub: '', label: 'APPOINTMENTS', icon: '📅', color: '#38BDF8' },
-                { val: '56', sub: '(10 hrs 35m)', label: 'CONVERSATIONS', icon: '📞', color: '#34D399' },
-                { val: '205', sub: '', label: 'CALL ATTEMPTS', icon: '📲', color: '#FB923C' },
-                { val: '259', sub: '', label: 'TEXT MESSAGES', icon: '💬', color: '#C084FC' },
-                { val: '1700', sub: '', label: 'EMAILS', icon: '✉️', color: '#60A5FA' }
+                { val: '5', sub: '', label: 'APPOINTMENTS', icon: '📅' },
+                { val: '56', sub: '(10 hrs 35m)', label: 'CONVERSATIONS', icon: '📞' },
+                { val: '205', sub: '', label: 'CALL ATTEMPTS', icon: '📲' },
+                { val: '259', sub: '', label: 'TEXT MESSAGES', icon: '💬' },
+                { val: '1700', sub: '', label: 'EMAILS', icon: '✉️' }
             ],
-            topThree: [
+            performers: [
                 {
                     rank: 1,
                     name: 'Meghan Porter',
                     score: 736,
+                    progressPct: 100,
+                    statusText: 'TERCAPAI (100%)',
+                    statusColor: '#10B981',
+                    statusBg: 'rgba(16, 185, 129, 0.12)',
                     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+                    tag: null,
                     m1: '8', m2: '9 (2m 47s)', m3: '6', m4: '7', m5: '12'
                 },
                 {
                     rank: 2,
                     name: 'Steve Hines',
                     score: 337,
+                    progressPct: 46,
+                    statusText: 'RUNNER UP (46%)',
+                    statusColor: '#3B82F6',
+                    statusBg: 'rgba(59, 130, 246, 0.12)',
                     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+                    tag: null,
                     m1: '6', m2: '7', m3: '8', m4: '8', m5: '10'
                 },
                 {
                     rank: 3,
                     name: 'Paul Drozdowski',
                     score: 191,
+                    progressPct: 26,
+                    statusText: 'TOP 3 (26%)',
+                    statusColor: '#8B5CF6',
+                    statusBg: 'rgba(139, 92, 246, 0.12)',
                     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+                    tag: null,
                     m1: '9', m2: '8 (52m 44s)', m3: '37', m4: '70', m5: '11'
-                }
-            ],
-            list: [
+                },
                 {
                     rank: 4,
                     name: 'Ashley Mielcarek',
                     score: 190,
-                    progressPct: 88,
+                    progressPct: 26,
+                    statusText: 'ON TRACK (26%)',
+                    statusColor: '#06B6D4',
+                    statusBg: 'rgba(6, 182, 212, 0.12)',
                     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+                    tag: null,
                     m1: '2', m2: '5 (1 hr 43m)', m3: '6', m4: '55', m5: '84'
                 },
                 {
                     rank: 5,
                     name: 'Tim Erickson',
                     score: 164,
-                    progressPct: 74,
+                    progressPct: 22,
+                    statusText: 'PROGRES (22%)',
+                    statusColor: '#F59E0B',
+                    statusBg: 'rgba(245, 158, 11, 0.12)',
                     avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
+                    tag: null,
                     m1: '2', m2: '10 (1 hr 49m)', m3: '13', m4: '29', m5: '52'
                 },
                 {
                     rank: 6,
                     name: 'Brooke Fletcher',
                     score: 151,
-                    progressPct: 65,
+                    progressPct: 21,
+                    statusText: 'PROGRES (21%)',
+                    statusColor: '#F59E0B',
+                    statusBg: 'rgba(245, 158, 11, 0.12)',
                     avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
+                    tag: null,
                     m1: '0', m2: '0', m3: '0', m4: '0', m5: '151'
                 },
                 {
                     rank: 7,
                     name: 'Jon Wright',
                     score: 148,
-                    progressPct: 62,
+                    progressPct: 20,
+                    statusText: 'PROGRES (20%)',
+                    statusColor: '#F59E0B',
+                    statusBg: 'rgba(245, 158, 11, 0.12)',
                     avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80',
+                    tag: null,
                     m1: '3', m2: '4 (38m 10s)', m3: '15', m4: '42', m5: '84'
+                },
+                {
+                    rank: 8,
+                    name: 'Sarah Jenkins',
+                    score: 132,
+                    progressPct: 18,
+                    statusText: 'KEJAR TARGET (18%)',
+                    statusColor: '#EF4444',
+                    statusBg: 'rgba(239, 68, 68, 0.12)',
+                    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+                    tag: null,
+                    m1: '2', m2: '3 (22m)', m3: '12', m4: '35', m5: '80'
+                },
+                {
+                    rank: 9,
+                    name: 'David Miller',
+                    score: 115,
+                    progressPct: 16,
+                    statusText: 'KEJAR TARGET (16%)',
+                    statusColor: '#EF4444',
+                    statusBg: 'rgba(239, 68, 68, 0.12)',
+                    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80',
+                    tag: null,
+                    m1: '1', m2: '2 (14m)', m3: '10', m4: '28', m5: '74'
+                },
+                {
+                    rank: 10,
+                    name: 'Linda Ross',
+                    score: 98,
+                    progressPct: 13,
+                    statusText: 'KEJAR TARGET (13%)',
+                    statusColor: '#EF4444',
+                    statusBg: 'rgba(239, 68, 68, 0.12)',
+                    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+                    tag: null,
+                    m1: '1', m2: '1 (8m)', m3: '8', m4: '22', m5: '66'
                 }
             ]
         };
 
-        // DATASET 2: ADAPTASI KHUSUS KSP CHECK (KASIR & CABANG KSP)
+        // DATASET 2: ADAPTASI KHUSUS KSP CHECK (KASIR & CABANG TOKO KSP)
         const KSP_DATASET = {
             metricLabels: [
-                { id: 'topup', label: 'TOPUP EWALLET', icon: '💳', color: '#38BDF8' },
-                { id: 'tarik', label: 'TARIK TUNAI', icon: '💵', color: '#34D399' },
-                { id: 'pulsa', label: 'VOUCHER / PULSA', icon: '🎟️', color: '#FB923C' },
-                { id: 'pln', label: 'TOKEN PLN', icon: '⚡', color: '#C084FC' },
-                { id: 'qris', label: 'QRIS / LAINNYA', icon: '📱', color: '#60A5FA' }
+                { id: 'topup', label: 'TOPUP EWALLET', icon: '💳' },
+                { id: 'tarik', label: 'TARIK TUNAI', icon: '💵' },
+                { id: 'pulsa', label: 'VOUCHER / PULSA', icon: '🎟️' },
+                { id: 'pln', label: 'TOKEN PLN', icon: '⚡' },
+                { id: 'qris', label: 'QRIS & LAINNYA', icon: '📱' }
             ],
             summaryValues: [
-                { val: '142', sub: '', label: 'TOPUP EWALLET', icon: '💳', color: '#38BDF8' },
-                { val: '98', sub: '(Rp 42.5 Jt)', label: 'TARIK TUNAI', icon: '💵', color: '#34D399' },
-                { val: '315', sub: '', label: 'VOUCHER / PULSA', icon: '🎟️', color: '#FB923C' },
-                { val: '86', sub: '', label: 'TOKEN PLN', icon: '⚡', color: '#C084FC' },
-                { val: '1840', sub: '', label: 'TOTAL TRANSAKSI', icon: '📊', color: '#60A5FA' }
+                { val: '142', sub: '', label: 'TOPUP EWALLET', icon: '💳' },
+                { val: '98', sub: '(Rp 42.5 Jt)', label: 'TARIK TUNAI', icon: '💵' },
+                { val: '315', sub: '', label: 'VOUCHER / PULSA', icon: '🎟️' },
+                { val: '86', sub: '', label: 'TOKEN PLN', icon: '⚡' },
+                { val: '1840', sub: '', label: 'TOTAL TRANSAKSI', icon: '📊' }
             ],
-            topThree: [
+            performers: [
                 {
                     rank: 1,
-                    name: 'Siti Rahma (Mahang)',
+                    name: 'Siti Rahma',
+                    tag: 'KSP Mahang',
                     score: 736,
+                    progressPct: 100,
+                    statusText: 'TERCAPAI (124%)',
+                    statusColor: '#10B981',
+                    statusBg: 'rgba(16, 185, 129, 0.12)',
                     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
                     m1: '148', m2: '42', m3: '86', m4: '35', m5: '425'
                 },
                 {
                     rank: 2,
-                    name: 'Budi Santoso (Gading)',
+                    name: 'Budi Santoso',
+                    tag: 'KSP Gading',
                     score: 337,
+                    progressPct: 46,
+                    statusText: 'RUNNER UP (112%)',
+                    statusColor: '#3B82F6',
+                    statusBg: 'rgba(59, 130, 246, 0.12)',
                     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
                     m1: '84', m2: '28', m3: '45', m4: '19', m5: '161'
                 },
                 {
                     rank: 3,
-                    name: 'Rian Hidayat (Marpoyan)',
+                    name: 'Rian Hidayat',
+                    tag: 'KSP Marpoyan',
                     score: 191,
+                    progressPct: 26,
+                    statusText: 'TOP 3 (102%)',
+                    statusColor: '#8B5CF6',
+                    statusBg: 'rgba(139, 92, 246, 0.12)',
                     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
                     m1: '45', m2: '16', m3: '38', m4: '12', m5: '80'
-                }
-            ],
-            list: [
+                },
                 {
                     rank: 4,
-                    name: 'Ahmad Fauzi (Mahang)',
+                    name: 'Ahmad Fauzi',
+                    tag: 'KSP Mahang',
                     score: 190,
-                    progressPct: 88,
+                    progressPct: 26,
+                    statusText: 'ON TRACK (95%)',
+                    statusColor: '#06B6D4',
+                    statusBg: 'rgba(6, 182, 212, 0.12)',
                     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
                     m1: '42', m2: '15', m3: '36', m4: '11', m5: '86'
                 },
                 {
                     rank: 5,
-                    name: 'Dewi Lestari (Gading)',
+                    name: 'Dewi Lestari',
+                    tag: 'KSP Gading',
                     score: 164,
-                    progressPct: 74,
+                    progressPct: 22,
+                    statusText: 'PROGRES (88%)',
+                    statusColor: '#F59E0B',
+                    statusBg: 'rgba(245, 158, 11, 0.12)',
                     avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
                     m1: '38', m2: '14', m3: '29', m4: '9', m5: '74'
                 },
                 {
                     rank: 6,
-                    name: 'Ilham Saputra (Karya 1)',
+                    name: 'Ilham Saputra',
+                    tag: 'KSP Karya 1',
                     score: 151,
-                    progressPct: 65,
+                    progressPct: 21,
+                    statusText: 'PROGRES (82%)',
+                    statusColor: '#F59E0B',
+                    statusBg: 'rgba(245, 158, 11, 0.12)',
                     avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
                     m1: '32', m2: '12', m3: '24', m4: '8', m5: '75'
                 },
                 {
                     rank: 7,
-                    name: 'Doni Pratama (Karya 2)',
+                    name: 'Doni Pratama',
+                    tag: 'KSP Karya 2',
                     score: 148,
-                    progressPct: 62,
+                    progressPct: 20,
+                    statusText: 'PROGRES (79%)',
+                    statusColor: '#F59E0B',
+                    statusBg: 'rgba(245, 158, 11, 0.12)',
                     avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80',
                     m1: '30', m2: '11', m3: '22', m4: '7', m5: '78'
+                },
+                {
+                    rank: 8,
+                    name: 'Putri Ananda',
+                    tag: 'KSP Karya 1',
+                    score: 132,
+                    progressPct: 18,
+                    statusText: 'KEJAR TARGET (71%)',
+                    statusColor: '#EF4444',
+                    statusBg: 'rgba(239, 68, 68, 0.12)',
+                    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+                    m1: '28', m2: '10', m3: '20', m4: '6', m5: '68'
+                },
+                {
+                    rank: 9,
+                    name: 'Nurul Aini',
+                    tag: 'KSP Marpoyan',
+                    score: 115,
+                    progressPct: 16,
+                    statusText: 'KEJAR TARGET (62%)',
+                    statusColor: '#EF4444',
+                    statusBg: 'rgba(239, 68, 68, 0.12)',
+                    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80',
+                    m1: '24', m2: '9', m3: '18', m4: '5', m5: '59'
+                },
+                {
+                    rank: 10,
+                    name: 'Fajar Siddiq',
+                    tag: 'KSP Mahang (Inval)',
+                    score: 98,
+                    progressPct: 13,
+                    statusText: 'KEJAR TARGET (53%)',
+                    statusColor: '#EF4444',
+                    statusBg: 'rgba(239, 68, 68, 0.12)',
+                    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+                    m1: '20', m2: '8', m3: '16', m4: '4', m5: '50'
                 }
             ]
         };
@@ -927,7 +1109,6 @@
         let currentDatasetKey = 'original';
         let currentDataset = ORIGINAL_DATASET;
 
-        // Render Saat DOM Siap
         document.addEventListener('DOMContentLoaded', () => {
             renderDashboard();
         });
@@ -936,59 +1117,11 @@
         // RENDER METHOD UTAMA
         // =============================================================
         function renderDashboard() {
-            renderTopThree();
             renderSummaryBoxes();
-            renderList();
+            renderUnifiedList();
         }
 
-        // 1. Render Top 3 Cards
-        function renderTopThree() {
-            const container = document.getElementById('topThreeGrid');
-            let html = '';
-
-            currentDataset.topThree.forEach(p => {
-                html += `
-                    <div class="top-performer-card" onclick="openDetailModal('${escapeHtml(p.name)}', ${p.score}, ${p.rank})">
-                        <div class="avatar-rank-wrapper">
-                            <div class="performer-avatar">
-                                <img src="${p.avatar}" alt="${p.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=4F7BF7&color=fff'">
-                            </div>
-                            <div class="performer-rank-pill">${p.rank}</div>
-                        </div>
-
-                        <div class="performer-name">${escapeHtml(p.name)}</div>
-                        <div class="performer-score">${p.score}</div>
-
-                        <div class="metrics-strip">
-                            <div class="metric-mini-item" title="${currentDataset.metricLabels[0].label}">
-                                <span>${currentDataset.metricLabels[0].icon}</span>
-                                <span>${p.m1}</span>
-                            </div>
-                            <div class="metric-mini-item" title="${currentDataset.metricLabels[1].label}">
-                                <span>${currentDataset.metricLabels[1].icon}</span>
-                                <span>${p.m2}</span>
-                            </div>
-                            <div class="metric-mini-item" title="${currentDataset.metricLabels[2].label}">
-                                <span>${currentDataset.metricLabels[2].icon}</span>
-                                <span>${p.m3}</span>
-                            </div>
-                            <div class="metric-mini-item" title="${currentDataset.metricLabels[3].label}">
-                                <span>${currentDataset.metricLabels[3].icon}</span>
-                                <span>${p.m4}</span>
-                            </div>
-                            <div class="metric-mini-item" title="${currentDataset.metricLabels[4].label}">
-                                <span>${currentDataset.metricLabels[4].icon}</span>
-                                <span>${p.m5}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
-
-        // 2. Render 5 Summary Boxes Strip
+        // 1. Render 5 Summary Boxes Strip
         function renderSummaryBoxes() {
             const container = document.getElementById('summaryBoxesStrip');
             let html = '';
@@ -1011,34 +1144,73 @@
             container.innerHTML = html;
         }
 
-        // 3. Render Remaining List Items (#4 onwards)
-        function renderList() {
-            const container = document.getElementById('leaderboardListCard');
+        // 2. Render Unified Leaderboard List (Top 1, 2, 3 ber-piala + baris lain)
+        function renderUnifiedList() {
+            const container = document.getElementById('unifiedLeaderboardList');
             let html = '';
 
-            currentDataset.list.forEach(p => {
+            document.getElementById('totalMembersBadge').innerText = `${currentDataset.performers.length} Anggota Tim`;
+
+            currentDataset.performers.forEach(p => {
+                // Class & Trophy styling khusus untuk Top 3
+                let rowHighlightClass = '';
+                let avatarRingClass = '';
+                let rankBadgeClass = '';
+                let trophyTagHtml = '';
+
+                if (p.rank === 1) {
+                    rowHighlightClass = 'rank-gold';
+                    avatarRingClass = 'ring-gold';
+                    rankBadgeClass = 'badge-gold';
+                    trophyTagHtml = `<span class="trophy-tag trophy-gold">🏆 JUARA 1</span>`;
+                } else if (p.rank === 2) {
+                    rowHighlightClass = 'rank-silver';
+                    avatarRingClass = 'ring-silver';
+                    rankBadgeClass = 'badge-silver';
+                    trophyTagHtml = `<span class="trophy-tag trophy-silver">🥈 JUARA 2</span>`;
+                } else if (p.rank === 3) {
+                    rowHighlightClass = 'rank-bronze';
+                    avatarRingClass = 'ring-bronze';
+                    rankBadgeClass = 'badge-bronze';
+                    trophyTagHtml = `<span class="trophy-tag trophy-bronze">🥉 JUARA 3</span>`;
+                }
+
+                // Tag Cabang (jika ada)
+                const storeTagHtml = p.tag ? `<span class="list-store-tag">🏬 ${escapeHtml(p.tag)}</span>` : '';
+
                 html += `
-                    <div class="list-row-item" onclick="openDetailModal('${escapeHtml(p.name)}', ${p.score}, ${p.rank})">
+                    <div class="list-row-item ${rowHighlightClass}" onclick="openDetailModal('${escapeHtml(p.name)}', ${p.score}, ${p.rank})">
+                        <!-- Avatar dengan Badge Peringkat -->
                         <div class="list-avatar-wrap">
-                            <div class="list-avatar">
+                            <div class="list-avatar ${avatarRingClass}">
                                 <img src="${p.avatar}" alt="${p.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=334155&color=fff'">
                             </div>
-                            <div class="list-rank-badge">${p.rank}</div>
+                            <div class="list-rank-badge ${rankBadgeClass}">${p.rank}</div>
                         </div>
 
+                        <!-- Info Kolom, Progress Bar & Metrics -->
                         <div class="list-info-col">
+                            <!-- Baris Nama, Tag Piala, & Nilai Skor -->
                             <div class="list-name-row">
-                                <span class="list-person-name">${escapeHtml(p.name)}</span>
-                            </div>
-
-                            <!-- Progress Bar with Attached Score Pill -->
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill" style="width: ${p.progressPct}%;">
-                                    <span class="progress-score-pill">${p.score}</span>
+                                <div class="name-trophy-group">
+                                    <span class="list-person-name">${escapeHtml(p.name)}</span>
+                                    ${trophyTagHtml}
+                                    ${storeTagHtml}
+                                </div>
+                                <div class="score-status-group">
+                                    <span class="score-display-val">${p.score}</span>
+                                    <span class="score-status-badge" style="background: ${p.statusBg}; color: ${p.statusColor}; border: 1px solid ${p.statusColor}44;">
+                                        ${p.statusText}
+                                    </span>
                                 </div>
                             </div>
 
-                            <!-- Metrics Mini Strip -->
+                            <!-- Progress Bar Persis store-target-mini-row -->
+                            <div class="store-target-progress-wrap" title="Progress: ${p.progressPct}%">
+                                <div class="store-target-progress-fill" style="width: ${p.progressPct}%; background: ${p.statusColor};"></div>
+                            </div>
+
+                            <!-- Breakdown Metrics Mini Strip -->
                             <div class="list-metrics-row">
                                 <div class="metric-mini-item" title="${currentDataset.metricLabels[0].label}">
                                     <span>${currentDataset.metricLabels[0].icon}</span>
@@ -1070,7 +1242,7 @@
         }
 
         // =============================================================
-        // INTERACTIVE CONTROLS & EVENT HANDLERS
+        // KONTROL PROTOTIPE & HANDLER
         // =============================================================
         function switchDataset(type) {
             currentDatasetKey = type;
@@ -1121,18 +1293,24 @@
             const modal = document.getElementById('detailModal');
             const content = document.getElementById('modalContent');
 
+            let rankLabel = `#${rank}`;
+            let rankColor = 'var(--primary-blue)';
+            if (rank === 1) { rankLabel = '🏆 #1'; rankColor = '#F59E0B'; }
+            else if (rank === 2) { rankLabel = '🥈 #2'; rankColor = '#94A3B8'; }
+            else if (rank === 3) { rankLabel = '🥉 #3'; rankColor = '#D97706'; }
+
             content.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
-                    <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--primary-blue); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800;">
-                        #${rank}
+                    <div style="width: 54px; height: 54px; border-radius: 50%; background: ${rankColor}; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                        ${rankLabel}
                     </div>
                     <div>
-                        <div style="font-size: 17px; font-weight: 800;">${name}</div>
-                        <div style="font-size: 13px; color: var(--text-sub);">Skor Total: <b style="color: var(--primary-blue);">${score} Poin</b></div>
+                        <div style="font-size: 17px; font-weight: 850;">${name}</div>
+                        <div style="font-size: 13px; color: var(--text-sub); margin-top: 2px;">Skor Transaksi: <b style="color: ${rankColor};">${score} Poin</b></div>
                     </div>
                 </div>
-                <div style="background: var(--bg-page); border-radius: 12px; padding: 14px; font-size: 12.5px; line-height: 1.6; color: var(--text-sub);">
-                    🚀 Performa individu tercatat dalam sistem pemantauan leaderboard. Data ini memperbarui posisi podium secara langsung pada periode aktif.
+                <div style="background: var(--input-bg); border: 1px solid var(--border-card); border-radius: 12px; padding: 14px; font-size: 12.5px; line-height: 1.6; color: var(--text-sub);">
+                    🚀 Seluruh metrik progres shift kasir tervalidasi otomatis. Capaian target dihitung proporsional terhadap target harian dan mingguan masing-masing cabang.
                 </div>
             `;
             modal.classList.add('open');
