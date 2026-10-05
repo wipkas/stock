@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>KSP Check - Transaksi &amp; Shift Kasir</title>
 
-    <!-- Chart.js CDN for Analytics Graphs -->
+    <!-- Chart.js CDN & CryptoJS untuk otentikasi Admin -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     <script src="js/ksp_sync_config.js?v=20261005"></script>
     <script src="js/ksp_sync.js?v=20261005"></script>
     <script src="js/ksp_ui.js?v=20261005"></script>
@@ -1384,9 +1385,10 @@
 
     <div class="container">
 
-        <!-- VIEW 0: FORM LOGIN KARYAWAN (KETIKA AKSES LANGSUNG KE store_transactions.html) -->
+        <!-- VIEW 0: FORM LOGIN (ADMIN / KARYAWAN KETIKA AKSES LANGSUNG KE store_transactions.html) -->
         <section id="empLoginOverlay" class="login-card" style="display: none;">
             <h2 class="pin-title">KSPCHECK</h2>
+            <p style="font-size: 12px; color: var(--text-muted); text-align: center; margin-top: -6px; margin-bottom: 16px;">Masukkan PIN Admin atau Password Kasir</p>
 
             <form onsubmit="handleEmployeeLogin(event)">
                 <div class="form-group" style="margin-bottom: 14px;">
@@ -2271,8 +2273,13 @@
             let storeParam = urlParams.get('store');
             const viewParam = urlParams.get('view');
             const fromParam = urlParams.get('from');
-            // Cek apakah dibuka dari store_manager.html (Mode Admin) atau Mode Bypass
-                                                                                                if (fromParam === 'manager' || sessionStorage.getItem('kspcheck_auth_mode') === 'admin') {
+            // Cek apakah dibuka dari store_manager.html (Mode Admin), sesi admin di sessionStorage,
+            // ATAU sudah ada PIN Admin yang tersimpan di localStorage (KspAuth.getAdminPin())
+            const savedAdminPin = (window.KspAuth && typeof KspAuth.getAdminPin === 'function') 
+                ? KspAuth.getAdminPin() 
+                : localStorage.getItem('kspcheck_viewer_pin');
+
+            if (fromParam === 'manager' || sessionStorage.getItem('kspcheck_auth_mode') === 'admin' || (savedAdminPin && !sessionStorage.getItem('kspcheck_active_emp'))) {
                 currentAuthRole = 'admin';
                 sessionStorage.setItem('kspcheck_auth_mode', 'admin');
             } else {
@@ -2519,7 +2526,59 @@
                 return;
             }
 
-            // Cari karyawan: cloud dulu (data terbaru), jika offline pakai data lokal
+            // 1. Cek apakah ini PIN Admin Toko (dekripsi config.enc)
+            if (window.KspAuth && typeof KspAuth.verifyAdminPin === 'function') {
+                try {
+                    const cfg = await KspAuth.verifyAdminPin(pass);
+                    if (cfg) {
+                        // PIN Admin Valid!
+                        KspAuth.setAdminSession(pass);
+                        currentAuthRole = 'admin';
+                        if (errBox) errBox.style.display = 'none';
+                        hideEmployeeLoginOverlay();
+
+                        // Tarik data cloud & rotasi otomatis
+                        if (window.KspSync && KspSync.enabled()) {
+                            KspSync.adminPull().then(() => {
+                                if (processAutomaticRotations()) refreshAfterRemoteUpdate();
+                            });
+                        } else {
+                            processAutomaticRotations();
+                        }
+
+                        // Tentukan toko aktif untuk Admin
+                        const urlParamsNow = new URLSearchParams(window.location.search);
+                        let targetStore = urlParamsNow.get('store');
+                        const targetView = urlParamsNow.get('view');
+
+                        if (!targetStore || !storesData.some(s => s.id === targetStore)) {
+                            const savedStoreId = localStorage.getItem('kspcheck_active_store_id');
+                            if (savedStoreId && storesData.some(s => s.id === savedStoreId)) {
+                                targetStore = savedStoreId;
+                            } else if (storesData.length > 0) {
+                                targetStore = storesData[0].id;
+                            }
+                        }
+
+                        if (targetStore && storesData.length > 0) {
+                            activeStoreId = targetStore;
+                            localStorage.setItem('kspcheck_active_store_id', activeStoreId);
+                            updateStoreSwitcherDropdown();
+                            openStoreAnalytics(null, activeStoreId);
+                            if (targetView === 'analytics') {
+                                openDedicatedAnalyticsView();
+                            }
+                        }
+
+                        showToast('👋 Selamat datang, Admin Toko!', '👑');
+                        return;
+                    }
+                } catch (adminErr) {
+                    console.warn('[store_transactions] Verifikasi admin PIN gagal:', adminErr);
+                }
+            }
+
+            // 2. Jika bukan PIN Admin, cari apakah ini Password Karyawan
             let match = null;
             let cloudRejected = false;
             if (window.KspSync && KspSync.enabled()) {
@@ -2549,7 +2608,7 @@
 
             if (!match) {
                 if (errBox) {
-                    errBox.innerText = '❌ Password PIN tidak terdaftar! Periksa kembali atau tanyakan Admin Toko.';
+                    errBox.innerText = '❌ Password / PIN tidak terdaftar! Periksa kembali atau tanyakan Admin Toko.';
                     errBox.style.display = 'block';
                 }
                 const input = document.getElementById('loginPasswordInput');
@@ -2577,6 +2636,10 @@
 
             hideEmployeeLoginOverlay();
             openStoreAnalytics(null, activeStoreId);
+            const curView = new URLSearchParams(window.location.search).get('view');
+            if (curView === 'analytics') {
+                openDedicatedAnalyticsView();
+            }
             showToast(`👋 Selamat datang, ${currentEmployee.name}!`, '👤');
         }
 

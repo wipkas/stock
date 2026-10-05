@@ -3708,10 +3708,10 @@
             showToast(`✅ Transaksi ${shiftName} di ${store.name} berhasil disimpan: ${inputVal} tx!`, '💾');
         }
 
-        // Buka halaman Transaksi & Analisa cabang
+        // Buka halaman Transaksi & Analisa cabang (langsung ke view analytics)
         function openStoreTransactions(e, storeId) {
             if (e) e.stopPropagation();
-            window.location.href = 'store_transactions.html?store=' + encodeURIComponent(storeId) + '&from=manager';
+            window.location.href = 'store_transactions.html?store=' + encodeURIComponent(storeId) + '&from=manager&view=analytics';
         }
 
         // Roll Shift: tukar Shift 1 (Pagi) <-> Shift 2 (Malam) karyawan aktif di cabang
