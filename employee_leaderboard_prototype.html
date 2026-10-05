@@ -1,0 +1,2200 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Prototype: Leaderboard Karyawan KSP Check</title>
+
+    <!-- Favicon & PWA Theme -->
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-karyawan.svg">
+    <meta name="theme-color" content="#0F1117">
+
+    <style>
+        :root {
+            --bg-color: #0F1117;
+            --card-bg: #181C27;
+            --card-border: #262B3D;
+            --card-hover: #1E2436;
+            --primary: #4F8EF7;
+            --primary-hover: #3B7ADF;
+            --primary-glow: rgba(79, 142, 247, 0.2);
+            --success: #10B981;
+            --success-glow: rgba(16, 185, 129, 0.2);
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --purple: #8B5CF6;
+            --text-main: #FFFFFF;
+            --text-muted: #8A92A6;
+            --chip-bg: #222736;
+            --input-bg: #11141F;
+            --shadow-color: rgba(0, 0, 0, 0.45);
+            --modal-backdrop: rgba(0, 0, 0, 0.8);
+            
+            /* Podium Colors */
+            --gold-1: #FFD700;
+            --gold-2: #FFA500;
+            --gold-glow: rgba(255, 215, 0, 0.35);
+            --silver-1: #E2E8F0;
+            --silver-2: #94A3B8;
+            --silver-glow: rgba(226, 232, 240, 0.25);
+            --bronze-1: #F59E0B;
+            --bronze-2: #B45309;
+            --bronze-glow: rgba(217, 119, 6, 0.25);
+        }
+
+        body.light-theme {
+            --bg-color: #F8F5EE;
+            --card-bg: #FFFFFF;
+            --card-border: #E8E1D5;
+            --card-hover: #F2EFE8;
+            --primary: #2B6CB0;
+            --primary-hover: #2C5282;
+            --primary-glow: rgba(43, 108, 176, 0.15);
+            --success: #059669;
+            --success-glow: rgba(5, 150, 105, 0.15);
+            --warning: #D97706;
+            --danger: #DC2626;
+            --purple: #7C3AED;
+            --text-main: #2D3748;
+            --text-muted: #718096;
+            --chip-bg: #EFE8DC;
+            --input-bg: #FAF8F5;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --modal-backdrop: rgba(0, 0, 0, 0.55);
+            
+            --gold-1: #D97706;
+            --gold-2: #B45309;
+            --gold-glow: rgba(217, 119, 6, 0.2);
+            --silver-1: #64748B;
+            --silver-2: #475569;
+            --silver-glow: rgba(100, 116, 139, 0.15);
+            --bronze-1: #B45309;
+            --bronze-2: #78350F;
+            --bronze-glow: rgba(180, 83, 9, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 0.25s ease, color 0.25s ease;
+            padding: 16px 10px 40px 10px;
+        }
+
+        /* -------------------------------------------------------------
+           CONTROLLER BAR PROTOTIPE (SIMULATOR & VIEW SETTINGS)
+           ------------------------------------------------------------- */
+        .proto-controller {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 24px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .proto-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 10px;
+        }
+
+        .proto-title-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13.5px;
+            font-weight: 850;
+        }
+
+        .proto-tag {
+            background: var(--primary-glow);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            font-size: 10.5px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .proto-controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            align-items: center;
+        }
+
+        .ctrl-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .ctrl-label {
+            font-size: 11px;
+            font-weight: 750;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .ctrl-select, .ctrl-btn {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 12.5px;
+            font-weight: 650;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .ctrl-select:focus, .ctrl-btn:hover {
+            border-color: var(--primary);
+        }
+
+        .device-toggle-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        .device-btn {
+            flex: 1;
+            padding: 6px 10px;
+            font-size: 11.5px;
+            font-weight: 700;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background: var(--input-bg);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: center;
+        }
+
+        .device-btn.active {
+            background: var(--primary);
+            color: #FFFFFF;
+            border-color: var(--primary);
+        }
+
+        /* -------------------------------------------------------------
+           DEVICE FRAME SIMULATOR (MOBILE 390px / 430px / FULL)
+           ------------------------------------------------------------- */
+        .device-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .device-frame {
+            width: 100%;
+            max-width: 420px; /* Default Mobile Width */
+            background: var(--bg-color);
+            border: 1px solid var(--card-border);
+            border-radius: 28px;
+            box-shadow: 0 16px 40px var(--shadow-color);
+            padding: 16px 14px 28px 14px;
+            position: relative;
+            transition: all 0.25s ease;
+        }
+
+        .device-frame.mode-wide {
+            max-width: 480px;
+        }
+
+        .device-frame.mode-full {
+            max-width: 720px;
+            border-radius: 20px;
+        }
+
+        /* -------------------------------------------------------------
+           APP TOP BAR & NAVIGATION
+           ------------------------------------------------------------- */
+        .app-top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 2px 14px 2px;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 14px;
+        }
+
+        .btn-nav-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+
+        .btn-nav-icon:hover {
+            border-color: var(--primary);
+            background: var(--chip-bg);
+        }
+
+        .app-title-wrap {
+            text-align: center;
+        }
+
+        .app-title {
+            font-size: 15.5px;
+            font-weight: 850;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .app-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        /* -------------------------------------------------------------
+           VIEW SWITCH TABS (PAGE VIEW vs WIDGET VIEW)
+           ------------------------------------------------------------- */
+        .view-mode-tabs {
+            display: flex;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 3px;
+            margin-bottom: 14px;
+            gap: 4px;
+        }
+
+        .view-tab {
+            flex: 1;
+            padding: 8px 10px;
+            font-size: 11.5px;
+            font-weight: 750;
+            text-align: center;
+            border-radius: 9px;
+            cursor: pointer;
+            color: var(--text-muted);
+            border: none;
+            background: transparent;
+            transition: all 0.15s ease;
+        }
+
+        .view-tab.active {
+            background: var(--card-bg);
+            color: var(--text-main);
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        /* -------------------------------------------------------------
+           FILTER PILLS (HARI INI / BULAN INI / SEMUA CABANG / CABANG SAYA)
+           ------------------------------------------------------------- */
+        .filter-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .period-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .period-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            padding: 8px 6px;
+            border-radius: 10px;
+            font-size: 11.5px;
+            font-weight: 750;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s ease;
+        }
+
+        .period-btn.active {
+            background: var(--primary-glow);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .scope-pills {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+        }
+
+        .scope-pill {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .scope-pill.active {
+            background: var(--chip-bg);
+            color: var(--text-main);
+            border-color: var(--primary);
+        }
+
+        /* -------------------------------------------------------------
+           SUMMARY STATS BANNER
+           ------------------------------------------------------------- */
+        .summary-banner {
+            background: linear-gradient(135deg, rgba(79, 142, 247, 0.08) 0%, rgba(139, 92, 246, 0.05) 100%);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 10px 14px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .summary-item .sum-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .summary-item .sum-val {
+            font-size: 14px;
+            font-weight: 850;
+            color: var(--text-main);
+            margin-top: 2px;
+        }
+
+        /* -------------------------------------------------------------
+           PODIUM TOP 3 (GOLD 🥇, SILVER 🥈, BRONZE 🥉)
+           ------------------------------------------------------------- */
+        .podium-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 18px 12px 14px 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 30px var(--shadow-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .podium-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding: 0 4px;
+        }
+
+        .podium-title {
+            font-size: 12.5px;
+            font-weight: 850;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .podium-stage {
+            display: grid;
+            grid-template-columns: 1fr 1.15fr 1fr;
+            align-items: flex-end;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .podium-pillar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .podium-pillar:hover {
+            transform: translateY(-4px);
+        }
+
+        .podium-pillar:active {
+            transform: scale(0.97);
+        }
+
+        /* Avatar Container in Podium */
+        .podium-avatar-wrap {
+            position: relative;
+            margin-bottom: 6px;
+        }
+
+        .podium-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--input-bg);
+            border: 3px solid;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 850;
+            color: var(--text-main);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .podium-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .rank-badge {
+            position: absolute;
+            bottom: -4px;
+            right: -2px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000000;
+            border: 2px solid var(--card-bg);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Crown for 1st Place */
+        .crown-icon {
+            position: absolute;
+            top: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            filter: drop-shadow(0 2px 6px var(--gold-glow));
+            animation: crownBounce 2.5s infinite ease-in-out;
+        }
+
+        @keyframes crownBounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-3px); }
+        }
+
+        /* Rank 1 Pillar Styling */
+        .pillar-1 .podium-avatar {
+            width: 68px;
+            height: 68px;
+            border-color: var(--gold-1);
+            box-shadow: 0 0 20px var(--gold-glow);
+        }
+        .pillar-1 .rank-badge {
+            background: linear-gradient(135deg, #FFE066, #FFB800);
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+        }
+        .pillar-1 .podium-box {
+            height: 108px;
+            background: linear-gradient(180deg, rgba(255, 215, 0, 0.16) 0%, rgba(24, 28, 39, 0.95) 100%);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-bottom: none;
+            box-shadow: inset 0 2px 8px rgba(255, 215, 0, 0.2);
+        }
+
+        /* Rank 2 Pillar Styling */
+        .pillar-2 .podium-avatar {
+            border-color: var(--silver-1);
+            box-shadow: 0 0 14px var(--silver-glow);
+        }
+        .pillar-2 .rank-badge {
+            background: linear-gradient(135deg, #F1F5F9, #94A3B8);
+        }
+        .pillar-2 .podium-box {
+            height: 84px;
+            background: linear-gradient(180deg, rgba(226, 232, 240, 0.12) 0%, rgba(24, 28, 39, 0.95) 100%);
+            border: 1px solid rgba(226, 232, 240, 0.3);
+            border-bottom: none;
+        }
+
+        /* Rank 3 Pillar Styling */
+        .pillar-3 .podium-avatar {
+            border-color: var(--bronze-1);
+            box-shadow: 0 0 14px var(--bronze-glow);
+        }
+        .pillar-3 .rank-badge {
+            background: linear-gradient(135deg, #FCD34D, #B45309);
+        }
+        .pillar-3 .podium-box {
+            height: 70px;
+            background: linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(24, 28, 39, 0.95) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-bottom: none;
+        }
+
+        /* Podium Box (Tinggi Balok) */
+        .podium-box {
+            width: 100%;
+            border-radius: 14px 14px 0 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 8px 4px 6px 4px;
+            margin-top: 6px;
+        }
+
+        .podium-name {
+            font-size: 11.5px;
+            font-weight: 850;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 90px;
+        }
+
+        .podium-store {
+            font-size: 9.5px;
+            color: var(--text-muted);
+            margin-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 90px;
+        }
+
+        .podium-tx {
+            font-size: 13.5px;
+            font-weight: 900;
+            margin-top: 4px;
+        }
+
+        .pillar-1 .podium-tx { color: var(--gold-1); }
+        .pillar-2 .podium-tx { color: var(--silver-1); }
+        .pillar-3 .podium-tx { color: var(--bronze-1); }
+
+        .podium-tag-badge {
+            font-size: 8.5px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 6px;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        /* -------------------------------------------------------------
+           STICKY "PERINGKAT SAYA" (MY RANK CARD)
+           ------------------------------------------------------------- */
+        .my-rank-card {
+            background: linear-gradient(135deg, rgba(79, 142, 247, 0.16) 0%, rgba(139, 92, 246, 0.12) 100%);
+            border: 1.5px solid var(--primary);
+            border-radius: 16px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 24px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .my-rank-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--primary);
+        }
+
+        .my-rank-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .my-rank-num-badge {
+            background: var(--primary);
+            color: #FFFFFF;
+            font-size: 14px;
+            font-weight: 900;
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px var(--primary-glow);
+        }
+
+        .my-rank-details {
+            min-width: 0;
+        }
+
+        .my-rank-title {
+            font-size: 11px;
+            color: var(--primary);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .my-rank-name {
+            font-size: 13.5px;
+            font-weight: 850;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .my-rank-gap-text {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .my-rank-tx-badge {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .my-rank-tx-val {
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--text-main);
+        }
+
+        .my-rank-tx-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        /* -------------------------------------------------------------
+           DAFTAR PERINGKAT KASIR (#4 S/D SETERUSNYA)
+           ------------------------------------------------------------- */
+        .rank-list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 0 4px;
+        }
+
+        .rank-list-title {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .rank-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .rank-item {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .rank-item:hover {
+            border-color: var(--primary);
+            background: var(--card-hover);
+            transform: translateX(2px);
+        }
+
+        .rank-item.is-me {
+            border-color: var(--primary);
+            background: rgba(79, 142, 247, 0.08);
+            box-shadow: 0 0 14px var(--primary-glow);
+        }
+
+        .rank-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .rank-pos-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 24px;
+        }
+
+        .rank-pos-num {
+            font-size: 13px;
+            font-weight: 850;
+            color: var(--text-muted);
+        }
+
+        .rank-trend {
+            font-size: 9.5px;
+            font-weight: 800;
+            margin-top: 1px;
+        }
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--danger); }
+        .trend-same { color: var(--text-muted); }
+
+        .rank-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--input-bg);
+            border: 1.5px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 800;
+            flex-shrink: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .rank-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .rank-status-dot {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid var(--card-bg);
+        }
+        .status-dot-active { background: var(--success); }
+        .status-dot-shift2 { background: var(--purple); }
+        .status-dot-off { background: var(--text-muted); }
+
+        .rank-emp-info {
+            min-width: 0;
+        }
+
+        .rank-emp-name-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .rank-emp-name {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .badge-you {
+            background: var(--primary);
+            color: #FFFFFF;
+            font-size: 9.5px;
+            font-weight: 850;
+            padding: 1px 6px;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .rank-meta-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 2px;
+            font-size: 10.5px;
+            color: var(--text-muted);
+        }
+
+        .branch-tag {
+            font-size: 9.5px;
+            font-weight: 750;
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: var(--chip-bg);
+        }
+
+        .rank-right {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .rank-tx-count {
+            font-size: 14.5px;
+            font-weight: 900;
+            color: var(--text-main);
+        }
+
+        .rank-tx-sub {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 1px;
+            font-weight: 600;
+        }
+
+        /* -------------------------------------------------------------
+           BADGES & ACHIEVEMENTS / HALL OF FAME
+           ------------------------------------------------------------- */
+        .hall-of-fame-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+
+        .hof-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .hof-title {
+            font-size: 12px;
+            font-weight: 850;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hof-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .hof-item {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hof-icon {
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .hof-info {
+            min-width: 0;
+        }
+
+        .hof-name {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .hof-holder {
+            font-size: 10px;
+            color: var(--primary);
+            font-weight: 750;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 1px;
+        }
+
+        /* -------------------------------------------------------------
+           ACTION BUTTONS (BAGIKAN KE WA, LIHAT ATURAN)
+           ------------------------------------------------------------- */
+        .bottom-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .btn-action-primary {
+            flex: 1;
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 12.5px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
+            transition: all 0.15s ease;
+        }
+
+        .btn-action-primary:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        .btn-action-secondary {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 12px;
+            font-weight: 750;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-action-secondary:hover {
+            border-color: var(--primary);
+        }
+
+        /* -------------------------------------------------------------
+           MODE B: WIDGET EMBEDDED DI DASHBOARD KARYAWAN
+           ------------------------------------------------------------- */
+        .karyawan-dash-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .welcome-card-mock {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.12) 0%, rgba(30, 41, 59, 0.25) 100%);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Widget Leaderboard Card */
+        .widget-leaderboard-card {
+            background: linear-gradient(135deg, rgba(79, 142, 247, 0.1) 0%, rgba(139, 92, 246, 0.08) 100%);
+            border: 1.5px solid rgba(79, 142, 247, 0.35);
+            border-radius: 16px;
+            padding: 14px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .widget-leaderboard-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .widget-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .widget-badge {
+            background: var(--primary);
+            color: #FFFFFF;
+            font-size: 10.5px;
+            font-weight: 850;
+            padding: 2px 8px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .widget-my-rank {
+            font-size: 12px;
+            color: var(--text-main);
+            font-weight: 750;
+        }
+
+        .widget-podium-preview {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 10px 8px;
+            margin-bottom: 10px;
+        }
+
+        .widget-avatar-podium {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .widget-avatar-circle {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 800;
+            background: var(--card-bg);
+        }
+
+        .widget-btn-open {
+            width: 100%;
+            background: var(--primary);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 10px;
+            padding: 9px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* -------------------------------------------------------------
+           MODAL DIALOG (DETAIL KASIR & SHARE WA)
+           ------------------------------------------------------------- */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: var(--modal-backdrop);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .modal-backdrop.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-box {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            max-width: 400px;
+            width: 100%;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            animation: modalPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0.92); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-head {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-head-title {
+            font-size: 14px;
+            font-weight: 850;
+        }
+
+        .btn-close-modal {
+            background: var(--chip-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-body-content {
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            max-height: 75vh;
+            overflow-y: auto;
+        }
+
+        /* Toast */
+        .proto-toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translate(-50%, 20px);
+            background: #1E293B;
+            color: #FFFFFF;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 12.5px;
+            font-weight: 750;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s ease;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .proto-toast.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- =============================================================
+         1. CONTROLLER BAR PROTOTIPE (PILIHAN SIMULASI & DEVICE VIEW)
+         ============================================================= -->
+    <aside class="proto-controller">
+        <div class="proto-header">
+            <div class="proto-title-badge">
+                <span>🏆</span>
+                <span>Prototype: Leaderboard Karyawan KSP Check</span>
+                <span class="proto-tag">Design v1</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="ctrl-btn" onclick="toggleThemePrototype()" title="Ganti Tema">🌓 Ubah Tema</button>
+                <button class="ctrl-btn" onclick="randomizeData()" title="Acak Data Realtime">🎲 Simulasi Update Tx</button>
+            </div>
+        </div>
+
+        <div class="proto-controls-grid">
+            <!-- Pilihan Lebar Layar -->
+            <div class="ctrl-group">
+                <span class="ctrl-label">Ukuran Layar Pratinjau</span>
+                <div class="device-toggle-group">
+                    <button class="device-btn active" onclick="setDeviceWidth('normal', this)">📱 HP 390px</button>
+                    <button class="device-btn" onclick="setDeviceWidth('wide', this)">📱 Max 480px</button>
+                    <button class="device-btn" onclick="setDeviceWidth('full', this)">💻 Penuh</button>
+                </div>
+            </div>
+
+            <!-- Pilihan Akun Login Simulasi -->
+            <div class="ctrl-group">
+                <span class="ctrl-label">Simulasi Login Sebagai (My Rank)</span>
+                <select id="simulatedEmpSelect" class="ctrl-select" onchange="changeSimulatedEmployee(this.value)">
+                    <option value="emp_ahmad">Ahmad Fauzi (Rank #4 · Mahang)</option>
+                    <option value="emp_siti">Siti Rahma (Rank #1 · Mahang - Juara 1 👑)</option>
+                    <option value="emp_budi">Budi Santoso (Rank #2 · Gading - Perak 🥈)</option>
+                    <option value="emp_rian">Rian Hidayat (Rank #3 · Marpoyan - Perunggu 🥉)</option>
+                    <option value="emp_doni">Doni Pratama (Rank #7 · Karya 2)</option>
+                    <option value="emp_fajar">Fajar Siddiq (Rank #11 · Inval Rolling)</option>
+                </select>
+            </div>
+
+            <!-- Mode Pratinjau Tampilan -->
+            <div class="ctrl-group">
+                <span class="ctrl-label">Mode Tampilan</span>
+                <div class="device-toggle-group">
+                    <button class="device-btn active" id="btnViewDedicated" onclick="switchViewMode('dedicated')">📄 Layar Penuh</button>
+                    <button class="device-btn" id="btnViewWidget" onclick="switchViewMode('widget')">🧩 Widget di Karyawan</button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- =============================================================
+         2. DEVICE WRAPPER & LEADERBOARD MAIN CONTENT
+         ============================================================= -->
+    <main class="device-wrapper">
+        <div id="deviceFrame" class="device-frame">
+
+            <!-- ---------------------------------------------------------
+                 TAMPILAN A: HALAMAN UTAMA LEADERBOARD (DEDICATED VIEW)
+                 --------------------------------------------------------- -->
+            <section id="dedicatedLeaderboardView">
+                <!-- App Top Bar -->
+                <header class="app-top-bar">
+                    <button class="btn-nav-icon" onclick="switchViewMode('widget')" title="Kembali ke Dashboard">
+                        ⬅️
+                    </button>
+                    <div class="app-title-wrap">
+                        <div class="app-title">
+                            <span>🏆</span>
+                            <span>Klasemen Kasir</span>
+                        </div>
+                        <div class="app-subtitle">Peringkat &amp; Produktivitas Shift</div>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn-nav-icon" onclick="openRulesModal()" title="Panduan &amp; Aturan Poin">
+                            ℹ️
+                        </button>
+                        <button class="btn-nav-icon" onclick="openShareWaModal()" title="Kirim ke WhatsApp">
+                            📲
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Filter Periode (Hari Ini / Bulan Ini / Minggu Ini) -->
+                <section class="filter-section">
+                    <div class="period-tabs">
+                        <button class="period-btn active" onclick="setPeriodFilter('today', this)">🔥 Hari Ini</button>
+                        <button class="period-btn" onclick="setPeriodFilter('month', this)">📅 Bulan Ini</button>
+                        <button class="period-btn" onclick="setPeriodFilter('week', this)">⚡ Minggu Ini</button>
+                    </div>
+
+                    <!-- Filter Lingkup (Semua Toko / Toko Saya) -->
+                    <div class="scope-pills">
+                        <button class="scope-pill active" onclick="setScopeFilter('all', this)">
+                            <span>🌍</span> Semua Cabang (Nasional)
+                        </button>
+                        <button class="scope-pill" id="scopeMyStoreBtn" onclick="setScopeFilter('store', this)">
+                            <span>🏬</span> Cabang Mahang Saja
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Summary Mini Banner -->
+                <section class="summary-banner">
+                    <div class="summary-item">
+                        <div class="sum-label">Kasir Aktif</div>
+                        <div class="sum-val" id="sumActiveKasir">12 Kasir</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="sum-label">Total Transaksi</div>
+                        <div class="sum-val" id="sumTotalTx" style="color: var(--primary);">2.418 tx</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="sum-label">Rata-rata / Kasir</div>
+                        <div class="sum-val" id="sumAvgTx">186 tx</div>
+                    </div>
+                </section>
+
+                <!-- PODIUM TOP 3 (GOLD, SILVER, BRONZE) -->
+                <section class="podium-section">
+                    <div class="podium-header">
+                        <div class="podium-title">
+                            <span>👑</span>
+                            <span>Podium Bintang Kasir</span>
+                        </div>
+                        <span id="podiumPeriodBadge" style="font-size: 10px; color: var(--primary); font-weight: 800; background: var(--primary-glow); padding: 2px 8px; border-radius: 6px;">
+                            Hari Ini
+                        </span>
+                    </div>
+
+                    <div class="podium-stage">
+                        <!-- JUARA 2 (PERAK / SILVER) -->
+                        <div class="podium-pillar pillar-2" onclick="showEmployeeDetail('rank_2')">
+                            <div class="podium-avatar-wrap">
+                                <div class="podium-avatar">
+                                    <span id="p2Avatar">BS</span>
+                                </div>
+                                <div class="rank-badge">2</div>
+                            </div>
+                            <div class="podium-name" id="p2Name">Budi S.</div>
+                            <div class="podium-store" id="p2Store">KSP Gading</div>
+                            <div class="podium-box">
+                                <div class="podium-tx" id="p2Tx">245 tx</div>
+                                <div class="podium-tag-badge" style="background: rgba(226, 232, 240, 0.15); color: var(--silver-1);">
+                                    RUNNER UP
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- JUARA 1 (EMAS / GOLD) -->
+                        <div class="podium-pillar pillar-1" onclick="showEmployeeDetail('rank_1')">
+                            <div class="podium-avatar-wrap">
+                                <div class="crown-icon">👑</div>
+                                <div class="podium-avatar">
+                                    <span id="p1Avatar">SR</span>
+                                </div>
+                                <div class="rank-badge">1</div>
+                            </div>
+                            <div class="podium-name" id="p1Name">Siti Rahma</div>
+                            <div class="podium-store" id="p1Store">KSP Mahang</div>
+                            <div class="podium-box">
+                                <div class="podium-tx" id="p1Tx">284 tx</div>
+                                <div class="podium-tag-badge" style="background: rgba(255, 215, 0, 0.18); color: var(--gold-1);">
+                                    MVP OF DAY
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- JUARA 3 (PERUNGGU / BRONZE) -->
+                        <div class="podium-pillar pillar-3" onclick="showEmployeeDetail('rank_3')">
+                            <div class="podium-avatar-wrap">
+                                <div class="podium-avatar">
+                                    <span id="p3Avatar">RH</span>
+                                </div>
+                                <div class="rank-badge">3</div>
+                            </div>
+                            <div class="podium-name" id="p3Name">Rian H.</div>
+                            <div class="podium-store" id="p3Store">KSP Marpoyan</div>
+                            <div class="podium-box">
+                                <div class="podium-tx" id="p3Tx">210 tx</div>
+                                <div class="podium-tag-badge" style="background: rgba(245, 158, 11, 0.18); color: var(--bronze-1);">
+                                    TOP 3
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- KARTU "PERINGKAT SAYA" (STICKY / HIGHLIGHT MY RANK) -->
+                <section id="myRankCard" class="my-rank-card" onclick="scrollToMyPosition()">
+                    <div class="my-rank-info">
+                        <div class="my-rank-num-badge" id="myRankBadge">#4</div>
+                        <div class="my-rank-details">
+                            <div class="my-rank-title" id="myRankStatusTitle">POSISI ANDA SAAT INI</div>
+                            <div class="my-rank-name" id="myRankName">Ahmad Fauzi (KSP Mahang)</div>
+                            <div class="my-rank-gap-text" id="myRankGap">⚡ Selisih 26 tx menuju Podium #3! Kejar sekarang!</div>
+                        </div>
+                    </div>
+                    <div class="my-rank-tx-badge">
+                        <div class="my-rank-tx-val" id="myRankTx">184 tx</div>
+                        <div class="my-rank-tx-label">Transaksi</div>
+                    </div>
+                </section>
+
+                <!-- DAFTAR PERINGKAT LENGKAP (#4 DAN SETERUSNYA) -->
+                <section>
+                    <div class="rank-list-header">
+                        <span class="rank-list-title">DAFTAR KLASEMEN LENGKAP</span>
+                        <span style="font-size: 11px; color: var(--text-muted);">Ketuk baris untuk detail</span>
+                    </div>
+
+                    <div class="rank-list" id="rankListContainer">
+                        <!-- Di-render dinamis oleh JavaScript -->
+                    </div>
+                </section>
+
+                <!-- HALL OF FAME / BADGE PENGHARGAAN HARIAN -->
+                <section class="hall-of-fame-card">
+                    <div class="hof-header">
+                        <div class="hof-title">
+                            <span>🎖️</span>
+                            <span>Apresiasi &amp; Bintang Shift</span>
+                        </div>
+                        <span style="font-size: 10.5px; color: var(--primary); font-weight: 750;">Update Live</span>
+                    </div>
+                    <div class="hof-grid">
+                        <div class="hof-item">
+                            <div class="hof-icon">⚡</div>
+                            <div class="hof-info">
+                                <div class="hof-name">Speed King</div>
+                                <div class="hof-holder" id="hofSpeed">Siti R. (38 tx/jam)</div>
+                            </div>
+                        </div>
+                        <div class="hof-item">
+                            <div class="hof-icon">🎯</div>
+                            <div class="hof-info">
+                                <div class="hof-name">Target Crusher</div>
+                                <div class="hof-holder" id="hofTarget">Ahmad F. (124% Target)</div>
+                            </div>
+                        </div>
+                        <div class="hof-item">
+                            <div class="hof-icon">🔥</div>
+                            <div class="hof-info">
+                                <div class="hof-name">Streak 5 Hari</div>
+                                <div class="hof-holder" id="hofStreak">Budi S. (Konsisten)</div>
+                            </div>
+                        </div>
+                        <div class="hof-item">
+                            <div class="hof-icon">🌙</div>
+                            <div class="hof-info">
+                                <div class="hof-name">Night Owl MVP</div>
+                                <div class="hof-holder" id="hofNight">Dewi L. (Shift 2)</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TOMBOL ACTION FOOTER -->
+                <div class="bottom-actions">
+                    <button class="btn-action-primary" onclick="openShareWaModal()">
+                        <span>📲</span>
+                        <span>Bagikan Rekap Klasemen ke WA</span>
+                    </button>
+                    <button class="btn-action-secondary" onclick="openRulesModal()">
+                        <span>ℹ️</span>
+                        <span>Aturan</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- ---------------------------------------------------------
+                 TAMPILAN B: INTEGRASI DI DASHBOARD KARYAWAN (WIDGET VIEW)
+                 --------------------------------------------------------- -->
+            <section id="widgetDashboardView" class="karyawan-dash-preview" style="display: none;">
+                <!-- Header Simulasi Portal Karyawan -->
+                <div class="app-top-bar" style="margin-bottom: 8px;">
+                    <div style="font-size: 14px; font-weight: 850; display: flex; align-items: center; gap: 6px;">
+                        <span>👤</span> Portal Karyawan (Simulasi)
+                    </div>
+                    <button class="btn-nav-icon" onclick="switchViewMode('dedicated')" title="Buka Leaderboard Penuh">
+                        🏆
+                    </button>
+                </div>
+
+                <!-- Welcome Card Miniatur -->
+                <div class="welcome-card-mock">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--primary); background: var(--input-bg); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                            👤
+                        </div>
+                        <div>
+                            <div style="font-size: 14.5px; font-weight: 850;" id="dashMockName">Halo, Ahmad Fauzi 👋</div>
+                            <div style="font-size: 11.5px; color: var(--text-muted);" id="dashMockStore">🏬 KSP Check Cabang Mahang</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 11px; background: rgba(79, 142, 247, 0.15); color: var(--primary); padding: 3px 8px; border-radius: 8px; font-weight: 800;">Shift 1</span>
+                    </div>
+                </div>
+
+                <!-- KOMPONEN BARU: WIDGET LEADERBOARD DI DASHBOARD KARYAWAN -->
+                <div class="widget-leaderboard-card" onclick="switchViewMode('dedicated')">
+                    <div class="widget-top-row">
+                        <div class="widget-badge">
+                            <span>🏆</span>
+                            <span>KLASEMEN KASIR HARI INI</span>
+                        </div>
+                        <div class="widget-my-rank" id="widgetRankSummary">
+                            Posisi Anda: <b style="color: var(--primary);">#4</b> (184 tx)
+                        </div>
+                    </div>
+
+                    <!-- Mini Podium Preview -->
+                    <div class="widget-podium-preview">
+                        <div class="widget-avatar-podium">
+                            <div class="widget-avatar-circle" style="border-color: var(--silver-1); color: var(--silver-1);">
+                                🥈
+                            </div>
+                            <span style="font-size: 10px; font-weight: 800;" id="wPodium2">Budi (245)</span>
+                        </div>
+                        <div class="widget-avatar-podium">
+                            <div class="widget-avatar-circle" style="border-color: var(--gold-1); color: var(--gold-1); transform: scale(1.15);">
+                                👑
+                            </div>
+                            <span style="font-size: 10.5px; font-weight: 900; color: var(--gold-1);" id="wPodium1">Siti (284)</span>
+                        </div>
+                        <div class="widget-avatar-podium">
+                            <div class="widget-avatar-circle" style="border-color: var(--bronze-1); color: var(--bronze-1);">
+                                🥉
+                            </div>
+                            <span style="font-size: 10px; font-weight: 800;" id="wPodium3">Rian (210)</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">
+                        <span id="widgetMotivation">🔥 Hanya butuh +26 tx lagi menuju podium #3!</span>
+                        <span style="color: var(--primary); font-weight: 800;">Lihat Semua ➜</span>
+                    </div>
+
+                    <button class="widget-btn-open" onclick="switchViewMode('dedicated')">
+                        <span>🏆</span>
+                        <span>Buka Papan Peringkat Lengkap</span>
+                    </button>
+                </div>
+
+                <!-- Menu Fitur Karyawan Lainnya (Mockup Karyawan.html) -->
+                <div style="font-size: 12px; font-weight: 800; color: var(--text-muted); margin-top: 4px;">MENU KARYAWAN LAINNYA</div>
+                <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
+                    <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 22px;">📊</span>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 800;">Rekap Transaksi Cabang</div>
+                            <div style="font-size: 10.5px; color: var(--text-muted);">Lihat riwayat transaksi shift &amp; margin</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background: rgba(79, 142, 247, 0.08); border: 1px dashed rgba(79, 142, 247, 0.3); border-radius: 12px; padding: 12px; font-size: 11.5px; line-height: 1.5; color: var(--text-main); margin-top: 10px;">
+                    💡 <b>Catatan Integrasi:</b> Widget ini dirancang untuk diletakkan tepat di bawah <i>Target Toko</i> pada <code>karyawan.html</code>. Ketika kasir mengetuk widget ini, halaman akan menampilkan tampilan klasemen penuh yang interaktif!
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- =============================================================
+         3. MODAL POPUP: DETAIL STATISTIK KASIR
+         ============================================================= -->
+    <div id="employeeDetailModal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-head">
+                <div class="modal-head-title" id="mDetailTitle">Profil &amp; Statistik Kasir</div>
+                <button class="btn-close-modal" onclick="closeEmployeeDetail()">&times;</button>
+            </div>
+            <div class="modal-body-content">
+                <!-- Header Kasir -->
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div id="mDetailAvatar" style="width: 58px; height: 58px; border-radius: 50%; border: 3px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; background: var(--input-bg);">
+                        AF
+                    </div>
+                    <div>
+                        <div id="mDetailName" style="font-size: 16px; font-weight: 850;">Ahmad Fauzi</div>
+                        <div id="mDetailStore" style="font-size: 12px; color: var(--text-muted);">🏬 KSP Check Cabang Mahang</div>
+                        <div style="display: flex; gap: 4px; margin-top: 4px;">
+                            <span id="mDetailRankBadge" style="font-size: 10.5px; font-weight: 800; background: var(--primary-glow); color: var(--primary); padding: 2px 8px; border-radius: 6px;">Peringkat #4</span>
+                            <span id="mDetailShiftBadge" style="font-size: 10.5px; font-weight: 750; background: var(--chip-bg); color: var(--text-muted); padding: 2px 8px; border-radius: 6px;">Shift 1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI Stats Grid -->
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px; text-align: center;">
+                        <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">TRANSAKSI HARI INI</div>
+                        <div id="mDetailTxToday" style="font-size: 18px; font-weight: 900; color: var(--primary); margin-top: 2px;">184 tx</div>
+                    </div>
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px; text-align: center;">
+                        <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">SPEED RATA-RATA</div>
+                        <div id="mDetailSpeed" style="font-size: 18px; font-weight: 900; color: var(--success); margin-top: 2px;">26 tx/jam</div>
+                    </div>
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px; text-align: center;">
+                        <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">CAPAIAN TARGET</div>
+                        <div id="mDetailTargetPct" style="font-size: 18px; font-weight: 900; color: var(--warning); margin-top: 2px;">115%</div>
+                    </div>
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px; text-align: center;">
+                        <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">TOTAL BULAN INI</div>
+                        <div id="mDetailTxMonth" style="font-size: 18px; font-weight: 900; color: var(--text-main); margin-top: 2px;">3.840 tx</div>
+                    </div>
+                </div>
+
+                <!-- Apresiasi Tepuk Tangan -->
+                <div style="background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.25); border-radius: 14px; padding: 12px; text-align: center;">
+                    <div style="font-size: 11.5px; color: var(--text-main); font-weight: 700; margin-bottom: 8px;">
+                        Kirim Semangat &amp; Apresiasi ke Rekan Kerja:
+                    </div>
+                    <button onclick="giveApplause()" style="background: var(--primary); color: #FFFFFF; border: none; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                        <span>👏 Beri Tepuk Tangan</span>
+                        <span id="applauseCount" style="background: rgba(255, 255, 255, 0.2); padding: 1px 6px; border-radius: 999px; font-size: 11px;">18</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================================
+         4. MODAL POPUP: SHARE KE WHATSAPP
+         ============================================================= -->
+    <div id="shareWaModal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-head">
+                <div class="modal-head-title">📲 Bagikan Klasemen ke WhatsApp</div>
+                <button class="btn-close-modal" onclick="closeShareWaModal()">&times;</button>
+            </div>
+            <div class="modal-body-content">
+                <div style="font-size: 12px; color: var(--text-muted); line-height: 1.45;">
+                    Format teks di bawah ini siap dibagikan ke grup WhatsApp staf toko atau manajemen KSP:
+                </div>
+
+                <textarea id="waPreviewText" readonly style="width: 100%; height: 160px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px; font-size: 11.5px; color: var(--text-main); font-family: monospace; resize: none; outline: none;"></textarea>
+
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="copyWaText()" style="flex: 1; background: var(--chip-bg); border: 1px solid var(--card-border); color: var(--text-main); padding: 10px; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer;">
+                        📋 Salin Teks
+                    </button>
+                    <button onclick="launchWhatsApp()" style="flex: 1; background: #25D366; color: #FFFFFF; border: none; padding: 10px; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer;">
+                        🚀 Buka WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================================
+         5. MODAL POPUP: ATURAN & PANDUAN KLASEMEN
+         ============================================================= -->
+    <div id="rulesModal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-head">
+                <div class="modal-head-title">ℹ️ Panduan &amp; Aturan Peringkat</div>
+                <button class="btn-close-modal" onclick="closeRulesModal()">&times;</button>
+            </div>
+            <div class="modal-body-content" style="font-size: 12px; line-height: 1.5; color: var(--text-main);">
+                <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px;">
+                    <b style="color: var(--primary);">🎯 Tujuan Klasemen Kasir:</b>
+                    <p style="color: var(--text-muted); margin-top: 4px;">
+                        Memberikan apresiasi transparan, memacu semangat pelayanan, dan menumbuhkan sportivitas positif antar sesama kasir KSP Check.
+                    </p>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div>
+                        <b>1. Metrik Peringkat Utama:</b>
+                        <div style="color: var(--text-muted);">Diurutkan berdasarkan total transaksi tervalidasi selama shift bertugas pada periode aktif.</div>
+                    </div>
+                    <div>
+                        <b>2. Kriteria Juara Podium (Top 3):</b>
+                        <div style="color: var(--text-muted);">Top 3 mendapatkan badge khusus Emas 🥇, Perak 🥈, dan Perunggu 🥉 serta tercatat di rekap harian WhatsApp.</div>
+                    </div>
+                    <div>
+                        <b>3. Filter Scope:</b>
+                        <div style="color: var(--text-muted);">Kasir dapat melihat persaingan tingkat nasional (seluruh cabang KSP) atau internal cabang tempat mereka bertugas.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="protoToast" class="proto-toast">
+        <span id="toastIcon">✅</span>
+        <span id="toastMsg">Berhasil!</span>
+    </div>
+
+    <!-- =============================================================
+         JAVASCRIPT LOGIC & SIMULASI DATA LEADERBOARD
+         ============================================================= -->
+    <script>
+        // Data Simulasi Cabang & Karyawan
+        const STORES_LIST = [
+            { id: 'store_mahang', name: 'KSP Mahang', color: '#3B82F6' },
+            { id: 'store_gading', name: 'KSP Gading', color: '#EF4444' },
+            { id: 'store_marpoyan', name: 'KSP Marpoyan', color: '#10B981' },
+            { id: 'store_karya1', name: 'KSP Karya 1', color: '#F59E0B' },
+            { id: 'store_karya2', name: 'KSP Karya 2', color: '#8B5CF6' }
+        ];
+
+        let employeesData = [
+            { id: 'emp_siti', name: 'Siti Rahma', storeId: 'store_mahang', storeName: 'KSP Mahang', shift: 'Shift 1', status: 'active', todayTx: 284, monthTx: 5210, trend: 'up', speed: 38, targetPct: 142, photo: null, applause: 42 },
+            { id: 'emp_budi', name: 'Budi Santoso', storeId: 'store_gading', storeName: 'KSP Gading', shift: 'Shift 1', status: 'active', todayTx: 245, monthTx: 4890, trend: 'same', speed: 32, targetPct: 122, photo: null, applause: 35 },
+            { id: 'emp_rian', name: 'Rian Hidayat', storeId: 'store_marpoyan', storeName: 'KSP Marpoyan', shift: 'Shift 1', status: 'active', todayTx: 210, monthTx: 4420, trend: 'up', speed: 29, targetPct: 110, photo: null, applause: 28 },
+            { id: 'emp_ahmad', name: 'Ahmad Fauzi', storeId: 'store_mahang', storeName: 'KSP Mahang', shift: 'Shift 1', status: 'active', todayTx: 184, monthTx: 3980, trend: 'up', speed: 26, targetPct: 115, photo: null, applause: 24 },
+            { id: 'emp_dewi', name: 'Dewi Lestari', storeId: 'store_gading', storeName: 'KSP Gading', shift: 'Shift 2', status: 'shift2', todayTx: 172, monthTx: 3850, trend: 'down', speed: 24, targetPct: 98, photo: null, applause: 19 },
+            { id: 'emp_ilham', name: 'Ilham Saputra', storeId: 'store_karya1', storeName: 'KSP Karya 1', shift: 'Shift 1', status: 'active', todayTx: 165, monthTx: 3620, trend: 'same', speed: 23, targetPct: 94, photo: null, applause: 15 },
+            { id: 'emp_doni', name: 'Doni Pratama', storeId: 'store_karya2', storeName: 'KSP Karya 2', shift: 'Shift 1', status: 'active', todayTx: 154, monthTx: 3410, trend: 'up', speed: 21, targetPct: 91, photo: null, applause: 12 },
+            { id: 'emp_putri', name: 'Putri Ananda', storeId: 'store_karya1', storeName: 'KSP Karya 1', shift: 'Shift 2', status: 'shift2', todayTx: 140, monthTx: 3200, trend: 'down', speed: 20, targetPct: 88, photo: null, applause: 11 },
+            { id: 'emp_nurul', name: 'Nurul Aini', storeId: 'store_marpoyan', storeName: 'KSP Marpoyan', shift: 'Shift 2', status: 'shift2', todayTx: 132, monthTx: 3050, trend: 'same', speed: 18, targetPct: 85, photo: null, applause: 9 },
+            { id: 'emp_eka', name: 'Eka Wulandari', storeId: 'store_karya2', storeName: 'KSP Karya 2', shift: 'Shift 2', status: 'shift2', todayTx: 121, monthTx: 2890, trend: 'down', speed: 17, targetPct: 80, photo: null, applause: 8 },
+            { id: 'emp_fajar', name: 'Fajar Siddiq', storeId: 'store_mahang', storeName: 'KSP Mahang', shift: 'Inval Rolling', status: 'active', todayTx: 110, monthTx: 2650, trend: 'same', speed: 16, targetPct: 75, photo: null, applause: 7 },
+            { id: 'emp_hendra', name: 'Hendra Wijaya', storeId: 'store_gading', storeName: 'KSP Gading', shift: 'Off', status: 'off', todayTx: 0, monthTx: 2400, trend: 'same', speed: 0, targetPct: 0, photo: null, applause: 5 }
+        ];
+
+        // State Simulasi
+        let currentSimulatedEmpId = 'emp_ahmad';
+        let currentPeriod = 'today'; // 'today' | 'month' | 'week'
+        let currentScope = 'all';    // 'all' | 'store'
+        let currentSelectedDetail = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderLeaderboard();
+        });
+
+        // -------------------------------------------------------------
+        // RENDER UTAMA LEADERBOARD
+        // -------------------------------------------------------------
+        function renderLeaderboard() {
+            const currentEmp = employeesData.find(e => e.id === currentSimulatedEmpId) || employeesData[0];
+
+            // 1. Filter Data berdasarkan Scope
+            let filtered = [...employeesData];
+            if (currentScope === 'store') {
+                filtered = filtered.filter(e => e.storeId === currentEmp.storeId);
+            }
+
+            // 2. Sort data berdasarkan metrik periode
+            filtered.sort((a, b) => {
+                if (currentPeriod === 'month') return b.monthTx - a.monthTx;
+                if (currentPeriod === 'week') return Math.round(b.monthTx / 4) - Math.round(a.monthTx / 4);
+                return b.todayTx - a.todayTx;
+            });
+
+            // 3. Update Summary Banner
+            const totalTx = filtered.reduce((acc, cur) => acc + (currentPeriod === 'month' ? cur.monthTx : cur.todayTx), 0);
+            const avgTx = filtered.length > 0 ? Math.round(totalTx / filtered.length) : 0;
+            document.getElementById('sumActiveKasir').innerText = `${filtered.length} Kasir`;
+            document.getElementById('sumTotalTx').innerText = `${totalTx.toLocaleString('id-ID')} tx`;
+            document.getElementById('sumAvgTx').innerText = `${avgTx.toLocaleString('id-ID')} tx`;
+
+            // 4. Update Top 3 Podium
+            const top1 = filtered[0];
+            const top2 = filtered[1];
+            const top3 = filtered[2];
+
+            if (top1) {
+                document.getElementById('p1Name').innerText = top1.name;
+                document.getElementById('p1Store').innerText = top1.storeName;
+                document.getElementById('p1Avatar').innerText = getInitials(top1.name);
+                document.getElementById('p1Tx').innerText = `${getDisplayTx(top1)} tx`;
+            }
+            if (top2) {
+                document.getElementById('p2Name').innerText = top2.name;
+                document.getElementById('p2Store').innerText = top2.storeName;
+                document.getElementById('p2Avatar').innerText = getInitials(top2.name);
+                document.getElementById('p2Tx').innerText = `${getDisplayTx(top2)} tx`;
+            }
+            if (top3) {
+                document.getElementById('p3Name').innerText = top3.name;
+                document.getElementById('p3Store').innerText = top3.storeName;
+                document.getElementById('p3Avatar').innerText = getInitials(top3.name);
+                document.getElementById('p3Tx').innerText = `${getDisplayTx(top3)} tx`;
+            }
+
+            // 5. Update Sticky "Peringkat Saya" Card
+            const myRankIndex = filtered.findIndex(e => e.id === currentEmp.id);
+            const myRankNum = myRankIndex !== -1 ? myRankIndex + 1 : '-';
+            const myRankBadge = document.getElementById('myRankBadge');
+            const myRankTitle = document.getElementById('myRankStatusTitle');
+            const myRankName = document.getElementById('myRankName');
+            const myRankGap = document.getElementById('myRankGap');
+            const myRankTx = document.getElementById('myRankTx');
+
+            myRankBadge.innerText = `#${myRankNum}`;
+            myRankName.innerText = `${currentEmp.name} (${currentEmp.storeName})`;
+            myRankTx.innerText = `${getDisplayTx(currentEmp)} tx`;
+
+            if (myRankNum === 1) {
+                myRankBadge.style.background = 'linear-gradient(135deg, #FFE066, #FFB800)';
+                myRankBadge.style.color = '#000000';
+                myRankTitle.innerText = '👑 ANDA JUARA 1 PODIUM!';
+                myRankGap.innerText = 'Luar biasa! Pertahankan posisi puncak Anda hari ini!';
+            } else if (myRankNum === 2 || myRankNum === 3) {
+                myRankBadge.style.background = myRankNum === 2 ? '#E2E8F0' : '#F59E0B';
+                myRankBadge.style.color = '#000000';
+                myRankTitle.innerText = `🎉 ANDA DI PODIUM #${myRankNum}`;
+                const diffTop = (getDisplayTx(top1) - getDisplayTx(currentEmp));
+                myRankGap.innerText = `Selisih ${diffTop} tx untuk menyalip posisi Juara 1!`;
+            } else {
+                myRankBadge.style.background = 'var(--primary)';
+                myRankBadge.style.color = '#FFFFFF';
+                myRankTitle.innerText = 'POSISI ANDA SAAT INI';
+                if (top3) {
+                    const diffTop3 = (getDisplayTx(top3) - getDisplayTx(currentEmp));
+                    myRankGap.innerText = `⚡ Selisih ${Math.max(1, diffTop3)} tx menuju Podium #3! Kejar sekarang!`;
+                } else {
+                    myRankGap.innerText = 'Tetap semangat tingkatkan transaksi shift!';
+                }
+            }
+
+            // 6. Render List Peringkat (#4 sampai seterusnya)
+            const listContainer = document.getElementById('rankListContainer');
+            let listHtml = '';
+
+            const listItems = filtered.slice(3); // Mulai dari rank 4
+            if (listItems.length === 0) {
+                listHtml = `
+                    <div style="text-align: center; color: var(--text-muted); padding: 18px; font-size: 12px; background: var(--input-bg); border-radius: 12px; border: 1px solid var(--card-border);">
+                        Semua kasir masuk dalam Top 3 Podium!
+                    </div>
+                `;
+            } else {
+                listItems.forEach((emp, index) => {
+                    const rankNum = index + 4;
+                    const isMe = emp.id === currentEmp.id;
+                    const trendHtml = getTrendHtml(emp.trend);
+                    const statusClass = emp.status === 'active' ? 'status-dot-active' : (emp.status === 'shift2' ? 'status-dot-shift2' : 'status-dot-off');
+                    const storeColor = getStoreColor(emp.storeId);
+
+                    listHtml += `
+                        <div class="rank-item ${isMe ? 'is-me' : ''}" id="rank_item_${emp.id}" onclick="showEmployeeDetail('${emp.id}')">
+                            <div class="rank-left">
+                                <div class="rank-pos-col">
+                                    <span class="rank-pos-num">#${rankNum}</span>
+                                    ${trendHtml}
+                                </div>
+                                <div class="rank-avatar">
+                                    <span>${getInitials(emp.name)}</span>
+                                    <span class="rank-status-dot ${statusClass}"></span>
+                                </div>
+                                <div class="rank-emp-info">
+                                    <div class="rank-emp-name-row">
+                                        <span class="rank-emp-name">${escapeHtml(emp.name)}</span>
+                                        ${isMe ? '<span class="badge-you">SAYA</span>' : ''}
+                                    </div>
+                                    <div class="rank-meta-row">
+                                        <span class="branch-tag" style="border: 1px solid ${storeColor}55; color: ${storeColor};">
+                                            ${escapeHtml(emp.storeName)}
+                                        </span>
+                                        <span>• ${escapeHtml(emp.shift)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rank-right">
+                                <div class="rank-tx-count">${getDisplayTx(emp)} tx</div>
+                                <div class="rank-tx-sub">${emp.speed} tx/jam • ${emp.targetPct}%</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            listContainer.innerHTML = listHtml;
+
+            // 7. Update Widget di Mode Dashboard Karyawan
+            updateWidgetPreview(currentEmp, top1, top2, top3, myRankNum);
+        }
+
+        function updateWidgetPreview(currentEmp, top1, top2, top3, myRankNum) {
+            document.getElementById('dashMockName').innerText = `Halo, ${currentEmp.name} 👋`;
+            document.getElementById('dashMockStore').innerText = `🏬 ${currentEmp.storeName}`;
+            document.getElementById('widgetRankSummary').innerHTML = `Posisi Anda: <b style="color: var(--primary);">#${myRankNum}</b> (${getDisplayTx(currentEmp)} tx)`;
+
+            if (top1) document.getElementById('wPodium1').innerText = `${top1.name.split(' ')[0]} (${getDisplayTx(top1)})`;
+            if (top2) document.getElementById('wPodium2').innerText = `${top2.name.split(' ')[0]} (${getDisplayTx(top2)})`;
+            if (top3) document.getElementById('wPodium3').innerText = `${top3.name.split(' ')[0]} (${getDisplayTx(top3)})`;
+
+            const diff = top3 ? (getDisplayTx(top3) - getDisplayTx(currentEmp)) : 0;
+            if (myRankNum <= 3) {
+                document.getElementById('widgetMotivation').innerText = '🎉 Anda berada di Podium Juara! Pertahankan!';
+            } else {
+                document.getElementById('widgetMotivation').innerText = `🔥 Butuh +${Math.max(1, diff)} tx lagi menuju Podium #3!`;
+            }
+        }
+
+        function getDisplayTx(emp) {
+            if (currentPeriod === 'month') return emp.monthTx;
+            if (currentPeriod === 'week') return Math.round(emp.monthTx / 4);
+            return emp.todayTx;
+        }
+
+        function getTrendHtml(trend) {
+            if (trend === 'up') return '<span class="rank-trend trend-up">▲+1</span>';
+            if (trend === 'down') return '<span class="rank-trend trend-down">▼-1</span>';
+            return '<span class="rank-trend trend-same">—</span>';
+        }
+
+        function getStoreColor(storeId) {
+            const st = STORES_LIST.find(s => s.id === storeId);
+            return st ? st.color : '#3B82F6';
+        }
+
+        function getInitials(name) {
+            if (!name) return '??';
+            const parts = name.trim().split(/\s+/);
+            if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            }[m]));
+        }
+
+        // -------------------------------------------------------------
+        // KONTROL PROTOTIPE & INTERAKSI
+        // -------------------------------------------------------------
+        function setDeviceWidth(mode, btn) {
+            const frame = document.getElementById('deviceFrame');
+            document.querySelectorAll('.device-toggle-group .device-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            frame.classList.remove('mode-wide', 'mode-full');
+            if (mode === 'wide') frame.classList.add('mode-wide');
+            if (mode === 'full') frame.classList.add('mode-full');
+            showToast(`Ukuran layar diubah ke ${mode.toUpperCase()}`);
+        }
+
+        function toggleThemePrototype() {
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            showToast(isLight ? 'Tema Terang Diaktifkan' : 'Tema Gelap Diaktifkan');
+        }
+
+        function changeSimulatedEmployee(empId) {
+            currentSimulatedEmpId = empId;
+            const emp = employeesData.find(e => e.id === empId);
+            if (emp) {
+                document.getElementById('scopeMyStoreBtn').innerHTML = `<span>🏬</span> Cabang ${emp.storeName.replace('KSP ', '')} Saja`;
+            }
+            renderLeaderboard();
+            showToast(`Simulasi login sebagai ${emp ? emp.name : 'Kasir'}`);
+        }
+
+        function switchViewMode(mode) {
+            const dedicated = document.getElementById('dedicatedLeaderboardView');
+            const widget = document.getElementById('widgetDashboardView');
+            const btnDedicated = document.getElementById('btnViewDedicated');
+            const btnWidget = document.getElementById('btnViewWidget');
+
+            if (mode === 'widget') {
+                dedicated.style.display = 'none';
+                widget.style.display = 'flex';
+                btnDedicated.classList.remove('active');
+                btnWidget.classList.add('active');
+            } else {
+                widget.style.display = 'none';
+                dedicated.style.display = 'block';
+                btnWidget.classList.remove('active');
+                btnDedicated.classList.add('active');
+            }
+        }
+
+        function setPeriodFilter(period, btn) {
+            currentPeriod = period;
+            document.querySelectorAll('.period-tabs .period-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            const labelMap = { 'today': 'Hari Ini', 'month': 'Bulan Ini', 'week': 'Minggu Ini' };
+            document.getElementById('podiumPeriodBadge').innerText = labelMap[period] || period;
+            renderLeaderboard();
+            showToast(`Periode diubah: ${labelMap[period]}`);
+        }
+
+        function setScopeFilter(scope, btn) {
+            currentScope = scope;
+            document.querySelectorAll('.scope-pills .scope-pill').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderLeaderboard();
+            showToast(scope === 'all' ? 'Menampilkan Semua Cabang' : 'Menampilkan Cabang Sendiri');
+        }
+
+        function randomizeData() {
+            employeesData.forEach(e => {
+                if (e.status !== 'off') {
+                    const delta = Math.floor(Math.random() * 9) + 1;
+                    e.todayTx += delta;
+                    e.monthTx += delta;
+                    e.speed = Math.min(45, e.speed + Math.floor(Math.random() * 3) - 1);
+                }
+            });
+            renderLeaderboard();
+            showToast('🎲 Data transaksi kasir diperbarui secara acak!');
+        }
+
+        function scrollToMyPosition() {
+            const el = document.getElementById(`rank_item_${currentSimulatedEmpId}`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.style.transform = 'scale(1.03)';
+                setTimeout(() => { el.style.transform = ''; }, 600);
+            } else {
+                showToast('Nama Anda sudah berada di podium atas! 🏆');
+            }
+        }
+
+        // -------------------------------------------------------------
+        // MODAL DETAIL KASIR
+        // -------------------------------------------------------------
+        function showEmployeeDetail(targetId) {
+            const currentEmp = employeesData.find(e => e.id === currentSimulatedEmpId) || employeesData[0];
+            let filtered = [...employeesData];
+            if (currentScope === 'store') {
+                filtered = filtered.filter(e => e.storeId === currentEmp.storeId);
+            }
+            filtered.sort((a, b) => {
+                if (currentPeriod === 'month') return b.monthTx - a.monthTx;
+                if (currentPeriod === 'week') return Math.round(b.monthTx / 4) - Math.round(a.monthTx / 4);
+                return b.todayTx - a.todayTx;
+            });
+
+            let emp = null;
+            if (targetId === 'rank_1') emp = filtered[0];
+            else if (targetId === 'rank_2') emp = filtered[1];
+            else if (targetId === 'rank_3') emp = filtered[2];
+            else emp = employeesData.find(e => e.id === targetId);
+
+            if (!emp) return;
+            currentSelectedDetail = emp;
+
+            document.getElementById('mDetailName').innerText = emp.name;
+            document.getElementById('mDetailStore').innerText = `🏬 ${emp.storeName}`;
+            document.getElementById('mDetailAvatar').innerText = getInitials(emp.name);
+            document.getElementById('mDetailShiftBadge').innerText = emp.shift;
+            document.getElementById('mDetailTxToday').innerText = `${emp.todayTx.toLocaleString('id-ID')} tx`;
+            document.getElementById('mDetailTxMonth').innerText = `${emp.monthTx.toLocaleString('id-ID')} tx`;
+            document.getElementById('mDetailSpeed').innerText = `${emp.speed} tx/jam`;
+            document.getElementById('mDetailTargetPct').innerText = `${emp.targetPct}%`;
+            document.getElementById('applauseCount').innerText = emp.applause || 10;
+
+            const rankNum = filtered.findIndex(e => e.id === emp.id) + 1;
+            document.getElementById('mDetailRankBadge').innerText = rankNum > 0 ? `Peringkat #${rankNum}` : 'Di Luar Filter';
+
+            document.getElementById('employeeDetailModal').classList.add('open');
+        }
+
+        function closeEmployeeDetail() {
+            document.getElementById('employeeDetailModal').classList.remove('open');
+        }
+
+        function giveApplause() {
+            if (!currentSelectedDetail) return;
+            currentSelectedDetail.applause = (currentSelectedDetail.applause || 10) + 1;
+            document.getElementById('applauseCount').innerText = currentSelectedDetail.applause;
+            showToast(`👏 Tepuk tangan terkirim untuk ${currentSelectedDetail.name}!`);
+        }
+
+        // -------------------------------------------------------------
+        // WHATSAPP SHARE GENERATOR
+        // -------------------------------------------------------------
+        function openShareWaModal() {
+            const currentEmp = employeesData.find(e => e.id === currentSimulatedEmpId) || employeesData[0];
+            let filtered = [...employeesData];
+            if (currentScope === 'store') {
+                filtered = filtered.filter(e => e.storeId === currentEmp.storeId);
+            }
+            filtered.sort((a, b) => {
+                if (currentPeriod === 'month') return b.monthTx - a.monthTx;
+                if (currentPeriod === 'week') return Math.round(b.monthTx / 4) - Math.round(a.monthTx / 4);
+                return b.todayTx - a.todayTx;
+            });
+
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const periodLabel = currentPeriod === 'month' ? 'BULAN INI' : (currentPeriod === 'week' ? 'MINGGU INI' : 'HARI INI');
+            const scopeLabel = currentScope === 'store' ? `CABANG ${currentEmp.storeName.replace('KSP ', '').toUpperCase()}` : 'SELURUH CABANG';
+
+            let text = `🏆 *KLASEMEN KASIR & KARYAWAN KSP CHECK*\n`;
+            text += `📍 Lingkup: *${scopeLabel}* (${periodLabel})\n`;
+            text += `📅 ${dateStr} • Pukul ${timeStr} WIB\n`;
+            text += `───────────────────────\n\n`;
+
+            if (filtered[0]) text += `🥇 *JUARA 1:* ${filtered[0].name} (${filtered[0].storeName}) - *${getDisplayTx(filtered[0])} tx*\n`;
+            if (filtered[1]) text += `🥈 *JUARA 2:* ${filtered[1].name} (${filtered[1].storeName}) - *${getDisplayTx(filtered[1])} tx*\n`;
+            if (filtered[2]) text += `🥉 *JUARA 3:* ${filtered[2].name} (${filtered[2].storeName}) - *${getDisplayTx(filtered[2])} tx*\n\n`;
+
+            text += `📋 *Peringkat Selanjutnya:*\n`;
+            filtered.slice(3, 8).forEach((e, idx) => {
+                text += `#${idx + 4} ${e.name} (${e.storeName}) - ${getDisplayTx(e)} tx\n`;
+            });
+
+            const totalFilteredTx = filtered.reduce((a, b) => a + getDisplayTx(b), 0);
+            text += `\n🔥 *Total Transaksi Tim:* ${totalFilteredTx.toLocaleString('id-ID')} tx\n`;
+            text += `🌟 _Semangat melayani rekan-rekan kasir KSP! Sukses bersama!_ 💪✨`;
+
+            document.getElementById('waPreviewText').value = text;
+            document.getElementById('shareWaModal').classList.add('open');
+        }
+
+        function closeShareWaModal() {
+            document.getElementById('shareWaModal').classList.remove('open');
+        }
+
+        function copyWaText() {
+            const ta = document.getElementById('waPreviewText');
+            ta.select();
+            navigator.clipboard.writeText(ta.value).then(() => {
+                showToast('📋 Format WhatsApp berhasil disalin!');
+            }).catch(() => {
+                document.execCommand('copy');
+                showToast('📋 Format disalin ke clipboard!');
+            });
+        }
+
+        function launchWhatsApp() {
+            const text = encodeURIComponent(document.getElementById('waPreviewText').value);
+            window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+        }
+
+        // -------------------------------------------------------------
+        // MODAL RULES & TOAST
+        // -------------------------------------------------------------
+        function openRulesModal() {
+            document.getElementById('rulesModal').classList.add('open');
+        }
+
+        function closeRulesModal() {
+            document.getElementById('rulesModal').classList.remove('open');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('protoToast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 2500);
+        }
+
+        // Close on backdrop click
+        window.onclick = function(e) {
+            if (e.target.classList.contains('modal-backdrop')) {
+                e.target.classList.remove('open');
+            }
+        };
+    </script>
+</body>
+</html>
