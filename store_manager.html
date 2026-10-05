@@ -411,7 +411,7 @@
         }
 
         .scoreboard-col.active-shift-col .emp-name-text {
-            color: #10B981 !important;
+            color: var(--text-main) !important;
             font-weight: 850 !important;
         }
 
@@ -452,7 +452,7 @@
         }
 
         .shift-title.s1 { color: #f59e0b; }
-        .shift-title.s2 { color: #10b981; }
+        .shift-title.s2 { color: #38bdf8; }
 
         .emp-profile-row {
             display: flex;
@@ -473,11 +473,12 @@
             background: rgba(255, 255, 255, 0.08);
             border: 1.5px solid var(--card-border);
             color: var(--text-main);
+            overflow: hidden;
         }
 
         .scoreboard-col.active-shift-col .emp-avatar {
             background: rgba(16, 185, 129, 0.22);
-            color: #10b981;
+            color: var(--text-main);
             border-color: rgba(16, 185, 129, 0.5);
         }
 
@@ -553,20 +554,20 @@
         }
 
         .scoreboard-col.active-shift-col .scoreboard-tx-num {
-            color: #10b981;
+            color: var(--text-main) !important;
         }
 
         .scoreboard-tx-field.s1 .scoreboard-tx-num {
-            color: #f59e0b;
+            color: var(--text-main);
         }
 
         .scoreboard-tx-field.s2 .scoreboard-tx-num {
-            color: #10b981;
+            color: var(--text-main);
         }
 
         .scoreboard-col.active-shift-col .scoreboard-tx-field.s1 .scoreboard-tx-num,
         .scoreboard-col.active-shift-col .scoreboard-tx-field.s2 .scoreboard-tx-num {
-            color: #10b981;
+            color: var(--text-main) !important;
         }
 
         /* Shift Roster Employee Card Modal Styling */
@@ -3831,6 +3832,20 @@
             renderStoresGrid();
         }
 
+        function getStoreCardEmpAvatarHtml(empObj, empName) {
+            const hasPhoto = empObj && empObj.photo && typeof empObj.photo === 'string' && empObj.photo.trim().length > 0;
+            const initial = escapeHtml((empName && empName !== '(Kosong)') ? empName.charAt(0).toUpperCase() : '?');
+            if (hasPhoto) {
+                return `
+                    <div class="emp-avatar" style="padding: 0;">
+                        <img src="${escapeHtml(empObj.photo)}" alt="${escapeHtml(empName || 'Kasir')}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                        <span style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center;">${initial}</span>
+                    </div>
+                `;
+            }
+            return `<div class="emp-avatar">${initial}</div>`;
+        }
+
         // 5. Render Stores Cards Grid (Admin View)
         function renderStoresGrid() {
             renderMainStoreFilterChips();
@@ -3870,6 +3885,8 @@
                 const s2EmpObj = (store.employees || []).find(e => (e.status === 'active' || !e.status) && e.shift_num === 2);
                 const empS1 = s1EmpObj ? s1EmpObj.name : '(Kosong)';
                 const empS2 = s2EmpObj ? s2EmpObj.name : '(Kosong)';
+                const s1AvatarHtml = getStoreCardEmpAvatarHtml(s1EmpObj, empS1);
+                const s2AvatarHtml = getStoreCardEmpAvatarHtml(s2EmpObj, empS2);
 
                 const s1Tx = getStoreShiftTodayTx(store, 1);
                 const s2Tx = getStoreShiftTodayTx(store, 2);
@@ -3954,7 +3971,7 @@
                                         <span class="shift-title s1">🌅 ${multiShift ? 'Pagi' : 'Full Shift'}</span>
                                     </div>
                                     <div class="emp-profile-row">
-                                        <div class="emp-avatar">${escapeHtml(empS1.charAt(0))}</div>
+                                        ${s1AvatarHtml}
                                         <div class="emp-meta">
                                             <div class="emp-name-text">${escapeHtml(empS1)}</div>
                                             <div class="emp-time-text">${shift1Info.start || '07:00'} - ${shift1Info.end || '15:00'} WIB</div>
@@ -3990,7 +4007,7 @@
                                         <span class="shift-title s2">🌙 Malam</span>
                                     </div>
                                     <div class="emp-profile-row">
-                                        <div class="emp-avatar">${escapeHtml(empS2.charAt(0))}</div>
+                                        ${s2AvatarHtml}
                                         <div class="emp-meta">
                                             <div class="emp-name-text">${escapeHtml(empS2)}</div>
                                             <div class="emp-time-text">${shift2Info.start || '15:00'} - ${shift2Info.end || '23:00'} WIB</div>

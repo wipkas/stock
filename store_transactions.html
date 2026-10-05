@@ -568,6 +568,7 @@
             font-weight: 900;
             letter-spacing: -0.5px;
             line-height: 1.1;
+            color: var(--text-main);
         }
 
         .scoreboard-split-bar {
@@ -4113,9 +4114,9 @@
                                     <div style="margin-top: 12px; border-top: 1px dashed rgba(245, 158, 11, 0.2); padding-top: 8px;">
                                         <div class="scoreboard-tx-field s1" onclick="openDailyTxModal('${store.id}', true)" role="button" tabindex="0" title="Klik untuk ubah / input transaksi Shift 1">
                                             <div style="display: flex; align-items: baseline; justify-content: center; gap: 4px;">
-                                                <span class="scoreboard-tx-num" style="color: #F59E0B;">${s1Tx}</span>
+                                                <span class="scoreboard-tx-num" style="color: var(--text-main);">${s1Tx}</span>
                                                 <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">tx</span>
-                                                <span style="font-size: 10px; color: #F59E0B; opacity: 0.7; margin-left: 2px;">✏️</span>
+                                                <span style="font-size: 10px; opacity: 0.7; margin-left: 2px;">✏️</span>
                                             </div>
                                         </div>
                                     </div>
@@ -4125,10 +4126,10 @@
                                 <div class="scoreboard-col s2">
                                     <div>
                                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
-                                            <span style="font-weight: 800; font-size: 12px; color: #10B981;">🌙 Shift 2 (Malam)</span>
+                                            <span style="font-weight: 800; font-size: 12px; color: #38BDF8;">🌙 Shift 2 (Malam)</span>
                                             ${s2Recorded 
                                                 ? '<span class="badge-status" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 10px;">🟢 Selesai</span>'
-                                                : '<span class="badge-status" style="background: rgba(16, 185, 129, 0.15); color: var(--warning); font-size: 10px;">⏳ Berjalan</span>'}
+                                                : '<span class="badge-status" style="background: rgba(245, 158, 11, 0.15); color: var(--warning); font-size: 10px;">⏳ Berjalan</span>'}
                                         </div>
                                         ${s2Prop ? `<div class="badge-status badge-proposal-pending" style="font-size: 10px; margin-top: 4px; display: inline-block;">🟡 Usulan: ${s2Prop.proposed_tx} tx</div>` : ''}
                                         <!-- Petugas Kasir (Tanpa Role) -->
@@ -4145,9 +4146,9 @@
                                     <div style="margin-top: 12px; border-top: 1px dashed rgba(16, 185, 129, 0.2); padding-top: 8px;">
                                         <div class="scoreboard-tx-field s2" onclick="openDailyTxModal('${store.id}', true)" role="button" tabindex="0" title="Klik untuk ubah / input transaksi Shift 2">
                                             <div style="display: flex; align-items: baseline; justify-content: center; gap: 4px;">
-                                                <span class="scoreboard-tx-num" style="color: #10B981;">${s2Tx}</span>
+                                                <span class="scoreboard-tx-num" style="color: var(--text-main);">${s2Tx}</span>
                                                 <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">tx</span>
-                                                <span style="font-size: 10px; color: #10B981; opacity: 0.7; margin-left: 2px;">✏️</span>
+                                                <span style="font-size: 10px; opacity: 0.7; margin-left: 2px;">✏️</span>
                                             </div>
                                             <div style="font-size: 10px; font-weight: 600; color: var(--text-muted); margin-top: 2px;">
                                                 ${s2Recorded ? 'Klik untuk ubah' : '+ Klik untuk input'}
