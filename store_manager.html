@@ -2568,20 +2568,29 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label class="form-label" for="pwModalInput">Password / PIN Unik Karyawan *</label>
-                        <div style="position: relative; display: flex; align-items: center;">
-                            <input type="password" 
-                                   id="pwModalInput" 
-                                   class="form-input" 
-                                   inputmode="numeric" 
-                                   autocomplete="off"
-                                   placeholder="Ketik PIN..." 
-                                   style="font-size: 20px; letter-spacing: 4px; text-align: center; font-weight: 800; padding: 12px 42px 12px 12px; width: 100%;" 
-                                   required>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="position: relative; flex: 1; display: flex; align-items: center;">
+                                <input type="password" 
+                                       id="pwModalInput" 
+                                       class="form-input" 
+                                       inputmode="numeric" 
+                                       autocomplete="off"
+                                       placeholder="Ketik PIN..." 
+                                       style="font-size: 20px; letter-spacing: 4px; text-align: center; font-weight: 800; padding: 12px 42px 12px 12px; width: 100%;" 
+                                       required>
+                                <button type="button" 
+                                        id="btnTogglePwModal" 
+                                        onclick="togglePwModalVisibility()" 
+                                        style="position: absolute; right: 10px; background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); padding: 6px;" 
+                                        title="Lihat PIN">👁️</button>
+                            </div>
                             <button type="button" 
-                                    id="btnTogglePwModal" 
-                                    onclick="togglePwModalVisibility()" 
-                                    style="position: absolute; right: 10px; background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); padding: 6px;" 
-                                    title="Lihat PIN">👁️</button>
+                                    class="btn-secondary" 
+                                    onclick="generateForPwModal()" 
+                                    style="padding: 10px 14px; font-size: 12px; font-weight: 800; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; color: var(--primary); border-color: rgba(79, 142, 247, 0.4);" 
+                                    title="Acak / Buat Password Baru">
+                                <span>🎲</span> <span>Acak</span>
+                            </button>
                         </div>
                         <div class="form-hint" style="margin-top: 6px; line-height: 1.45;">
                             💡 PIN ini wajib <b>unik</b> (berbeda dengan karyawan/cabang lain) agar kasir dapat langsung login tanpa memilih cabang toko.
@@ -2738,8 +2747,15 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="rehirePinInput">Password / PIN Baru *</label>
-                        <input type="password" id="rehirePinInput" class="form-input" placeholder="Masukkan PIN baru" required autocomplete="off">
+                        <label class="form-label" for="rehirePinInput">Password / PIN Baru <span style="color: var(--danger);">*</span></label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="position: relative; flex: 1; display: flex; align-items: center;">
+                                <input type="text" id="rehirePinInput" class="form-input" placeholder="Masukkan PIN baru" required autocomplete="off" style="font-size: 18px; font-weight: 850; letter-spacing: 2px;">
+                            </div>
+                            <button type="button" class="btn-secondary" onclick="document.getElementById('rehirePinInput').value = generateUniqueEmpPin(); showToast('🎲 PIN baru dibuat', '🔑');" style="padding: 10px 14px; font-size: 12px; font-weight: 800; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; color: var(--primary);" title="Acak PIN Baru">
+                                <span>🎲</span> <span>Acak</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -2779,6 +2795,41 @@
                     <div class="form-group">
                         <label class="form-label" for="editEmpNameInput">Nama Lengkap Karyawan *</label>
                         <input type="text" id="editEmpNameInput" class="form-input" placeholder="Nama karyawan..." required>
+                    </div>
+
+                    <!-- Password / PIN Login & Tombol Buat Ulang Password -->
+                    <div class="form-group" style="background: rgba(79, 142, 247, 0.05); border: 1px solid rgba(79, 142, 247, 0.22); padding: 12px 14px; border-radius: 12px;">
+                        <label class="form-label" for="editEmpPinInput" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span>🔐 Password / PIN Login Karyawan <span style="color: var(--danger);">*</span></span>
+                            <span id="badgeEditPinChanged" style="font-size: 10.5px; color: #10B981; background: rgba(16, 185, 129, 0.12); padding: 2px 8px; border-radius: 6px; font-weight: 800; display: none;">✨ Baru (Klik Simpan)</span>
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="position: relative; flex: 1; display: flex; align-items: center;">
+                                <input type="text" 
+                                       id="editEmpPinInput" 
+                                       class="form-input" 
+                                       inputmode="numeric" 
+                                       autocomplete="off"
+                                       placeholder="PIN Karyawan..." 
+                                       style="font-size: 18px; font-weight: 850; letter-spacing: 2px; padding-right: 40px;" 
+                                       required>
+                                <button type="button" 
+                                        id="btnToggleEditEmpPass" 
+                                        onclick="toggleInputVisibility('editEmpPinInput', this)" 
+                                        style="position: absolute; right: 10px; background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-muted); padding: 4px;" 
+                                        title="Lihat / Sembunyikan PIN">👁️</button>
+                            </div>
+                            <button type="button" 
+                                    class="btn-secondary" 
+                                    onclick="regenerateEditEmployeePin()" 
+                                    style="padding: 10px 14px; font-size: 12px; font-weight: 800; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; color: var(--primary); border-color: rgba(79, 142, 247, 0.4);" 
+                                    title="Buat ulang password baru secara acak">
+                                <span>🔄</span> <span>Buat Ulang Password</span>
+                            </button>
+                        </div>
+                        <div class="form-hint" style="margin-top: 6px;">
+                            PIN digunakan karyawan untuk login portal dan verifikasi serah terima shift harian.
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -2850,9 +2901,34 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="newMasterEmpPinInput">PIN Password Login <span style="color: var(--danger);">*</span></label>
-                        <input type="password" id="newMasterEmpPinInput" class="form-input" placeholder="Minimal 3 digit angka/huruf (unik)" required>
-                        <div class="form-hint">Digunakan karyawan untuk login portal dan pencatatan transaksi harian.</div>
+                        <label class="form-label" for="newMasterEmpPinInput">
+                            PIN Password Login <span style="color: var(--danger);">*</span>
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="position: relative; flex: 1; display: flex; align-items: center;">
+                                <input type="text" 
+                                       id="newMasterEmpPinInput" 
+                                       class="form-input" 
+                                       inputmode="numeric" 
+                                       autocomplete="off"
+                                       placeholder="PIN unik..." 
+                                       style="font-size: 18px; font-weight: 850; letter-spacing: 2px; padding-right: 40px;" 
+                                       required>
+                                <button type="button" 
+                                        id="btnToggleNewEmpPass" 
+                                        onclick="toggleInputVisibility('newMasterEmpPinInput', this)" 
+                                        style="position: absolute; right: 10px; background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-muted); padding: 4px;" 
+                                        title="Lihat / Sembunyikan PIN">👁️</button>
+                            </div>
+                            <button type="button" 
+                                    class="btn-secondary" 
+                                    onclick="generateNewEmpModalPin()" 
+                                    style="padding: 10px 14px; font-size: 12px; font-weight: 800; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; color: var(--primary); border-color: rgba(79, 142, 247, 0.4);" 
+                                    title="Acak / Buat Password Baru">
+                                <span>🎲</span> <span>Acak PIN</span>
+                            </button>
+                        </div>
+                        <div class="form-hint">Digenerate otomatis. Digunakan karyawan untuk login portal dan pencatatan transaksi harian.</div>
                     </div>
 
                     <div class="form-group">
@@ -4374,6 +4450,9 @@
             div.className = 'emp-item-row';
             div.id = rowId;
             if (id) div.dataset.empId = id;
+            if (!pass && (!id || status === 'active')) {
+                pass = generateUniqueEmpPin();
+            }
             div.dataset.empPass = pass ? String(pass).trim() : '';
             div.dataset.empRole = role || 'kasir';
             div.dataset.empStatus = status || 'active';
@@ -4534,6 +4613,88 @@
                 if (btn) btn.innerText = '👁️';
             }
             input.focus();
+        }
+
+        // ==========================================
+        // GENERATOR PASSWORD / PIN KARYAWAN UNIK
+        // ==========================================
+        function generateUniqueEmpPin() {
+            const existingPins = new Set();
+            storesData.forEach(st => {
+                (st.employees || []).forEach(e => {
+                    if (e.password) existingPins.add(String(e.password).trim());
+                });
+            });
+            getUnassignedEmployees().forEach(e => {
+                if (e.password) existingPins.add(String(e.password).trim());
+            });
+
+            // Buat PIN 4-digit acak (1000 - 9999) yang belum terdaftar
+            let pin = '';
+            let attempts = 0;
+            do {
+                pin = String(Math.floor(1000 + Math.random() * 9000));
+                attempts++;
+            } while (existingPins.has(pin) && attempts < 1000);
+
+            return pin;
+        }
+
+        function toggleInputVisibility(inputId, btnEl) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (btnEl) btnEl.innerText = '🙈';
+            } else {
+                input.type = 'password';
+                if (btnEl) btnEl.innerText = '👁️';
+            }
+            input.focus();
+        }
+
+        function generateNewEmpModalPin() {
+            const pin = generateUniqueEmpPin();
+            const input = document.getElementById('newMasterEmpPinInput');
+            if (input) {
+                input.value = pin;
+                input.type = 'text';
+                const btn = document.getElementById('btnToggleNewEmpPass');
+                if (btn) btn.innerText = '🙈';
+                input.focus();
+                try { input.select(); } catch(e) {}
+            }
+            showToast(`🎲 PIN baru dibuat: ${pin}`, '🔑');
+        }
+
+        function regenerateEditEmployeePin() {
+            const pin = generateUniqueEmpPin();
+            const input = document.getElementById('editEmpPinInput');
+            if (input) {
+                input.value = pin;
+                input.type = 'text';
+                const btn = document.getElementById('btnToggleEditEmpPass');
+                if (btn) btn.innerText = '🙈';
+                input.focus();
+                try { input.select(); } catch(e) {}
+            }
+            const badge = document.getElementById('badgeEditPinChanged');
+            if (badge) badge.style.display = 'inline-block';
+            showToast(`🎲 Password baru dibuat: ${pin}. Klik "Simpan Data Karyawan" untuk menyimpan!`, '🔐');
+        }
+
+        function generateForPwModal() {
+            const pin = generateUniqueEmpPin();
+            const input = document.getElementById('pwModalInput');
+            if (input) {
+                input.value = pin;
+                input.type = 'text';
+                const btn = document.getElementById('btnTogglePwModal');
+                if (btn) btn.innerText = '🙈';
+                input.focus();
+                try { input.select(); } catch(e) {}
+            }
+            showToast(`🎲 PIN acak dibuat: ${pin}`, '🔑');
         }
 
         function handleSaveEmpPasswordModal(e) {
@@ -5417,6 +5578,9 @@ ${portalUrl}
             }
 
             document.getElementById('editEmpNameInput').value = emp.name || '';
+            document.getElementById('editEmpPinInput').value = emp.password || '';
+            const badgePinChanged = document.getElementById('badgeEditPinChanged');
+            if (badgePinChanged) badgePinChanged.style.display = 'none';
             document.getElementById('editEmpPhoneInput').value = emp.phone || '';
             document.getElementById('editEmpAddressInput').value = emp.address || '';
             document.getElementById('editEmpShiftSelect').value = emp.shift_num || 1;
@@ -5431,6 +5595,7 @@ ${portalUrl}
             const empId = document.getElementById('editEmpId').value;
             const storeId = document.getElementById('editEmpStoreId').value;
             const newName = document.getElementById('editEmpNameInput').value.trim();
+            const newPin = document.getElementById('editEmpPinInput').value.trim();
             const newPhone = document.getElementById('editEmpPhoneInput').value.trim();
             const newAddress = document.getElementById('editEmpAddressInput').value.trim();
             const newShift = parseInt(document.getElementById('editEmpShiftSelect').value) || 1;
@@ -5441,12 +5606,31 @@ ${portalUrl}
                 uiAlert('Nama karyawan wajib diisi!');
                 return;
             }
+            if (!newPin || newPin.length < 3) {
+                uiAlert('⚠️ Password PIN login karyawan minimal 3 karakter!');
+                return;
+            }
+
+            // Cek konflik duplikasi PIN dengan karyawan aktif lain
+            for (const st of storesData) {
+                const conflict = (st.employees || []).find(o => o.id !== empId && (o.status === 'active' || !o.status) && String(o.password).trim() === newPin);
+                if (conflict) {
+                    uiAlert(`⚠️ Password PIN "${newPin}" sudah dipakai oleh karyawan "${conflict.name}" di cabang "${st.name}". Gunakan PIN yang berbeda!`);
+                    return;
+                }
+            }
+            const uConflict = getUnassignedEmployees().find(o => o.id !== empId && (o.status === 'active' || !o.status) && String(o.password).trim() === newPin);
+            if (uConflict) {
+                uiAlert(`⚠️ Password PIN "${newPin}" sudah dipakai oleh karyawan "${uConflict.name}". Gunakan PIN yang berbeda!`);
+                return;
+            }
 
             let foundEmp = null;
             for (const store of storesData) {
                 const emp = (store.employees || []).find(e => e.id === empId);
                 if (emp) {
                     emp.name = newName;
+                    emp.password = newPin;
                     emp.phone = newPhone || null;
                     emp.address = newAddress || null;
                     emp.shift_num = newShift;
@@ -5462,6 +5646,7 @@ ${portalUrl}
                 const uIdx = uList.findIndex(e => e.id === empId);
                 if (uIdx >= 0) {
                     uList[uIdx].name = newName;
+                    uList[uIdx].password = newPin;
                     uList[uIdx].phone = newPhone || null;
                     uList[uIdx].address = newAddress || null;
                     uList[uIdx].shift_num = newShift;
@@ -5537,7 +5722,14 @@ ${portalUrl}
             }
 
             document.getElementById('newMasterEmpNameInput').value = '';
-            document.getElementById('newMasterEmpPinInput').value = '';
+            const autoGeneratedPin = generateUniqueEmpPin();
+            const pinInput = document.getElementById('newMasterEmpPinInput');
+            if (pinInput) {
+                pinInput.value = autoGeneratedPin;
+                pinInput.type = 'text';
+            }
+            const btnPass = document.getElementById('btnToggleNewEmpPass');
+            if (btnPass) btnPass.innerText = '🙈';
             document.getElementById('newMasterEmpPhoneInput').value = '';
             document.getElementById('newMasterEmpAddressInput').value = '';
             document.getElementById('newMasterEmpNotesInput').value = '';
@@ -6094,7 +6286,7 @@ ${portalUrl}
         function openRehireEmpModal(empId, empName, currentStoreId) {
             document.getElementById('rehireEmpId').value = empId;
             document.getElementById('rehireEmpNameDisplay').innerText = empName;
-            document.getElementById('rehirePinInput').value = '';
+            document.getElementById('rehirePinInput').value = generateUniqueEmpPin();
 
             const storeSelect = document.getElementById('rehireStoreSelect');
             storeSelect.innerHTML = '';

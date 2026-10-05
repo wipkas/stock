@@ -7356,27 +7356,35 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     const pId = parseInt(it.product_id || 0, 10);
                     const targetDev = it.device_id || order.device_id;
 
+                    const hasDev = !!(targetDev && targetDev !== 'all');
+                    const itProv = (it.provider_name || '').toLowerCase().trim();
+
                     let matchV = null;
                     if (pId > 0) {
+                        // Utamakan voucher dari perangkat yang sama; abaikan jika kategorinya bentrok
+                        // (ID lama bisa salah ter-heal ke produk kembar kategori lain, mis. PKU vs KAMPAR)
                         matchV = allVouchers.find(v => {
                             const vId = parseInt(v.product_id || v.id || 0, 10);
-                            return vId === pId;
+                            if (vId !== pId) return false;
+                            if (hasDev && v.device_id && v.device_id !== targetDev) return false;
+                            return categoriesCompatible(it.category_name, v.category_name || v.category);
                         });
                     }
 
                     if (!matchV) {
-                        const itProv = (it.provider_name || '').toLowerCase().trim();
-                        // Cari voucher yang cocok dengan perangkat, provider, dan nama bersih
+                        // Cari voucher yang cocok dengan perangkat, provider, nama bersih, dan KATEGORI
                         matchV = allVouchers.find(v => {
-                            if (targetDev && targetDev !== 'all' && v.device_id && v.device_id !== targetDev) return false;
+                            if (hasDev && v.device_id && v.device_id !== targetDev) return false;
                             if (itProv && v.provider_name && v.provider_name.toLowerCase().trim() !== itProv) return false;
+                            if (!categoriesCompatible(it.category_name, v.category_name || v.category)) return false;
                             return cleanProdName(v.product_name) === cleanName;
                         });
 
-                        // Fallback jika tidak cocok perangkat
+                        // Fallback jika tidak cocok perangkat (tetap wajib sama kategori)
                         if (!matchV) {
                             matchV = allVouchers.find(v => {
                                 if (itProv && v.provider_name && v.provider_name.toLowerCase().trim() !== itProv) return false;
+                                if (!categoriesCompatible(it.category_name, v.category_name || v.category)) return false;
                                 return cleanProdName(v.product_name) === cleanName;
                             });
                         }
@@ -7387,6 +7395,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                             if (realId > 0) it.product_id = realId;
                         }
                     }
+
 
                     if (matchV && matchV.category_name && !it.category_name) {
                         it.category_name = matchV.category_name;
@@ -7571,8 +7580,43 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 .trim();
         }
 
+        // Normalisasi nama kategori (PKU, KAMPAR, dll). Kosong = tidak diketahui.
+        function normCategoryName(c) {
+            return String(c || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+
+        // Dua kategori dianggap kompatibel jika salah satunya kosong (data lama) atau sama persis.
+        function categoriesCompatible(a, b) {
+            const x = normCategoryName(a);
+            const y = normCategoryName(b);
+            if (!x || !y) return true;
+            return x === y;
+        }
+
+        /**
+         * Apakah kandidat (voucher / baris laporan harian) adalah produk yang sama dengan item order?
+         * - Jika perangkat sama (spesifik) dan kedua ID tersedia, ID adalah penentu mutlak.
+         *   (Mencegah produk kembar beda kategori, mis. Telkomsel PKU vs KAMPAR bernama sama.)
+         * - Selain itu cocokkan nama bersih + provider + KATEGORI.
+         */
+        function isSameOrderProduct(item, itemId, targetDev, candDev, candId, candName, candProv, candCat) {
+            const sameDevice = !!(targetDev && targetDev !== 'all' && candDev && candDev === targetDev);
+            if (sameDevice && itemId > 0 && candId > 0) {
+                return candId === itemId;
+            }
+            if (cleanProdName(candName) !== cleanProdName(item.product_name)) return false;
+            if (item.provider_name && candProv) {
+                if (cleanProdName(item.provider_name) !== cleanProdName(candProv)) return false;
+            }
+            return categoriesCompatible(item.category_name, candCat);
+        }
+
+
         function reconcileAllOrders() {
             if (!allRestockOrders || allRestockOrders.length === 0) return;
+
+            // Perbaiki product_id/kategori item order yang salah/kosong sebelum dicocokkan
+            enrichOrdersWithDeviceDetails();
 
             allRestockOrders.forEach(order => {
                 if (order.status === 'cancelled') return;
@@ -7606,15 +7650,8 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                             const rItem = rep.items.find(ri => {
                                 if (!ri || ri.type !== 'product') return false;
                                 const rPId = parseInt(ri.productId || ri.product_id || 0, 10);
-                                if (itemId > 0 && rPId > 0 && rPId === itemId) {
-                                    return true;
-                                }
-                                const cleanRi = cleanProdName(ri.productName);
-                                if (cleanRi !== cleanItemName) return false;
-                                if (item.provider_name && ri.providerName) {
-                                    if (cleanProdName(item.provider_name) !== cleanProdName(ri.providerName)) return false;
-                                }
-                                return true;
+                                return isSameOrderProduct(item, itemId, targetDev, devId, rPId,
+                                    ri.productName, ri.providerName, ri.categoryName || ri.category_name);
                             });
 
                             if (rItem) {
@@ -7660,16 +7697,11 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
                     // 2. SUMBER PENDUKUNG: AUDIT TRAIL CHANGE_HISTORY DI Supabase (allVouchers)
                     let incomingFromAudit = 0;
-                    const itProv = (item.provider_name || '').toLowerCase().trim();
                     const vMatches = allVouchers.filter(v => {
                         if (targetDev && targetDev !== 'all' && v.device_id && v.device_id !== targetDev) return false;
                         const vId = parseInt(v.product_id || v.id || 0, 10);
-                        if (itemId > 0 && vId > 0 && vId === itemId) {
-                            return true; // WAJIB sama persis jika ID ada
-                        }
-                        if (itProv && v.provider_name && v.provider_name.toLowerCase().trim() !== itProv) return false;
-                        const cleanVName = cleanProdName(v.product_name);
-                        return cleanVName === cleanItemName;
+                        return isSameOrderProduct(item, itemId, targetDev, v.device_id, vId,
+                            v.product_name, v.provider_name, v.category_name || v.category);
                     });
 
                     vMatches.forEach(v => {
@@ -8055,8 +8087,11 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     const itSubtotalAct = itRecvQty * itActCost;
 
                     let itStatusTag = '<span style="color:var(--warning); font-weight:700;">⏳ Belum (0)</span>';
-                    if (itRecvQty >= itOrderQty) {
+                    if (itRecvQty === itOrderQty) {
                         itStatusTag = '<span style="color:var(--success); font-weight:700;">✅ Cocok (' + itRecvQty + ')</span>';
+                    } else if (itRecvQty > itOrderQty) {
+                        const lebih = itRecvQty - itOrderQty;
+                        itStatusTag = '<span style="color:var(--warning); font-weight:700;">➕ Lebih ' + lebih + '</span>';
                     } else if (itRecvQty > 0) {
                         const sisa = itOrderQty - itRecvQty;
                         itStatusTag = '<span style="color:var(--primary); font-weight:700;">🔄 Kurang ' + sisa + '</span>';
@@ -8074,7 +8109,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                                 ${it.provider_name ? `<div style="font-size:10px; color:var(--text-muted); margin-top:2px;">${escapeHtml(it.provider_name)}</div>` : ''}
                             </td>
                             <td class="center"><b>${itOrderQty}</b> pcs</td>
-                            <td class="center"><b style="color:${itRecvQty >= itOrderQty ? 'var(--success)' : (itRecvQty > 0 ? 'var(--primary)' : 'var(--text-muted)')};">${itRecvQty}</b> pcs</td>
+                            <td class="center"><b style="color:${itRecvQty > itOrderQty ? 'var(--warning)' : (itRecvQty === itOrderQty ? 'var(--success)' : (itRecvQty > 0 ? 'var(--primary)' : 'var(--text-muted)'))};">${itRecvQty}</b> pcs</td>
                             <td class="center">${itStatusTag}</td>
                             <td class="right" style="color:var(--text-muted);">Rp ${itEstCost.toLocaleString('id-ID')}</td>
                             <td class="right" style="color:${itActCost > itEstCost ? 'var(--danger)' : (itActCost < itEstCost ? 'var(--success)' : 'var(--text-main)')};">Rp ${itActCost.toLocaleString('id-ID')}</td>

@@ -2073,6 +2073,7 @@
         let currentAuthRole = 'employee'; // 'admin' | 'employee'
         let currentEmployee = null; // { id, name, password, shift_num, storeId, storeName }
         let currentProposalDateKey = null;
+        let autoDailyTxTimeout = null;
 
         // State Filter & Chart (Default: Bulan Ini)
         const initNow = new Date();
@@ -2362,9 +2363,10 @@
                 activeStoreId = storeParam;
                 localStorage.setItem('kspcheck_active_store_id', activeStoreId);
                 updateStoreSwitcherDropdown();
-                openStoreAnalytics(null, activeStoreId);
                 if (viewParam === 'analytics') {
                     openDedicatedAnalyticsView();
+                } else {
+                    openStoreAnalytics(null, activeStoreId);
                 }
             } else {
                 document.body.innerHTML = `
@@ -2564,9 +2566,10 @@
                             activeStoreId = targetStore;
                             localStorage.setItem('kspcheck_active_store_id', activeStoreId);
                             updateStoreSwitcherDropdown();
-                            openStoreAnalytics(null, activeStoreId);
                             if (targetView === 'analytics') {
                                 openDedicatedAnalyticsView();
+                            } else {
+                                openStoreAnalytics(null, activeStoreId);
                             }
                         }
 
@@ -2635,10 +2638,11 @@
             }));
 
             hideEmployeeLoginOverlay();
-            openStoreAnalytics(null, activeStoreId);
             const curView = new URLSearchParams(window.location.search).get('view');
             if (curView === 'analytics') {
                 openDedicatedAnalyticsView();
+            } else {
+                openStoreAnalytics(null, activeStoreId);
             }
             showToast(`👋 Selamat datang, ${currentEmployee.name}!`, '👤');
         }
@@ -3368,15 +3372,35 @@
                 const todayKey = getTodayKey();
                 const unsetEmployees = getUnsetEmployees(store, todayKey);
 
-                if (unsetEmployees.length > 0) {
-                    setTimeout(() => {
-                        openDailyTxModal(storeId, false);
+                const urlView = new URLSearchParams(window.location.search).get('view');
+                const isDedicatedActive = document.getElementById('dedicatedAnalyticsView') && 
+                                          document.getElementById('dedicatedAnalyticsView').classList.contains('active');
+                const isAccessingAnalytics = (urlView === 'analytics') || isDedicatedActive;
+
+                // Hanya munculkan otomatis saat akses ke cabang (bukan saat akses Analisa & Grafik)
+                if (unsetEmployees.length > 0 && !isAccessingAnalytics) {
+                    if (autoDailyTxTimeout) clearTimeout(autoDailyTxTimeout);
+                    autoDailyTxTimeout = setTimeout(() => {
+                        autoDailyTxTimeout = null;
+                        const isNowInAnalytics = (new URLSearchParams(window.location.search).get('view') === 'analytics') ||
+                            (document.getElementById('dedicatedAnalyticsView') && 
+                             document.getElementById('dedicatedAnalyticsView').classList.contains('active'));
+                        if (!isNowInAnalytics) {
+                            openDailyTxModal(storeId, false);
+                        }
                     }, 300);
                 }
             }
         }
 
         function openDedicatedAnalyticsView() {
+            // Batalkan timer modal otomatis & pastikan modal tertutup saat membuka Analisa & Grafik
+            if (autoDailyTxTimeout) {
+                clearTimeout(autoDailyTxTimeout);
+                autoDailyTxTimeout = null;
+            }
+            closeModal('dailyTxModal');
+
             const store = storesData.find(s => s.id === activeStoreId);
             if (!store) return;
 
@@ -5152,6 +5176,17 @@
         }
 
         function openDailyTxModal(storeId, isManualEdit = false, targetDateKey = null) {
+            if (autoDailyTxTimeout) {
+                clearTimeout(autoDailyTxTimeout);
+                autoDailyTxTimeout = null;
+            }
+
+            // Cegah modal muncul otomatis jika pengguna sedang membuka / berada di Analisa & Grafik
+            if (!isManualEdit && document.getElementById('dedicatedAnalyticsView') && 
+                document.getElementById('dedicatedAnalyticsView').classList.contains('active')) {
+                return;
+            }
+
             if (currentAuthRole === 'employee') {
                 openEmployeeProposalModal(targetDateKey || getTodayKey());
                 return;
