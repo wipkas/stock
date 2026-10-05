@@ -207,19 +207,54 @@
             .then(function (r) {
                 if (!r || !r.ok) throw new Error(r && r.error === 'unauthorized' ? 'PIN admin ditolak server' : 'Gagal mengambil data');
                 var remote = unpackLeaveInfoFromRemote(r.stores || []);
+                var unassigned = null;
 
-                // Supabase adalah Single Source of Truth (Pusat Kebenaran Mutlak):
-                // Jika database cloud kosong, jangan pernah auto-seeding / upload ulang data lokal!
-                var before = JSON.stringify(opts.getStores() || []);
-                var after = JSON.stringify(remote);
-                if (before !== after || isDirty()) {
-                    opts.setStores(remote);
-                    writeLocalCache(remote);
-                    setDirty(null); // Bersihkan tanda dirty lokal karena data cloud menjadi acuan utama
-                    if (typeof opts.onRemoteUpdate === 'function') opts.onRemoteUpdate();
+                if (Array.isArray(r.unassigned_employees)) {
+                    unassigned = unpackLeaveInfoFromRemote(r.unassigned_employees);
                 }
-                setStatus('ok', remote.length === 0 ? '☁️ Cloud kosong' : '☁️ Tersinkron');
-                return { updated: before !== after, count: remote.length };
+
+                // Jika server skema lama belum mengembalikan unassigned_employees dan jumlah cabang 0,
+                // tarik seluruh master karyawan untuk memastikan karyawan cloud tidak hilang
+                var unassignedPromise = Promise.resolve(unassigned);
+                if (unassigned === null && remote.length === 0) {
+                    unassignedPromise = rpc('ksp_admin_get_all_employees', { p_pin: adminPin() })
+                        .then(function (resAll) {
+                            if (resAll && Array.isArray(resAll.employees)) {
+                                var all = unpackLeaveInfoFromRemote(resAll.employees);
+                                return all.filter(function (e) {
+                                    return !e.store_id || !remote.some(function (st) { return st.id === e.store_id; });
+                                });
+                            }
+                            return [];
+                        }).catch(function () { return []; });
+                }
+
+                return unassignedPromise.then(function (finalUnassigned) {
+                    if (Array.isArray(finalUnassigned) && typeof opts.setUnassigned === 'function') {
+                        opts.setUnassigned(finalUnassigned);
+                    }
+
+                    // Supabase adalah Single Source of Truth (Pusat Kebenaran Mutlak):
+                    // Jika database cloud kosong, jangan pernah auto-seeding / upload ulang data lokal!
+                    var before = JSON.stringify(opts.getStores() || []);
+                    var after = JSON.stringify(remote);
+                    if (before !== after || isDirty()) {
+                        opts.setStores(remote);
+                        writeLocalCache(remote);
+                        setDirty(null); // Bersihkan tanda dirty lokal karena data cloud menjadi acuan utama
+                        if (typeof opts.onRemoteUpdate === 'function') opts.onRemoteUpdate();
+                    }
+
+                    var uCount = Array.isArray(finalUnassigned) ? finalUnassigned.length : 0;
+                    if (remote.length === 0 && uCount === 0) {
+                        setStatus('ok', '☁️ Cloud kosong');
+                    } else if (remote.length === 0 && uCount > 0) {
+                        setStatus('ok', '☁️ Tersinkron (' + uCount + ' Karyawan Bebas)');
+                    } else {
+                        setStatus('ok', '☁️ Tersinkron');
+                    }
+                    return { updated: before !== after, count: remote.length, unassignedCount: uCount };
+                });
             }).catch(function (err) {
                 console.warn('[KspSync] pull gagal:', err);
                 setStatus('err', '⚠️ Cloud: ' + (err.message || 'offline') + ' (pakai data lokal)');
@@ -257,6 +292,38 @@
                 setStatus('err', '⚠️ Cloud delete: ' + (err.message || 'gagal'));
                 throw err;
             });
+    }
+
+    function adminSaveEmployee(empObj) {
+        if (!enabled() || !adminPin() || !empObj) return Promise.resolve({ skipped: true });
+        setStatus('busy', '☁️ Menyimpan karyawan di cloud…');
+
+        var preparedEmp = Object.assign({}, empObj);
+        if (preparedEmp.status === 'leave') {
+            var leaveMeta = {
+                reason: preparedEmp.leave_reason || 'Izin Libur',
+                notes: preparedEmp.leave_notes || '',
+                date: preparedEmp.leave_date || new Date().toISOString(),
+                replaced_by: preparedEmp.replaced_by || null,
+                replaced_by_name: preparedEmp.replaced_by_name || null
+            };
+            var metaTag = '[LEAVE_INFO:' + encodeURIComponent(JSON.stringify(leaveMeta)) + ']';
+            var baseNotes = (preparedEmp.notes || '').replace(/\[LEAVE_INFO:.*?\]/g, '').trim();
+            preparedEmp.notes = (baseNotes ? baseNotes + ' ' : '') + metaTag;
+        }
+
+        return rpc('ksp_admin_save_employee', {
+            p_pin: adminPin(),
+            p_employee: preparedEmp
+        }).then(function (r) {
+            if (!r || !r.ok) throw new Error(r && r.error === 'unauthorized' ? 'PIN admin ditolak server' : 'Gagal menyimpan karyawan');
+            setStatus('ok', '☁️ Karyawan tersimpan di cloud');
+            return r;
+        }).catch(function (err) {
+            console.warn('[KspSync] save employee gagal:', err);
+            setStatus('err', '⚠️ Cloud: ' + (err.message || 'gagal'));
+            throw err;
+        });
     }
 
     function adminDeleteDailyTx(storeId, txDate, empId) {
@@ -419,6 +486,7 @@
         adminPush: adminPush,
         adminDeleteStore: adminDeleteStore,
         adminDeleteEmployee: adminDeleteEmployee,
+        adminSaveEmployee: adminSaveEmployee,
         adminDeleteDailyTx: adminDeleteDailyTx,
         adminTransferEmployee: adminTransferEmployee,
         adminDeactivateEmployee: adminDeactivateEmployee,

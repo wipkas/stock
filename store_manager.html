@@ -2891,6 +2891,13 @@
                 KspSync.init({
                     getStores: () => storesData,
                     setStores: (v) => { storesData = v; },
+                    getUnassigned: () => getUnassignedEmployees(),
+                    setUnassigned: (v) => {
+                        if (Array.isArray(v)) {
+                            saveUnassignedEmployees(v);
+                            filterMasterEmployeesTable();
+                        }
+                    },
                     isAdmin: () => true,
                     onRemoteUpdate: () => {
                         if (document.querySelector('[id$="Modal"].open')) { setTimeout(() => KspSync.adminPull(), 4000); return; }
@@ -3663,17 +3670,25 @@
                     const res = await window.KspSync.adminGetAllEmployees();
                     if (res && res.employees && Array.isArray(res.employees)) {
                         localStorage.setItem('kspcheck_master_employees_cache', JSON.stringify(res.employees));
-                        // Daftarkan karyawan yang tidak terhubung dengan cabang aktif ke unassigned
+                        // Daftarkan seluruh karyawan yang tidak terhubung dengan cabang aktif ke pool unassigned
+                        const unassignedList = [];
                         res.employees.forEach(e => {
                             if (!e.store_id || e.store_id === 'null' || !storesData.some(s => s.id === e.store_id)) {
-                                addUnassignedEmployee({ ...e, store_id: null, store_name: null });
+                                unassignedList.push({
+                                    ...e,
+                                    store_id: null,
+                                    store_name: null
+                                });
                             }
                         });
+                        saveUnassignedEmployees(unassignedList);
+                        return res.employees;
                     }
                 } catch (e) {
                     console.warn('[StoreManager] Gagal fetch master employees:', e);
                 }
             }
+            return [];
         }
 
         async function openPickExistingEmployeeModal() {
@@ -4179,6 +4194,16 @@
             switchMasterEmpTab('list');
             filterMasterEmployeesTable();
             openModal('masterEmployeesModal');
+
+            // Selalu ambil data master karyawan terbaru dari cloud Supabase (ksp_employees)
+            if (window.KspSync && window.KspSync.enabled()) {
+                fetchMasterEmployees().then(() => {
+                    renderStoreFilterChips();
+                    filterMasterEmployeesTable();
+                }).catch(e => {
+                    console.warn('[StoreManager] Auto-fetch master employees warning:', e);
+                });
+            }
         }
 
         function renderStoreFilterChips() {
@@ -4823,7 +4848,7 @@ _(Buka link di atas untuk langsung masuk ke portal kasir tanpa mengetik PIN)_`;
                     emp.shift_num = newShift;
                     emp.role = newRole;
                     emp.notes = newNotes || null;
-                    foundEmp = emp;
+                    foundEmp = { ...emp, store_id: store.id };
                     break;
                 }
             }
@@ -4839,7 +4864,7 @@ _(Buka link di atas untuk langsung masuk ke portal kasir tanpa mengetik PIN)_`;
                     uList[uIdx].role = newRole;
                     uList[uIdx].notes = newNotes || null;
                     saveUnassignedEmployees(uList);
-                    foundEmp = uList[uIdx];
+                    foundEmp = { ...uList[uIdx], store_id: null };
                 }
             }
 
@@ -4849,6 +4874,13 @@ _(Buka link di atas untuk langsung masuk ke portal kasir tanpa mengetik PIN)_`;
             }
 
             saveStoresData();
+
+            if (window.KspSync && typeof window.KspSync.adminSaveEmployee === 'function') {
+                window.KspSync.adminSaveEmployee(foundEmp).catch(err => {
+                    console.warn('[StoreManager] Gagal sync edit employee ke cloud:', err);
+                });
+            }
+
             closeModal('editEmployeeModal');
 
             // Refresh form cabang jika sedang terbuka
@@ -5018,6 +5050,14 @@ _(Buka link di atas untuk langsung masuk ke portal kasir tanpa mengetik PIN)_`;
 
                 saveStoresData();
 
+                if (window.KspSync && typeof window.KspSync.adminSaveEmployee === 'function') {
+                    try {
+                        await window.KspSync.adminSaveEmployee({ ...newEmpObj, store_id: targetStore.id });
+                    } catch(e) {
+                        console.warn('[StoreManager] Gagal adminSaveEmployee:', e);
+                    }
+                }
+
                 if (window.KspSync && typeof window.KspSync.adminTransferEmployee === 'function') {
                     try {
                         window.KspSync.adminTransferEmployee(newEmpId, targetStore.id, shiftNum, 'Karyawan Baru').catch(() => {});
@@ -5039,6 +5079,14 @@ _(Buka link di atas untuk langsung masuk ke portal kasir tanpa mengetik PIN)_`;
                 });
 
                 saveStoresData();
+
+                if (window.KspSync && typeof window.KspSync.adminSaveEmployee === 'function') {
+                    try {
+                        await window.KspSync.adminSaveEmployee({ ...newEmpObj, store_id: null });
+                    } catch(e) {
+                        console.warn('[StoreManager] Gagal adminSaveEmployee unassigned:', e);
+                    }
+                }
             }
 
             if (btn) {
