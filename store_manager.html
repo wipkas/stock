@@ -3434,30 +3434,40 @@
 
                 <!-- Tombol Cek / Sembunyikan Preview Gambar Card -->
                 <div style="margin-bottom: 12px;">
-                    <button type="button" id="btnTogglePreviewCanvas" class="btn-secondary" onclick="toggleTargetPreviewCanvas()" style="width: 100%; padding: 10px 14px; font-size: 12.5px; font-weight: 750; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 10px; border: 1px solid var(--card-border);">
-                        <span>👁️</span> Cek Preview Gambar Card
-                    </button>
-                    <div style="font-size: 10.5px; color: var(--text-muted); text-align: center; margin-top: 4px;">
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" id="btnTogglePreviewCanvas" class="btn-secondary" onclick="toggleTargetPreviewCanvas()" style="flex: 1; padding: 10px 14px; font-size: 12.5px; font-weight: 750; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 10px; border: 1px solid var(--card-border);">
+                            <span>👁️</span> Cek Preview Gambar Card
+                        </button>
+                        <button type="button" class="btn-secondary" onclick="openTargetImageLightbox()" style="padding: 10px 14px; font-size: 12.5px; font-weight: 750; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 10px; border: 1px solid var(--card-border); background: var(--input-bg);" title="Buka gambar layar penuh ukuran besar seperti WhatsApp">
+                            <span>🔍</span> Popup Layar Penuh
+                        </button>
+                    </div>
+                    <div style="font-size: 10.5px; color: var(--text-muted); text-align: center; margin-top: 5px;">
                         💡 <i>Kirim WA / Unduh PNG tetap otomatis memproses gambar walau preview ditutup.</i>
                     </div>
                 </div>
 
                 <!-- Preview Canvas Card (Default Tersembunyi untuk Mobile) -->
-                <div id="targetCanvasPreviewContainer" class="target-canvas-preview-wrap" style="display: none; margin-bottom: 14px;">
+                <div id="targetCanvasPreviewContainer" class="target-canvas-preview-wrap" style="display: none; margin-bottom: 14px; flex-direction: column;">
                     <div id="targetCanvasLoading" style="display: none; text-align: center; color: var(--text-muted); padding: 30px;">
                         <span>⏳ Membuat gambar pratinjau...</span>
                     </div>
-                    <div id="targetCanvasMountPoint" style="text-align: center; width: 100%;">
+                    <div id="targetCanvasClickHint" style="display: none; width: 100%; text-align: center; margin-bottom: 8px;">
+                        <div role="button" tabindex="0" onclick="openTargetImageLightbox()" style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 14px; font-size: 11.5px; font-weight: 750; color: var(--primary); background: rgba(79, 142, 247, 0.12); border: 1px solid rgba(79, 142, 247, 0.3); border-radius: 20px; transition: all 0.15s ease;" title="Klik untuk lihat gambar ukuran penuh seperti WhatsApp">
+                            <span>🔍</span> <span>Ketuk Gambar untuk Layar Penuh (Popup WhatsApp)</span> <span>↗</span>
+                        </div>
+                    </div>
+                    <div id="targetCanvasMountPoint" style="text-align: center; width: 100%; cursor: pointer;" onclick="openTargetImageLightbox()" title="Klik untuk perbesar gambar (Popup WhatsApp)">
                         <!-- Canvas dimount di sini -->
                     </div>
                 </div>
 
-                <!-- Teks Ringkasan Pesan WhatsApp & Editor Template -->
+                <!-- Teks Ringkasan Pesan WhatsApp & Tombol Buka Editor Template Terpisah -->
                 <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; margin-bottom: 6px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
                         <span style="font-size: 11.5px; font-weight: 750; color: var(--text-main);">💬 Teks Pesan WhatsApp:</span>
                         <div style="display: flex; gap: 6px;">
-                            <button type="button" class="btn-secondary" onclick="toggleTemplateEditor()" style="padding: 4px 9px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                            <button type="button" class="btn-secondary" onclick="openTargetTemplateModal()" style="padding: 4px 9px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="Buka dialog luas untuk edit format template">
                                 <span>✏️</span> Edit Template
                             </button>
                             <button type="button" class="btn-secondary" onclick="copyTargetCaptionText()" style="padding: 4px 9px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
@@ -3466,49 +3476,120 @@
                         </div>
                     </div>
                     <textarea id="targetCaptionPreview" class="form-input" readonly rows="4" style="font-size: 11px; font-family: monospace; background: var(--input-bg); line-height: 1.45; resize: vertical;"></textarea>
-
-                    <!-- Panel Editor Template Pesan WhatsApp (Disimpan di Local Storage) -->
-                    <div id="targetTemplateEditorPanel" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--card-border);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
-                            <span style="font-size: 11.5px; font-weight: 750; color: var(--text-main);">⚙️ Edit Format Template (<span id="targetTemplateModeLabel">Per Cabang</span>):</span>
-                            <span style="font-size: 10px; color: var(--text-muted); background: var(--input-bg); padding: 2px 6px; border-radius: 4px;">💾 Tersimpan di perangkat ini</span>
-                        </div>
-                        <div style="font-size: 10.5px; color: var(--text-muted); margin-bottom: 6px;">
-                            Klik tag berikut untuk menyisipkan ke pesan:
-                        </div>
-                        <div id="targetTemplatePlaceholderTags" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px;">
-                            <!-- Tag pills dinamis via JS -->
-                        </div>
-                        <textarea id="targetTemplateEditorInput" class="form-input" rows="6" style="font-size: 11px; font-family: monospace; background: var(--input-bg); line-height: 1.4; resize: vertical; margin-bottom: 8px;"></textarea>
-                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-                            <button type="button" class="btn-secondary" onclick="resetTargetTemplateToDefault()" style="padding: 6px 10px; font-size: 11px; color: var(--danger, #ef4444);">
-                                ↺ Reset ke Standar
-                            </button>
-                            <div style="display: flex; gap: 6px;">
-                                <button type="button" class="btn-secondary" onclick="toggleTemplateEditor(false)" style="padding: 6px 10px; font-size: 11px;">
-                                    Tutup
-                                </button>
-                                <button type="button" class="btn-primary" onclick="saveTargetTemplateFromEditor()" style="padding: 6px 12px; font-size: 11px;">
-                                    💾 Simpan Perubahan (Lokal)
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
-            <!-- Footer Action Buttons -->
-            <div class="modal-footer" style="display: flex; gap: 8px; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                <button type="button" class="btn-secondary" onclick="closeModal('branchTargetModal')" style="padding: 9px 16px;">Tutup</button>
+            <!-- Footer Action Buttons (Tombol Tutup dihapus karena sudah ada di header dialog) -->
+            <div class="modal-footer" style="display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+                <button type="button" class="btn-secondary" onclick="copyTargetImageToClipboard()" title="Salin Gambar ke Clipboard (Ctrl+V di WA Web)">
+                    📋 Salin Gambar
+                </button>
+                <button type="button" class="btn-secondary" onclick="downloadCurrentTargetImage()" title="Unduh File Gambar PNG">
+                    📥 Unduh PNG
+                </button>
+                <button type="button" class="btn-whatsapp-share" onclick="shareCurrentTargetToWhatsApp()" title="Kirim ke WhatsApp (Gambar + Teks Langsung)">
+                    <span>💬</span> Kirim ke WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP LIGHTBOX GAMBAR TARGET & PROGRESS (WHATSAPP STYLE) -->
+    <div id="targetImageLightboxModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'targetImageLightboxModal')" style="z-index: 10100; background: rgba(0, 0, 0, 0.94); backdrop-filter: blur(8px); padding: 0;">
+        <div style="position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; overflow: hidden;" onclick="event.stopPropagation()">
+            <!-- Top Floating Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: #fff; z-index: 10;">
+                <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                    <span style="font-size: 20px;">🖼️</span>
+                    <div style="min-width: 0;">
+                        <div id="lightboxTargetTitle" style="font-size: 13.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #f8fafc;">
+                            Pratinjau Gambar Target
+                        </div>
+                        <div style="font-size: 11px; color: #94a3b8;">
+                            Ketuk gambar untuk zoom in/out · Tekan ✕ atau area luar untuk tutup
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" class="btn-secondary" onclick="copyTargetImageToClipboard()" style="padding: 7px 12px; font-size: 11.5px; background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.2);" title="Salin Gambar">
+                        📋 Salin
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="downloadCurrentTargetImage()" style="padding: 7px 12px; font-size: 11.5px; background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.2);" title="Unduh Gambar PNG">
+                        📥 Unduh
+                    </button>
+                    <button type="button" class="btn-whatsapp-share" onclick="shareCurrentTargetToWhatsApp()" style="padding: 7px 12px; font-size: 11.5px;" title="Kirim ke WhatsApp">
+                        <span>💬</span> WA
+                    </button>
+                    <button type="button" onclick="closeModal('targetImageLightboxModal')" style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.15); border: none; color: #fff; font-size: 20px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: 4px; transition: background 0.15s;" title="Tutup Preview">
+                        &times;
+                    </button>
+                </div>
+            </div>
+
+            <!-- Image Center Area (WhatsApp Style) -->
+            <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 12px; overflow: auto; cursor: zoom-out;" onclick="closeModal('targetImageLightboxModal')">
+                <img id="lightboxTargetImg" src="" alt="Target Card" style="max-width: 96vw; max-height: 84vh; object-fit: contain; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.85); transition: transform 0.2s ease; cursor: zoom-in;" onclick="toggleLightboxZoom(event)">
+            </div>
+
+            <!-- Bottom Floating Caption / Hint -->
+            <div style="padding: 10px 16px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.1); color: #cbd5e1; font-size: 11px; text-align: center; display: flex; justify-content: center; align-items: center; gap: 12px;">
+                <span>💡 <i>Resolusi penuh siap kirim ke WhatsApp · Ketuk gambar untuk zoom in/out</i></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TERPISAH: EDITOR TEMPLATE PESAN WA (LUAS & NYAMAN) -->
+    <div id="targetTemplateModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'targetTemplateModal')" style="z-index: 10050;">
+        <div class="modal-card" style="max-width: 720px; width: 95%; max-height: 92vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                        <span>✏️</span> Edit Template Pesan WhatsApp
+                    </h3>
+                    <p class="modal-subtitle">Format pesan dinamis untuk: <b id="targetTemplateModeLabel" style="color: var(--primary);">Rekap Semua Cabang</b></p>
+                </div>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('targetTemplateModal')">&times;</button>
+            </div>
+
+            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 16px;">
+                <div style="background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.25); border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; font-size: 11.5px; color: var(--text-main); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span>💡</span>
+                        <span>Template disimpan di <b>penyimpanan lokal browser</b> dan otomatis diterapkan saat kirim WhatsApp.</span>
+                    </div>
+                    <span style="font-size: 10px; color: var(--text-muted); background: var(--input-bg); padding: 2px 7px; border-radius: 5px; border: 1px solid var(--card-border);">💾 LocalStorage</span>
+                </div>
+
+                <div style="margin-bottom: 8px;">
+                    <label style="font-size: 12px; font-weight: 750; color: var(--text-main); display: block; margin-bottom: 6px;">
+                        🏷️ Tag Dinamis (Klik untuk menyisipkan ke teks template):
+                    </label>
+                    <div id="targetTemplatePlaceholderTags" style="display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px;">
+                        <!-- Tag pills dinamis via JS -->
+                    </div>
+                </div>
+
+                <div style="margin-top: 12px;">
+                    <label for="targetTemplateEditorInput" style="font-size: 12px; font-weight: 750; color: var(--text-main); display: block; margin-bottom: 6px;">
+                        📝 Isi Format Template:
+                    </label>
+                    <textarea id="targetTemplateEditorInput" class="form-input" rows="12" style="font-size: 12.5px; font-family: 'Consolas', 'Courier New', monospace; background: var(--input-bg); line-height: 1.5; resize: vertical; min-height: 280px; width: 100%; padding: 12px; border-radius: 10px; border: 1.5px solid var(--card-border);" placeholder="Tulis template pesan di sini..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding: 12px 16px;">
+                <button type="button" class="btn-secondary" onclick="resetTargetTemplateToDefault()" style="color: var(--danger, #ef4444); border-color: rgba(239, 68, 68, 0.3); padding: 8px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;" title="Kembalikan format ke pengaturan standar awal">
+                    <span>↺</span> Reset ke Standar
+                </button>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button type="button" class="btn-secondary" onclick="copyTargetImageToClipboard()" title="Salin Gambar ke Clipboard (Ctrl+V di WA Web)">
-                        📋 Salin Gambar
+                    <button type="button" class="btn-secondary" onclick="copyTemplateFromEditor()" style="padding: 8px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;" title="Salin seluruh isi format template ini ke clipboard">
+                        <span>📋</span> Salin Template
                     </button>
-                    <button type="button" class="btn-secondary" onclick="downloadCurrentTargetImage()" title="Unduh File Gambar PNG">
-                        📥 Unduh PNG
+                    <button type="button" class="btn-secondary" onclick="closeModal('targetTemplateModal')" style="padding: 8px 14px; font-size: 12px;">
+                        Batal
                     </button>
-                    <button type="button" class="btn-whatsapp-share" onclick="shareCurrentTargetToWhatsApp()" title="Kirim ke WhatsApp (Gambar + Teks Langsung)">
-                        <span>💬</span> Kirim ke WhatsApp
+                    <button type="button" class="btn-primary" onclick="saveTargetTemplateFromEditor()" style="padding: 8px 16px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;">
+                        <span>💾</span> Simpan Template
                     </button>
                 </div>
             </div>
@@ -7975,6 +8056,7 @@ ${portalUrl}
             const cutOffVal = parseInt(document.getElementById('targetPeriodCutOff')?.value) || null;
             const storeIdVal = document.getElementById('targetSelectStore')?.value;
             const mountPoint = document.getElementById('targetCanvasMountPoint');
+            const hintEl = document.getElementById('targetCanvasClickHint');
             if (!mountPoint) return;
 
             mountPoint.innerHTML = '';
@@ -7984,6 +8066,7 @@ ${portalUrl}
                     const store = storesData.find(s => s.id === storeIdVal) || storesData[0];
                     if (!store) {
                         mountPoint.innerHTML = '<div style="padding: 24px; color: var(--text-muted);">Tidak ada cabang dipilih.</div>';
+                        if (hintEl) hintEl.style.display = 'none';
                         return;
                     }
                     if (!currentTargetMetrics) {
@@ -7991,18 +8074,79 @@ ${portalUrl}
                     }
                     const canvas = KspTarget.renderSingleBranchCanvas(store, currentTargetMetrics);
                     currentGeneratedCanvas = canvas;
+                    canvas.style.cursor = 'pointer';
+                    canvas.title = 'Ketuk untuk membuka gambar ukuran penuh (Popup WhatsApp)';
+                    canvas.onclick = openTargetImageLightbox;
                     mountPoint.appendChild(canvas);
+                    if (hintEl) hintEl.style.display = 'block';
                 } else {
                     if (!currentTargetMetrics) {
                         currentTargetMetrics = KspTarget.calculateAllStoresSummary(storesData, monthVal, cutOffVal);
                     }
                     const canvas = KspTarget.renderAllBranchesCanvas(storesData, currentTargetMetrics);
                     currentGeneratedCanvas = canvas;
+                    canvas.style.cursor = 'pointer';
+                    canvas.title = 'Ketuk untuk membuka gambar ukuran penuh (Popup WhatsApp)';
+                    canvas.onclick = openTargetImageLightbox;
                     mountPoint.appendChild(canvas);
+                    if (hintEl) hintEl.style.display = 'block';
                 }
             } catch (err) {
                 console.error('Error rendering target canvas:', err);
                 mountPoint.innerHTML = `<div style="padding: 20px; color: var(--danger);">Gagal menggambar target card: ${escapeHtml(err.message)}</div>`;
+                if (hintEl) hintEl.style.display = 'none';
+            }
+        }
+
+        // --- POPUP GAMBAR TERSENDIRI ALA WHATSAPP (LIGHTBOX) ---
+        let isLightboxZoomed = false;
+
+        async function openTargetImageLightbox() {
+            try {
+                const canvas = await ensureTargetCanvasReady();
+                if (!canvas) {
+                    showToast('⚠️ Gambar target belum siap.', '⚠️');
+                    return;
+                }
+                const imgEl = document.getElementById('lightboxTargetImg');
+                const titleEl = document.getElementById('lightboxTargetTitle');
+                if (imgEl) {
+                    imgEl.src = canvas.toDataURL('image/png');
+                    isLightboxZoomed = false;
+                    imgEl.style.maxWidth = '96vw';
+                    imgEl.style.maxHeight = '84vh';
+                    imgEl.style.width = 'auto';
+                    imgEl.style.cursor = 'zoom-in';
+                }
+                if (titleEl) {
+                    const storeIdVal = document.getElementById('targetSelectStore')?.value;
+                    const store = storesData.find(s => s.id === storeIdVal);
+                    titleEl.innerText = (currentTargetTab === 'single' && store)
+                        ? `Target & Progress: ${store.name}`
+                        : 'Rekap Target Semua Cabang';
+                }
+                openModal('targetImageLightboxModal');
+            } catch (err) {
+                console.error('Error opening target lightbox:', err);
+                showToast('Gagal membuka preview gambar: ' + err.message, '⚠️');
+            }
+        }
+
+        function toggleLightboxZoom(e) {
+            if (e) e.stopPropagation();
+            const img = document.getElementById('lightboxTargetImg');
+            if (!img) return;
+            isLightboxZoomed = !isLightboxZoomed;
+            if (isLightboxZoomed) {
+                img.style.maxWidth = 'none';
+                img.style.maxHeight = 'none';
+                img.style.width = '100%';
+                img.style.cursor = 'zoom-out';
+            } else {
+                img.style.maxWidth = '96vw';
+                img.style.maxHeight = '84vh';
+                img.style.width = 'auto';
+                img.style.cursor = 'zoom-in';
             }
         }
 
@@ -8073,37 +8217,37 @@ ${portalUrl}
             showToast(`✅ Target berhasil disimpan untuk ${updatedCount} cabang!`, '🎯');
         }
 
-        // --- TEMPLATE PESAN WHATSAPP (LOCAL STORAGE) ---
-        function toggleTemplateEditor(forceState) {
-            const panel = document.getElementById('targetTemplateEditorPanel');
-            if (!panel) return;
-            const isVisible = (forceState !== undefined) ? forceState : (panel.style.display !== 'block');
-            panel.style.display = isVisible ? 'block' : 'none';
-
-            if (isVisible) {
-                const modeLabel = document.getElementById('targetTemplateModeLabel');
-                if (modeLabel) {
-                    modeLabel.innerText = currentTargetTab === 'single' ? 'Per Cabang' : 'Rekap Semua Cabang';
-                }
-
-                const tagsContainer = document.getElementById('targetTemplatePlaceholderTags');
-                if (tagsContainer) {
-                    const tags = (currentTargetTab === 'single')
-                        ? ['{CABANG}', '{PERIODE}', '{TARGET}', '{REALISASI}', '{PERSEN}', '{SISA_TARGET}', '{SISA_HARI}', '{WAJIB_HARI}', '{RATA2_SKRG}', '{STATUS}', '{GAP_NAIK}', '{GAP_INFO}']
-                        : ['{PERIODE}', '{TOTAL_TARGET}', '{TOTAL_REAL}', '{PERSEN}', '{LIST_CABANG}', '{CATATAN_NAIK}', '{FOKUS}'];
-                    
-                    tagsContainer.innerHTML = tags.map(t => `
-                        <button type="button" class="tpl-tag-pill" onclick="insertTemplateTag('${t}')" title="Klik untuk menyisipkan tag ${t}">
-                            ${t}
-                        </button>
-                    `).join('');
-                }
-
-                const input = document.getElementById('targetTemplateEditorInput');
-                if (input && window.KspTarget) {
-                    input.value = KspTarget.getTemplate(currentTargetTab);
-                }
+        // --- TEMPLATE PESAN WHATSAPP (DIALOG TERPISAH & LOCAL STORAGE) ---
+        function openTargetTemplateModal() {
+            const modeLabel = document.getElementById('targetTemplateModeLabel');
+            if (modeLabel) {
+                modeLabel.innerText = currentTargetTab === 'single' ? 'Per Cabang' : 'Rekap Semua Cabang';
             }
+
+            const tagsContainer = document.getElementById('targetTemplatePlaceholderTags');
+            if (tagsContainer) {
+                const tags = (currentTargetTab === 'single')
+                    ? ['{CABANG}', '{BULAN}', '{TAHUN}', '{PERIODE}', '{TARGET}', '{REALISASI}', '{PERSEN}', '{SISA_TARGET}', '{SISA_HARI}', '{WAJIB_HARI}', '{RATA2_SKRG}', '{STATUS}', '{GAP_NAIK}', '{GAP_INFO}']
+                    : ['{BULAN}', '{TAHUN}', '{PERIODE}', '{TOTAL_TARGET}', '{TOTAL_REAL}', '{PERSEN}', '{LIST_CABANG}', '{CATATAN_NAIK}', '{FOKUS}'];
+                
+                tagsContainer.innerHTML = tags.map(t => `
+                    <button type="button" class="tpl-tag-pill" onclick="insertTemplateTag('${t}')" title="Klik untuk menyisipkan tag ${t}">
+                        ${t}
+                    </button>
+                `).join('');
+            }
+
+            const input = document.getElementById('targetTemplateEditorInput');
+            if (input && window.KspTarget) {
+                input.value = KspTarget.getTemplate(currentTargetTab);
+            }
+
+            openModal('targetTemplateModal');
+        }
+
+        // Backward compatibility
+        function toggleTemplateEditor() {
+            openTargetTemplateModal();
         }
 
         function insertTemplateTag(tag) {
@@ -8117,6 +8261,27 @@ ${portalUrl}
             input.setSelectionRange(start + tag.length, start + tag.length);
         }
 
+        async function copyTemplateFromEditor() {
+            const input = document.getElementById('targetTemplateEditorInput');
+            if (!input || !input.value.trim()) {
+                showToast('⚠️ Template kosong, tidak ada yang disalin.', '⚠️');
+                return;
+            }
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(input.value);
+                } else {
+                    input.select();
+                    document.execCommand('copy');
+                }
+                showToast('📋 Template berhasil disalin ke clipboard!', '✅');
+            } catch (err) {
+                input.select();
+                document.execCommand('copy');
+                showToast('📋 Template berhasil disalin ke clipboard!', '✅');
+            }
+        }
+
         function saveTargetTemplateFromEditor() {
             const input = document.getElementById('targetTemplateEditorInput');
             if (!input || !window.KspTarget) return;
@@ -8127,8 +8292,8 @@ ${portalUrl}
             }
             KspTarget.saveTemplate(currentTargetTab, val);
             updateTargetModalView();
+            closeModal('targetTemplateModal');
             showToast('💾 Format template berhasil disimpan di browser lokal!', '✅');
-            toggleTemplateEditor(false);
         }
 
         function resetTargetTemplateToDefault() {
