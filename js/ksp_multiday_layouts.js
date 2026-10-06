@@ -108,7 +108,7 @@
       totalsRef.totalMasuk += amtCharged; totalsRef.totalKeluar += amtNominal;
       const desc = (item.customerName ? item.customerName + ' - ' : '') + (item.category || 'TopUp') + (item.destination ? ' (' + item.destination + ')' : '');
       const timeVal = timeColFmt ? formatDisplayTime(item.date, item.time) : (item.time || '00:00');
-      rowsHtml += opt.renderRowHtml(globalSeqRef.val++, timeVal, amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee || 0, item.date || dateAttr);
+      rowsHtml += opt.renderRowHtml(globalSeqRef.val++, timeVal, amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee || 0, item.date || dateAttr, item.rowId || item.id);
     });
     const thead = `<thead class="lv-thead"><tr>
       <th class="lv-th c" style="width:36px;">#</th>
@@ -143,9 +143,9 @@
       const prodName = item.productName || item.provider || 'Voucher';
       const timeVal = timeColFmt ? formatDisplayTime(item.date, item.time) : (item.time || '00:00');
       if (typeof opt.renderVoucherRowHtml === 'function') {
-        rowsHtml += opt.renderVoucherRowHtml(globalSeqRef.val++, timeVal, prodName, amt, item.provider || 'VOUCHER', item.orig, item.deleted, item.read, item.isNew, item.cost, item.date || dateAttr);
+        rowsHtml += opt.renderVoucherRowHtml(globalSeqRef.val++, timeVal, prodName, amt, item.provider || 'VOUCHER', item.orig, item.deleted, item.read, item.isNew, item.cost, item.date || dateAttr, item.rowId || item.id);
       } else {
-        rowsHtml += opt.renderRowHtml(globalSeqRef.val++, timeVal, amt, false, prodName, true, item.orig, item.deleted, item.read, item.isNew, item.cost || 0, 0, item.date || dateAttr);
+        rowsHtml += opt.renderRowHtml(globalSeqRef.val++, timeVal, amt, false, prodName, true, item.orig, item.deleted, item.read, item.isNew, item.cost || 0, 0, item.date || dateAttr, item.rowId || item.id);
       }
     });
     const thead = `<thead class="lv-thead"><tr>
@@ -196,7 +196,7 @@
         const timeFmt = formatDisplayTime(item.date, item.time);
         const jumtar = item.jumtar || amt;
         const adm = item.adm || 0;
-        rowsHtml += opt.renderRowHtml(globalSeqObj.val++, timeFmt, amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, item.date);
+        rowsHtml += opt.renderRowHtml(globalSeqObj.val++, timeFmt, amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, item.date, item.rowId || item.id);
       });
 
       const theadHtml = isOutcomeOnly
@@ -245,7 +245,7 @@
           if (isIncome) { aIn += amt; totalMasuk += amt; } else { aOut += amt; totalKeluar += amt; }
           const desc = item.desc || item.name || displayName;
           const timeFmt = formatDisplayTime(item.date, item.time);
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, timeFmt, amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, item.date);
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, timeFmt, amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, item.date, item.rowId || item.id);
         });
 
         const theadHtml = isOutcomeOnly
@@ -325,7 +325,7 @@
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey);
+          dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id);
         });
 
         const dayMetaStr = isOutcomeOnly
@@ -399,7 +399,7 @@
             const isIncome = String(item.category || '').toLowerCase() === 'income';
             if (isIncome) { dayIn += amt; aIn += amt; totalMasuk += amt; } else { dayOut += amt; aOut += amt; totalKeluar += amt; }
             const desc = item.desc || item.name || displayName;
-            dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey);
+            dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
           });
 
           const dayMetaStr = isOutcomeOnly
@@ -460,7 +460,7 @@
           tMasuk += amtCharged; tKeluar += amtNominal;
           totalMasuk += amtCharged; totalKeluar += amtNominal;
           const desc = (item.customerName ? item.customerName + ' - ' : '') + (item.category || 'TopUp') + (item.destination ? ' (' + item.destination + ')' : '');
-          dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee || 0, dKey);
+          dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee || 0, dKey, item.rowId || item.id);
         });
         rowsHtml += `
           <tr class="lv-date-subhd-row" data-date="${dKey}">
@@ -504,9 +504,9 @@
           dayOut += amt; vTotalKeluar += amt; totalKeluar += amt;
           const prodName = item.productName || item.provider || 'Voucher';
           if (typeof opt.renderVoucherRowHtml === 'function') {
-            dayRows += opt.renderVoucherRowHtml(globalSeqObj.val++, item.time || '00:00', prodName, amt, item.provider || 'VOUCHER', item.orig, item.deleted, item.read, item.isNew, item.cost, dKey);
+            dayRows += opt.renderVoucherRowHtml(globalSeqObj.val++, item.time || '00:00', prodName, amt, item.provider || 'VOUCHER', item.orig, item.deleted, item.read, item.isNew, item.cost, dKey, item.rowId || item.id);
           } else {
-            dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, false, prodName, true, item.orig, item.deleted, item.read, item.isNew, item.cost || 0, 0, dKey);
+            dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, false, prodName, true, item.orig, item.deleted, item.read, item.isNew, item.cost || 0, 0, dKey, item.rowId || item.id);
           }
         });
         rowsHtml += `
@@ -600,7 +600,7 @@
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey);
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id);
         });
 
         const theadHtml = isOutcomeOnly
@@ -648,7 +648,7 @@
             const isIncome = String(item.category || '').toLowerCase() === 'income';
             if (isIncome) { aIn += amt; dayIn += amt; totalMasuk += amt; } else { aOut += amt; dayOut += amt; totalKeluar += amt; }
             const desc = item.desc || item.name || displayName;
-            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey);
+            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
           });
 
           const theadHtml = isOutcomeOnly
@@ -763,7 +763,7 @@
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey);
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id);
         });
 
         const theadHtml = isOutcomeOnly
@@ -811,7 +811,7 @@
             const isIncome = String(item.category || '').toLowerCase() === 'income';
             if (isIncome) { aIn += amt; dayIn += amt; totalMasuk += amt; } else { aOut += amt; dayOut += amt; totalKeluar += amt; }
             const desc = item.desc || item.name || displayName;
-            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey);
+            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
           });
 
           const theadHtml = isOutcomeOnly
@@ -903,7 +903,7 @@
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey);
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id);
         });
 
         const theadHtml = isOutcomeOnly
@@ -956,7 +956,7 @@
           const isIncome = String(item.category || '').toLowerCase() === 'income';
           if (isIncome) { aIn += amt; totalMasuk += amt; } else { aOut += amt; totalKeluar += amt; }
           const desc = item.desc || item.name || displayName;
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey);
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
         });
 
         const theadHtml = isOutcomeOnly
@@ -1056,7 +1056,7 @@
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey);
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id);
         });
 
         const theadHtml = isOutcomeOnly
@@ -1104,7 +1104,7 @@
             const isIncome = String(item.category || '').toLowerCase() === 'income';
             if (isIncome) { aIn += amt; dayIn += amt; totalMasuk += amt; } else { aOut += amt; dayOut += amt; totalKeluar += amt; }
             const desc = item.desc || item.name || displayName;
-            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey);
+            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
           });
 
           const theadHtml = isOutcomeOnly

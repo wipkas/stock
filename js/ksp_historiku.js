@@ -1221,11 +1221,14 @@ function saveReportEdits() {
     clearTimeout(autoSaveDebounceTimer);
   }
   if (typeof setTimeout === 'function') {
-    autoSaveDebounceTimer = setTimeout(doSaveReportEdits, 120);
+    autoSaveDebounceTimer = setTimeout(doSaveReportEdits, 250);
   } else if (typeof doSaveReportEdits === 'function') {
     doSaveReportEdits();
   }
 }
+
+let isSyncingEditsToSupabase = false;
+let pendingEditsToSync = false;
 
 function doSaveReportEdits() {
   try {
@@ -1266,15 +1269,185 @@ function doSaveReportEdits() {
       if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
         localStorage.setItem(key, JSON.stringify(payload));
       }
-      updateLocalEditsBadge(true);
+      updateLocalEditsBadge(true, false);
+      // Pushing changes directly to Supabase Cloud
+      syncEditsToSupabase();
     } else {
       if (typeof localStorage !== 'undefined' && typeof localStorage.removeItem === 'function') {
         localStorage.removeItem(key);
       }
-      updateLocalEditsBadge(false);
+      updateLocalEditsBadge(false, false);
     }
   } catch (err) {
     console.warn('Auto-save edits failed:', err);
+  }
+}
+
+async function syncEditsToSupabase() {
+  const client = getSupabaseClient();
+  const cfg = window.KSP_SYNC_CONFIG || {};
+  if (!client && (!cfg.url || !cfg.key)) return;
+
+  const storeId = window.ACTIVE_STORE_ID || (window.REPORT_DATA && window.REPORT_DATA.storeId);
+  if (!storeId) return;
+
+  if (isSyncingEditsToSupabase) {
+    pendingEditsToSync = true;
+    return;
+  }
+  isSyncingEditsToSupabase = true;
+  pendingEditsToSync = false;
+
+  window._isSavingWebEdits = true;
+  clearTimeout(window._savingEditsTimer);
+  window._savingEditsTimer = setTimeout(() => {
+    window._isSavingWebEdits = false;
+  }, 2500);
+
+  try {
+    const rows = document.querySelectorAll('.lv-row');
+    const updatePromises = [];
+
+    rows.forEach(row => {
+      let rowId = row.dataset.rowId;
+      const currentVal = parseFloat(row.dataset.val) || 0;
+      const origVal = parseFloat(row.dataset.orig) || 0;
+      const currentDesc = (row.dataset.desc || '').trim();
+      const isDel = row.classList.contains('item-deleted');
+      const isRead = row.classList.contains('item-read');
+      const isNew = row.dataset.isNew === 'true';
+      const isChanged = (currentVal !== origVal);
+
+      if (isChanged || isDel || isRead || isNew) {
+        if (!rowId && isNew) {
+          rowId = 'web_' + storeId + '_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+          row.dataset.rowId = rowId;
+        }
+
+        if (rowId) {
+          updatePromises.push(saveRowToSupabase(rowId, currentVal, origVal, currentDesc, isDel, isRead, isNew, isChanged, row, storeId));
+        }
+      }
+    });
+
+    if (updatePromises.length > 0) {
+      await Promise.all(updatePromises);
+      updateLocalEditsBadge(true, true);
+    }
+  } catch (err) {
+    console.warn('[KspHistoriku] Gagal sync editan ke Supabase:', err);
+    updateLocalEditsBadge(true, false);
+  } finally {
+    isSyncingEditsToSupabase = false;
+    if (pendingEditsToSync) {
+      setTimeout(syncEditsToSupabase, 200);
+    }
+  }
+}
+
+async function saveRowToSupabase(rowId, currentVal, origVal, currentDesc, isDel, isRead, isNew, isChanged, rowEl, storeId) {
+  const client = getSupabaseClient();
+  const cfg = window.KSP_SYNC_CONFIG || {};
+  const baseUrl = (cfg.url || '').replace(/\/+$/, '');
+  const headers = {
+    'apikey': cfg.key,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=minimal'
+  };
+  if (cfg.key && !cfg.key.startsWith('sb_')) headers['Authorization'] = 'Bearer ' + cfg.key;
+
+  const extra = {
+    is_edited: true,
+    is_deleted_by_web: isDel,
+    web_edited_at: new Date().toISOString(),
+    orig_amount: origVal,
+    web_read: isRead,
+    web_modified: isChanged
+  };
+
+  const group = rowEl ? rowEl.closest('.lv-group') : null;
+  const modType = group ? (group.dataset.groupId || 'tarik').split('-')[0] : 'tarik';
+  const trxDate = (rowEl && rowEl.dataset.date) || (window.REPORT_DATA && window.REPORT_DATA.dateDb) || getTodayDbDate();
+  const timeCell = rowEl ? rowEl.querySelector('.lv-time-text') : null;
+  const timeStr = timeCell ? timeCell.textContent.trim() : '00:00';
+  const cat = (rowEl && rowEl.dataset.cat) || 'outcome';
+
+  if (isNew) {
+    const newRecord = {
+      id: rowId,
+      store_id: storeId,
+      device_id: 'web_client',
+      device_name: 'Web Dashboard',
+      module_type: modType,
+      local_id: rowId,
+      trx_date: trxDate.indexOf(' s/d ') > -1 ? getTodayDbDate() : trxDate,
+      trx_time: timeStr.length === 5 ? timeStr + ':00' : timeStr,
+      timestamp: Date.now(),
+      shift: (window.REPORT_DATA && window.REPORT_DATA.shift) || 0,
+      category: cat,
+      amount: currentVal,
+      real_amount: currentVal,
+      fee: 0,
+      cost: 0,
+      quantity: 1,
+      app_package: 'com.kspcheck.' + modType,
+      app_name: 'Input Web',
+      title: 'Input Web',
+      item_name: currentDesc || 'Item Baru',
+      customer_name: currentDesc || 'Item Baru',
+      is_edited: true,
+      is_deleted_by_web: isDel,
+      web_edited_at: new Date().toISOString(),
+      extra_data: extra
+    };
+
+    if (client) {
+      let res = await client.from('ksp_history_transactions').insert([newRecord]);
+      if (res.error) {
+        delete newRecord.is_edited;
+        delete newRecord.is_deleted_by_web;
+        delete newRecord.web_edited_at;
+        await client.from('ksp_history_transactions').insert([newRecord]);
+      }
+    } else {
+      await fetch(`${baseUrl}/rest/v1/ksp_history_transactions`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(newRecord)
+      });
+    }
+    return;
+  }
+
+  // Update row yang sudah ada di Supabase
+  const updatePayload = {
+    amount: currentVal,
+    item_name: currentDesc || undefined,
+    customer_name: currentDesc || undefined,
+    is_edited: true,
+    is_deleted_by_web: isDel,
+    web_edited_at: new Date().toISOString(),
+    extra_data: extra
+  };
+
+  if (client) {
+    let res = await client.from('ksp_history_transactions').update(updatePayload).eq('id', rowId);
+    if (res.error) {
+      // Fallback jika kolom is_edited belum ditambahkan di Supabase
+      const fallbackPayload = {
+        amount: currentVal,
+        item_name: currentDesc || undefined,
+        customer_name: currentDesc || undefined,
+        extra_data: extra
+      };
+      await client.from('ksp_history_transactions').update(fallbackPayload).eq('id', rowId);
+    }
+  } else {
+    await fetch(`${baseUrl}/rest/v1/ksp_history_transactions?id=eq.${encodeURIComponent(rowId)}`, {
+      method: 'PATCH',
+      headers: headers,
+      body: JSON.stringify(updatePayload)
+    });
   }
 }
 
@@ -1288,16 +1461,31 @@ function hasUserEdits() {
   }
 }
 
-function updateLocalEditsBadge(hasEdits) {
+function updateLocalEditsBadge(hasEdits, isCloudSaved) {
   const chip = document.getElementById('chip-local-edits');
   if (chip) {
     chip.style.display = hasEdits ? 'inline-flex' : 'none';
+    if (hasEdits) {
+      if (isCloudSaved) {
+        chip.innerHTML = '☁️ Tersimpan di Cloud';
+        chip.title = 'Perubahan tersimpan permanen di Supabase Cloud & write-protected dari Android. Klik untuk opsi reset.';
+        chip.style.background = 'rgba(16,185,129,0.18)';
+        chip.style.color = '#10b981';
+        chip.style.borderColor = 'rgba(16,185,129,0.4)';
+      } else {
+        chip.innerHTML = '💾 Tersimpan (Lokal)';
+        chip.title = 'Perubahan tersimpan otomatis di perangkat ini. Klik untuk opsi reset data asli.';
+        chip.style.background = '';
+        chip.style.color = '';
+        chip.style.borderColor = '';
+      }
+    }
   }
   const badge = document.getElementById('local-edits-badge');
   const btnReset = document.getElementById('btn-reset-edits');
   if (badge) {
     if (hasEdits) {
-      badge.textContent = 'Ada Perubahan (Tersimpan)';
+      badge.textContent = isCloudSaved ? 'Ada Perubahan (Tersimpan di Cloud)' : 'Ada Perubahan (Tersimpan Lokal)';
       badge.style.background = 'rgba(16,185,129,0.15)';
       badge.style.color = '#10b981';
     } else {
@@ -1312,22 +1500,59 @@ function updateLocalEditsBadge(hasEdits) {
 }
 
 function showLocalEditsAction() {
-  if (confirm('Perubahan Anda tersimpan otomatis di perangkat ini.\n\nApakah Anda ingin me-reset semua perubahan kembali ke data asli laporan?')) {
+  if (confirm('Perubahan Anda tersimpan di Cloud Supabase & terlindungi dari sinkronisasi kasir.\n\nApakah Anda ingin me-reset semua perubahan dan mengembalikan ke data asli laporan?')) {
     resetReportEdits();
   }
 }
 
-function resetReportEdits() {
+async function resetReportEdits() {
   const key = getReportStorageKey();
   try {
     if (typeof localStorage !== 'undefined' && typeof localStorage.removeItem === 'function') {
       localStorage.removeItem(key);
     }
   } catch(e) {}
-  updateLocalEditsBadge(false);
+
+  const client = getSupabaseClient();
+  const rows = document.querySelectorAll('.lv-row');
+  const resetPromises = [];
+
+  rows.forEach(row => {
+    const rowId = row.dataset.rowId;
+    const origVal = parseFloat(row.dataset.orig) || 0;
+    const isNew = row.dataset.isNew === 'true';
+
+    if (rowId) {
+      if (isNew) {
+        if (client) resetPromises.push(client.from('ksp_history_transactions').delete().eq('id', rowId));
+      } else {
+        const resetPayload = {
+          amount: origVal,
+          is_edited: false,
+          is_deleted_by_web: false,
+          extra_data: { reset_to_original: true }
+        };
+        if (client) resetPromises.push(client.from('ksp_history_transactions').update(resetPayload).eq('id', rowId));
+      }
+    }
+  });
+
+  try {
+    if (resetPromises.length > 0) {
+      await Promise.all(resetPromises);
+    }
+  } catch (err) {
+    console.warn('[KspHistoriku] Gagal reset di cloud:', err);
+  }
+
+  updateLocalEditsBadge(false, false);
   showToast('Semua perubahan di-reset ke data asli');
   if (typeof renderReport === 'function' && window.REPORT_DATA) {
-    renderReport(window.REPORT_DATA);
+    if (window.ACTIVE_PERIOD_MODE === 'multiday') {
+      loadMultiDayForStore(window.ACTIVE_STORE_ID, window.ACTIVE_STORE_NAME, window.REPORT_DATA.startDate, window.REPORT_DATA.endDate);
+    } else {
+      window.KspHistoriku.loadForStore(window.ACTIVE_STORE_ID, window.ACTIVE_STORE_NAME, window.REPORT_DATA.dateDb);
+    }
   }
 }
 
@@ -2696,6 +2921,8 @@ function addNewItemBelowCurrent() {
 
   newRow.classList.add('item-new');
   newRow.dataset.isNew = 'true';
+  const sId = window.ACTIVE_STORE_ID || (window.REPORT_DATA && window.REPORT_DATA.storeId) || 'store';
+  newRow.dataset.rowId = 'web_' + sId + '_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
   updateRowMarkTags(newRow);
 
   renumberAllRows();
@@ -3614,7 +3841,7 @@ function getAppIcon(appPackage) {
   return '📱';
 }
 
-function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmount, isDeleted, isRead, isNew, realVal, feeVal, dateVal) {
+function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmount, isDeleted, isRead, isNew, realVal, feeVal, dateVal, rowId) {
   const cat = isIncome ? 'income' : 'outcome';
   const descAttr = desc ? ` data-desc="${escapeHtml(desc)}"` : '';
   const timeTitle = desc ? `${escapeHtml(time)} · ${escapeHtml(desc)}` : escapeHtml(time);
@@ -3631,6 +3858,7 @@ function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmo
   const realAttr = (realVal !== undefined && realVal !== null && realVal > 0) ? ` data-real="${realVal}"` : '';
   const feeAttr = (feeVal !== undefined && feeVal !== null && feeVal > 0) ? ` data-fee="${feeVal}"` : '';
   const dateAttr = dateVal ? ` data-date="${escapeHtml(dateVal)}"` : '';
+  const rowIdAttr = rowId ? ` data-row-id="${escapeHtml(rowId)}"` : '';
 
   let statusTagHtml = '';
   if (isItemNew) {
@@ -3652,7 +3880,7 @@ function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmo
 
   if (isOutcomeOnly) {
     return `
-      <tr class="lv-row${rowExtraClass}" data-cat="${cat}" data-orig="${orig}" data-val="${amount}"${descAttr}${newAttr}${realAttr}${feeAttr}${dateAttr}>
+      <tr class="lv-row${rowExtraClass}" data-cat="${cat}" data-orig="${orig}" data-val="${amount}"${descAttr}${newAttr}${realAttr}${feeAttr}${dateAttr}${rowIdAttr}>
         <td class="lv-td lv-td-idx">${idx}</td>
         <td class="lv-td lv-td-time" title="${timeTitle}"><span class="lv-time-text">${escapeHtml(time)}</span>${statusTagHtml}</td>
         <td class="lv-td lv-td-itemname" onclick="onNameClick(this, event)" title="Klik untuk dengar / ubah: ${escapeHtml(desc || '—')}">${escapeHtml(desc || '—')}</td>
@@ -3671,7 +3899,7 @@ function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmo
     : `<td class="lv-td lv-td-in"><span class="lv-empty-cell">—</span></td>`;
 
   return `
-    <tr class="lv-row${rowExtraClass}" data-cat="${cat}" data-orig="${orig}" data-val="${amount}"${descAttr}${newAttr}${realAttr}${feeAttr}${dateAttr}>
+    <tr class="lv-row${rowExtraClass}" data-cat="${cat}" data-orig="${orig}" data-val="${amount}"${descAttr}${newAttr}${realAttr}${feeAttr}${dateAttr}${rowIdAttr}>
       <td class="lv-td lv-td-idx">${idx}</td>
       <td class="lv-td lv-td-time" title="${timeTitle}"><span class="lv-time-text">${escapeHtml(time)}</span>${statusTagHtml}</td>
       ${outCell}
@@ -3679,7 +3907,7 @@ function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmo
     </tr>`;
 }
 
-function renderVoucherRowHtml(idx, time, prodName, amount, provider, origAmount, isDeleted, isRead, isNew, costVal, dateVal) {
+function renderVoucherRowHtml(idx, time, prodName, amount, provider, origAmount, isDeleted, isRead, isNew, costVal, dateVal, rowId) {
   const timeTitle = `${escapeHtml(time)} · ${escapeHtml(provider)} - ${escapeHtml(prodName)}`;
   const orig = (origAmount !== undefined && origAmount !== null) ? origAmount : amount;
   const isItemNew = (isNew === true || isNew === 'true');
@@ -3693,6 +3921,7 @@ function renderVoucherRowHtml(idx, time, prodName, amount, provider, origAmount,
   const newAttr = isItemNew ? ' data-is-new="true"' : '';
   const costAttr = (costVal !== undefined && costVal !== null && costVal > 0) ? ` data-cost="${costVal}"` : '';
   const dateAttr = dateVal ? ` data-date="${escapeHtml(dateVal)}"` : '';
+  const rowIdAttr = rowId ? ` data-row-id="${escapeHtml(rowId)}"` : '';
 
   let statusTagHtml = '';
   if (isItemNew) {
@@ -3711,7 +3940,7 @@ function renderVoucherRowHtml(idx, time, prodName, amount, provider, origAmount,
     </td>`;
 
   return `
-    <tr class="lv-row${rowExtraClass}" data-cat="outcome" data-orig="${orig}" data-val="${amount}" data-desc="${escapeHtml(prodName)}" data-provider="${escapeHtml(provider)}"${newAttr}${costAttr}${dateAttr}>
+    <tr class="lv-row${rowExtraClass}" data-cat="outcome" data-orig="${orig}" data-val="${amount}" data-desc="${escapeHtml(prodName)}" data-provider="${escapeHtml(provider)}"${newAttr}${costAttr}${dateAttr}${rowIdAttr}>
       <td class="lv-td lv-td-idx">${idx}</td>
       <td class="lv-td lv-td-time" title="${timeTitle}"><span class="lv-time-text">${escapeHtml(time)}</span>${statusTagHtml}</td>
       <td class="lv-td lv-td-itemname" onclick="onNameClick(this, event)" title="Klik untuk dengar / ubah: ${escapeHtml(prodName)}">${escapeHtml(prodName)}</td>
@@ -3791,7 +4020,7 @@ function renderReport(data) {
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm);
+          rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, item.date, item.rowId || item.id);
         });
 
         const theadHtml = isOutcomeOnly
@@ -3880,7 +4109,7 @@ function renderReport(data) {
               totalKeluar += amt;
             }
             const desc = item.name || item.title || displayName;
-            rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee);
+            rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, item.date, item.rowId || item.id);
           });
 
           const theadHtml = isOutcomeOnly
@@ -3942,7 +4171,7 @@ function renderReport(data) {
           totalKeluar += amtNominal;
 
           const desc = (item.customerName ? item.customerName + ' - ' : '') + (item.category || 'TopUp') + (item.destination ? ' (' + item.destination + ')' : '');
-          topUpRowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee);
+          topUpRowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee, item.date, item.rowId || item.id);
         });
 
         const topUpTheadHtml = `<thead class="lv-thead"><tr>
@@ -4006,7 +4235,7 @@ function renderReport(data) {
 
             const prodName = item.productName || provKey;
             const time = item.time || '00:00';
-            provRowsHtml += renderVoucherRowHtml(voucherSeqIdx++, time, prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost);
+            provRowsHtml += renderVoucherRowHtml(voucherSeqIdx++, time, prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost, item.date, item.rowId || item.id);
           });
 
           const subHeaderHtml = `
@@ -4481,6 +4710,9 @@ function transformSupabaseRowsToReportData(rows, dateDb, shift, isMultiDay, star
   let totalKeluar = 0;
 
   rows.forEach(r => {
+    const isEdited = Boolean(r.is_edited) || Boolean(r.extra_data && r.extra_data.is_edited);
+    const isDeleted = Boolean(r.is_deleted_by_web) || Boolean(r.extra_data && r.extra_data.is_deleted_by_web);
+    const isRead = Boolean(r.extra_data && r.extra_data.web_read);
     const cat = (r.category || 'outcome').toLowerCase();
     const amt = Number(r.amount) || 0;
     const realAmt = Number(r.real_amount) || 0;
@@ -4489,9 +4721,14 @@ function transformSupabaseRowsToReportData(rows, dateDb, shift, isMultiDay, star
     const timeStr = r.trx_time ? String(r.trx_time).substring(0, 5) : '00:00';
     const dateStr = r.trx_date || dateDb;
 
+    const origAmt = (r.extra_data && typeof r.extra_data.orig_amount === 'number')
+      ? r.extra_data.orig_amount
+      : (isEdited && realAmt > 0 && realAmt !== amt ? realAmt : amt);
+
     if (r.module_type === 'tarik') {
       tarik.push({
         id: r.local_id || r.id,
+        rowId: r.id,
         date: dateStr,
         time: timeStr,
         amount: amt,
@@ -4499,25 +4736,41 @@ function transformSupabaseRowsToReportData(rows, dateDb, shift, isMultiDay, star
         adm: feeAmt,
         type: cat,
         name: r.customer_name || r.item_name || '',
-        app: r.app_name || 'Tarik Tunai'
+        app: r.app_name || 'Tarik Tunai',
+        orig: origAmt,
+        deleted: isDeleted,
+        read: isRead,
+        isEdited: isEdited,
+        extraData: r.extra_data
       });
-      if (cat === 'income') totalMasuk += amt;
-      else totalKeluar += amt;
+      if (!isDeleted) {
+        if (cat === 'income') totalMasuk += amt;
+        else totalKeluar += amt;
+      }
     } else if (r.module_type === 'voucher') {
       voucher.push({
         id: r.local_id || r.id,
+        rowId: r.id,
         date: dateStr,
         time: timeStr,
         provider: r.provider || r.app_name || 'VOUCHER',
         productName: r.item_name || '',
         amount: amt,
         cost: costAmt,
-        category: 'outcome'
+        category: 'outcome',
+        orig: origAmt,
+        deleted: isDeleted,
+        read: isRead,
+        isEdited: isEdited,
+        extraData: r.extra_data
       });
-      totalKeluar += amt;
+      if (!isDeleted) {
+        totalKeluar += amt;
+      }
     } else if (r.module_type === 'notif') {
       notif.push({
         id: r.local_id || r.id,
+        rowId: r.id,
         date: dateStr,
         time: timeStr,
         app: r.app_package || 'other',
@@ -4527,10 +4780,17 @@ function transformSupabaseRowsToReportData(rows, dateDb, shift, isMultiDay, star
         fee: feeAmt,
         category: cat,
         title: r.title || '',
-        name: r.customer_name || r.item_name || ''
+        name: r.customer_name || r.item_name || '',
+        orig: origAmt,
+        deleted: isDeleted,
+        read: isRead,
+        isEdited: isEdited,
+        extraData: r.extra_data
       });
-      if (cat === 'income') totalMasuk += amt;
-      else totalKeluar += amt;
+      if (!isDeleted) {
+        if (cat === 'income') totalMasuk += amt;
+        else totalKeluar += amt;
+      }
     }
   });
 
@@ -4604,6 +4864,10 @@ function initSupabaseRealtime(storeId) {
 }
 
 function handleRealtimeTransactionEvent(payload) {
+  if (window._isSavingWebEdits) {
+    // Abaikan event realtime yang dipicu oleh aktivitas simpan dari browser ini sendiri
+    return;
+  }
   const ev = payload.eventType;
   const row = payload.new || payload.old;
   if (!row) return;
