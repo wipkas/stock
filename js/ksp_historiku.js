@@ -184,7 +184,9 @@ function toggleSteppers(btn) {
 
 function applySteppersState(btn) {
   if (!btn) btn = document.getElementById('btn-stepper');
-  document.body.classList.toggle('no-steppers', !showSteppers);
+  if (document.body) {
+    document.body.classList.toggle('no-steppers', !showSteppers);
+  }
   if (btn) {
     btn.classList.toggle('active', showSteppers);
     btn.title = showSteppers ? 'Sembunyikan Tombol Stepper (+/-)' : 'Tampilkan Tombol Stepper (+/-)';
@@ -197,7 +199,7 @@ try {
     showSteppers = true;
   }
 } catch(e){}
-applySteppersState();
+// applySteppersState(); (diinisialisasi aman saat DOM ready)
 
 let stickyAppHeaders = true;
 
@@ -223,7 +225,9 @@ window.addEventListener('resize', syncHeaderHeight);
 window.addEventListener('orientationchange', syncHeaderHeight);
 
 function applyStickyAppHeadersState() {
-  document.body.classList.toggle('sticky-app-headers', stickyAppHeaders);
+  if (document.body) {
+    document.body.classList.toggle('sticky-app-headers', stickyAppHeaders);
+  }
   updateStickyAppHeadersBadge();
   syncHeaderHeight();
   requestSideStickyUpdate();
@@ -373,7 +377,7 @@ function initSideSpreadStickyHeaders() {
   requestSideStickyUpdate();
 }
 
-applyStickyAppHeadersState();
+// applyStickyAppHeadersState(); (diinisialisasi aman saat DOM ready)
 
 function updateRowMarkTags(row) {
   if (!row) return;
@@ -4090,26 +4094,35 @@ function applyInjectedReportConfig() {
     try { localStorage.setItem('ksp_theme', cfg.theme); } catch(e){}
   }
 }
-applyInjectedReportConfig();
-const autoHideToggle = document.getElementById('auto-hide-toggle');
-if (autoHideToggle) autoHideToggle.checked = autoHideCompleted;
-updateAutoHideBadge();
-const sambungToggle = document.getElementById('sambung-multidate-toggle');
-if (sambungToggle) sambungToggle.checked = sambungMultiDate;
-updateSambungMultiDateBadge();
-applyRingkasState();
-applyRoundingState();
-applySteppersState();
-applyHiddenGroupState();
-applyStickyAppHeadersState();
-updateThemeModeBadge();
-renderReport(window.REPORT_DATA);
-applyInitialGroupCollapse();
-initTtsControls();
-initSideSpreadStickyHeaders();
-syncHeaderHeight();
-loadAndApplyReportEdits();
-initBackInterceptor();
+function initHistorikuApp() {
+  applyInjectedReportConfig();
+  const autoHideToggle = document.getElementById('auto-hide-toggle');
+  if (autoHideToggle) autoHideToggle.checked = autoHideCompleted;
+  updateAutoHideBadge();
+  const sambungToggle = document.getElementById('sambung-multidate-toggle');
+  if (sambungToggle) sambungToggle.checked = sambungMultiDate;
+  updateSambungMultiDateBadge();
+  applyRingkasState();
+  applyRoundingState();
+  applySteppersState();
+  applyHiddenGroupState();
+  applyStickyAppHeadersState();
+  updateThemeModeBadge();
+  if (window.REPORT_DATA && document.getElementById('groups-container')) {
+    renderReport(window.REPORT_DATA);
+    applyInitialGroupCollapse();
+  }
+  initTtsControls();
+  initSideSpreadStickyHeaders();
+  syncHeaderHeight();
+  loadAndApplyReportEdits();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initHistorikuApp);
+} else {
+  initHistorikuApp();
+}
 
 // ============================================================================
 // KSP HISTORIKU - BRIDGE FOR STORE MANAGER
