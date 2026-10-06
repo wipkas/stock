@@ -795,15 +795,20 @@
                 KspHistoriku.selectFormatLayoutMode(layoutParam);
             }
 
-            if (storeParam && storesList.some(s => s.id === storeParam)) {
+            if (storeParam) {
                 currentStoreId = storeParam;
                 const found = storesList.find(s => s.id === storeParam);
-                currentStoreName = found ? found.name : (nameParam || 'Cabang');
+                currentStoreName = found ? found.name : (nameParam || storeParam);
+                if (!found) {
+                    storesList.unshift({ id: storeParam, name: currentStoreName });
+                    try { localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesList)); } catch(e) {}
+                    renderStoreSelectOptions();
+                }
             } else if (storesList.length > 0) {
                 currentStoreId = storesList[0].id;
                 currentStoreName = storesList[0].name;
             } else {
-                currentStoreId = 'store_sample';
+                currentStoreId = 'store_pusat';
                 currentStoreName = 'Cabang Utama';
             }
 
@@ -842,8 +847,8 @@
 
             if (!storesList || storesList.length === 0) {
                 storesList = [
-                    { id: 'store_sample', name: 'Cabang Utama' },
-                    { id: 'store_2', name: 'Cabang Barat' }
+                    { id: 'store_pusat', name: 'Cabang Utama' },
+                    { id: 'store_pasar', name: 'Cabang Pasar' }
                 ];
             }
 
@@ -854,9 +859,11 @@
         function renderStoreSelectOptions() {
             const select = document.getElementById('storeSelect');
             if (!select) return;
-            select.innerHTML = storesList.map(s => `
-                <option value="${s.id}">${s.name}</option>
+            let html = storesList.map(s => `
+                <option value="${s.id}">${s.name} (${s.id})</option>
             `).join('');
+            html += `<option value="__custom_store_action__">➕ Tambah / Pilih ID Cabang Lain...</option>`;
+            select.innerHTML = html;
             if (currentStoreId) select.value = currentStoreId;
         }
 
@@ -868,38 +875,86 @@
             const headers = { 'apikey': cfg.key };
             if (String(cfg.key).indexOf('sb_') !== 0) headers['Authorization'] = 'Bearer ' + cfg.key;
 
-            fetch(baseUrl + '/rest/v1/ksp_stores?select=id,name', { headers: headers })
-                .then(r => r.ok ? r.json() : Promise.reject())
-                .then(remoteStores => {
-                    if (Array.isArray(remoteStores) && remoteStores.length > 0) {
-                        storesList = remoteStores;
-                        try { localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesList)); } catch(e) {}
-                        renderStoreSelectOptions();
-                    }
-                })
-                .catch(() => {
-                    // Fallback: Ambil store_id dari transaksi yang ada di Supabase
-                    fetch(baseUrl + '/rest/v1/ksp_history_transactions?select=store_id&limit=100', { headers: headers })
-                        .then(r => r.ok ? r.json() : [])
-                        .then(rows => {
-                            if (Array.isArray(rows) && rows.length > 0) {
-                                const uniqueIds = [...new Set(rows.map(x => x.store_id).filter(Boolean))];
-                                if (uniqueIds.length > 0) {
-                                    uniqueIds.forEach(uid => {
-                                        if (!storesList.some(s => s.id === uid)) {
-                                            storesList.push({ id: uid, name: uid });
-                                        }
-                                    });
-                                    renderStoreSelectOptions();
+            const pin = localStorage.getItem('kspcheck_viewer_pin') || localStorage.getItem('kspcheck_admin_pin') || '';
+
+            // Coba 1: RPC ksp_admin_get_stores (jika PIN ada)
+            const tryRpc = pin ? fetch(baseUrl + '/rest/v1/rpc/ksp_admin_get_stores', {
+                method: 'POST',
+                headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+                body: JSON.stringify({ p_pin: pin })
+            }).then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null);
+
+            tryRpc.then(rpcRes => {
+                if (rpcRes && rpcRes.ok && Array.isArray(rpcRes.stores) && rpcRes.stores.length > 0) {
+                    mergeStoresList(rpcRes.stores);
+                    return;
+                }
+
+                // Coba 2: Dari tabel ksp_stores
+                fetch(baseUrl + '/rest/v1/ksp_stores?select=id,name', { headers: headers })
+                    .then(r => r.ok ? r.json() : Promise.reject())
+                    .then(remoteStores => {
+                        if (Array.isArray(remoteStores) && remoteStores.length > 0) {
+                            mergeStoresList(remoteStores);
+                        }
+                    })
+                    .catch(() => {
+                        // Coba 3: Dari transaksi riwayat yang tersimpan di ksp_history_transactions
+                        fetch(baseUrl + '/rest/v1/ksp_history_transactions?select=store_id&limit=200', { headers: headers })
+                            .then(r => r.ok ? r.json() : [])
+                            .then(rows => {
+                                if (Array.isArray(rows) && rows.length > 0) {
+                                    const uniqueIds = [...new Set(rows.map(x => x.store_id).filter(Boolean))];
+                                    if (uniqueIds.length > 0) {
+                                        const foundList = uniqueIds.map(uid => ({ id: uid, name: uid }));
+                                        mergeStoresList(foundList);
+                                    }
                                 }
-                            }
-                        })
-                        .catch(() => {});
-                });
+                            })
+                            .catch(() => {});
+                    });
+            });
+        }
+
+        function mergeStoresList(newStores) {
+            if (!Array.isArray(newStores) || newStores.length === 0) return;
+            newStores.forEach(st => {
+                const sId = st.id || st.store_id;
+                const sName = st.name || st.store_name || sId;
+                if (!sId) return;
+                const idx = storesList.findIndex(x => x.id === sId);
+                if (idx >= 0) {
+                    storesList[idx].name = sName;
+                } else {
+                    storesList.push({ id: sId, name: sName });
+                }
+            });
+            try { localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesList)); } catch(e) {}
+            renderStoreSelectOptions();
         }
 
         function onStoreSelectChange(storeId) {
             if (!storeId) return;
+            if (storeId === '__custom_store_action__') {
+                const newId = prompt('Masukkan ID Cabang (store_id) yang diset di HP:\nContoh: store_pusat, store_pasar, cabang_1', currentStoreId || '');
+                if (!newId || !newId.trim()) {
+                    renderStoreSelectOptions();
+                    return;
+                }
+                const cleanId = newId.trim();
+                const newName = prompt('Masukkan Nama Label Cabang:', cleanId) || cleanId;
+                const existing = storesList.find(s => s.id === cleanId);
+                if (existing) {
+                    existing.name = newName;
+                } else {
+                    storesList.unshift({ id: cleanId, name: newName });
+                }
+                try { localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesList)); } catch(e) {}
+                renderStoreSelectOptions();
+                onStoreSelectChange(cleanId);
+                return;
+            }
+
             currentStoreId = storeId;
             const found = storesList.find(s => s.id === storeId);
             currentStoreName = found ? found.name : 'Cabang';
