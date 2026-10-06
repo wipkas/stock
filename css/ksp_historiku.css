@@ -26,28 +26,29 @@
   --hk-r-xs: 4px;
 }
 
-[data-theme="dark"] {
-  --hk-bg: #0F172A;
-  --hk-bg2: #1E293B;
-  --hk-surface: #1E293B;
-  --hk-surface2: #334155;
-  --hk-accent: #F97316;
-  --hk-accent-lt: #431407;
-  --hk-income: #4ADE80;
-  --hk-income-bg: #064E3B;
-  --hk-outcome: #F87171;
-  --hk-outcome-bg: #7F1D1D;
-  --hk-text: #F8FAFC;
+[data-theme="dark"],
+body:not(.light-theme) {
+  --hk-bg: #0F1117;
+  --hk-bg2: #181C27;
+  --hk-surface: #181C27;
+  --hk-surface2: #1E2436;
+  --hk-accent: #3B82F6;
+  --hk-accent-lt: rgba(59, 130, 246, 0.15);
+  --hk-income: #10B981;
+  --hk-income-bg: rgba(16, 185, 129, 0.12);
+  --hk-outcome: #EF4444;
+  --hk-outcome-bg: rgba(239, 68, 68, 0.12);
+  --hk-text: #FFFFFF;
   --hk-text2: #CBD5E1;
-  --hk-muted: #94A3B8;
-  --hk-border: #334155;
-  --hk-shadow: 0 1px 3px rgba(0,0,0,.3);
-  --hk-shadow-lg: 0 10px 15px -3px rgba(0,0,0,.4);
+  --hk-muted: #8A92A6;
+  --hk-border: #262B3D;
+  --hk-shadow: 0 1px 3px rgba(0,0,0,.4);
+  --hk-shadow-lg: 0 10px 15px -3px rgba(0,0,0,.5);
 }
 
-/* --- KONTAINER UTAMA HISTORIKU DI VIEW 2 --- */
+/* --- KONTAINER UTAMA HISTORIKU --- */
 .branch-historiku-section {
-  margin-top: 24px;
+  margin-top: 0;
   background: var(--hk-surface);
   border: 1px solid var(--hk-border);
   border-radius: var(--hk-r);

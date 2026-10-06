@@ -1461,6 +1461,26 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Historiku Full Page View Styling */
+        .historiku-full-view {
+            display: none;
+            animation: fadeInHistorikuView 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .historiku-page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        @keyframes fadeInHistorikuView {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .master-header-card {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
@@ -2395,24 +2415,21 @@
                 </div>
 
                 <!-- HistoriKu: Riwayat Transaksi Asli Android -->
-                <div class="feature-card" style="--feature-accent: #10B981; cursor: pointer;" onclick="scrollToHistorikuSection()">
+                <div class="feature-card" style="--feature-accent: #10B981; cursor: pointer;" onclick="openHistorikuView(activeStoreId)">
                     <div>
                         <div class="feature-card-top">
                             <div class="feature-icon">📜</div>
                             <div class="feature-title">HistoriKu Transaksi Asli</div>
                         </div>
-                        <p class="feature-desc">Riwayat itemized per-modul (Tarik, Topup, Voucher, Notifikasi Bank), controller stepper &amp; voice TTS.</p>
+                        <p class="feature-desc">Buka halaman penuh riwayat itemized per-modul (Tarik, Topup, Voucher, Notifikasi Bank), controller stepper &amp; voice TTS.</p>
                     </div>
                     <div class="feature-action">
-                        <span>Lihat Rincian &amp; Verifikasi</span>
-                        <span>&darr;</span>
+                        <span>Buka Halaman HistoriKu</span>
+                        <span>&rarr;</span>
                     </div>
                 </div>
 
             </div>
-
-            <!-- SECTION HISTORIKU TRANSAKSI ASLI PER-CABANG -->
-            <div id="branchHistorikuContainer" style="margin-top: 24px;"></div>
         </section>
 
         <!-- VIEW 3: HALAMAN MASTER DATA KARYAWAN & RIWAYAT MUTASI -->
@@ -2543,6 +2560,16 @@
                     </div>
                 </div>
             </div>
+        </section>
+
+        <!-- VIEW 4: HALAMAN PENUH HISTORIKU TRANSAKSI ASLI -->
+        <section id="historikuView" class="historiku-full-view" style="display: none;">
+            <div class="historiku-page-header">
+                <button type="button" class="btn-back-stores" onclick="backFromHistorikuView()">
+                    &larr; <span id="historikuBackBtnLabel">Kembali ke Cabang</span>
+                </button>
+            </div>
+            <div id="branchHistorikuContainer"></div>
         </section>
 
     </div>
@@ -4222,6 +4249,8 @@
                         renderStoresGrid();
                         const dv2 = document.getElementById('storeDetailView');
                         if (activeStoreId && dv2 && dv2.classList.contains('active')) selectStore(activeStoreId);
+                        const hv = document.getElementById('historikuView');
+                        if (activeStoreId && hv && hv.style.display !== 'none') openHistorikuView(activeStoreId);
                         const mv = document.getElementById('masterEmployeesView');
                         if (mv && mv.style.display !== 'none') {
                             renderStoreFilterChips();
@@ -4276,6 +4305,8 @@
 
                 if (viewParam === 'master' || viewParam === 'employees') {
                     openMasterEmployeesView(storeParam);
+                } else if (viewParam === 'historiku') {
+                    openHistorikuView(storeParam);
                 } else if (storeParam && storesData.some(s => s.id === storeParam)) {
                     selectStore(storeParam);
                 }
@@ -5138,16 +5169,90 @@
                     </div>`;
             }
 
-            // Muat HistoriKu Transaksi Asli untuk cabang ini
+            const hView = document.getElementById('historikuView');
+            if (hView) hView.style.display = 'none';
+        }
+
+        let previousViewBeforeHistoriku = 'storeDetail';
+
+        function openHistorikuView(storeId = null) {
+            storeId = storeId || activeStoreId;
+            const store = storesData.find(s => s.id === storeId);
+            if (!store) return;
+
+            activeStoreId = store.id;
+
+            // Tentukan view asal sebelum masuk ke HistoriKu
+            const detailView = document.getElementById('storeDetailView');
+            if (detailView && detailView.classList.contains('active')) {
+                previousViewBeforeHistoriku = 'storeDetail';
+            } else {
+                previousViewBeforeHistoriku = 'storesList';
+            }
+
+            // Atur label tombol kembali
+            const backLabel = document.getElementById('historikuBackBtnLabel');
+            if (backLabel) {
+                backLabel.innerText = previousViewBeforeHistoriku === 'storeDetail'
+                    ? `Kembali ke Cabang ${store.name}`
+                    : 'Kembali ke Semua Cabang';
+            }
+
+            // Sembunyikan view lainnya
+            const storesList = document.getElementById('storesListView');
+            if (storesList) storesList.style.display = 'none';
+            if (detailView) detailView.classList.remove('active');
+            const masterView = document.getElementById('masterEmployeesView');
+            if (masterView) masterView.style.display = 'none';
+
+            // Tampilkan historikuView dan lebarkan kontainer ke mode wide
+            const hView = document.getElementById('historikuView');
+            if (hView) hView.style.display = 'block';
+            const mainContainer = document.getElementById('mainApp');
+            if (mainContainer) mainContainer.classList.add('container-wide');
+
+            // Update URL search parameters
+            try {
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('view', 'historiku');
+                currentUrl.searchParams.set('store', store.id);
+                window.history.replaceState({}, '', currentUrl.toString());
+            } catch(e) {}
+
+            // Muat dan render data HistoriKu untuk cabang ini
             if (window.KspHistoriku && typeof window.KspHistoriku.loadForStore === 'function') {
                 window.KspHistoriku.loadForStore(store.id, store.name);
             }
+
+            // Scroll mulus ke posisi atas halaman
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function scrollToHistorikuSection() {
-            const el = document.getElementById('branchHistorikuContainer');
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        function backFromHistorikuView() {
+            // Tutup controller bar dan hentikan audio reader jika aktif
+            if (window.KspHistoriku) {
+                if (typeof window.KspHistoriku.closeItemNavBar === 'function') window.KspHistoriku.closeItemNavBar();
+                if (typeof window.KspHistoriku.stopSpeaking === 'function') window.KspHistoriku.stopSpeaking();
+            }
+
+            const hView = document.getElementById('historikuView');
+            if (hView) hView.style.display = 'none';
+            const mainContainer = document.getElementById('mainApp');
+            if (mainContainer) mainContainer.classList.remove('container-wide');
+
+            try {
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.delete('view');
+                if (previousViewBeforeHistoriku !== 'storeDetail') {
+                    currentUrl.searchParams.delete('store');
+                }
+                window.history.replaceState({}, '', currentUrl.pathname + (currentUrl.search ? currentUrl.search : ''));
+            } catch(e) {}
+
+            if (previousViewBeforeHistoriku === 'storeDetail' && activeStoreId) {
+                selectStore(activeStoreId);
+            } else {
+                backToStoresList();
             }
         }
 
@@ -5173,6 +5278,8 @@
             const savedStoreId = localStorage.getItem('kspcheck_active_store_id') || (storesData[0] ? storesData[0].id : '');
             const detailView = document.getElementById('storeDetailView');
             if (detailView) detailView.classList.remove('active');
+            const hView = document.getElementById('historikuView');
+            if (hView) hView.style.display = 'none';
             const masterView = document.getElementById('masterEmployeesView');
             if (masterView) masterView.style.display = 'none';
             const mainContainer = document.getElementById('mainApp');
