@@ -18,7 +18,7 @@
   --r:         12px;
   --r-sm:      8px;
   --r-xs:      4px;
-  --header-h:  56px;
+  --header-h:  38px;
 }
 [data-theme="dark"] {
   --bg:        #0F172A;
@@ -50,7 +50,7 @@ body{
 header{
   background:var(--surface);
   border-bottom:1px solid var(--border);
-  padding:0 20px;
+  padding:3px 14px;
   min-height:var(--header-h);
   height:auto;
   display:flex;
@@ -67,6 +67,9 @@ header{
   justify-content:space-between;
   width:100%;
   gap:8px;
+  min-height:auto;
+  height:auto;
+  padding:0;
 }
 .header-sub{
   display:none;
@@ -121,7 +124,7 @@ header{
 }
 .toggle-btn:hover{border-color:var(--accent);color:var(--accent);}
 .toggle-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
-#page-listview{padding:24px 16px;max-width:820px;margin:0 auto;}
+#page-listview{padding:0;max-width:820px;margin:0 auto;}
 .summary-bar{
   background:var(--surface);
   border:1px solid var(--border);
@@ -398,7 +401,7 @@ body.sticky-app-headers .lv-row {
 body.has-nav-bar #ksp-toast{bottom:175px;}
 @media(max-width:480px){body.has-nav-bar #ksp-toast{bottom:160px;}}
 @media(max-width:600px){
-  header{padding:8px 10px;overflow-x:clip;}
+  header{padding:2px 8px;overflow-x:clip;}
   .desktop-only{display:none !important;}
   .mobile-only{display:flex !important;}
   .logo{font-size:1.15rem;}
@@ -408,7 +411,7 @@ body.has-nav-bar #ksp-toast{bottom:175px;}
   .theme-btn, .settings-btn{width:32px;height:32px;font-size:.95rem;}
   .date-chip{padding:3px 9px;font-size:.7rem;}
   .lv-group-body{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  #page-listview{padding:12px 8px;}
+  #page-listview{padding:0;}
   .summary-bar{grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px;}
   .sb-v{font-size:1.05rem;}
   .lv-td, .lv-th{padding:8px 8px;}
@@ -820,7 +823,7 @@ body.has-nav-bar #ksp-toast{bottom:175px;}
 
 /* Bottom Navigation Bar: Split Action Card with Steppers */
 body.has-nav-bar #page-listview {
-  padding-bottom: 165px;
+  padding: 0 0 165px 0;
 }
 .item-nav-bar {
   position: fixed;

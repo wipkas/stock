@@ -97,10 +97,11 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 6px 0 16px 0;
+            padding: 6px 0 12px 0;
             border-bottom: 1px solid var(--card-border);
-            margin-bottom: 16px;
-            gap: 10px;
+            margin-bottom: 14px;
+            gap: 8px;
+            flex-wrap: nowrap;
         }
 
         .btn-nav-action {
@@ -1981,8 +1982,15 @@
         /* ===== Responsif (tablet & HP) ===== */
         @media (max-width: 720px) {
             .top-bar {
-                flex-wrap: wrap;
+                flex-wrap: nowrap;
                 gap: 8px;
+                padding: 4px 0 10px 0;
+            }
+
+            #btnTopMasterEmp {
+                padding: 7px 10px;
+                font-size: 11.5px;
+                white-space: nowrap;
             }
 
             .sub-header,

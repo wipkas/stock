@@ -217,7 +217,7 @@ function updateStickyAppHeadersBadge() {
 function syncHeaderHeight() {
   const hdr = document.querySelector('header');
   if (hdr) {
-    const h = hdr.offsetHeight || 56;
+    const h = hdr.offsetHeight || 38;
     document.documentElement.style.setProperty('--header-h', h + 'px');
   }
 }
