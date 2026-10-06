@@ -4345,6 +4345,214 @@ function getSampleDataForStore(storeId, storeName) {
   return base;
 }
 
+// ============================================================================
+// SUPABASE HISTORY SYNC & REALTIME INTEGRATION
+// ============================================================================
+let supabaseHistoryClient = null;
+let realtimeHistoryChannel = null;
+
+function getSupabaseClient() {
+  if (supabaseHistoryClient) return supabaseHistoryClient;
+  const cfg = window.KSP_SYNC_CONFIG || {};
+  if (cfg.url && cfg.key && window.supabase && typeof window.supabase.createClient === 'function') {
+    supabaseHistoryClient = window.supabase.createClient(cfg.url, cfg.key);
+  }
+  return supabaseHistoryClient;
+}
+
+function fetchSupabaseHistory(storeId, startDate, endDate) {
+  const cfg = window.KSP_SYNC_CONFIG || {};
+  if (!cfg.url || !cfg.key || !storeId) return Promise.resolve(null);
+
+  const baseUrl = cfg.url.replace(/\/+$/, '');
+  const headers = {
+    'apikey': cfg.key,
+    'Authorization': 'Bearer ' + cfg.key
+  };
+
+  let endpoint = `${baseUrl}/rest/v1/ksp_history_transactions?store_id=eq.${encodeURIComponent(storeId)}`;
+  if (startDate === endDate) {
+    endpoint += `&trx_date=eq.${startDate}`;
+  } else {
+    endpoint += `&trx_date=gte.${startDate}&trx_date=lte.${endDate}`;
+  }
+  endpoint += `&order=trx_date.asc,trx_time.asc,created_at.asc`;
+
+  return fetch(endpoint, { headers: headers })
+    .then(res => {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .catch(err => {
+      console.warn('[KspHistoriku] Gagal fetch Supabase history:', err);
+      return null;
+    });
+}
+
+function transformSupabaseRowsToReportData(rows, dateDb, shift, isMultiDay, startDate, endDate, dateList, storeId, storeName) {
+  const tarik = [];
+  const voucher = [];
+  const notif = [];
+  let totalMasuk = 0;
+  let totalKeluar = 0;
+
+  rows.forEach(r => {
+    const cat = (r.category || 'outcome').toLowerCase();
+    const amt = Number(r.amount) || 0;
+    const realAmt = Number(r.real_amount) || 0;
+    const feeAmt = Number(r.fee) || 0;
+    const costAmt = Number(r.cost) || 0;
+    const timeStr = r.trx_time ? String(r.trx_time).substring(0, 5) : '00:00';
+    const dateStr = r.trx_date || dateDb;
+
+    if (r.module_type === 'tarik') {
+      tarik.push({
+        id: r.local_id || r.id,
+        date: dateStr,
+        time: timeStr,
+        amount: amt,
+        jumtar: realAmt > 0 ? realAmt : amt,
+        adm: feeAmt,
+        type: cat,
+        name: r.customer_name || r.item_name || '',
+        app: r.app_name || 'Tarik Tunai'
+      });
+      if (cat === 'income') totalMasuk += amt;
+      else totalKeluar += amt;
+    } else if (r.module_type === 'voucher') {
+      voucher.push({
+        id: r.local_id || r.id,
+        date: dateStr,
+        time: timeStr,
+        provider: r.provider || r.app_name || 'VOUCHER',
+        productName: r.item_name || '',
+        amount: amt,
+        cost: costAmt,
+        category: 'outcome'
+      });
+      totalKeluar += amt;
+    } else if (r.module_type === 'notif') {
+      notif.push({
+        id: r.local_id || r.id,
+        date: dateStr,
+        time: timeStr,
+        app: r.app_package || 'other',
+        appName: r.app_name || 'Notifikasi',
+        amount: amt,
+        real: realAmt,
+        fee: feeAmt,
+        category: cat,
+        title: r.title || '',
+        name: r.customer_name || r.item_name || ''
+      });
+      if (cat === 'income') totalMasuk += amt;
+      else totalKeluar += amt;
+    }
+  });
+
+  const shiftLabel = shift === 1 ? 'Shift 1 (Pagi)' : (shift === 2 ? 'Shift 2 (Malam)' : 'Semua Shift');
+  const summary = {
+    totalMasuk: totalMasuk,
+    totalKeluar: totalKeluar,
+    totalBersih: totalKeluar - totalMasuk,
+    totalTrx: tarik.length + voucher.length + notif.length
+  };
+
+  if (isMultiDay) {
+    return {
+      isMultiDay: true,
+      dates: dateList,
+      startDate: startDate,
+      endDate: endDate,
+      dateDb: `${startDate} s/d ${endDate}`,
+      dateDisplay: `${formatDateDisplayShort(startDate)} - ${formatDateDisplayShort(endDate)}`,
+      shiftLabel: shiftLabel,
+      storeId: storeId,
+      storeName: storeName,
+      tarik: tarik,
+      notif: notif,
+      voucher: voucher,
+      topup: [],
+      summary: summary
+    };
+  } else {
+    return {
+      dateDb: dateDb,
+      dateDisplay: formatDateDisplayLong(dateDb),
+      shift: shift || 0,
+      shiftLabel: shiftLabel,
+      storeId: storeId,
+      storeName: storeName,
+      tarik: tarik,
+      notif: notif,
+      voucher: voucher,
+      topup: [],
+      summary: summary
+    };
+  }
+}
+
+function initSupabaseRealtime(storeId) {
+  const client = getSupabaseClient();
+  if (!client || !storeId) return;
+
+  if (realtimeHistoryChannel) {
+    try { client.removeChannel(realtimeHistoryChannel); } catch(e) {}
+    realtimeHistoryChannel = null;
+  }
+
+  try {
+    realtimeHistoryChannel = client
+      .channel('public:ksp_history_transactions:' + storeId)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'ksp_history_transactions',
+        filter: 'store_id=eq.' + storeId
+      }, function(payload) {
+        console.log('[KspHistoriku Realtime] Event:', payload);
+        handleRealtimeTransactionEvent(payload);
+      })
+      .subscribe();
+  } catch (err) {
+    console.warn('[KspHistoriku] Gagal inisialisasi Realtime:', err);
+  }
+}
+
+function handleRealtimeTransactionEvent(payload) {
+  const ev = payload.eventType;
+  const row = payload.new || payload.old;
+  if (!row) return;
+
+  const rowDate = row.trx_date;
+  const isMulti = window.ACTIVE_PERIOD_MODE === 'multiday';
+  let isRelevant = false;
+
+  if (isMulti && window.REPORT_DATA && window.REPORT_DATA.startDate && window.REPORT_DATA.endDate) {
+    isRelevant = rowDate >= window.REPORT_DATA.startDate && rowDate <= window.REPORT_DATA.endDate;
+  } else if (window.REPORT_DATA && window.REPORT_DATA.dateDb) {
+    isRelevant = rowDate === window.REPORT_DATA.dateDb;
+  }
+
+  if (isRelevant) {
+    const sId = window.ACTIVE_STORE_ID;
+    const sName = window.ACTIVE_STORE_NAME;
+    if (isMulti) {
+      loadMultiDayForStore(sId, sName, window.REPORT_DATA.startDate, window.REPORT_DATA.endDate);
+    } else {
+      window.KspHistoriku.loadForStore(sId, sName, window.REPORT_DATA.dateDb);
+    }
+
+    if (ev === 'INSERT') {
+      showToast('⚡ Transaksi Baru: ' + (row.app_name || row.module_type) + ' Rp ' + (Number(row.amount) || 0).toLocaleString('id-ID'));
+    } else if (ev === 'UPDATE') {
+      showToast('✏️ Transaksi Diperbarui: ' + (row.app_name || row.module_type));
+    } else if (ev === 'DELETE') {
+      showToast('🗑️ Transaksi Dihapus / Dibatalkan');
+    }
+  }
+}
+
 function loadMultiDayForStore(storeId, storeName, startDate, endDate) {
   window.ACTIVE_STORE_ID = storeId;
   window.ACTIVE_STORE_NAME = storeName || 'Cabang';
@@ -4356,7 +4564,6 @@ function loadMultiDayForStore(storeId, storeName, startDate, endDate) {
   let mergedTarik = [];
   let mergedNotif = [];
   let mergedVoucher = [];
-  let mergedTopup = [];
   let foundAny = false;
 
   dateList.forEach(dKey => {
@@ -4369,7 +4576,6 @@ function loadMultiDayForStore(storeId, storeName, startDate, endDate) {
           if (parsed.tarik) parsed.tarik.forEach(item => { item.date = dKey; mergedTarik.push(item); });
           if (parsed.notif) parsed.notif.forEach(item => { item.date = dKey; mergedNotif.push(item); });
           if (parsed.voucher) parsed.voucher.forEach(item => { item.date = dKey; mergedVoucher.push(item); });
-          if (parsed.topup) parsed.topup.forEach(item => { item.date = dKey; mergedTopup.push(item); });
         }
       }
     } catch(e) {}
@@ -4380,7 +4586,6 @@ function loadMultiDayForStore(storeId, storeName, startDate, endDate) {
     mergedTarik = sample.tarik;
     mergedNotif = sample.notif;
     mergedVoucher = sample.voucher;
-    mergedTopup = sample.topup;
   }
 
   const multiData = {
@@ -4396,7 +4601,7 @@ function loadMultiDayForStore(storeId, storeName, startDate, endDate) {
     tarik: mergedTarik,
     notif: mergedNotif,
     voucher: mergedVoucher,
-    topup: mergedTopup
+    topup: []
   };
 
   window.REPORT_DATA = multiData;
@@ -4404,6 +4609,22 @@ function loadMultiDayForStore(storeId, storeName, startDate, endDate) {
   renderReport(window.REPORT_DATA);
   applyInitialGroupCollapse();
   loadAndApplyReportEdits();
+
+  // Ambil data asli dari Supabase Cloud
+  fetchSupabaseHistory(storeId, startDate, endDate).then(rows => {
+    if (rows && Array.isArray(rows) && rows.length > 0) {
+      const remoteData = transformSupabaseRowsToReportData(
+        rows, `${startDate} s/d ${endDate}`, 0, true, startDate, endDate, dateList, storeId, storeName
+      );
+      window.REPORT_DATA = remoteData;
+      renderReport(window.REPORT_DATA);
+      applyInitialGroupCollapse();
+      loadAndApplyReportEdits();
+      showToast('☁️ Cloud: ' + rows.length + ' transaksi termuat');
+    }
+  });
+
+  initSupabaseRealtime(storeId);
 }
 
 function updateDateDisplayUI(text) {
@@ -4603,6 +4824,25 @@ window.KspHistoriku = {
     renderReport(window.REPORT_DATA);
     applyInitialGroupCollapse();
     loadAndApplyReportEdits();
+
+    // Ambil data asli dari Supabase Cloud
+    fetchSupabaseHistory(storeId, nowKey, nowKey).then(rows => {
+      if (rows && Array.isArray(rows) && rows.length > 0) {
+        const remoteData = transformSupabaseRowsToReportData(
+          rows, nowKey, shiftNum || 0, false, nowKey, nowKey, [nowKey], storeId, storeName
+        );
+        window.REPORT_DATA = remoteData;
+        try {
+          localStorage.setItem('ksp_historiku_data_' + storeId + '_' + nowKey, JSON.stringify(remoteData));
+        } catch(e) {}
+        renderReport(window.REPORT_DATA);
+        applyInitialGroupCollapse();
+        loadAndApplyReportEdits();
+        showToast('☁️ Cloud: ' + rows.length + ' transaksi termuat');
+      }
+    });
+
+    initSupabaseRealtime(storeId);
   },
   loadMultiDayForStore: loadMultiDayForStore,
   setPeriodMode: setPeriodMode,
