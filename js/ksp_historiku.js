@@ -3721,120 +3721,50 @@ function renderReport(data) {
   if (!container) return;
   container.innerHTML = '';
 
-  // Modular group renderers respecting moduleOrder
-  const moduleRenderers = {
-    tarik: function() {
-      // 1. Tarik Group
-      if (!data.tarik || data.tarik.length === 0) return;
-      let tarikMasuk = 0;
-      let tarikKeluar = 0;
-      const isOutcomeOnly = data.tarik.every(item => String(item.type || '').toLowerCase() !== 'income');
-      let rowsHtml = '';
+  const isMultiDay = Boolean(data.isMultiDay || (data.dates && data.dates.length > 1) || (window.ACTIVE_PERIOD_MODE === 'multiday'));
 
-      data.tarik.forEach((item, idx) => {
-        totalTrx++;
-        const amt = Math.round(item.amount || item.jumtar || 0);
-        const isIncome = String(item.type || '').toLowerCase() === 'income';
-        if (isIncome) {
-          tarikMasuk += amt;
-          totalMasuk += amt;
-        } else {
-          tarikKeluar += amt;
-          totalKeluar += amt;
-        }
-        const desc = item.name || item.desc || item.app || 'Tarik Tunai';
-        const jumtar = item.jumtar || amt;
-        const adm = item.adm || 0;
-        rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm);
-      });
-
-      const theadHtml = isOutcomeOnly
-        ? `<thead class="lv-thead"><tr>
-            <th class="lv-th c" style="width:36px;">#</th>
-            <th class="lv-th c" style="width:65px;">Waktu</th>
-            <th class="lv-th l">Nama</th>
-            <th class="lv-th r" style="width:140px;">Keluar</th>
-          </tr></thead>`
-        : `<thead class="lv-thead"><tr>
-            <th class="lv-th c">#</th>
-            <th class="lv-th c">Waktu</th>
-            <th class="lv-th r">Keluar</th>
-            <th class="lv-th r">Masuk</th>
-          </tr></thead>`;
-
-      const metaHtml = isOutcomeOnly
-        ? `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${ringkasMode ? '' : 'Keluar: '}${fmtAmt(tarikKeluar)}</span>`
-        : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${fmtAmt(tarikKeluar)}</span> / 
-           <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" title="Klik untuk salin Masuk" style="color:var(--income)">${fmtAmt(tarikMasuk)}</span>`;
-
-      const tarikGroupHtml = `
-        <div class="lv-group" data-group-id="tarik" data-rekap-label="💸 Tarik Tunai">
-          <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
-            <button class="grp-toggle-btn" title="Lipat / Buka grup" onclick="toggleGroupCollapse(this, event)">▼</button>
-            <span class="lv-group-icon">💸</span>
-            <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">Tarik</span>
-            <span class="grp-done-badge">✓ Selesai</span>
-            <span class="lv-group-meta">
-              ${metaHtml}
-            </span>
-            <button class="g-act-btn" onclick="speakGroup(this, event)" title="Bacakan nilai grup ini">🔊</button>
-          </div>
-          <div class="lv-group-body">
-            <table class="lv-table">
-              ${theadHtml}
-              <tbody>${rowsHtml}</tbody>
-            </table>
-          </div>
-        </div>`;
-      container.innerHTML += tarikGroupHtml;
-    },
-
-    notif: function() {
-      // 2. Notification Groups (group by app)
-      if (!data.notif || data.notif.length === 0) return;
-      const notifByApp = {};
-      data.notif.forEach(item => {
-        const appKey = item.app || 'other';
-        if (!notifByApp[appKey]) notifByApp[appKey] = [];
-        notifByApp[appKey].push(item);
-      });
-
-      const savedNotifOrder = data.notifAppOrder || (window.REPORT_CONFIG && window.REPORT_CONFIG.notifAppOrder) || [];
-      const orderedAppKeys = [];
-      savedNotifOrder.forEach(k => {
-        const key = String(k).trim();
-        if (notifByApp[key] && !orderedAppKeys.includes(key)) {
-          orderedAppKeys.push(key);
-        }
-      });
-      Object.keys(notifByApp).forEach(key => {
-        if (!orderedAppKeys.includes(key)) {
-          orderedAppKeys.push(key);
-        }
-      });
-
-      orderedAppKeys.forEach(appKey => {
-        const items = notifByApp[appKey];
-        const displayName = items[0].appName || appKey;
-        const icon = getAppIcon(appKey);
-        let appMasuk = 0;
-        let appKeluar = 0;
-        const isOutcomeOnly = items.every(item => String(item.category || '').toLowerCase() !== 'income');
+  if (isMultiDay && window.KspMultiDayLayouts && typeof window.KspMultiDayLayouts.render === 'function') {
+    const currentLayout = window.CURRENT_LAYOUT_MODE || (function() {
+      try { return localStorage.getItem('ksp_multiday_layout'); } catch(e){ return null; }
+    })() || 'book_swipe';
+    const opt = {
+      renderRowHtml: renderRowHtml,
+      renderVoucherRowHtml: renderVoucherRowHtml,
+      ringkasMode: ringkasMode,
+      fmtAmt: fmtAmt,
+      getAppIcon: getAppIcon,
+      escapeHtml: escapeHtml
+    };
+    const res = window.KspMultiDayLayouts.render(container, data, currentLayout, opt);
+    totalMasuk = res.totalMasuk || 0;
+    totalKeluar = res.totalKeluar || 0;
+    totalTrx = res.totalTrx || 0;
+  } else {
+    // Modular group renderers respecting moduleOrder
+    const moduleRenderers = {
+      tarik: function() {
+        // 1. Tarik Group
+        if (!data.tarik || data.tarik.length === 0) return;
+        let tarikMasuk = 0;
+        let tarikKeluar = 0;
+        const isOutcomeOnly = data.tarik.every(item => String(item.type || '').toLowerCase() !== 'income');
         let rowsHtml = '';
 
-        items.forEach((item, idx) => {
+        data.tarik.forEach((item, idx) => {
           totalTrx++;
-          const amt = Math.round(item.amount || 0);
-          const isIncome = String(item.category || '').toLowerCase() === 'income';
+          const amt = Math.round(item.amount || item.jumtar || 0);
+          const isIncome = String(item.type || '').toLowerCase() === 'income';
           if (isIncome) {
-            appMasuk += amt;
+            tarikMasuk += amt;
             totalMasuk += amt;
           } else {
-            appKeluar += amt;
+            tarikKeluar += amt;
             totalKeluar += amt;
           }
-          const desc = item.name || item.title || displayName;
-          rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee);
+          const desc = item.name || item.desc || item.app || 'Tarik Tunai';
+          const jumtar = item.jumtar || amt;
+          const adm = item.adm || 0;
+          rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm);
         });
 
         const theadHtml = isOutcomeOnly
@@ -3852,16 +3782,16 @@ function renderReport(data) {
             </tr></thead>`;
 
         const metaHtml = isOutcomeOnly
-          ? `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${ringkasMode ? '' : 'Keluar: '}${fmtAmt(appKeluar)}</span>`
-          : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${fmtAmt(appKeluar)}</span> / 
-             <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" title="Klik untuk salin Masuk" style="color:var(--income)">${fmtAmt(appMasuk)}</span>`;
+          ? `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${ringkasMode ? '' : 'Keluar: '}${fmtAmt(tarikKeluar)}</span>`
+          : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${fmtAmt(tarikKeluar)}</span> / 
+             <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" title="Klik untuk salin Masuk" style="color:var(--income)">${fmtAmt(tarikMasuk)}</span>`;
 
-        const appGroupHtml = `
-          <div class="lv-group" data-group-id="${escapeHtml(appKey)}" data-app-key="${escapeHtml(appKey)}" data-rekap-label="${icon} ${escapeHtml(displayName)}">
+        const tarikGroupHtml = `
+          <div class="lv-group" data-group-id="tarik" data-rekap-label="💸 Tarik Tunai">
             <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
               <button class="grp-toggle-btn" title="Lipat / Buka grup" onclick="toggleGroupCollapse(this, event)">▼</button>
-              <span class="lv-group-icon">${icon}</span>
-              <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">${escapeHtml(displayName)}</span>
+              <span class="lv-group-icon">💸</span>
+              <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">Tarik</span>
               <span class="grp-done-badge">✓ Selesai</span>
               <span class="lv-group-meta">
                 ${metaHtml}
@@ -3875,142 +3805,232 @@ function renderReport(data) {
               </table>
             </div>
           </div>`;
-        container.innerHTML += appGroupHtml;
-      });
-    },
+        container.innerHTML += tarikGroupHtml;
+      },
 
-    topup: function() {
-      // 3. TopUp Group (Jika data topup tersedia)
-      if (!data.topup || data.topup.length === 0) return;
-      let topUpMasuk = 0;
-      let topUpKeluar = 0;
-      let topUpRowsHtml = '';
-
-      data.topup.forEach((item, idx) => {
-        totalTrx++;
-        const amtCharged = Math.round(item.amount || (item.nominal + item.fee) || 0);
-        const amtNominal = Math.round(item.nominal || 0);
-        topUpMasuk += amtCharged;
-        topUpKeluar += amtNominal;
-        totalMasuk += amtCharged;
-        totalKeluar += amtNominal;
-
-        const desc = (item.customerName ? item.customerName + ' - ' : '') + (item.category || 'TopUp') + (item.destination ? ' (' + item.destination + ')' : '');
-        topUpRowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee);
-      });
-
-      const topUpTheadHtml = `<thead class="lv-thead"><tr>
-          <th class="lv-th c">#</th>
-          <th class="lv-th c">Waktu</th>
-          <th class="lv-th r">Modal (Keluar)</th>
-          <th class="lv-th r">Tagihan (Masuk)</th>
-        </tr></thead>`;
-
-      const topUpMetaHtml = `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${fmtAmt(topUpKeluar)}</span> / 
-         <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" title="Klik untuk salin Masuk" style="color:var(--income)">${fmtAmt(topUpMasuk)}</span>`;
-
-      const topUpGroupHtml = `
-        <div class="lv-group" data-group-id="topup" data-rekap-label="📱 Modul TopUp">
-          <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
-            <button class="grp-toggle-btn" title="Lipat / Buka grup" onclick="toggleGroupCollapse(this, event)">▼</button>
-            <span class="lv-group-icon">📱</span>
-            <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">TopUp</span>
-            <span class="grp-done-badge">✓ Selesai</span>
-            <span class="lv-group-meta">${topUpMetaHtml}</span>
-            <button class="g-act-btn" onclick="speakGroup(this, event)" title="Bacakan semua topup">🔊</button>
-          </div>
-          <div class="lv-group-body">
-            <table class="lv-table">
-              ${topUpTheadHtml}
-              <tbody>${topUpRowsHtml}</tbody>
-            </table>
-          </div>
-        </div>`;
-      container.innerHTML += topUpGroupHtml;
-    },
-
-    voucher: function() {
-      // 4. Voucher Group (Satu header utama, dibagi per provider, nomor urut kontinu)
-      if (!data.voucher || data.voucher.length === 0) return;
-      const voucherByProv = {};
-      data.voucher.forEach(item => {
-        let provKey = (item.provider || 'VOUCHER').trim().toUpperCase();
-        if (!voucherByProv[provKey]) voucherByProv[provKey] = [];
-        voucherByProv[provKey].push(item);
-      });
-
-      let voucherTotalKeluar = 0;
-      let voucherTotalTrx = 0;
-      let voucherRowsHtml = '';
-      let voucherSeqIdx = 1;
-
-      for (const provKey in voucherByProv) {
-        const items = voucherByProv[provKey];
-        const provLabel = (provKey === 'VOUCHER') ? 'Umum' : provKey;
-        let provKeluar = 0;
-        let provRowsHtml = '';
-
-        items.forEach((item) => {
-          totalTrx++;
-          voucherTotalTrx++;
-          const amt = Math.round(item.amount || 0);
-          provKeluar += amt;
-          voucherTotalKeluar += amt;
-          totalKeluar += amt;
-
-          const prodName = item.productName || provKey;
-          const time = item.time || '00:00';
-          provRowsHtml += renderVoucherRowHtml(voucherSeqIdx++, time, prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost);
+      notif: function() {
+        // 2. Notification Groups (group by app)
+        if (!data.notif || data.notif.length === 0) return;
+        const notifByApp = {};
+        data.notif.forEach(item => {
+          const appKey = item.app || 'other';
+          if (!notifByApp[appKey]) notifByApp[appKey] = [];
+          notifByApp[appKey].push(item);
         });
 
-        const subHeaderHtml = `
-          <tr class="lv-subhd-row">
-            <td colspan="4" class="lv-subhd">
-              <div class="lv-subhd-inner">
-                <span class="lv-subhd-title">📶 ${escapeHtml(provLabel)}</span>
-                <span class="lv-subhd-meta">${items.length} item · ${fmtAmt(provKeluar)}</span>
-              </div>
-            </td>
-          </tr>`;
+        const savedNotifOrder = data.notifAppOrder || (window.REPORT_CONFIG && window.REPORT_CONFIG.notifAppOrder) || [];
+        const orderedAppKeys = [];
+        savedNotifOrder.forEach(k => {
+          const key = String(k).trim();
+          if (notifByApp[key] && !orderedAppKeys.includes(key)) {
+            orderedAppKeys.push(key);
+          }
+        });
+        Object.keys(notifByApp).forEach(key => {
+          if (!orderedAppKeys.includes(key)) {
+            orderedAppKeys.push(key);
+          }
+        });
 
-        voucherRowsHtml += subHeaderHtml + provRowsHtml;
-      }
+        orderedAppKeys.forEach(appKey => {
+          const items = notifByApp[appKey];
+          const displayName = items[0].appName || appKey;
+          const icon = getAppIcon(appKey);
+          let appMasuk = 0;
+          let appKeluar = 0;
+          const isOutcomeOnly = items.every(item => String(item.category || '').toLowerCase() !== 'income');
+          let rowsHtml = '';
 
-      const voucherGroupHtml = `
-        <div class="lv-group" data-group-id="voucher" data-rekap-label="🎫 Voucher Fisik / Game">
-          <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
-            <button class="grp-toggle-btn" title="Lipat / Buka grup" onclick="toggleGroupCollapse(this, event)">▼</button>
-            <span class="lv-group-icon">🎫</span>
-            <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">Voucher</span>
-            <span class="grp-done-badge">✓ Selesai</span>
-            <span class="lv-group-meta">
-              <span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${ringkasMode ? '' : 'Keluar: '}${fmtAmt(voucherTotalKeluar)}</span>
-            </span>
-            <button class="g-act-btn" onclick="speakGroup(this, event)" title="Bacakan semua voucher">🔊</button>
-          </div>
-          <div class="lv-group-body">
-            <table class="lv-table lv-table-voucher">
-              <thead class="lv-thead"><tr>
+          items.forEach((item, idx) => {
+            totalTrx++;
+            const amt = Math.round(item.amount || 0);
+            const isIncome = String(item.category || '').toLowerCase() === 'income';
+            if (isIncome) {
+              appMasuk += amt;
+              totalMasuk += amt;
+            } else {
+              appKeluar += amt;
+              totalKeluar += amt;
+            }
+            const desc = item.name || item.title || displayName;
+            rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee);
+          });
+
+          const theadHtml = isOutcomeOnly
+            ? `<thead class="lv-thead"><tr>
                 <th class="lv-th c" style="width:36px;">#</th>
                 <th class="lv-th c" style="width:65px;">Waktu</th>
                 <th class="lv-th l">Nama</th>
                 <th class="lv-th r" style="width:140px;">Keluar</th>
-              </tr></thead>
-              <tbody>${voucherRowsHtml}</tbody>
-            </table>
-          </div>
-        </div>`;
-      container.innerHTML += voucherGroupHtml;
-    }
-  };
+              </tr></thead>`
+            : `<thead class="lv-thead"><tr>
+                <th class="lv-th c">#</th>
+                <th class="lv-th c">Waktu</th>
+                <th class="lv-th r">Keluar</th>
+                <th class="lv-th r">Masuk</th>
+              </tr></thead>`;
 
-  const moduleOrder = data.moduleOrder || (window.REPORT_CONFIG && window.REPORT_CONFIG.moduleOrder) || ['tarik', 'notif', 'voucher', 'topup'];
-  moduleOrder.forEach(modKey => {
-    const fn = moduleRenderers[String(modKey).toLowerCase().trim()];
-    if (typeof fn === 'function') {
-      fn();
-    }
-  });
+          const metaHtml = isOutcomeOnly
+            ? `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${ringkasMode ? '' : 'Keluar: '}${fmtAmt(appKeluar)}</span>`
+            : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${fmtAmt(appKeluar)}</span> / 
+               <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" title="Klik untuk salin Masuk" style="color:var(--income)">${fmtAmt(appMasuk)}</span>`;
+
+          const appGroupHtml = `
+            <div class="lv-group" data-group-id="${escapeHtml(appKey)}" data-app-key="${escapeHtml(appKey)}" data-rekap-label="${icon} ${escapeHtml(displayName)}">
+              <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
+                <button class="grp-toggle-btn" title="Lipat / Buka grup" onclick="toggleGroupCollapse(this, event)">▼</button>
+                <span class="lv-group-icon">${icon}</span>
+                <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">${escapeHtml(displayName)}</span>
+                <span class="grp-done-badge">✓ Selesai</span>
+                <span class="lv-group-meta">
+                  ${metaHtml}
+                </span>
+                <button class="g-act-btn" onclick="speakGroup(this, event)" title="Bacakan nilai grup ini">🔊</button>
+              </div>
+              <div class="lv-group-body">
+                <table class="lv-table">
+                  ${theadHtml}
+                  <tbody>${rowsHtml}</tbody>
+                </table>
+              </div>
+            </div>`;
+          container.innerHTML += appGroupHtml;
+        });
+      },
+
+      topup: function() {
+        // 3. TopUp Group (Jika data topup tersedia)
+        if (!data.topup || data.topup.length === 0) return;
+        let topUpMasuk = 0;
+        let topUpKeluar = 0;
+        let topUpRowsHtml = '';
+
+        data.topup.forEach((item, idx) => {
+          totalTrx++;
+          const amtCharged = Math.round(item.amount || (item.nominal + item.fee) || 0);
+          const amtNominal = Math.round(item.nominal || 0);
+          topUpMasuk += amtCharged;
+          topUpKeluar += amtNominal;
+          totalMasuk += amtCharged;
+          totalKeluar += amtNominal;
+
+          const desc = (item.customerName ? item.customerName + ' - ' : '') + (item.category || 'TopUp') + (item.destination ? ' (' + item.destination + ')' : '');
+          topUpRowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee);
+        });
+
+        const topUpTheadHtml = `<thead class="lv-thead"><tr>
+            <th class="lv-th c">#</th>
+            <th class="lv-th c">Waktu</th>
+            <th class="lv-th r">Modal (Keluar)</th>
+            <th class="lv-th r">Tagihan (Masuk)</th>
+          </tr></thead>`;
+
+        const topUpMetaHtml = `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${fmtAmt(topUpKeluar)}</span> / 
+           <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" title="Klik untuk salin Masuk" style="color:var(--income)">${fmtAmt(topUpMasuk)}</span>`;
+
+        const topUpGroupHtml = `
+          <div class="lv-group" data-group-id="topup" data-rekap-label="📱 Modul TopUp">
+            <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
+              <button class="grp-toggle-btn" title="Lipat / Buka grup" onclick="toggleGroupCollapse(this, event)">▼</button>
+              <span class="lv-group-icon">📱</span>
+              <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">TopUp</span>
+              <span class="grp-done-badge">✓ Selesai</span>
+              <span class="lv-group-meta">${topUpMetaHtml}</span>
+              <button class="g-act-btn" onclick="speakGroup(this, event)" title="Bacakan semua topup">🔊</button>
+            </div>
+            <div class="lv-group-body">
+              <table class="lv-table">
+                ${topUpTheadHtml}
+                <tbody>${topUpRowsHtml}</tbody>
+              </table>
+            </div>
+          </div>`;
+        container.innerHTML += topUpGroupHtml;
+      },
+
+      voucher: function() {
+        // 4. Voucher Group (Satu header utama, dibagi per provider, nomor urut kontinu)
+        if (!data.voucher || data.voucher.length === 0) return;
+        const voucherByProv = {};
+        data.voucher.forEach(item => {
+          let provKey = (item.provider || 'VOUCHER').trim().toUpperCase();
+          if (!voucherByProv[provKey]) voucherByProv[provKey] = [];
+          voucherByProv[provKey].push(item);
+        });
+
+        let voucherTotalKeluar = 0;
+        let voucherTotalTrx = 0;
+        let voucherRowsHtml = '';
+        let voucherSeqIdx = 1;
+
+        for (const provKey in voucherByProv) {
+          const items = voucherByProv[provKey];
+          const provLabel = (provKey === 'VOUCHER') ? 'Umum' : provKey;
+          let provKeluar = 0;
+          let provRowsHtml = '';
+
+          items.forEach((item) => {
+            totalTrx++;
+            voucherTotalTrx++;
+            const amt = Math.round(item.amount || 0);
+            provKeluar += amt;
+            voucherTotalKeluar += amt;
+            totalKeluar += amt;
+
+            const prodName = item.productName || provKey;
+            const time = item.time || '00:00';
+            provRowsHtml += renderVoucherRowHtml(voucherSeqIdx++, time, prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost);
+          });
+
+          const subHeaderHtml = `
+            <tr class="lv-subhd-row">
+              <td colspan="4" class="lv-subhd">
+                <div class="lv-subhd-inner">
+                  <span class="lv-subhd-title">📶 ${escapeHtml(provLabel)}</span>
+                  <span class="lv-subhd-meta">${items.length} item · ${fmtAmt(provKeluar)}</span>
+                </div>
+              </td>
+            </tr>`;
+
+          voucherRowsHtml += subHeaderHtml + provRowsHtml;
+        }
+
+        const voucherGroupHtml = `
+          <div class="lv-group" data-group-id="voucher" data-rekap-label="🎫 Voucher Fisik / Game">
+            <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
+              <button class="grp-toggle-btn" title="Lipat / Buka grup" onclick="toggleGroupCollapse(this, event)">▼</button>
+              <span class="lv-group-icon">🎫</span>
+              <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">Voucher</span>
+              <span class="grp-done-badge">✓ Selesai</span>
+              <span class="lv-group-meta">
+                <span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${ringkasMode ? '' : 'Keluar: '}${fmtAmt(voucherTotalKeluar)}</span>
+              </span>
+              <button class="g-act-btn" onclick="speakGroup(this, event)" title="Bacakan semua voucher">🔊</button>
+            </div>
+            <div class="lv-group-body">
+              <table class="lv-table lv-table-voucher">
+                <thead class="lv-thead"><tr>
+                  <th class="lv-th c" style="width:36px;">#</th>
+                  <th class="lv-th c" style="width:65px;">Waktu</th>
+                  <th class="lv-th l">Nama</th>
+                  <th class="lv-th r" style="width:140px;">Keluar</th>
+                </tr></thead>
+                <tbody>${voucherRowsHtml}</tbody>
+              </table>
+            </div>
+          </div>`;
+        container.innerHTML += voucherGroupHtml;
+      }
+    };
+
+    const moduleOrder = data.moduleOrder || (window.REPORT_CONFIG && window.REPORT_CONFIG.moduleOrder) || ['tarik', 'notif', 'voucher', 'topup'];
+    moduleOrder.forEach(modKey => {
+      const fn = moduleRenderers[String(modKey).toLowerCase().trim()];
+      if (typeof fn === 'function') {
+        fn();
+      }
+    });
+  }
 
   // Summary Card values
   const totalBersih = totalKeluar - totalMasuk;
@@ -4196,6 +4216,109 @@ function parseAndLoadImportContent(text, fileName) {
   }
 }
 
+window.ACTIVE_PERIOD_MODE = 'singleday';
+window.CURRENT_LAYOUT_MODE = (function() {
+  try { return localStorage.getItem('ksp_multiday_layout'); } catch(e){ return null; }
+})() || 'book_swipe';
+
+function getTodayDbDate() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function formatDateDisplayShort(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+  } catch(e) { return dateStr; }
+}
+
+function getDatesInRange(startStr, endStr) {
+  const dates = [];
+  let curr = new Date(startStr + 'T00:00:00');
+  const end = new Date(endStr + 'T00:00:00');
+  while (curr <= end) {
+    dates.push(curr.getFullYear() + '-' + String(curr.getMonth() + 1).padStart(2, '0') + '-' + String(curr.getDate()).padStart(2, '0'));
+    curr.setDate(curr.getDate() + 1);
+  }
+  return dates;
+}
+
+function generateMockMultiDayData(storeId, storeName, dateList) {
+  const tarik = [];
+  const notif = [];
+  const voucher = [];
+  const topup = [];
+
+  const apps = [
+    { app: 'com.bca', name: 'BCA' },
+    { app: 'com.bri', name: 'BRImo' },
+    { app: 'id.dana', name: 'DANA' },
+    { app: 'com.mandiri.livin', name: 'Livin Mandiri' }
+  ];
+
+  const providers = ['TELKOMSEL', 'AXIS', 'INDOSAT', 'XL'];
+
+  dateList.forEach((d, dayIdx) => {
+    tarik.push({ id: 1000 + dayIdx * 10 + 1, date: d, time: '08:30', amount: 100000 + (dayIdx * 25000), type: 'outcome', desc: 'Tarik Tunai Bank' });
+    tarik.push({ id: 1000 + dayIdx * 10 + 2, date: d, time: '11:15', amount: 250000, type: 'outcome', desc: 'Tarik E-Wallet' });
+    if (dayIdx % 2 === 0) {
+      tarik.push({ id: 1000 + dayIdx * 10 + 3, date: d, time: '14:40', amount: 50000, type: 'income', desc: 'Setor Tunai' });
+    }
+
+    apps.forEach((a, aIdx) => {
+      const isInc = (aIdx !== 2);
+      notif.push({
+        id: 2000 + dayIdx * 20 + aIdx,
+        date: d,
+        app: a.app,
+        appName: a.name,
+        time: String(8 + aIdx * 2).padStart(2, '0') + ':25',
+        amount: 50000 * (aIdx + 1) + (dayIdx * 15000),
+        category: isInc ? 'income' : 'outcome',
+        name: isInc ? ('Transfer Masuk (' + a.name + ')') : ('Kirim Saldo (' + a.name + ')')
+      });
+    });
+
+    const prov = providers[dayIdx % providers.length];
+    voucher.push({
+      id: 3000 + dayIdx * 10 + 1,
+      date: d,
+      provider: prov,
+      productName: prov + ' 2.5GB',
+      time: '09:45',
+      amount: 15000,
+      cost: 13500,
+      category: 'outcome'
+    });
+    voucher.push({
+      id: 3000 + dayIdx * 10 + 2,
+      date: d,
+      provider: prov,
+      productName: prov + ' 5GB',
+      time: '15:20',
+      amount: 25000,
+      cost: 23000,
+      category: 'outcome'
+    });
+
+    topup.push({
+      id: 4000 + dayIdx * 10 + 1,
+      date: d,
+      time: '10:05',
+      customerName: 'Pelanggan ' + (dayIdx + 1),
+      category: 'DANA 50k',
+      destination: '081234567' + dayIdx,
+      nominal: 50000,
+      fee: 2000,
+      amount: 52000
+    });
+  });
+
+  return { tarik, notif, voucher, topup };
+}
+
 function loadSampleReportForCurrentStore() {
   window.REPORT_DATA = getSampleDataForStore(window.ACTIVE_STORE_ID, window.ACTIVE_STORE_NAME);
   renderReport(window.REPORT_DATA);
@@ -4211,17 +4334,206 @@ function getSampleDataForStore(storeId, storeName) {
   return base;
 }
 
+function loadMultiDayForStore(storeId, storeName, startDate, endDate) {
+  window.ACTIVE_STORE_ID = storeId;
+  window.ACTIVE_STORE_NAME = storeName || 'Cabang';
+  window.ACTIVE_PERIOD_MODE = 'multiday';
+  setPeriodMode('multiday');
+
+  const dateList = getDatesInRange(startDate, endDate);
+
+  let mergedTarik = [];
+  let mergedNotif = [];
+  let mergedVoucher = [];
+  let mergedTopup = [];
+  let foundAny = false;
+
+  dateList.forEach(dKey => {
+    try {
+      const raw = localStorage.getItem('ksp_historiku_data_' + storeId + '_' + dKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed) {
+          foundAny = true;
+          if (parsed.tarik) parsed.tarik.forEach(item => { item.date = dKey; mergedTarik.push(item); });
+          if (parsed.notif) parsed.notif.forEach(item => { item.date = dKey; mergedNotif.push(item); });
+          if (parsed.voucher) parsed.voucher.forEach(item => { item.date = dKey; mergedVoucher.push(item); });
+          if (parsed.topup) parsed.topup.forEach(item => { item.date = dKey; mergedTopup.push(item); });
+        }
+      }
+    } catch(e) {}
+  });
+
+  if (!foundAny) {
+    const sample = generateMockMultiDayData(storeId, storeName, dateList);
+    mergedTarik = sample.tarik;
+    mergedNotif = sample.notif;
+    mergedVoucher = sample.voucher;
+    mergedTopup = sample.topup;
+  }
+
+  const multiData = {
+    isMultiDay: true,
+    dates: dateList,
+    startDate: startDate,
+    endDate: endDate,
+    dateDb: `${startDate} s/d ${endDate}`,
+    dateDisplay: `${formatDateDisplayShort(startDate)} - ${formatDateDisplayShort(endDate)}`,
+    shiftLabel: 'Semua Shift',
+    storeId: storeId,
+    storeName: storeName,
+    tarik: mergedTarik,
+    notif: mergedNotif,
+    voucher: mergedVoucher,
+    topup: mergedTopup
+  };
+
+  window.REPORT_DATA = multiData;
+  updateDateDisplayUI(multiData.dateDisplay);
+  renderReport(window.REPORT_DATA);
+  applyInitialGroupCollapse();
+  loadAndApplyReportEdits();
+}
+
+function updateDateDisplayUI(text) {
+  const el = document.getElementById('currentDateDisplay');
+  if (el) el.textContent = text;
+  const chipDate = document.getElementById('chip-date');
+  if (chipDate) chipDate.textContent = text;
+}
+
+function setPeriodMode(mode) {
+  window.ACTIVE_PERIOD_MODE = mode;
+  const btnSingle = document.getElementById('btnPeriodSingle');
+  const btnMulti = document.getElementById('btnPeriodMulti');
+  const btnFormat = document.getElementById('btnFormatLayout');
+  if (btnSingle) btnSingle.classList.toggle('active', mode === 'singleday');
+  if (btnMulti) btnMulti.classList.toggle('active', mode === 'multiday');
+  if (btnFormat) btnFormat.style.display = (mode === 'multiday') ? 'inline-flex' : 'none';
+}
+
+function openFormatLayoutModal() {
+  const modal = document.getElementById('formatLayoutModal');
+  if (!modal) return;
+  const list = document.getElementById('formatLayoutOptionsList');
+  if (list && window.KspMultiDayLayouts) {
+    list.innerHTML = window.KspMultiDayLayouts.MODES.map(m => `
+      <div class="layout-option-card ${m.id === window.CURRENT_LAYOUT_MODE ? 'active' : ''}" onclick="KspHistoriku.selectFormatLayoutMode('${m.id}')">
+        <div class="layout-opt-icon">${m.icon}</div>
+        <div class="layout-opt-info">
+          <div class="layout-opt-title">${escapeHtml(m.name)} <span class="layout-opt-badge">${escapeHtml(m.badge)}</span></div>
+          <div class="layout-opt-desc">${escapeHtml(m.desc)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+  modal.classList.add('open');
+}
+
+function closeFormatLayoutModal() {
+  const modal = document.getElementById('formatLayoutModal');
+  if (modal) modal.classList.remove('open');
+}
+
+function selectFormatLayoutMode(modeId) {
+  window.CURRENT_LAYOUT_MODE = modeId;
+  try { localStorage.setItem('ksp_multiday_layout', modeId); } catch(e){}
+  updateLayoutModeUI();
+  closeFormatLayoutModal();
+  if (window.REPORT_DATA) {
+    renderReport(window.REPORT_DATA);
+  }
+  showToast('✓ Format tampilan diubah: ' + modeId);
+}
+
+function updateLayoutModeUI() {
+  const btn = document.getElementById('btnFormatLayout');
+  const label = document.getElementById('formatLayoutCurrentLabel');
+  if (window.KspMultiDayLayouts) {
+    const m = window.KspMultiDayLayouts.MODES.find(x => x.id === window.CURRENT_LAYOUT_MODE);
+    if (label && m) label.textContent = m.name;
+    if (btn && m) btn.title = 'Format Tampilan: ' + m.name;
+  }
+}
+
+function openDateRangePickerModal() {
+  const modal = document.getElementById('dateRangePickerModal');
+  if (!modal) return;
+  const startInput = document.getElementById('rangeStartDate');
+  const endInput = document.getElementById('rangeEndDate');
+  const todayStr = getTodayDbDate();
+  if (startInput && !startInput.value) startInput.value = todayStr;
+  if (endInput && !endInput.value) endInput.value = todayStr;
+  modal.classList.add('open');
+}
+
+function closeDateRangePickerModal() {
+  const modal = document.getElementById('dateRangePickerModal');
+  if (modal) modal.classList.remove('open');
+}
+
+function selectRangePreset(presetKey) {
+  const today = new Date();
+  const formatD = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  let start = formatD(today);
+  let end = formatD(today);
+
+  if (presetKey === 'yesterday') {
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    start = formatD(y); end = formatD(y);
+  } else if (presetKey === 'last7') {
+    const d7 = new Date(); d7.setDate(d7.getDate() - 6);
+    start = formatD(d7); end = formatD(today);
+  } else if (presetKey === 'last30') {
+    const d30 = new Date(); d30.setDate(d30.getDate() - 29);
+    start = formatD(d30); end = formatD(today);
+  } else if (presetKey === 'thisMonth') {
+    const m1 = new Date(today.getFullYear(), today.getMonth(), 1);
+    start = formatD(m1); end = formatD(today);
+  }
+
+  const startInput = document.getElementById('rangeStartDate');
+  const endInput = document.getElementById('rangeEndDate');
+  if (startInput) startInput.value = start;
+  if (endInput) endInput.value = end;
+
+  document.querySelectorAll('#dateRangePickerModal .btn-range-preset').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.preset === presetKey);
+  });
+}
+
+function applyDateRange() {
+  const startInput = document.getElementById('rangeStartDate');
+  const endInput = document.getElementById('rangeEndDate');
+  if (!startInput || !endInput) return;
+  const startDate = startInput.value;
+  const endDate = endInput.value;
+  if (!startDate || !endDate) {
+    alert('Pilih tanggal awal dan akhir!');
+    return;
+  }
+  if (startDate > endDate) {
+    alert('Tanggal awal tidak boleh lebih besar dari tanggal akhir!');
+    return;
+  }
+  closeDateRangePickerModal();
+
+  if (startDate === endDate) {
+    setPeriodMode('singleday');
+    window.KspHistoriku.loadForStore(window.ACTIVE_STORE_ID, window.ACTIVE_STORE_NAME, startDate);
+  } else {
+    loadMultiDayForStore(window.ACTIVE_STORE_ID, window.ACTIVE_STORE_NAME, startDate, endDate);
+  }
+}
+
 window.KspHistoriku = {
   loadForStore: function(storeId, storeName, dateKey, shiftNum) {
     window.ACTIVE_STORE_ID = storeId;
     window.ACTIVE_STORE_NAME = storeName || 'Cabang';
+    setPeriodMode('singleday');
 
-    // Cari data laporan tersimpan untuk store ini
     let storeData = null;
-    const nowKey = dateKey || (function() {
-      const d = new Date();
-      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    })();
+    const nowKey = dateKey || getTodayDbDate();
 
     try {
       const cached = localStorage.getItem('ksp_historiku_data_' + storeId + '_' + nowKey);
@@ -4233,10 +4545,21 @@ window.KspHistoriku = {
     }
 
     window.REPORT_DATA = storeData;
+    updateDateDisplayUI(storeData.dateDisplay || storeData.dateDb || nowKey);
     renderReport(window.REPORT_DATA);
     applyInitialGroupCollapse();
     loadAndApplyReportEdits();
   },
+  loadMultiDayForStore: loadMultiDayForStore,
+  setPeriodMode: setPeriodMode,
+  openFormatLayoutModal: openFormatLayoutModal,
+  closeFormatLayoutModal: closeFormatLayoutModal,
+  selectFormatLayoutMode: selectFormatLayoutMode,
+  updateLayoutModeUI: updateLayoutModeUI,
+  openDateRangePickerModal: openDateRangePickerModal,
+  closeDateRangePickerModal: closeDateRangePickerModal,
+  selectRangePreset: selectRangePreset,
+  applyDateRange: applyDateRange,
   closeItemNavBar: function() {
     if (typeof closeItemNavBar === 'function') closeItemNavBar();
   },

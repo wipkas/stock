@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+    <title>HistoriKu - Riwayat Transaksi Cabang</title>
+
+    <!-- Web App Manifest & Favicons -->
+    <link rel="manifest" href="assets/manifests/manifest-store.json">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-store.svg">
+    <meta name="theme-color" content="#0F1117">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- CSS Dependencies -->
+    <link rel="stylesheet" href="css/ksp_historiku.css?v=20261006_compact1">
+    <link rel="stylesheet" href="css/ksp_multiday_layouts.css?v=20261006_v1">
+
+    <!-- Core Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script src="js/ksp_sync_config.js?v=20261005"></script>
+    <script src="js/ksp_sync.js?v=20261005"></script>
+    <script src="js/ksp_ui.js?v=20261005"></script>
+    <script src="js/ksp_theme.js?v=20261005"></script>
+    <script src="js/ksp_auth.js?v=20261005"></script>
+    <script src="js/ksp_multiday_layouts.js?v=20261006_v1"></script>
+    <script src="js/ksp_historiku.js?v=20261006_v2"></script>
+
+    <style>
+        :root {
+            --bg-color: #0F1117;
+            --card-bg: #181C27;
+            --card-border: #262B3D;
+            --card-hover: #1E2436;
+            --primary: #4F8EF7;
+            --primary-hover: #3B7ADF;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text-main: #FFFFFF;
+            --text-muted: #8A92A6;
+            --chip-bg: #222736;
+            --input-bg: #11141F;
+        }
+
+        body.light-theme {
+            --bg-color: #F8F5EE;
+            --card-bg: #FFFFFF;
+            --card-border: #E8E1D5;
+            --card-hover: #F2EFE8;
+            --primary: #2B6CB0;
+            --primary-hover: #2C5282;
+            --success: #059669;
+            --warning: #D97706;
+            --danger: #DC2626;
+            --text-main: #2D3748;
+            --text-muted: #718096;
+            --chip-bg: #EFE8DC;
+            --input-bg: #FAF8F5;
+        }
+
+        /* PIN Security Gate Modal */
+        #pinModal {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            padding: 20px;
+        }
+
+        .pin-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 28px 24px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .pin-title {
+            margin: 0 0 18px 0;
+            font-size: 19px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: var(--text-main);
+        }
+
+        .pin-input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+        }
+
+        .pin-input:focus {
+            border-color: var(--primary);
+        }
+
+        .pin-btn {
+            width: 100%;
+            padding: 13px;
+            border-radius: 12px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .pin-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Top Header Navigation */
+        .history-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--bg-color);
+            border-bottom: 1px solid var(--card-border);
+            padding: 6px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .history-topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            flex-shrink: 0;
+        }
+
+        .btn-top-back {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-top-back:hover {
+            background: var(--card-hover);
+            border-color: var(--primary);
+        }
+
+        .store-select-compact {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+            max-width: 150px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .history-topbar-center {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .history-topbar-center::-webkit-scrollbar { display: none; }
+
+        .period-toggle-group {
+            display: inline-flex;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 2px;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+
+        .btn-period-opt {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 5px 9px;
+            font-size: 11.5px;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .btn-period-opt.active {
+            background: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .btn-date-trigger {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn-date-trigger:hover {
+            background: var(--card-hover);
+            border-color: var(--primary);
+        }
+
+        .btn-format-trigger {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #10b981;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn-format-trigger:hover {
+            background: rgba(16, 185, 129, 0.22);
+        }
+
+        .history-topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .btn-tool-action {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-tool-action:hover {
+            background: var(--card-hover);
+            border-color: var(--primary);
+        }
+
+        /* Main View Container */
+        .page-listview {
+            padding: 0 !important;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        /* Tools Modal Sheet */
+        #toolsModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 10000;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        #toolsModal.open {
+            display: flex;
+        }
+
+        .tools-sheet {
+            background: var(--card-bg);
+            border-top: 1px solid var(--card-border);
+            width: 100%;
+            max-width: 480px;
+            border-radius: 20px 20px 0 0;
+            padding: 18px;
+            box-shadow: 0 -8px 24px rgba(0,0,0,0.5);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .tools-sheet-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .tools-sheet-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .tools-sheet-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .tool-btn-card {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s ease;
+        }
+
+        .tool-btn-card:hover {
+            border-color: var(--primary);
+            background: var(--card-hover);
+        }
+
+        .tool-btn-card.active {
+            border-color: var(--primary);
+            background: rgba(79, 142, 247, 0.12);
+        }
+
+        .tool-card-icon {
+            font-size: 18px;
+        }
+
+        .tool-card-title {
+            font-size: 12.5px;
+            font-weight: 750;
+            color: var(--text-main);
+        }
+
+        .tool-card-sub {
+            font-size: 10.5px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 600px) {
+            .history-topbar {
+                padding: 5px 8px;
+                gap: 5px;
+            }
+            .store-select-compact {
+                max-width: 110px;
+                font-size: 12px;
+                padding: 5px 6px;
+            }
+            .btn-period-opt {
+                padding: 4px 7px;
+                font-size: 11px;
+            }
+            .btn-date-trigger {
+                padding: 5px 7px;
+                font-size: 11px;
+            }
+            .btn-format-trigger {
+                padding: 5px 7px;
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PIN SECURITY GATE -->
+    <div id="pinModal" style="display: none;">
+        <div class="pin-card">
+            <h2 class="pin-title">🔒 Verifikasi PIN</h2>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Masukkan PIN / Password untuk melihat riwayat transaksi cabang</p>
+            <form onsubmit="handleHistoryPinSubmit(event)">
+                <input type="password" id="pinInput" class="pin-input" placeholder="PIN / Password..." autocomplete="current-password" autofocus required>
+                <div id="pinError" style="color: var(--danger); font-size: 11px; margin-bottom: 12px; display: none;">PIN salah!</div>
+                <button type="submit" id="btnUnlock" class="pin-btn">
+                    <span>MASUK</span> ➜
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="mainApp" style="display: none;">
+
+        <!-- COMPACT HEADER TOP BAR -->
+        <header class="history-topbar">
+            <!-- Left: Back button & Store Select -->
+            <div class="history-topbar-left">
+                <a href="store_manager.html" id="btnBackToStore" class="btn-top-back" title="Kembali ke Cabang">←</a>
+                <select id="storeSelect" class="store-select-compact" onchange="onStoreSelectChange(this.value)">
+                    <option value="">Pilih Cabang...</option>
+                </select>
+            </div>
+
+            <!-- Center: Mode Toggle, Date Button, Format Selector -->
+            <div class="history-topbar-center">
+                <div class="period-toggle-group">
+                    <button id="btnPeriodSingle" class="btn-period-opt active" onclick="switchPeriodMode('singleday')">1 Hari</button>
+                    <button id="btnPeriodMulti" class="btn-period-opt" onclick="switchPeriodMode('multiday')">Rentang</button>
+                </div>
+
+                <button class="btn-date-trigger" id="btnDateTrigger" onclick="KspHistoriku.openDateRangePickerModal()" title="Pilih Tanggal / Rentang">
+                    📅 <span id="currentDateDisplay">Hari Ini</span> ▾
+                </button>
+
+                <button class="btn-format-trigger" id="btnFormatLayout" onclick="KspHistoriku.openFormatLayoutModal()" style="display: none;" title="Pilih Format Layout">
+                    📖 <span id="formatLayoutCurrentLabel">Lembar Buku</span> ▾
+                </button>
+            </div>
+
+            <!-- Right: Quick Tools button -->
+            <div class="history-topbar-right">
+                <button class="btn-tool-action" id="btn-hidden-group" onclick="toggleHiddenGroup(this)" title="Lipat / Buka Semua Tabel"><span id="btn-hidden-group-icon">📁</span></button>
+                <button class="btn-tool-action" id="btnQuickTools" onclick="openToolsModal()" title="Alat &amp; Pengaturan">⚙️</button>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT LISTVIEW -->
+        <main class="page-listview">
+
+            <!-- SUMMARY BAR (Sticky Mini Totals) -->
+            <section class="summary-bar" id="summary-bar">
+                <div class="sb-item">
+                    <span class="sb-lbl">Total Keluar</span>
+                    <span class="sb-v c-out" id="sb-total-keluar">Rp 0</span>
+                </div>
+                <div class="sb-item">
+                    <span class="sb-lbl">Total Masuk</span>
+                    <span class="sb-v c-in" id="sb-total-masuk">Rp 0</span>
+                </div>
+                <div class="sb-item">
+                    <span class="sb-lbl">Selisih</span>
+                    <span class="sb-v" id="sb-selisih">Rp 0</span>
+                </div>
+                <div class="sb-item">
+                    <span class="sb-lbl">Total Trx</span>
+                    <span class="sb-v" id="sb-total-trx">0</span>
+                </div>
+            </section>
+
+            <!-- REKAP SUMMARY ACCORDION TABLE -->
+            <section id="rekap-summary-container" class="rekap-card">
+                <div class="rekap-hd" onclick="toggleRekapCollapse(this, event)">
+                    <span class="rekap-title">📊 Rekap &amp; Total Keseluruhan</span>
+                    <button class="rekap-toggle-btn">▼</button>
+                </div>
+                <div class="rekap-body">
+                    <table class="rekap-tbl">
+                        <thead>
+                            <tr>
+                                <th class="l">Aplikasi / Modul</th>
+                                <th class="c" style="width: 50px;">Trx</th>
+                                <th class="r">Keluar</th>
+                                <th class="r">Masuk</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rekap-tbody"></tbody>
+                        <tfoot id="rekap-tfoot"></tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <!-- DYNAMIC GROUPS / MULTI-DAY CONTAINER -->
+            <div id="groups-container"></div>
+
+        </main>
+    </div>
+
+    <!-- MODAL: DATE RANGE PICKER -->
+    <div id="dateRangePickerModal" class="date-range-modal" onclick="if(event.target===this) KspHistoriku.closeDateRangePickerModal()">
+        <div class="date-range-sheet">
+            <div class="date-range-hd">
+                <span class="date-range-title">📅 Pilih Rentang Tanggal</span>
+                <button class="date-range-close" onclick="KspHistoriku.closeDateRangePickerModal()">✕</button>
+            </div>
+            <div class="date-range-presets">
+                <button class="btn-range-preset active" data-preset="today" onclick="KspHistoriku.selectRangePreset('today')">Hari Ini</button>
+                <button class="btn-range-preset" data-preset="yesterday" onclick="KspHistoriku.selectRangePreset('yesterday')">Kemarin</button>
+                <button class="btn-range-preset" data-preset="last7" onclick="KspHistoriku.selectRangePreset('last7')">7 Hari Terakhir</button>
+                <button class="btn-range-preset" data-preset="last30" onclick="KspHistoriku.selectRangePreset('last30')">30 Hari Terakhir</button>
+                <button class="btn-range-preset" data-preset="thisMonth" onclick="KspHistoriku.selectRangePreset('thisMonth')">Bulan Ini</button>
+            </div>
+            <div class="date-range-inputs">
+                <div class="date-input-field">
+                    <label>Mulai Tanggal</label>
+                    <input type="date" id="rangeStartDate">
+                </div>
+                <div class="date-input-field">
+                    <label>Sampai Tanggal</label>
+                    <input type="date" id="rangeEndDate">
+                </div>
+            </div>
+            <div class="date-range-actions">
+                <button class="btn-range-apply" onclick="KspHistoriku.applyDateRange()">Terapkan Rentang</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: 6 MULTI-DAY FORMAT LAYOUTS -->
+    <div id="formatLayoutModal" class="format-layout-modal" onclick="if(event.target===this) KspHistoriku.closeFormatLayoutModal()">
+        <div class="format-layout-sheet">
+            <div class="format-layout-hd">
+                <span class="format-layout-title">📖 Format Tampilan Multi-Day</span>
+                <button class="format-layout-close" onclick="KspHistoriku.closeFormatLayoutModal()">✕</button>
+            </div>
+            <div class="format-layout-options" id="formatLayoutOptionsList"></div>
+        </div>
+    </div>
+
+    <!-- MODAL: QUICK TOOLS SHEET -->
+    <div id="toolsModal" onclick="if(event.target===this) closeToolsModal()">
+        <div class="tools-sheet">
+            <div class="tools-sheet-hd">
+                <span class="tools-sheet-title">⚙️ Alat &amp; Preferensi HistoriKu</span>
+                <button class="tools-sheet-close" onclick="closeToolsModal()">✕</button>
+            </div>
+            <div class="tools-grid">
+                <div class="tool-btn-card" id="cardToolRingkas" onclick="toggleRingkasFromSheet()">
+                    <span class="tool-card-icon">🧮</span>
+                    <span class="tool-card-title">Mode Ringkas</span>
+                    <span class="tool-card-sub" id="subToolRingkas">Sembunyikan 000</span>
+                </div>
+                <div class="tool-btn-card" id="cardToolRounding" onclick="toggleRoundingFromSheet()">
+                    <span class="tool-card-icon">🔢</span>
+                    <span class="tool-card-title">Bulatkan Ribuan</span>
+                    <span class="tool-card-sub" id="subToolRounding">Pembulatan ke ribuan</span>
+                </div>
+                <div class="tool-btn-card" onclick="closeToolsModal(); KspHistoriku.openImportModal();">
+                    <span class="tool-card-icon">📥</span>
+                    <span class="tool-card-title">Impor Laporan</span>
+                    <span class="tool-card-sub">HTML / JSON KSP Check</span>
+                </div>
+                <div class="tool-btn-card" onclick="closeToolsModal(); openTtsSettingsModal();">
+                    <span class="tool-card-icon">🔊</span>
+                    <span class="tool-card-title">Pengaturan Suara</span>
+                    <span class="tool-card-sub">Atur TTS &amp; kecepatan</span>
+                </div>
+                <div class="tool-btn-card" onclick="closeToolsModal(); toggleThemeMode();">
+                    <span class="tool-card-icon">🌓</span>
+                    <span class="tool-card-title">Ganti Tema</span>
+                    <span class="tool-card-sub" id="subToolTheme">Gelap / Terang</span>
+                </div>
+                <div class="tool-btn-card" onclick="closeToolsModal(); showLocalEditsAction();">
+                    <span class="tool-card-icon">↺</span>
+                    <span class="tool-card-title">Reset Editan</span>
+                    <span class="tool-card-sub">Kembalikan data asli</span>
+                </div>
+            </div>
+            <button class="pin-btn" onclick="closeToolsModal()" style="background: var(--card-border); color: var(--text-main);">Tutup</button>
+        </div>
+    </div>
+
+    <!-- MODAL: IMPORT LAPORAN -->
+    <div id="import-report-modal" class="ksp-modal-backdrop" onclick="if(event.target===this) KspHistoriku.closeImportModal()">
+        <div class="ksp-modal-card">
+            <h3 style="margin:0 0 8px 0; font-size:16px; font-weight:800;">📥 Impor Laporan HTML / JSON</h3>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Pilih file laporan HTML atau JSON hasil ekspor dari aplikasi Android KSP Check untuk ditampilkan dan dikelola.</p>
+            <input type="file" id="report-file-input" accept=".html,.htm,.json" style="margin-bottom:14px; font-size:12px; width:100%;" onchange="KspHistoriku.handleFileImport(this.files[0])">
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button type="button" class="btn-cancel" onclick="KspHistoriku.closeImportModal()" style="padding:8px 14px; font-size:12px; border-radius:8px; border:1px solid var(--card-border); background:transparent; color:var(--text-main); cursor:pointer;">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: TTS SETTINGS -->
+    <div id="tts-settings-modal" class="ksp-modal-backdrop" onclick="if(event.target===this) closeTtsSettingsModal()">
+        <div class="ksp-modal-card">
+            <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:800;">🔊 Pengaturan Audio Suara (TTS)</h3>
+            <div style="margin-bottom:12px;">
+                <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Pilih Suara:</label>
+                <select id="tts-voice-select" style="width:100%; padding:8px; border-radius:8px; background:var(--input-bg); border:1px solid var(--card-border); color:var(--text-main);"></select>
+            </div>
+            <div style="margin-bottom:16px;">
+                <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Kecepatan Bicara: <span id="tts-rate-val">1.0x</span></label>
+                <input type="range" id="tts-rate-slider" min="0.7" max="1.5" step="0.1" value="1.0" style="width:100%;">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button type="button" onclick="testTtsVoice()" style="padding:8px 14px; font-size:12px; border-radius:8px; background:var(--primary); color:#fff; border:none; cursor:pointer;">Uji Suara</button>
+                <button type="button" onclick="closeTtsSettingsModal()" style="padding:8px 14px; font-size:12px; border-radius:8px; border:1px solid var(--card-border); background:transparent; color:var(--text-main); cursor:pointer;">Selesai</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: APP MARGIN DETAILS -->
+    <div id="app-margin-modal" class="ksp-modal-backdrop" onclick="if(event.target===this) closeAppMarginDialog()">
+        <div class="ksp-modal-card">
+            <h3 id="app-margin-title" style="margin:0 0 10px 0; font-size:16px; font-weight:800;">📊 Rincian Nilai &amp; Margin</h3>
+            <div id="app-margin-body" style="font-size:13px; line-height:1.6;"></div>
+            <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+                <button type="button" onclick="closeAppMarginDialog()" style="padding:8px 14px; font-size:12px; border-radius:8px; background:var(--primary); color:#fff; border:none; cursor:pointer;">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING ITEM NAVIGATION BAR -->
+    <div id="item-nav-bar" class="item-nav-bar" style="display:none;">
+        <button class="nav-btn" onclick="prevNavRow()" title="Item Sebelumnya">◀</button>
+        <button class="nav-btn" id="nav-btn-speak" onclick="speakCurrentItem()" title="Dengarkan Item">🔊</button>
+        <div class="nav-info" onclick="focusCurrentNavInput()">
+            <span class="nav-desc" id="nav-item-desc">-</span>
+            <span class="nav-amt" id="nav-amt-val">-</span>
+        </div>
+        <button class="nav-btn" onclick="toggleCurrentItemDone()" title="Tandai Selesai">✓</button>
+        <button class="nav-btn" onclick="nextNavRow()" title="Item Berikutnya">▶</button>
+        <button class="nav-btn nav-close" onclick="closeItemNavBar()" title="Tutup Navigasi">✕</button>
+    </div>
+
+    <!-- SCRIPT INLINE: CONTROLLER INITIALIZATION -->
+    <script>
+        let currentStoreId = '';
+        let currentStoreName = '';
+        let storesList = [];
+
+        // 1. Inisialisasi Auth & Halaman
+        document.addEventListener('DOMContentLoaded', async function() {
+            const savedPin = KspAuth.getAdminPin();
+            if (savedPin) {
+                unlockWithPin(savedPin);
+            } else {
+                document.getElementById('pinModal').style.display = 'flex';
+            }
+        });
+
+        // 2. PIN Unlock Logic
+        async function handleHistoryPinSubmit(e) {
+            e.preventDefault();
+            const pin = document.getElementById('pinInput').value.trim();
+            if (!pin) return;
+            unlockWithPin(pin);
+        }
+
+        async function unlockWithPin(pin) {
+            const btn = document.getElementById('btnUnlock');
+            const errBox = document.getElementById('pinError');
+            if (btn) btn.innerHTML = '<span>Membuka...</span>';
+            if (errBox) errBox.style.display = 'none';
+
+            try {
+                // Verifikasi PIN via KspAuth decryptConfig
+                await KspAuth.decryptConfig(pin);
+                KspAuth.setAdminSession(pin);
+
+                document.getElementById('pinModal').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+
+                initHistoryPage();
+            } catch (err) {
+                console.error(err);
+                if (errBox) {
+                    errBox.innerText = err.message || 'PIN Salah!';
+                    errBox.style.display = 'block';
+                }
+                document.getElementById('pinModal').style.display = 'flex';
+                document.getElementById('mainApp').style.display = 'none';
+            } finally {
+                if (btn) btn.innerHTML = '<span>MASUK</span> ➜';
+            }
+        }
+
+        // 3. Setup Halaman & Data Toko
+        function initHistoryPage() {
+            // Load stores dari local cache atau KspSync
+            loadStoresList();
+
+            // Parse URL parameters
+            const params = new URLSearchParams(window.location.search);
+            const storeParam = params.get('store');
+            const nameParam = params.get('name');
+            const modeParam = params.get('mode');
+            const layoutParam = params.get('layout');
+            const dateParam = params.get('date');
+            const rangeStart = params.get('rangeStart');
+            const rangeEnd = params.get('rangeEnd');
+
+            if (layoutParam && window.KspHistoriku) {
+                KspHistoriku.selectFormatLayoutMode(layoutParam);
+            }
+
+            // Tentukan store aktif
+            if (storeParam && storesList.some(s => s.id === storeParam)) {
+                currentStoreId = storeParam;
+                const found = storesList.find(s => s.id === storeParam);
+                currentStoreName = found ? found.name : (nameParam || 'Cabang');
+            } else if (storesList.length > 0) {
+                currentStoreId = storesList[0].id;
+                currentStoreName = storesList[0].name;
+            } else {
+                currentStoreId = 'store_sample';
+                currentStoreName = 'Cabang Utama';
+            }
+
+            // Update Back Link to store_manager.html
+            const backBtn = document.getElementById('btnBackToStore');
+            if (backBtn) {
+                backBtn.href = 'store_manager.html?store=' + encodeURIComponent(currentStoreId);
+            }
+
+            // Update store selector dropdown
+            const storeSelect = document.getElementById('storeSelect');
+            if (storeSelect) storeSelect.value = currentStoreId;
+
+            // Update Layout UI label
+            if (window.KspHistoriku) KspHistoriku.updateLayoutModeUI();
+
+            // Load data sesuai mode
+            if (modeParam === 'multiday' || (rangeStart && rangeEnd)) {
+                switchPeriodMode('multiday');
+                const start = rangeStart || (function() {
+                    const d = new Date(); d.setDate(d.getDate() - 6);
+                    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                })();
+                const end = rangeEnd || (function() {
+                    const d = new Date();
+                    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                })();
+                KspHistoriku.loadMultiDayForStore(currentStoreId, currentStoreName, start, end);
+            } else {
+                switchPeriodMode('singleday');
+                KspHistoriku.loadForStore(currentStoreId, currentStoreName, dateParam);
+            }
+        }
+
+        function loadStoresList() {
+            try {
+                const raw = localStorage.getItem('kspcheck_stores_data');
+                if (raw) {
+                    storesList = JSON.parse(raw);
+                }
+            } catch(e) {}
+
+            if (!storesList || storesList.length === 0) {
+                storesList = [
+                    { id: 'store_sample', name: 'Cabang Utama' },
+                    { id: 'store_2', name: 'Cabang Barat' }
+                ];
+            }
+
+            const select = document.getElementById('storeSelect');
+            if (!select) return;
+            select.innerHTML = storesList.map(s => `
+                <option value="${s.id}">${s.name}</option>
+            `).join('');
+        }
+
+        function onStoreSelectChange(storeId) {
+            if (!storeId) return;
+            currentStoreId = storeId;
+            const found = storesList.find(s => s.id === storeId);
+            currentStoreName = found ? found.name : 'Cabang';
+
+            // Update Back link
+            const backBtn = document.getElementById('btnBackToStore');
+            if (backBtn) backBtn.href = 'store_manager.html?store=' + encodeURIComponent(currentStoreId);
+
+            // Replace state in URL
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('store', currentStoreId);
+                window.history.replaceState({}, '', url.toString());
+            } catch(e) {}
+
+            if (window.ACTIVE_PERIOD_MODE === 'multiday') {
+                const startInput = document.getElementById('rangeStartDate');
+                const endInput = document.getElementById('rangeEndDate');
+                const start = (startInput && startInput.value) || '';
+                const end = (endInput && endInput.value) || '';
+                if (start && end) {
+                    KspHistoriku.loadMultiDayForStore(currentStoreId, currentStoreName, start, end);
+                } else {
+                    KspHistoriku.loadForStore(currentStoreId, currentStoreName);
+                }
+            } else {
+                KspHistoriku.loadForStore(currentStoreId, currentStoreName);
+            }
+        }
+
+        function switchPeriodMode(mode) {
+            if (window.KspHistoriku) {
+                KspHistoriku.setPeriodMode(mode);
+            }
+            if (mode === 'multiday') {
+                KspHistoriku.openDateRangePickerModal();
+            } else {
+                KspHistoriku.loadForStore(currentStoreId, currentStoreName);
+            }
+        }
+
+        // Tools Sheet Controller
+        function openToolsModal() {
+            const modal = document.getElementById('toolsModal');
+            if (modal) modal.classList.add('open');
+            updateToolsSheetBadges();
+        }
+
+        function closeToolsModal() {
+            const modal = document.getElementById('toolsModal');
+            if (modal) modal.classList.remove('open');
+        }
+
+        function updateToolsSheetBadges() {
+            const cardRingkas = document.getElementById('cardToolRingkas');
+            const subRingkas = document.getElementById('subToolRingkas');
+            if (cardRingkas && subRingkas) {
+                cardRingkas.classList.toggle('active', Boolean(ringkasMode));
+                subRingkas.textContent = ringkasMode ? 'Aktif (Potong 000)' : 'Nonaktif (Format Penuh)';
+            }
+
+            const cardRounding = document.getElementById('cardToolRounding');
+            const subRounding = document.getElementById('subToolRounding');
+            if (cardRounding && subRounding) {
+                cardRounding.classList.toggle('active', Boolean(roundingMode));
+                subRounding.textContent = roundingMode ? 'Aktif (Ribuan)' : 'Nonaktif (Asli)';
+            }
+        }
+
+        function toggleRingkasFromSheet() {
+            toggleRingkas(null);
+            updateToolsSheetBadges();
+        }
+
+        function toggleRoundingFromSheet() {
+            toggleRounding(null);
+            updateToolsSheetBadges();
+        }
+
+        function openTtsSettingsModal() {
+            const modal = document.getElementById('tts-settings-modal');
+            if (modal) modal.classList.add('open');
+        }
+
+        function closeTtsSettingsModal() {
+            const modal = document.getElementById('tts-settings-modal');
+            if (modal) modal.classList.remove('open');
+        }
+    </script>
+</body>
+</html>
