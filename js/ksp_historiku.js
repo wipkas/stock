@@ -3726,7 +3726,7 @@ function renderReport(data) {
   if (isMultiDay && window.KspMultiDayLayouts && typeof window.KspMultiDayLayouts.render === 'function') {
     const currentLayout = window.CURRENT_LAYOUT_MODE || (function() {
       try { return localStorage.getItem('ksp_multiday_layout'); } catch(e){ return null; }
-    })() || 'book_swipe';
+    })() || 'side_spread';
     const opt = {
       renderRowHtml: renderRowHtml,
       renderVoucherRowHtml: renderVoucherRowHtml,
@@ -4219,7 +4219,7 @@ function parseAndLoadImportContent(text, fileName) {
 window.ACTIVE_PERIOD_MODE = 'singleday';
 window.CURRENT_LAYOUT_MODE = (function() {
   try { return localStorage.getItem('ksp_multiday_layout'); } catch(e){ return null; }
-})() || 'book_swipe';
+})() || 'side_spread';
 
 function getTodayDbDate() {
   const d = new Date();
@@ -4424,7 +4424,7 @@ function openFormatLayoutModal() {
   const list = document.getElementById('formatLayoutOptionsList');
   if (list && window.KspMultiDayLayouts) {
     list.innerHTML = window.KspMultiDayLayouts.MODES.map(m => `
-      <div class="format-option-card ${m.id === window.CURRENT_LAYOUT_MODE ? 'active' : ''}" onclick="KspHistoriku.selectFormatLayoutMode('${m.id}')">
+      <div class="format-option-card ${m.id === window.CURRENT_LAYOUT_MODE ? 'active' : ''}" data-mode="${m.id}" onclick="KspHistoriku.selectFormatLayoutMode('${m.id}')">
         <div class="format-opt-icon">${m.icon}</div>
         <div class="format-opt-info">
           <div class="format-opt-title">${escapeHtml(m.name)} <span class="format-opt-badge">${escapeHtml(m.badge)}</span></div>
@@ -4446,10 +4446,26 @@ function selectFormatLayoutMode(modeId) {
   try { localStorage.setItem('ksp_multiday_layout', modeId); } catch(e){}
   updateLayoutModeUI();
   closeFormatLayoutModal();
-  if (window.REPORT_DATA) {
+
+  // Jika date range modal aktif dan user sedang memilih rentang tanggal
+  const startInput = document.getElementById('rangeStartDate');
+  const endInput = document.getElementById('rangeEndDate');
+  if (window.ACTIVE_PERIOD_MODE === 'multiday' && startInput && endInput && startInput.value && endInput.value && startInput.value !== endInput.value) {
+    if (!window.REPORT_DATA || !window.REPORT_DATA.isMultiDay || window.REPORT_DATA.startDate !== startInput.value || window.REPORT_DATA.endDate !== endInput.value) {
+      loadMultiDayForStore(window.ACTIVE_STORE_ID, window.ACTIVE_STORE_NAME, startInput.value, endInput.value);
+    } else {
+      renderReport(window.REPORT_DATA);
+    }
+  } else if (window.REPORT_DATA) {
     renderReport(window.REPORT_DATA);
   }
-  showToast('✓ Format tampilan diubah: ' + modeId);
+
+  let modeName = modeId;
+  if (window.KspMultiDayLayouts) {
+    const m = window.KspMultiDayLayouts.MODES.find(x => x.id === modeId);
+    if (m) modeName = m.name;
+  }
+  showToast('✓ Format tampilan: ' + modeName);
 }
 
 function updateLayoutModeUI() {
@@ -4460,9 +4476,9 @@ function updateLayoutModeUI() {
     if (label && m) label.textContent = m.name;
     if (btn && m) btn.title = 'Format Tampilan: ' + m.name;
   }
-  // Juga update kartu active di modal
+  // Juga update kartu active di semua modal
   document.querySelectorAll('.format-option-card').forEach(card => {
-    card.classList.remove('active');
+    card.classList.toggle('active', card.getAttribute('data-mode') === window.CURRENT_LAYOUT_MODE);
   });
 }
 
@@ -4470,7 +4486,7 @@ function renderModalFormatOptions() {
   const list = document.getElementById('modalFormatOptionsList');
   if (list && window.KspMultiDayLayouts) {
     list.innerHTML = window.KspMultiDayLayouts.MODES.map(m => `
-      <div class="format-option-card ${m.id === window.CURRENT_LAYOUT_MODE ? 'active' : ''}" onclick="KspHistoriku.selectFormatLayoutMode('${m.id}')">
+      <div class="format-option-card ${m.id === window.CURRENT_LAYOUT_MODE ? 'active' : ''}" data-mode="${m.id}" onclick="KspHistoriku.selectFormatLayoutMode('${m.id}')">
         <div class="format-opt-icon">${m.icon}</div>
         <div class="format-opt-info">
           <div class="format-opt-title">${escapeHtml(m.name)} <span class="format-opt-badge">${escapeHtml(m.badge)}</span></div>

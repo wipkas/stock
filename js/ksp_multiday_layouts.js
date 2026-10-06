@@ -175,7 +175,7 @@
   // RENDERER 1: CONTINUOUS MODE (Hemat Ruang)
   // ==========================================================================
   function renderContinuous(container, data, opt) {
-    container.classList.add('layout-continuous');
+    container.className = 'layout-continuous';
     let totalMasuk = 0, totalKeluar = 0, totalTrx = 0;
     const globalSeqObj = { val: 1 };
     const totalsObj = { totalMasuk: 0, totalKeluar: 0, totalTrx: 0 };
@@ -186,7 +186,8 @@
       const isOutcomeOnly = data.tarik.every(item => String(item.type || '').toLowerCase() !== 'income');
       let rowsHtml = '';
 
-      data.tarik.forEach(item => {
+      const sortedTarik = data.tarik.slice().sort((a, b) => ((a.date || '') + ' ' + (a.time || '')).localeCompare((b.date || '') + ' ' + (b.time || '')));
+      sortedTarik.forEach(item => {
         totalTrx++;
         const amt = Math.round(item.amount || item.jumtar || 0);
         const isIncome = String(item.type || '').toLowerCase() === 'income';
@@ -236,7 +237,8 @@
         const isOutcomeOnly = items.every(item => String(item.category || '').toLowerCase() !== 'income');
         let aIn = 0, aOut = 0, rowsHtml = '';
 
-        items.forEach(item => {
+        const sortedItems = items.slice().sort((a, b) => ((a.date || '') + ' ' + (a.time || '')).localeCompare((b.date || '') + ' ' + (b.time || '')));
+        sortedItems.forEach(item => {
           totalTrx++;
           const amt = Math.round(item.amount || 0);
           const isIncome = String(item.category || '').toLowerCase() === 'income';
@@ -271,7 +273,8 @@
 
     // 3. TopUp
     if (data.topup && data.topup.length > 0) {
-      container.innerHTML += renderTopupGroupHtml(data.topup, 'TopUp', null, opt, globalSeqObj, totalsObj, true);
+      const sortedTopup = data.topup.slice().sort((a, b) => ((a.date || '') + ' ' + (a.time || '')).localeCompare((b.date || '') + ' ' + (b.time || '')));
+      container.innerHTML += renderTopupGroupHtml(sortedTopup, 'TopUp', null, opt, globalSeqObj, totalsObj, true);
       totalMasuk += totalsObj.totalMasuk;
       totalKeluar += totalsObj.totalKeluar;
       totalTrx += totalsObj.totalTrx;
@@ -280,7 +283,8 @@
     // 4. Voucher
     if (data.voucher && data.voucher.length > 0) {
       const vTotals = { totalMasuk: 0, totalKeluar: 0, totalTrx: 0 };
-      container.innerHTML += renderVoucherGroupHtml(data.voucher, 'Voucher', null, opt, globalSeqObj, vTotals, true);
+      const sortedVoucher = data.voucher.slice().sort((a, b) => ((a.date || '') + ' ' + (a.time || '')).localeCompare((b.date || '') + ' ' + (b.time || '')));
+      container.innerHTML += renderVoucherGroupHtml(sortedVoucher, 'Voucher', null, opt, globalSeqObj, vTotals, true);
       totalKeluar += vTotals.totalKeluar;
       totalTrx += vTotals.totalTrx;
     }
@@ -292,6 +296,7 @@
   // RENDERER 2: DATE SECTION MODE (Sub-Header Tanggal dalam Tabel)
   // ==========================================================================
   function renderDateSection(container, data, opt) {
+    container.className = 'layout-date-section';
     let totalMasuk = 0, totalKeluar = 0, totalTrx = 0;
     const globalSeqObj = { val: 1 };
 
@@ -535,6 +540,7 @@
   // RENDERER 3: BOOK SWIPE MODE (Lembar Buku Per Hari)
   // ==========================================================================
   function renderBookSwipe(container, data, opt) {
+    container.className = 'layout-book-swipe';
     let totalMasuk = 0, totalKeluar = 0, totalTrx = 0;
     const globalSeqObj = { val: 1 };
 
@@ -580,7 +586,7 @@
       let dayGroupsHtml = '';
 
       // Tarik untuk hari ini
-      const dayTarik = (data.tarik || []).filter(item => (item.date || '') === dKey);
+      const dayTarik = (data.tarik || []).filter(item => (item.date || (dates.length === 1 ? dKey : '')) === dKey);
       if (dayTarik.length > 0) {
         let tMasuk = 0, tKeluar = 0;
         const isOutcomeOnly = dayTarik.every(item => String(item.type || '').toLowerCase() !== 'income');
@@ -620,7 +626,7 @@
       }
 
       // Notif untuk hari ini
-      const dayNotif = (data.notif || []).filter(item => (item.date || '') === dKey);
+      const dayNotif = (data.notif || []).filter(item => (item.date || (dates.length === 1 ? dKey : '')) === dKey);
       if (dayNotif.length > 0) {
         const notifByApp = {};
         dayNotif.forEach(n => {
@@ -669,7 +675,7 @@
       }
 
       // TopUp untuk hari ini
-      const dayTopup = (data.topup || []).filter(item => (item.date || '') === dKey);
+      const dayTopup = (data.topup || []).filter(item => (item.date || (dates.length === 1 ? dKey : '')) === dKey);
       if (dayTopup.length > 0) {
         const tTotals = { totalMasuk: 0, totalKeluar: 0, totalTrx: 0 };
         dayGroupsHtml += renderTopupGroupHtml(dayTopup, 'TopUp', dKey, opt, globalSeqObj, tTotals, false);
@@ -678,7 +684,7 @@
       }
 
       // Voucher untuk hari ini
-      const dayVoucher = (data.voucher || []).filter(item => (item.date || '') === dKey);
+      const dayVoucher = (data.voucher || []).filter(item => (item.date || (dates.length === 1 ? dKey : '')) === dKey);
       if (dayVoucher.length > 0) {
         const vTotals = { totalMasuk: 0, totalKeluar: 0, totalTrx: 0 };
         dayGroupsHtml += renderVoucherGroupHtml(dayVoucher, 'Voucher', dKey, opt, globalSeqObj, vTotals, false);
@@ -687,9 +693,9 @@
       }
 
       const dayHeaderHtml = `
-        <div class="book-page-hd">
-          <div class="book-page-hd-title">📅 ${formatDayFull(dKey)}</div>
-          <div class="book-page-hd-meta">
+        <div class="book-page-header book-page-hd">
+          <div class="book-page-title book-page-hd-title">📅 ${formatDayFull(dKey)}</div>
+          <div class="book-page-badge book-page-hd-meta">
             ${dayTrx} trx · Keluar: <b style="color:var(--outcome)">${opt.fmtAmt(dayOut)}</b> | Masuk: <b style="color:var(--income)">${opt.fmtAmt(dayIn)}</b>
           </div>
         </div>`;
@@ -723,6 +729,7 @@
   // RENDERER 4: STACK DOWN MODE (Susun ke Bawah Per Hari)
   // ==========================================================================
   function renderStackDown(container, data, opt) {
+    container.className = 'layout-stack-down';
     let totalMasuk = 0, totalKeluar = 0, totalTrx = 0;
     const globalSeqObj = { val: 1 };
 
@@ -733,12 +740,16 @@
     if (data.voucher) data.voucher.forEach(v => { if (v.date) dateSet.add(v.date); });
     const dates = Array.from(dateSet).sort();
 
+    if (dates.length === 0) {
+      dates.push(data.startDate || 'Hari Ini');
+    }
+
     dates.forEach(dKey => {
       let dayIn = 0, dayOut = 0, dayTrx = 0;
       let dayGroupsHtml = '';
 
       // Tarik hari ini
-      const dayTarik = (data.tarik || []).filter(item => (item.date || '') === dKey);
+      const dayTarik = (data.tarik || []).filter(item => (item.date || (dates.length === 1 ? dKey : '')) === dKey);
       if (dayTarik.length > 0) {
         let tMasuk = 0, tKeluar = 0;
         const isOutcomeOnly = dayTarik.every(item => String(item.type || '').toLowerCase() !== 'income');
@@ -778,7 +789,7 @@
       }
 
       // Notif hari ini
-      const dayNotif = (data.notif || []).filter(item => (item.date || '') === dKey);
+      const dayNotif = (data.notif || []).filter(item => (item.date || (dates.length === 1 ? dKey : '')) === dKey);
       if (dayNotif.length > 0) {
         const notifByApp = {};
         dayNotif.forEach(n => {
@@ -827,7 +838,7 @@
       }
 
       // TopUp hari ini
-      const dayTopup = (data.topup || []).filter(item => (item.date || '') === dKey);
+      const dayTopup = (data.topup || []).filter(item => (item.date || (dates.length === 1 ? dKey : '')) === dKey);
       if (dayTopup.length > 0) {
         const tTotals = { totalMasuk: 0, totalKeluar: 0, totalTrx: 0 };
         dayGroupsHtml += renderTopupGroupHtml(dayTopup, 'TopUp', dKey, opt, globalSeqObj, tTotals, false);
@@ -836,7 +847,7 @@
       }
 
       // Voucher hari ini
-      const dayVoucher = (data.voucher || []).filter(item => (item.date || '') === dKey);
+      const dayVoucher = (data.voucher || []).filter(item => (item.date || (dates.length === 1 ? dKey : '')) === dKey);
       if (dayVoucher.length > 0) {
         const vTotals = { totalMasuk: 0, totalKeluar: 0, totalTrx: 0 };
         dayGroupsHtml += renderVoucherGroupHtml(dayVoucher, 'Voucher', dKey, opt, globalSeqObj, vTotals, false);
@@ -846,11 +857,14 @@
 
       container.innerHTML += `
         <div class="stack-day-card" data-date="${dKey}">
-          <div class="stack-day-hd" onclick="this.parentElement.classList.toggle('collapsed')">
+          <div class="stack-day-header stack-day-hd" onclick="this.parentElement.classList.toggle('collapsed')">
             <span class="stack-day-title">📅 ${formatDayFull(dKey)}</span>
-            <span class="stack-day-meta">
-              ${dayTrx} trx · Keluar: <b style="color:var(--outcome)">${opt.fmtAmt(dayOut)}</b> | Masuk: <b style="color:var(--income)">${opt.fmtAmt(dayIn)}</b>
-            </span>
+            <div class="stack-day-meta">
+              <span class="stack-summary-pill">${dayTrx} trx</span>
+              <span style="font-size:0.75rem; color:var(--outcome);">Keluar: <b>${opt.fmtAmt(dayOut)}</b></span>
+              <span style="font-size:0.75rem; color:var(--income);">Masuk: <b>${opt.fmtAmt(dayIn)}</b></span>
+              <span class="stack-day-toggle-arrow">▼</span>
+            </div>
           </div>
           <div class="stack-day-content">${dayGroupsHtml}</div>
         </div>`;
@@ -863,6 +877,7 @@
   // RENDERER 5: APP DATE MODE (Grup Per App + Tanggal Terpisah)
   // ==========================================================================
   function renderAppDate(container, data, opt) {
+    container.className = 'layout-app-date';
     let totalMasuk = 0, totalKeluar = 0, totalTrx = 0;
     const globalSeqObj = { val: 1 };
 
@@ -1006,6 +1021,7 @@
   // RENDERER 6: SIDE SPREAD MODE (Kolom Berdampingan Geser Samping)
   // ==========================================================================
   function renderSideSpread(container, data, opt) {
+    container.className = 'layout-side-spread';
     let totalMasuk = 0, totalKeluar = 0, totalTrx = 0;
     const globalSeqObj = { val: 1 };
 
@@ -1016,13 +1032,17 @@
     if (data.voucher) data.voucher.forEach(v => { if (v.date) dateSet.add(v.date); });
     const dates = Array.from(dateSet).sort();
 
+    if (dates.length === 0) {
+      dates.push(data.startDate || 'Hari Ini');
+    }
+
     let sheetsHtml = '';
     dates.forEach((dKey) => {
       let dayIn = 0, dayOut = 0, dayTrx = 0;
       let dayGroupsHtml = '';
 
       // Tarik hari ini
-      const dayTarik = (data.tarik || []).filter(item => (item.date || '') === dKey);
+      const dayTarik = (data.tarik || []).filter(item => (item.date || (dates.length === 1 ? dKey : '')) === dKey);
       if (dayTarik.length > 0) {
         let tMasuk = 0, tKeluar = 0;
         const isOutcomeOnly = dayTarik.every(item => String(item.type || '').toLowerCase() !== 'income');
@@ -1062,7 +1082,7 @@
       }
 
       // Notif hari ini
-      const dayNotif = (data.notif || []).filter(item => (item.date || '') === dKey);
+      const dayNotif = (data.notif || []).filter(item => (item.date || (dates.length === 1 ? dKey : '')) === dKey);
       if (dayNotif.length > 0) {
         const notifByApp = {};
         dayNotif.forEach(n => {
@@ -1111,7 +1131,7 @@
       }
 
       // TopUp hari ini
-      const dayTopup = (data.topup || []).filter(item => (item.date || '') === dKey);
+      const dayTopup = (data.topup || []).filter(item => (item.date || (dates.length === 1 ? dKey : '')) === dKey);
       if (dayTopup.length > 0) {
         const tTotals = { totalMasuk: 0, totalKeluar: 0, totalTrx: 0 };
         dayGroupsHtml += renderTopupGroupHtml(dayTopup, 'TopUp', dKey, opt, globalSeqObj, tTotals, false);
@@ -1120,7 +1140,7 @@
       }
 
       // Voucher hari ini
-      const dayVoucher = (data.voucher || []).filter(item => (item.date || '') === dKey);
+      const dayVoucher = (data.voucher || []).filter(item => (item.date || (dates.length === 1 ? dKey : '')) === dKey);
       if (dayVoucher.length > 0) {
         const vTotals = { totalMasuk: 0, totalKeluar: 0, totalTrx: 0 };
         dayGroupsHtml += renderVoucherGroupHtml(dayVoucher, 'Voucher', dKey, opt, globalSeqObj, vTotals, false);
@@ -1129,18 +1149,28 @@
       }
 
       sheetsHtml += `
-        <div class="spread-sheet-col" data-date="${dKey}">
-          <div class="spread-sheet-hd">
-            <span class="spread-sheet-title">📅 ${formatDayShort(dKey)}</span>
-            <span class="spread-sheet-meta">${dayTrx} trx</span>
+        <div class="side-day-sheet spread-sheet-col" data-date="${dKey}">
+          <div class="side-day-sheet-header spread-sheet-hd">
+            <div class="side-day-sheet-title-row">
+              <span class="side-day-sheet-title spread-sheet-title">📅 ${formatDayFull(dKey)}</span>
+              <span class="side-day-sheet-num spread-sheet-meta">${dayTrx} trx</span>
+            </div>
+            <div class="side-day-sheet-metrics">
+              <span style="color:var(--outcome);">Keluar: <b>${opt.fmtAmt(dayOut)}</b></span>
+              <span style="color:var(--income);">Masuk: <b>${opt.fmtAmt(dayIn)}</b></span>
+            </div>
           </div>
-          <div class="spread-sheet-body">${dayGroupsHtml}</div>
+          <div class="side-day-sheet-body spread-sheet-body">${dayGroupsHtml}</div>
         </div>`;
     });
 
     container.innerHTML = `
-      <div class="spread-horizontal-wrapper">
-        <div class="spread-sheets-container">
+      <div class="side-spread-wrapper spread-horizontal-wrapper">
+        <div class="side-spread-hint">
+          <span>👈 Geser samping untuk melihat hari lainnya 👉</span>
+          <span class="hint-badge">${dates.length} Hari</span>
+        </div>
+        <div class="side-spread-container spread-sheets-container">
           ${sheetsHtml}
         </div>
       </div>`;
@@ -1155,7 +1185,7 @@
     if (!container || !data) return { totalMasuk: 0, totalKeluar: 0, totalTrx: 0 };
 
     container.className = ''; // Reset custom layout classes
-    const mode = layoutMode || 'book_swipe';
+    const mode = layoutMode || window.CURRENT_LAYOUT_MODE || 'side_spread';
 
     // Custom renderer jika ada pendaftaran mode baru
     if (customRenderers[mode]) {
@@ -1176,7 +1206,7 @@
       case 'side_spread':
         return renderSideSpread(container, data, options);
       default:
-        return renderBookSwipe(container, data, options);
+        return renderSideSpread(container, data, options);
     }
   }
 

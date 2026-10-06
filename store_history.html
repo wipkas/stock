@@ -304,10 +304,10 @@
                 <div class="rekap-hd" onclick="toggleRekapCollapse(this, event)">
                     <span class="rekap-title">📊 Rekap &amp; Total Keseluruhan</span>
                     <div class="rekap-actions">
-                        <button class="rekap-toggle-btn" title="Buka / Tutup Rekap">▼</button>
+                        <button class="rekap-toggle-btn" title="Buka / Tutup Rekap"><span id="rekap-toggle-icon">▼</span></button>
                     </div>
                 </div>
-                <div class="rekap-body">
+                <div class="rekap-body" id="rekap-body">
                     <table class="rekap-tbl">
                         <thead>
                             <tr>
@@ -315,6 +315,7 @@
                                 <th class="c" style="width: 50px;">Trx</th>
                                 <th class="r">Keluar</th>
                                 <th class="r">Masuk</th>
+                                <th class="r">Selisih</th>
                             </tr>
                         </thead>
                         <tbody id="rekap-tbody"></tbody>
