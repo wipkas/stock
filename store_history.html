@@ -8,14 +8,14 @@
     <!-- Web App Manifest & Favicons -->
     <link rel="manifest" href="assets/manifests/manifest-store.json">
     <link rel="icon" type="image/svg+xml" href="assets/icons/icon-store.svg">
-    <meta name="theme-color" content="#0F1117">
+    <meta name="theme-color" content="#1E293B">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
 
     <!-- CSS Dependencies -->
-    <link rel="stylesheet" href="css/ksp_historiku.css?v=20261006_compact1">
-    <link rel="stylesheet" href="css/ksp_multiday_layouts.css?v=20261006_v1">
+    <link rel="stylesheet" href="css/ksp_historiku.css?v=20261006_compact2">
+    <link rel="stylesheet" href="css/ksp_multiday_layouts.css?v=20261006_v2">
 
     <!-- Core Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
@@ -24,47 +24,15 @@
     <script src="js/ksp_ui.js?v=20261005"></script>
     <script src="js/ksp_theme.js?v=20261005"></script>
     <script src="js/ksp_auth.js?v=20261005"></script>
-    <script src="js/ksp_multiday_layouts.js?v=20261006_v1"></script>
+    <script src="js/ksp_multiday_layouts.js?v=20261006_v2"></script>
     <script src="js/ksp_historiku.js?v=20261006_v2"></script>
 
     <style>
-        :root {
-            --bg-color: #0F1117;
-            --card-bg: #181C27;
-            --card-border: #262B3D;
-            --card-hover: #1E2436;
-            --primary: #4F8EF7;
-            --primary-hover: #3B7ADF;
-            --success: #10B981;
-            --warning: #F59E0B;
-            --danger: #EF4444;
-            --text-main: #FFFFFF;
-            --text-muted: #8A92A6;
-            --chip-bg: #222736;
-            --input-bg: #11141F;
-        }
-
-        body.light-theme {
-            --bg-color: #F8F5EE;
-            --card-bg: #FFFFFF;
-            --card-border: #E8E1D5;
-            --card-hover: #F2EFE8;
-            --primary: #2B6CB0;
-            --primary-hover: #2C5282;
-            --success: #059669;
-            --warning: #D97706;
-            --danger: #DC2626;
-            --text-main: #2D3748;
-            --text-muted: #718096;
-            --chip-bg: #EFE8DC;
-            --input-bg: #FAF8F5;
-        }
-
         /* PIN Security Gate Modal */
         #pinModal {
             position: fixed;
             inset: 0;
-            background: var(--bg-color);
+            background: var(--bg);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -73,31 +41,31 @@
         }
 
         .pin-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
+            background: var(--surface);
+            border: 1px solid var(--border);
             padding: 28px 24px;
-            border-radius: 20px;
+            border-radius: var(--r);
             width: 100%;
             max-width: 320px;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: var(--shadow-lg);
         }
 
         .pin-title {
-            margin: 0 0 18px 0;
+            margin: 0 0 14px 0;
             font-size: 19px;
             font-weight: 800;
             letter-spacing: 0.5px;
-            color: var(--text-main);
+            color: var(--text);
         }
 
         .pin-input {
             width: 100%;
-            background: var(--input-bg);
-            border: 1px solid var(--card-border);
-            color: var(--text-main);
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
             padding: 12px;
-            border-radius: 12px;
+            border-radius: var(--r-sm);
             font-size: 16px;
             text-align: center;
             outline: none;
@@ -106,14 +74,14 @@
         }
 
         .pin-input:focus {
-            border-color: var(--primary);
+            border-color: var(--accent);
         }
 
         .pin-btn {
             width: 100%;
-            padding: 13px;
-            border-radius: 12px;
-            background: var(--primary);
+            padding: 12px;
+            border-radius: var(--r-sm);
+            background: var(--accent);
             color: #fff;
             border: none;
             font-weight: 700;
@@ -126,246 +94,57 @@
         }
 
         .pin-btn:hover {
-            background: var(--primary-hover);
+            opacity: 0.92;
         }
 
-        /* Top Header Navigation */
-        .history-topbar {
+        /* Top Header Styling */
+        header.historiku-header {
             position: sticky;
             top: 0;
-            z-index: 100;
-            background: var(--bg-color);
-            border-bottom: 1px solid var(--card-border);
-            padding: 6px 10px;
+            z-index: 95;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 3px 8px;
+            min-height: 38px;
+            box-shadow: var(--shadow);
+        }
+
+        .header-main-custom {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 8px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        .history-topbar-left {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-width: 0;
-            flex-shrink: 0;
-        }
-
-        .btn-top-back {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            color: var(--text-main);
-            text-decoration: none;
-            font-size: 15px;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            flex-shrink: 0;
-        }
-
-        .btn-top-back:hover {
-            background: var(--card-hover);
-            border-color: var(--primary);
-        }
-
-        .store-select-compact {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            color: var(--text-main);
-            font-size: 13px;
-            font-weight: 700;
-            padding: 6px 10px;
-            border-radius: 8px;
-            outline: none;
-            cursor: pointer;
-            max-width: 150px;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .history-topbar-center {
-            display: flex;
-            align-items: center;
             gap: 6px;
-            overflow-x: auto;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-        .history-topbar-center::-webkit-scrollbar { display: none; }
-
-        .period-toggle-group {
-            display: inline-flex;
-            background: var(--input-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 2px;
-            gap: 2px;
-            flex-shrink: 0;
-        }
-
-        .btn-period-opt {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            padding: 5px 9px;
-            font-size: 11.5px;
-            font-weight: 700;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            white-space: nowrap;
-        }
-
-        .btn-period-opt.active {
-            background: var(--primary);
-            color: #ffffff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        }
-
-        .btn-date-trigger {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            color: var(--text-main);
-            padding: 6px 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
-        .btn-date-trigger:hover {
-            background: var(--card-hover);
-            border-color: var(--primary);
-        }
-
-        .btn-format-trigger {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: rgba(16, 185, 129, 0.12);
-            border: 1px solid rgba(16, 185, 129, 0.35);
-            color: #10b981;
-            padding: 6px 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
-        .btn-format-trigger:hover {
-            background: rgba(16, 185, 129, 0.22);
-        }
-
-        .history-topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-shrink: 0;
-        }
-
-        .btn-tool-action {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            color: var(--text-main);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 15px;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-
-        .btn-tool-action:hover {
-            background: var(--card-hover);
-            border-color: var(--primary);
-        }
-
-        /* Main View Container */
-        .page-listview {
-            padding: 0 !important;
+            width: 100%;
+            max-width: 820px;
             margin: 0 auto;
-            width: 100%;
-            max-width: 900px;
         }
 
-        /* Tools Modal Sheet */
-        #toolsModal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 10000;
-            display: none;
-            align-items: flex-end;
-            justify-content: center;
-        }
-
-        #toolsModal.open {
-            display: flex;
-        }
-
-        .tools-sheet {
-            background: var(--card-bg);
-            border-top: 1px solid var(--card-border);
-            width: 100%;
-            max-width: 480px;
-            border-radius: 20px 20px 0 0;
-            padding: 18px;
-            box-shadow: 0 -8px 24px rgba(0,0,0,0.5);
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-
-        .tools-sheet-hd {
+        .header-main-left {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            margin-bottom: 14px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--card-border);
+            gap: 6px;
+            min-width: 0;
+            flex-shrink: 1;
         }
 
-        .tools-sheet-title {
-            font-size: 15px;
-            font-weight: 800;
-            color: var(--text-main);
+        .header-main-right {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
         }
 
-        .tools-sheet-close {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            font-size: 18px;
-            cursor: pointer;
-        }
-
+        /* Tools Sheet Grid in Modal */
         .tools-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 10px;
-            margin-bottom: 14px;
         }
 
         .tool-btn-card {
-            background: var(--input-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
             padding: 12px;
             display: flex;
             flex-direction: column;
@@ -376,13 +155,13 @@
         }
 
         .tool-btn-card:hover {
-            border-color: var(--primary);
-            background: var(--card-hover);
+            border-color: var(--accent);
+            background: var(--accent-lt);
         }
 
         .tool-btn-card.active {
-            border-color: var(--primary);
-            background: rgba(79, 142, 247, 0.12);
+            border-color: var(--accent);
+            background: var(--accent-lt);
         }
 
         .tool-card-icon {
@@ -392,35 +171,64 @@
         .tool-card-title {
             font-size: 12.5px;
             font-weight: 750;
-            color: var(--text-main);
+            color: var(--text);
         }
 
         .tool-card-sub {
             font-size: 10.5px;
-            color: var(--text-muted);
+            color: var(--muted);
         }
 
-        @media (max-width: 600px) {
-            .history-topbar {
-                padding: 5px 8px;
-                gap: 5px;
+        /* Period Switcher inside Date Modal */
+        .modal-period-tabs {
+            display: flex;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
+            padding: 3px;
+            gap: 3px;
+        }
+
+        .modal-tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            padding: 7px;
+            font-size: 12px;
+            font-weight: 750;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .modal-tab-btn.active {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+
+        @media (max-width: 480px) {
+            header.historiku-header {
+                padding: 3px 6px;
             }
             .store-select-compact {
-                max-width: 110px;
-                font-size: 12px;
-                padding: 5px 6px;
+                max-width: 105px;
+                font-size: 11.5px;
+                padding: 4px 6px;
             }
-            .btn-period-opt {
+            .btn-date-trigger {
                 padding: 4px 7px;
                 font-size: 11px;
             }
-            .btn-date-trigger {
-                padding: 5px 7px;
+            .btn-format-trigger {
+                padding: 4px 7px;
                 font-size: 11px;
             }
-            .btn-format-trigger {
-                padding: 5px 7px;
-                font-size: 11px;
+            .btn-top-back {
+                width: 26px;
+                height: 26px;
+                font-size: 13px;
             }
         }
     </style>
@@ -431,10 +239,10 @@
     <div id="pinModal" style="display: none;">
         <div class="pin-card">
             <h2 class="pin-title">🔒 Verifikasi PIN</h2>
-            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Masukkan PIN / Password untuk melihat riwayat transaksi cabang</p>
+            <p style="font-size: 12px; color: var(--muted); margin-bottom: 16px;">Masukkan PIN / Password untuk melihat riwayat transaksi cabang</p>
             <form onsubmit="handleHistoryPinSubmit(event)">
                 <input type="password" id="pinInput" class="pin-input" placeholder="PIN / Password..." autocomplete="current-password" autofocus required>
-                <div id="pinError" style="color: var(--danger); font-size: 11px; margin-bottom: 12px; display: none;">PIN salah!</div>
+                <div id="pinError" style="color: var(--outcome); font-size: 11px; margin-bottom: 12px; display: none;">PIN salah!</div>
                 <button type="submit" id="btnUnlock" class="pin-btn">
                     <span>MASUK</span> ➜
                 </button>
@@ -445,67 +253,59 @@
     <!-- MAIN APP WRAPPER -->
     <div id="mainApp" style="display: none;">
 
-        <!-- COMPACT HEADER TOP BAR -->
-        <header class="history-topbar">
-            <!-- Left: Back button & Store Select -->
-            <div class="history-topbar-left">
-                <a href="store_manager.html" id="btnBackToStore" class="btn-top-back" title="Kembali ke Cabang">←</a>
-                <select id="storeSelect" class="store-select-compact" onchange="onStoreSelectChange(this.value)">
-                    <option value="">Pilih Cabang...</option>
-                </select>
-            </div>
-
-            <!-- Center: Mode Toggle, Date Button, Format Selector -->
-            <div class="history-topbar-center">
-                <div class="period-toggle-group">
-                    <button id="btnPeriodSingle" class="btn-period-opt active" onclick="switchPeriodMode('singleday')">1 Hari</button>
-                    <button id="btnPeriodMulti" class="btn-period-opt" onclick="switchPeriodMode('multiday')">Rentang</button>
+        <!-- COMPACT HEADER TOP BAR (STRICTLY 1 BARIS) -->
+        <header class="historiku-header">
+            <div class="header-main-custom">
+                <!-- Left: Back button & Store Select -->
+                <div class="header-main-left">
+                    <a href="store_manager.html" id="btnBackToStore" class="btn-top-back" title="Kembali ke Cabang">←</a>
+                    <select id="storeSelect" class="store-select-compact" onchange="onStoreSelectChange(this.value)">
+                        <option value="">Pilih Cabang...</option>
+                    </select>
                 </div>
 
-                <button class="btn-date-trigger" id="btnDateTrigger" onclick="KspHistoriku.openDateRangePickerModal()" title="Pilih Tanggal / Rentang">
-                    📅 <span id="currentDateDisplay">Hari Ini</span> ▾
-                </button>
+                <!-- Right: Date Trigger, Format Trigger, Hidden Group, Tools -->
+                <div class="header-main-right">
+                    <button class="btn-date-trigger" id="btnDateTrigger" onclick="KspHistoriku.openDateRangePickerModal()" title="Pilih Tanggal / Rentang">
+                        📅 <span id="currentDateDisplay">Hari Ini</span> ▾
+                    </button>
 
-                <button class="btn-format-trigger" id="btnFormatLayout" onclick="KspHistoriku.openFormatLayoutModal()" style="display: none;" title="Pilih Format Layout">
-                    📖 <span id="formatLayoutCurrentLabel">Lembar Buku</span> ▾
-                </button>
-            </div>
+                    <button class="btn-format-trigger" id="btnFormatLayout" onclick="KspHistoriku.openFormatLayoutModal()" style="display: none;" title="Pilih Format Layout">
+                        📖 <span id="formatLayoutCurrentLabel">Lembar Buku</span> ▾
+                    </button>
 
-            <!-- Right: Quick Tools button -->
-            <div class="history-topbar-right">
-                <button class="btn-tool-action" id="btn-hidden-group" onclick="toggleHiddenGroup(this)" title="Lipat / Buka Semua Tabel"><span id="btn-hidden-group-icon">📁</span></button>
-                <button class="btn-tool-action" id="btnQuickTools" onclick="openToolsModal()" title="Alat &amp; Pengaturan">⚙️</button>
+                    <button class="toggle-btn" id="btn-hidden-group" onclick="toggleHiddenGroup(this)" title="Lipat / Buka Semua Tabel" style="padding: 4px 8px; font-size: 13px;">
+                        <span id="btn-hidden-group-icon">📁</span>
+                    </button>
+
+                    <button class="settings-btn" id="btnQuickTools" onclick="openToolsModal()" title="Alat &amp; Pengaturan" style="padding: 4px 6px; font-size: 13px;">⚙️</button>
+                </div>
             </div>
         </header>
 
-        <!-- MAIN CONTENT LISTVIEW -->
-        <main class="page-listview">
+        <!-- MAIN CONTENT LISTVIEW CONTAINER -->
+        <div id="page-listview">
 
-            <!-- SUMMARY BAR (Sticky Mini Totals) -->
-            <section class="summary-bar" id="summary-bar">
-                <div class="sb-item">
-                    <span class="sb-lbl">Total Keluar</span>
-                    <span class="sb-v c-out" id="sb-total-keluar">Rp 0</span>
+            <!-- GLOBAL SUMMARY BAR (METRIC TOTALS) -->
+            <div class="summary-bar" id="summary-bar">
+                <div class="sb-meta-chips">
+                    <span class="date-chip" id="chip-date">Tanggal</span>
+                    <span class="date-chip" id="chip-shift">Semua Shift</span>
+                    <span class="date-chip chip-saved" id="chip-local-edits" style="display:none;" onclick="showLocalEditsAction()" title="Perubahan tersimpan otomatis di perangkat. Klik untuk opsi reset data asli.">💾 Tersimpan</span>
                 </div>
-                <div class="sb-item">
-                    <span class="sb-lbl">Total Masuk</span>
-                    <span class="sb-v c-in" id="sb-total-masuk">Rp 0</span>
-                </div>
-                <div class="sb-item">
-                    <span class="sb-lbl">Selisih</span>
-                    <span class="sb-v" id="sb-selisih">Rp 0</span>
-                </div>
-                <div class="sb-item">
-                    <span class="sb-lbl">Total Trx</span>
-                    <span class="sb-v" id="sb-total-trx">0</span>
-                </div>
-            </section>
+                <div class="sb-it"><span class="sb-l">Total Keluar <span class="sb-rounding-badge" style="display:none;font-size:0.65rem;color:var(--accent);font-weight:700;">(Round)</span></span><span class="sb-v c-out" id="sb-total-keluar">Rp 0</span></div>
+                <div class="sb-it"><span class="sb-l">Total Masuk <span class="sb-rounding-badge" style="display:none;font-size:0.65rem;color:var(--accent);font-weight:700;">(Round)</span></span><span class="sb-v c-in" id="sb-total-masuk">Rp 0</span></div>
+                <div class="sb-it"><span class="sb-l">Selisih <span class="sb-rounding-badge" style="display:none;font-size:0.65rem;color:var(--accent);font-weight:700;">(Round)</span></span><span class="sb-v" id="sb-selisih">Rp 0</span></div>
+                <div class="sb-it"><span class="sb-l">Total Transaksi</span><span class="sb-v" id="sb-total-trx">0</span></div>
+            </div>
 
             <!-- REKAP SUMMARY ACCORDION TABLE -->
-            <section id="rekap-summary-container" class="rekap-card">
+            <div class="rekap-card" id="rekap-summary-container">
                 <div class="rekap-hd" onclick="toggleRekapCollapse(this, event)">
                     <span class="rekap-title">📊 Rekap &amp; Total Keseluruhan</span>
-                    <button class="rekap-toggle-btn">▼</button>
+                    <div class="rekap-actions">
+                        <button class="rekap-toggle-btn" title="Buka / Tutup Rekap">▼</button>
+                    </div>
                 </div>
                 <div class="rekap-body">
                     <table class="rekap-tbl">
@@ -521,136 +321,192 @@
                         <tfoot id="rekap-tfoot"></tfoot>
                     </table>
                 </div>
-            </section>
+            </div>
 
             <!-- DYNAMIC GROUPS / MULTI-DAY CONTAINER -->
             <div id="groups-container"></div>
 
-        </main>
+        </div>
     </div>
 
-    <!-- MODAL: DATE RANGE PICKER -->
-    <div id="dateRangePickerModal" class="date-range-modal" onclick="if(event.target===this) KspHistoriku.closeDateRangePickerModal()">
-        <div class="date-range-sheet">
-            <div class="date-range-hd">
-                <span class="date-range-title">📅 Pilih Rentang Tanggal</span>
-                <button class="date-range-close" onclick="KspHistoriku.closeDateRangePickerModal()">✕</button>
-            </div>
-            <div class="date-range-presets">
-                <button class="btn-range-preset active" data-preset="today" onclick="KspHistoriku.selectRangePreset('today')">Hari Ini</button>
-                <button class="btn-range-preset" data-preset="yesterday" onclick="KspHistoriku.selectRangePreset('yesterday')">Kemarin</button>
-                <button class="btn-range-preset" data-preset="last7" onclick="KspHistoriku.selectRangePreset('last7')">7 Hari Terakhir</button>
-                <button class="btn-range-preset" data-preset="last30" onclick="KspHistoriku.selectRangePreset('last30')">30 Hari Terakhir</button>
-                <button class="btn-range-preset" data-preset="thisMonth" onclick="KspHistoriku.selectRangePreset('thisMonth')">Bulan Ini</button>
-            </div>
-            <div class="date-range-inputs">
-                <div class="date-input-field">
-                    <label>Mulai Tanggal</label>
-                    <input type="date" id="rangeStartDate">
+    <!-- MODAL: DATE RANGE PICKER (PROPER KSP-MODAL-OVERLAY) -->
+    <div id="dateRangePickerModal" class="ksp-modal-overlay" onclick="if(event.target===this) KspHistoriku.closeDateRangePickerModal()">
+        <div class="ksp-modal-card" style="max-width: 440px;" onclick="event.stopPropagation()">
+            <div class="ksp-modal-hd">
+                <div class="ksp-modal-title">
+                    <span>📅</span> <span>Pilih Tanggal / Rentang</span>
                 </div>
-                <div class="date-input-field">
-                    <label>Sampai Tanggal</label>
-                    <input type="date" id="rangeEndDate">
+                <button class="ksp-modal-close" onclick="KspHistoriku.closeDateRangePickerModal()" title="Tutup">✕</button>
+            </div>
+            <div class="ksp-modal-body">
+                <!-- Mode Tabs: 1 Hari vs Rentang Tanggal -->
+                <div class="modal-period-tabs">
+                    <button id="modalTabSingle" type="button" class="modal-tab-btn active" onclick="setModalPeriodTab('singleday')">1 Hari</button>
+                    <button id="modalTabMulti" type="button" class="modal-tab-btn" onclick="setModalPeriodTab('multiday')">Rentang Tanggal</button>
+                </div>
+
+                <!-- Quick Presets -->
+                <div class="range-preset-row" id="modalPresetsRow">
+                    <button type="button" class="range-preset-btn active" data-preset="today" onclick="KspHistoriku.selectRangePreset('today')">Hari Ini</button>
+                    <button type="button" class="range-preset-btn" data-preset="yesterday" onclick="KspHistoriku.selectRangePreset('yesterday')">Kemarin</button>
+                    <button type="button" class="range-preset-btn" data-preset="last7" onclick="KspHistoriku.selectRangePreset('last7')">7 Hari</button>
+                    <button type="button" class="range-preset-btn" data-preset="last30" onclick="KspHistoriku.selectRangePreset('last30')">30 Hari</button>
+                    <button type="button" class="range-preset-btn" data-preset="thisMonth" onclick="KspHistoriku.selectRangePreset('thisMonth')">Bulan Ini</button>
+                </div>
+
+                <!-- Inputs Tanggal -->
+                <div class="range-input-group">
+                    <div class="range-input-field">
+                        <label class="range-input-label" id="labelStartDate">Tanggal</label>
+                        <input type="date" id="rangeStartDate" class="range-input">
+                    </div>
+                    <div class="range-input-field" id="rangeEndFieldWrapper" style="display: none;">
+                        <label class="range-input-label">Sampai Tanggal</label>
+                        <input type="date" id="rangeEndDate" class="range-input">
+                    </div>
+                </div>
+
+                <!-- Pilihan Format Layout jika Rentang dipilih -->
+                <div id="modalLayoutSelectWrapper" style="display: none; border-top: 1px dashed var(--border); padding-top: 10px;">
+                    <label class="range-input-label" style="margin-bottom: 6px; display: block;">Format Tampilan Laporan:</label>
+                    <div class="format-option-list" id="modalFormatOptionsList"></div>
                 </div>
             </div>
-            <div class="date-range-actions">
-                <button class="btn-range-apply" onclick="KspHistoriku.applyDateRange()">Terapkan Rentang</button>
+            <div class="ksp-modal-ft">
+                <button type="button" class="ksp-btn-sec" onclick="KspHistoriku.closeDateRangePickerModal()">Batal</button>
+                <button type="button" class="range-apply-btn" onclick="KspHistoriku.applyDateRange()">Terapkan</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL: 6 MULTI-DAY FORMAT LAYOUTS -->
-    <div id="formatLayoutModal" class="format-layout-modal" onclick="if(event.target===this) KspHistoriku.closeFormatLayoutModal()">
-        <div class="format-layout-sheet">
-            <div class="format-layout-hd">
-                <span class="format-layout-title">📖 Format Tampilan Multi-Day</span>
-                <button class="format-layout-close" onclick="KspHistoriku.closeFormatLayoutModal()">✕</button>
+    <!-- MODAL: 6 MULTI-DAY FORMAT LAYOUTS (PROPER KSP-MODAL-OVERLAY) -->
+    <div id="formatLayoutModal" class="ksp-modal-overlay" onclick="if(event.target===this) KspHistoriku.closeFormatLayoutModal()">
+        <div class="ksp-modal-card" style="max-width: 440px;" onclick="event.stopPropagation()">
+            <div class="ksp-modal-hd">
+                <div class="ksp-modal-title">
+                    <span>📖</span> <span>Format Tampilan Multi-Day</span>
+                </div>
+                <button class="ksp-modal-close" onclick="KspHistoriku.closeFormatLayoutModal()" title="Tutup">✕</button>
             </div>
-            <div class="format-layout-options" id="formatLayoutOptionsList"></div>
-        </div>
-    </div>
-
-    <!-- MODAL: QUICK TOOLS SHEET -->
-    <div id="toolsModal" onclick="if(event.target===this) closeToolsModal()">
-        <div class="tools-sheet">
-            <div class="tools-sheet-hd">
-                <span class="tools-sheet-title">⚙️ Alat &amp; Preferensi HistoriKu</span>
-                <button class="tools-sheet-close" onclick="closeToolsModal()">✕</button>
+            <div class="ksp-modal-body">
+                <div class="format-option-list" id="formatLayoutOptionsList"></div>
             </div>
-            <div class="tools-grid">
-                <div class="tool-btn-card" id="cardToolRingkas" onclick="toggleRingkasFromSheet()">
-                    <span class="tool-card-icon">🧮</span>
-                    <span class="tool-card-title">Mode Ringkas</span>
-                    <span class="tool-card-sub" id="subToolRingkas">Sembunyikan 000</span>
-                </div>
-                <div class="tool-btn-card" id="cardToolRounding" onclick="toggleRoundingFromSheet()">
-                    <span class="tool-card-icon">🔢</span>
-                    <span class="tool-card-title">Bulatkan Ribuan</span>
-                    <span class="tool-card-sub" id="subToolRounding">Pembulatan ke ribuan</span>
-                </div>
-                <div class="tool-btn-card" onclick="closeToolsModal(); KspHistoriku.openImportModal();">
-                    <span class="tool-card-icon">📥</span>
-                    <span class="tool-card-title">Impor Laporan</span>
-                    <span class="tool-card-sub">HTML / JSON KSP Check</span>
-                </div>
-                <div class="tool-btn-card" onclick="closeToolsModal(); openTtsSettingsModal();">
-                    <span class="tool-card-icon">🔊</span>
-                    <span class="tool-card-title">Pengaturan Suara</span>
-                    <span class="tool-card-sub">Atur TTS &amp; kecepatan</span>
-                </div>
-                <div class="tool-btn-card" onclick="closeToolsModal(); toggleThemeMode();">
-                    <span class="tool-card-icon">🌓</span>
-                    <span class="tool-card-title">Ganti Tema</span>
-                    <span class="tool-card-sub" id="subToolTheme">Gelap / Terang</span>
-                </div>
-                <div class="tool-btn-card" onclick="closeToolsModal(); showLocalEditsAction();">
-                    <span class="tool-card-icon">↺</span>
-                    <span class="tool-card-title">Reset Editan</span>
-                    <span class="tool-card-sub">Kembalikan data asli</span>
-                </div>
-            </div>
-            <button class="pin-btn" onclick="closeToolsModal()" style="background: var(--card-border); color: var(--text-main);">Tutup</button>
-        </div>
-    </div>
-
-    <!-- MODAL: IMPORT LAPORAN -->
-    <div id="import-report-modal" class="ksp-modal-backdrop" onclick="if(event.target===this) KspHistoriku.closeImportModal()">
-        <div class="ksp-modal-card">
-            <h3 style="margin:0 0 8px 0; font-size:16px; font-weight:800;">📥 Impor Laporan HTML / JSON</h3>
-            <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Pilih file laporan HTML atau JSON hasil ekspor dari aplikasi Android KSP Check untuk ditampilkan dan dikelola.</p>
-            <input type="file" id="report-file-input" accept=".html,.htm,.json" style="margin-bottom:14px; font-size:12px; width:100%;" onchange="KspHistoriku.handleFileImport(this.files[0])">
-            <div style="display:flex; justify-content:flex-end; gap:8px;">
-                <button type="button" class="btn-cancel" onclick="KspHistoriku.closeImportModal()" style="padding:8px 14px; font-size:12px; border-radius:8px; border:1px solid var(--card-border); background:transparent; color:var(--text-main); cursor:pointer;">Batal</button>
+            <div class="ksp-modal-ft">
+                <button type="button" class="ksp-btn-sec" onclick="KspHistoriku.closeFormatLayoutModal()">Tutup</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL: TTS SETTINGS -->
-    <div id="tts-settings-modal" class="ksp-modal-backdrop" onclick="if(event.target===this) closeTtsSettingsModal()">
-        <div class="ksp-modal-card">
-            <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:800;">🔊 Pengaturan Audio Suara (TTS)</h3>
-            <div style="margin-bottom:12px;">
-                <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Pilih Suara:</label>
-                <select id="tts-voice-select" style="width:100%; padding:8px; border-radius:8px; background:var(--input-bg); border:1px solid var(--card-border); color:var(--text-main);"></select>
+    <!-- MODAL: QUICK TOOLS SHEET (PROPER KSP-MODAL-OVERLAY) -->
+    <div id="toolsModal" class="ksp-modal-overlay" onclick="if(event.target===this) closeToolsModal()">
+        <div class="ksp-modal-card" style="max-width: 440px;" onclick="event.stopPropagation()">
+            <div class="ksp-modal-hd">
+                <div class="ksp-modal-title">
+                    <span>⚙️</span> <span>Alat &amp; Preferensi HistoriKu</span>
+                </div>
+                <button class="ksp-modal-close" onclick="closeToolsModal()" title="Tutup">✕</button>
             </div>
-            <div style="margin-bottom:16px;">
-                <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Kecepatan Bicara: <span id="tts-rate-val">1.0x</span></label>
-                <input type="range" id="tts-rate-slider" min="0.7" max="1.5" step="0.1" value="1.0" style="width:100%;">
+            <div class="ksp-modal-body">
+                <div class="tools-grid">
+                    <div class="tool-btn-card" id="cardToolRingkas" onclick="toggleRingkasFromSheet()">
+                        <span class="tool-card-icon">🧮</span>
+                        <span class="tool-card-title">Mode Ringkas</span>
+                        <span class="tool-card-sub" id="subToolRingkas">Sembunyikan 000</span>
+                    </div>
+                    <div class="tool-btn-card" id="cardToolRounding" onclick="toggleRoundingFromSheet()">
+                        <span class="tool-card-icon">🔢</span>
+                        <span class="tool-card-title">Bulatkan Ribuan</span>
+                        <span class="tool-card-sub" id="subToolRounding">Pembulatan ke ribuan</span>
+                    </div>
+                    <div class="tool-btn-card" onclick="closeToolsModal(); KspHistoriku.openImportModal();">
+                        <span class="tool-card-icon">📥</span>
+                        <span class="tool-card-title">Impor Laporan</span>
+                        <span class="tool-card-sub">HTML / JSON KSP Check</span>
+                    </div>
+                    <div class="tool-btn-card" onclick="closeToolsModal(); openTtsSettingsModal();">
+                        <span class="tool-card-icon">🔊</span>
+                        <span class="tool-card-title">Pengaturan Suara</span>
+                        <span class="tool-card-sub">Atur TTS &amp; kecepatan</span>
+                    </div>
+                    <div class="tool-btn-card" onclick="toggleThemeModeFromHistory();">
+                        <span class="tool-card-icon">🌓</span>
+                        <span class="tool-card-title">Ganti Tema</span>
+                        <span class="tool-card-sub" id="subToolTheme">Gelap / Terang</span>
+                    </div>
+                    <div class="tool-btn-card" onclick="closeToolsModal(); showLocalEditsAction();">
+                        <span class="tool-card-icon">↺</span>
+                        <span class="tool-card-title">Reset Editan</span>
+                        <span class="tool-card-sub">Kembalikan data asli</span>
+                    </div>
+                </div>
             </div>
-            <div style="display:flex; justify-content:flex-end; gap:8px;">
-                <button type="button" onclick="testTtsVoice()" style="padding:8px 14px; font-size:12px; border-radius:8px; background:var(--primary); color:#fff; border:none; cursor:pointer;">Uji Suara</button>
-                <button type="button" onclick="closeTtsSettingsModal()" style="padding:8px 14px; font-size:12px; border-radius:8px; border:1px solid var(--card-border); background:transparent; color:var(--text-main); cursor:pointer;">Selesai</button>
+            <div class="ksp-modal-ft">
+                <button type="button" class="ksp-btn-sec" onclick="closeToolsModal()">Tutup</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL: APP MARGIN DETAILS -->
-    <div id="app-margin-modal" class="ksp-modal-backdrop" onclick="if(event.target===this) closeAppMarginDialog()">
-        <div class="ksp-modal-card">
-            <h3 id="app-margin-title" style="margin:0 0 10px 0; font-size:16px; font-weight:800;">📊 Rincian Nilai &amp; Margin</h3>
-            <div id="app-margin-body" style="font-size:13px; line-height:1.6;"></div>
-            <div style="display:flex; justify-content:flex-end; margin-top:14px;">
-                <button type="button" onclick="closeAppMarginDialog()" style="padding:8px 14px; font-size:12px; border-radius:8px; background:var(--primary); color:#fff; border:none; cursor:pointer;">Tutup</button>
+    <!-- MODAL: IMPORT LAPORAN (PROPER KSP-MODAL-OVERLAY) -->
+    <div id="import-report-modal" class="ksp-modal-overlay" onclick="if(event.target===this) KspHistoriku.closeImportModal()">
+        <div class="ksp-modal-card" style="max-width: 440px;" onclick="event.stopPropagation()">
+            <div class="ksp-modal-hd">
+                <div class="ksp-modal-title">
+                    <span>📥</span> <span>Impor Laporan HistoriKu</span>
+                </div>
+                <button class="ksp-modal-close" onclick="KspHistoriku.closeImportModal()" title="Tutup">&times;</button>
+            </div>
+            <div class="ksp-modal-body">
+                <p style="font-size: 12px; color: var(--muted); margin: 0;">Pilih file laporan HTML atau JSON hasil ekspor dari aplikasi Android KSP Check untuk ditampilkan dan dikelola di cabang ini.</p>
+                <input type="file" id="report-file-input" accept=".html,.htm,.json" style="width: 100%; font-size: 12px;" onchange="KspHistoriku.handleFileImport(this.files[0])">
+                <div style="border-top: 1px dashed var(--border); padding-top: 10px;">
+                    <button type="button" class="ksp-btn-sec" onclick="loadSampleReportForCurrentStore(); KspHistoriku.closeImportModal();" style="width: 100%;">
+                        <span>✨</span> <span>Gunakan Contoh Data Riwayat Transaksi</span>
+                    </button>
+                </div>
+            </div>
+            <div class="ksp-modal-ft">
+                <button type="button" class="ksp-btn-sec" onclick="KspHistoriku.closeImportModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: TTS SETTINGS (PROPER KSP-MODAL-OVERLAY) -->
+    <div id="tts-settings-modal" class="ksp-modal-overlay" onclick="if(event.target===this) closeTtsSettingsModal()">
+        <div class="ksp-modal-card" style="max-width: 440px;" onclick="event.stopPropagation()">
+            <div class="ksp-modal-hd">
+                <div class="ksp-modal-title">
+                    <span>⚙️</span> <span>Pengaturan Suara &amp; Laporan</span>
+                </div>
+                <button class="ksp-modal-close" onclick="closeTtsSettingsModal()" title="Tutup">✕</button>
+            </div>
+            <div class="ksp-modal-body">
+                <div>
+                    <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px;">Suara Pembaca:</label>
+                    <select id="tts-voice-select" style="width: 100%; padding: 8px 10px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border); color: var(--text);"></select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px;">Kecepatan Suara: <span id="tts-rate-val">1.0x</span></label>
+                    <input type="range" id="tts-rate-slider" min="0.5" max="1.5" step="0.1" value="1.0" style="width: 100%;">
+                </div>
+            </div>
+            <div class="ksp-modal-ft">
+                <button type="button" class="ksp-btn-sec" onclick="closeTtsSettingsModal()">Selesai</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: APP MARGIN DETAILS (PROPER KSP-MODAL-OVERLAY) -->
+    <div id="app-margin-modal" class="ksp-modal-overlay" onclick="if(event.target===this) closeAppMarginDialog()">
+        <div class="ksp-modal-card" style="max-width: 360px;" onclick="event.stopPropagation()">
+            <div class="ksp-modal-hd">
+                <div class="ksp-modal-title">
+                    <span id="app-margin-title">📊 Rincian Nilai &amp; Margin</span>
+                </div>
+                <button class="ksp-modal-close" onclick="closeAppMarginDialog()" title="Tutup">✕</button>
+            </div>
+            <div id="app-margin-body" style="padding: 14px 16px; font-size: 13px; line-height: 1.6;"></div>
+            <div class="ksp-modal-ft">
+                <button type="button" class="ksp-btn-sec" onclick="closeAppMarginDialog()">Tutup</button>
             </div>
         </div>
     </div>
@@ -668,14 +524,39 @@
         <button class="nav-btn nav-close" onclick="closeItemNavBar()" title="Tutup Navigasi">✕</button>
     </div>
 
-    <!-- SCRIPT INLINE: CONTROLLER INITIALIZATION -->
+    <!-- INLINE PAGE SCRIPTS -->
     <script>
         let currentStoreId = '';
         let currentStoreName = '';
         let storesList = [];
 
-        // 1. Inisialisasi Auth & Halaman
+        // Inisialisasi Tema
+        function syncPageTheme() {
+            try {
+                let theme = localStorage.getItem('kspcheck_theme') || localStorage.getItem('ksp_theme');
+                if (!theme) theme = 'dark';
+                document.documentElement.setAttribute('data-theme', theme);
+                document.body.classList.toggle('light-theme', theme === 'light');
+            } catch(e) {}
+        }
+        syncPageTheme();
+
+        function toggleThemeModeFromHistory() {
+            const cur = document.documentElement.getAttribute('data-theme');
+            const next = (cur === 'dark') ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            document.body.classList.toggle('light-theme', next === 'light');
+            try {
+                localStorage.setItem('kspcheck_theme', next);
+                localStorage.setItem('ksp_theme', next);
+            } catch(e) {}
+            updateToolsSheetBadges();
+            showToast('Tema diubah ke mode ' + (next === 'dark' ? 'Gelap' : 'Terang'));
+        }
+
+        // Inisialisasi Halaman & Autentikasi
         document.addEventListener('DOMContentLoaded', async function() {
+            syncPageTheme();
             const savedPin = KspAuth.getAdminPin();
             if (savedPin) {
                 unlockWithPin(savedPin);
@@ -684,7 +565,7 @@
             }
         });
 
-        // 2. PIN Unlock Logic
+        // PIN Unlock Logic
         async function handleHistoryPinSubmit(e) {
             e.preventDefault();
             const pin = document.getElementById('pinInput').value.trim();
@@ -699,7 +580,6 @@
             if (errBox) errBox.style.display = 'none';
 
             try {
-                // Verifikasi PIN via KspAuth decryptConfig
                 await KspAuth.decryptConfig(pin);
                 KspAuth.setAdminSession(pin);
 
@@ -720,12 +600,10 @@
             }
         }
 
-        // 3. Setup Halaman & Data Toko
+        // Setup Toko & Parameter URL
         function initHistoryPage() {
-            // Load stores dari local cache atau KspSync
             loadStoresList();
 
-            // Parse URL parameters
             const params = new URLSearchParams(window.location.search);
             const storeParam = params.get('store');
             const nameParam = params.get('name');
@@ -739,7 +617,6 @@
                 KspHistoriku.selectFormatLayoutMode(layoutParam);
             }
 
-            // Tentukan store aktif
             if (storeParam && storesList.some(s => s.id === storeParam)) {
                 currentStoreId = storeParam;
                 const found = storesList.find(s => s.id === storeParam);
@@ -752,22 +629,17 @@
                 currentStoreName = 'Cabang Utama';
             }
 
-            // Update Back Link to store_manager.html
             const backBtn = document.getElementById('btnBackToStore');
             if (backBtn) {
                 backBtn.href = 'store_manager.html?store=' + encodeURIComponent(currentStoreId);
             }
 
-            // Update store selector dropdown
             const storeSelect = document.getElementById('storeSelect');
             if (storeSelect) storeSelect.value = currentStoreId;
 
-            // Update Layout UI label
             if (window.KspHistoriku) KspHistoriku.updateLayoutModeUI();
 
-            // Load data sesuai mode
             if (modeParam === 'multiday' || (rangeStart && rangeEnd)) {
-                switchPeriodMode('multiday');
                 const start = rangeStart || (function() {
                     const d = new Date(); d.setDate(d.getDate() - 6);
                     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -778,7 +650,6 @@
                 })();
                 KspHistoriku.loadMultiDayForStore(currentStoreId, currentStoreName, start, end);
             } else {
-                switchPeriodMode('singleday');
                 KspHistoriku.loadForStore(currentStoreId, currentStoreName, dateParam);
             }
         }
@@ -811,11 +682,9 @@
             const found = storesList.find(s => s.id === storeId);
             currentStoreName = found ? found.name : 'Cabang';
 
-            // Update Back link
             const backBtn = document.getElementById('btnBackToStore');
             if (backBtn) backBtn.href = 'store_manager.html?store=' + encodeURIComponent(currentStoreId);
 
-            // Replace state in URL
             try {
                 const url = new URL(window.location.href);
                 url.searchParams.set('store', currentStoreId);
@@ -837,14 +706,31 @@
             }
         }
 
-        function switchPeriodMode(mode) {
+        // Tab switcher di dalam Date Modal
+        function setModalPeriodTab(mode) {
             if (window.KspHistoriku) {
                 KspHistoriku.setPeriodMode(mode);
             }
-            if (mode === 'multiday') {
-                KspHistoriku.openDateRangePickerModal();
+            const tabSingle = document.getElementById('modalTabSingle');
+            const tabMulti = document.getElementById('modalTabMulti');
+            const endWrapper = document.getElementById('rangeEndFieldWrapper');
+            const presetsRow = document.getElementById('modalPresetsRow');
+            const layoutWrapper = document.getElementById('modalLayoutSelectWrapper');
+            const lblStart = document.getElementById('labelStartDate');
+
+            if (tabSingle) tabSingle.classList.toggle('active', mode === 'singleday');
+            if (tabMulti) tabMulti.classList.toggle('active', mode === 'multiday');
+
+            if (mode === 'singleday') {
+                if (endWrapper) endWrapper.style.display = 'none';
+                if (presetsRow) presetsRow.style.display = 'none';
+                if (layoutWrapper) layoutWrapper.style.display = 'none';
+                if (lblStart) lblStart.textContent = 'Pilih Tanggal';
             } else {
-                KspHistoriku.loadForStore(currentStoreId, currentStoreName);
+                if (endWrapper) endWrapper.style.display = 'flex';
+                if (presetsRow) presetsRow.style.display = 'flex';
+                if (layoutWrapper) layoutWrapper.style.display = 'block';
+                if (lblStart) lblStart.textContent = 'Mulai Tanggal';
             }
         }
 
@@ -873,6 +759,12 @@
             if (cardRounding && subRounding) {
                 cardRounding.classList.toggle('active', Boolean(roundingMode));
                 subRounding.textContent = roundingMode ? 'Aktif (Ribuan)' : 'Nonaktif (Asli)';
+            }
+
+            const subTheme = document.getElementById('subToolTheme');
+            if (subTheme) {
+                const cur = document.documentElement.getAttribute('data-theme');
+                subTheme.textContent = (cur === 'dark') ? 'Mode Gelap (Aktif)' : 'Mode Terang (Aktif)';
             }
         }
 

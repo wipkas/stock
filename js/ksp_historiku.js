@@ -4404,12 +4404,18 @@ function updateDateDisplayUI(text) {
 
 function setPeriodMode(mode) {
   window.ACTIVE_PERIOD_MODE = mode;
-  const btnSingle = document.getElementById('btnPeriodSingle');
-  const btnMulti = document.getElementById('btnPeriodMulti');
+  const btnSingle = document.getElementById('modalTabSingle');
+  const btnMulti = document.getElementById('modalTabMulti');
   const btnFormat = document.getElementById('btnFormatLayout');
+  const layoutWrap = document.getElementById('modalLayoutSelectWrapper');
+  const endWrap = document.getElementById('rangeEndFieldWrapper');
+  const presetsWrap = document.getElementById('modalPresetsRow');
   if (btnSingle) btnSingle.classList.toggle('active', mode === 'singleday');
   if (btnMulti) btnMulti.classList.toggle('active', mode === 'multiday');
   if (btnFormat) btnFormat.style.display = (mode === 'multiday') ? 'inline-flex' : 'none';
+  if (layoutWrap) layoutWrap.style.display = (mode === 'multiday') ? 'block' : 'none';
+  if (endWrap) endWrap.style.display = (mode === 'multiday') ? 'flex' : 'none';
+  if (presetsWrap) presetsWrap.style.display = (mode === 'multiday') ? 'flex' : 'none';
 }
 
 function openFormatLayoutModal() {
@@ -4418,11 +4424,11 @@ function openFormatLayoutModal() {
   const list = document.getElementById('formatLayoutOptionsList');
   if (list && window.KspMultiDayLayouts) {
     list.innerHTML = window.KspMultiDayLayouts.MODES.map(m => `
-      <div class="layout-option-card ${m.id === window.CURRENT_LAYOUT_MODE ? 'active' : ''}" onclick="KspHistoriku.selectFormatLayoutMode('${m.id}')">
-        <div class="layout-opt-icon">${m.icon}</div>
-        <div class="layout-opt-info">
-          <div class="layout-opt-title">${escapeHtml(m.name)} <span class="layout-opt-badge">${escapeHtml(m.badge)}</span></div>
-          <div class="layout-opt-desc">${escapeHtml(m.desc)}</div>
+      <div class="format-option-card ${m.id === window.CURRENT_LAYOUT_MODE ? 'active' : ''}" onclick="KspHistoriku.selectFormatLayoutMode('${m.id}')">
+        <div class="format-opt-icon">${m.icon}</div>
+        <div class="format-opt-info">
+          <div class="format-opt-title">${escapeHtml(m.name)} <span class="format-opt-badge">${escapeHtml(m.badge)}</span></div>
+          <div class="format-opt-desc">${escapeHtml(m.desc)}</div>
         </div>
       </div>
     `).join('');
@@ -4454,6 +4460,25 @@ function updateLayoutModeUI() {
     if (label && m) label.textContent = m.name;
     if (btn && m) btn.title = 'Format Tampilan: ' + m.name;
   }
+  // Juga update kartu active di modal
+  document.querySelectorAll('.format-option-card').forEach(card => {
+    card.classList.remove('active');
+  });
+}
+
+function renderModalFormatOptions() {
+  const list = document.getElementById('modalFormatOptionsList');
+  if (list && window.KspMultiDayLayouts) {
+    list.innerHTML = window.KspMultiDayLayouts.MODES.map(m => `
+      <div class="format-option-card ${m.id === window.CURRENT_LAYOUT_MODE ? 'active' : ''}" onclick="KspHistoriku.selectFormatLayoutMode('${m.id}')">
+        <div class="format-opt-icon">${m.icon}</div>
+        <div class="format-opt-info">
+          <div class="format-opt-title">${escapeHtml(m.name)} <span class="format-opt-badge">${escapeHtml(m.badge)}</span></div>
+          <div class="format-opt-desc">${escapeHtml(m.desc)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
 }
 
 function openDateRangePickerModal() {
@@ -4464,6 +4489,8 @@ function openDateRangePickerModal() {
   const todayStr = getTodayDbDate();
   if (startInput && !startInput.value) startInput.value = todayStr;
   if (endInput && !endInput.value) endInput.value = todayStr;
+  renderModalFormatOptions();
+  setPeriodMode(window.ACTIVE_PERIOD_MODE || 'singleday');
   modal.classList.add('open');
 }
 
@@ -4497,7 +4524,7 @@ function selectRangePreset(presetKey) {
   if (startInput) startInput.value = start;
   if (endInput) endInput.value = end;
 
-  document.querySelectorAll('#dateRangePickerModal .btn-range-preset').forEach(btn => {
+  document.querySelectorAll('#dateRangePickerModal .range-preset-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.preset === presetKey);
   });
 }
@@ -4507,22 +4534,22 @@ function applyDateRange() {
   const endInput = document.getElementById('rangeEndDate');
   if (!startInput || !endInput) return;
   const startDate = startInput.value;
-  const endDate = endInput.value;
-  if (!startDate || !endDate) {
-    alert('Pilih tanggal awal dan akhir!');
+  const endDate = (window.ACTIVE_PERIOD_MODE === 'multiday') ? endInput.value : startDate;
+  if (!startDate) {
+    alert('Pilih tanggal!');
     return;
   }
-  if (startDate > endDate) {
+  if (window.ACTIVE_PERIOD_MODE === 'multiday' && startDate > endDate) {
     alert('Tanggal awal tidak boleh lebih besar dari tanggal akhir!');
     return;
   }
   closeDateRangePickerModal();
 
-  if (startDate === endDate) {
+  if (window.ACTIVE_PERIOD_MODE === 'multiday' && startDate !== endDate) {
+    loadMultiDayForStore(window.ACTIVE_STORE_ID, window.ACTIVE_STORE_NAME, startDate, endDate);
+  } else {
     setPeriodMode('singleday');
     window.KspHistoriku.loadForStore(window.ACTIVE_STORE_ID, window.ACTIVE_STORE_NAME, startDate);
-  } else {
-    loadMultiDayForStore(window.ACTIVE_STORE_ID, window.ACTIVE_STORE_NAME, startDate, endDate);
   }
 }
 
