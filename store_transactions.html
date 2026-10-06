@@ -5271,7 +5271,11 @@
                     const myRec = records.find(r => r.emp_id === currentEmployee.id);
 
                     let shiftName = '';
-                    if (myRec && myRec.shift_name) {
+                    if (isTodayRow && isSingle) {
+                        shiftName = 'Full Shift';
+                    } else if (isSingle && (!myRec || !myRec.shift_name || myRec.shift_name.includes('1') || myRec.shift_name.toLowerCase().includes('pagi'))) {
+                        shiftName = 'Full Shift';
+                    } else if (myRec && myRec.shift_name) {
                         shiftName = myRec.shift_name;
                     } else if (isSingle) {
                         shiftName = 'Full Shift';
@@ -5485,7 +5489,11 @@
                     const myRec = records.find(r => r.emp_id === currentEmployee.id);
 
                     let shiftName = '';
-                    if (myRec && myRec.shift_name) {
+                    if (isTodayRow && isSingle) {
+                        shiftName = 'Full Shift';
+                    } else if (isSingle && (!myRec || !myRec.shift_name || myRec.shift_name.includes('1') || myRec.shift_name.toLowerCase().includes('pagi'))) {
+                        shiftName = 'Full Shift';
+                    } else if (myRec && myRec.shift_name) {
                         shiftName = myRec.shift_name;
                     } else if (isSingle) {
                         shiftName = 'Full Shift';
