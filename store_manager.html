@@ -25,6 +25,8 @@
     <script src="js/ksp_auth.js?v=20261005"></script>
     <script src="js/ksp_target_card.js?v=20261005"></script>
     <script src="js/ksp_leaderboard.js?v=20261006"></script>
+    <link rel="stylesheet" href="css/ksp_historiku.css?v=20261006">
+    <script src="js/ksp_historiku.js?v=20261006"></script>
 
     <style>
         :root {
@@ -2392,7 +2394,25 @@
                     </div>
                 </div>
 
+                <!-- HistoriKu: Riwayat Transaksi Asli Android -->
+                <div class="feature-card" style="--feature-accent: #10B981; cursor: pointer;" onclick="scrollToHistorikuSection()">
+                    <div>
+                        <div class="feature-card-top">
+                            <div class="feature-icon">📜</div>
+                            <div class="feature-title">HistoriKu Transaksi Asli</div>
+                        </div>
+                        <p class="feature-desc">Riwayat itemized per-modul (Tarik, Topup, Voucher, Notifikasi Bank), controller stepper &amp; voice TTS.</p>
+                    </div>
+                    <div class="feature-action">
+                        <span>Lihat Rincian &amp; Verifikasi</span>
+                        <span>&darr;</span>
+                    </div>
+                </div>
+
             </div>
+
+            <!-- SECTION HISTORIKU TRANSAKSI ASLI PER-CABANG -->
+            <div id="branchHistorikuContainer" style="margin-top: 24px;"></div>
         </section>
 
         <!-- VIEW 3: HALAMAN MASTER DATA KARYAWAN & RIWAYAT MUTASI -->
@@ -3962,6 +3982,175 @@
         </div>
     </div>
 
+    <!-- MODAL PENGATURAN HISTORIKU (PARITAS DENGAN HISTORYACTIVITY.JAVA) -->
+    <div id="historikuSettingsModal" class="hk-modal-overlay" onclick="if(event.target===this) KspHistoriku.closeSettingsModal()">
+        <div class="hk-modal-card">
+            <div class="hk-modal-hd">
+                <div class="hk-modal-title">
+                    <span>⚙️</span> <span>Pengaturan HistoriKu</span>
+                </div>
+                <button type="button" class="hk-modal-close" onclick="KspHistoriku.closeSettingsModal()">&times;</button>
+            </div>
+            <div class="hk-modal-body">
+                <!-- Sticky Headers -->
+                <div class="hk-ctrl-grp">
+                    <div class="hk-switch-row">
+                        <div>
+                            <div class="hk-ctrl-label">Sticky App Headers</div>
+                            <div class="hk-switch-desc">Header tabel tetap mengambang di atas saat menggulir layar.</div>
+                        </div>
+                        <label class="hk-switch">
+                            <input type="checkbox" id="hk-set-sticky">
+                            <span class="hk-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Mode Ringkas Angka -->
+                <div class="hk-ctrl-grp">
+                    <div class="hk-switch-row">
+                        <div>
+                            <div class="hk-ctrl-label">Mode Ringkas (Ribuan Kasir)</div>
+                            <div class="hk-switch-desc">Sembunyikan 3 digit '000' (contoh: 50.000 jadi 50) untuk input cepat kasir.</div>
+                        </div>
+                        <label class="hk-switch">
+                            <input type="checkbox" id="hk-set-ringkas">
+                            <span class="hk-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Mode Pembulatan -->
+                <div class="hk-ctrl-grp">
+                    <div class="hk-switch-row">
+                        <div>
+                            <div class="hk-ctrl-label">Mode Pembulatan Nominal</div>
+                            <div class="hk-switch-desc">Bulatkan nilai nominal ke ribuan terdekat pada perhitungan ringkasan.</div>
+                        </div>
+                        <label class="hk-switch">
+                            <input type="checkbox" id="hk-set-round">
+                            <span class="hk-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Tampilkan Stepper +/- di Baris -->
+                <div class="hk-ctrl-grp">
+                    <div class="hk-switch-row">
+                        <div>
+                            <div class="hk-ctrl-label">Tombol Stepper +/- di Baris</div>
+                            <div class="hk-switch-desc">Tampilkan tombol stepper kecil langsung pada setiap baris item tabel.</div>
+                        </div>
+                        <label class="hk-switch">
+                            <input type="checkbox" id="hk-set-steppers">
+                            <span class="hk-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Auto-hide Grup Selesai -->
+                <div class="hk-ctrl-grp">
+                    <div class="hk-switch-row">
+                        <div>
+                            <div class="hk-ctrl-label">Auto-Hide Grup Selesai</div>
+                            <div class="hk-switch-desc">Otomatis sembunyikan grup transaksi saat semua itemnya telah ditandai dibaca.</div>
+                        </div>
+                        <label class="hk-switch">
+                            <input type="checkbox" id="hk-set-autohide">
+                            <span class="hk-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Layar Tetap Menyala (WakeLock) -->
+                <div class="hk-ctrl-grp">
+                    <div class="hk-switch-row">
+                        <div>
+                            <div class="hk-ctrl-label">Layar Tetap Menyala (Wake Lock)</div>
+                            <div class="hk-switch-desc">Cegah layar mati otomatis saat pembacaan suara TTS sedang berlangsung.</div>
+                        </div>
+                        <label class="hk-switch">
+                            <input type="checkbox" id="hk-set-wakelock">
+                            <span class="hk-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Pengaturan Suara TTS -->
+                <div class="hk-ctrl-grp">
+                    <div class="hk-ctrl-label-row">
+                        <span class="hk-ctrl-label">Kecepatan Pembacaan (TTS)</span>
+                        <span class="hk-badge" id="hk-speed-val">0.9x</span>
+                    </div>
+                    <input type="range" id="hk-set-tts-speed" class="hk-range-slider" min="0.5" max="2.0" step="0.1" value="0.9" oninput="document.getElementById('hk-speed-val').textContent = parseFloat(this.value).toFixed(1) + 'x'">
+                    <div class="hk-range-hints">
+                        <span>0.5x Lambat</span>
+                        <span>1.0x Normal</span>
+                        <span>2.0x Cepat</span>
+                    </div>
+
+                    <div class="hk-ctrl-label-row" style="margin-top: 10px;">
+                        <span class="hk-ctrl-label">Jeda Antar Baris</span>
+                        <span class="hk-badge" id="hk-delay-val">500 ms</span>
+                    </div>
+                    <input type="range" id="hk-set-tts-delay" class="hk-range-slider" min="200" max="2000" step="100" value="500" oninput="document.getElementById('hk-delay-val').textContent = this.value + ' ms'">
+                    <div class="hk-range-hints">
+                        <span>200 ms Cepat</span>
+                        <span>500 ms Standar</span>
+                        <span>2000 ms Santai</span>
+                    </div>
+
+                    <div style="margin-top: 10px; display: flex; gap: 8px;">
+                        <button type="button" class="hk-btn-sec" style="flex: 1;" onclick="KspHistoriku.testTtsVoice()">🔊 Tes Suara</button>
+                        <button type="button" class="hk-btn-sec" style="flex: 1;" onclick="KspHistoriku.clearAllReadStatus()">↺ Reset Tanda Dibaca</button>
+                    </div>
+                </div>
+            </div>
+            <div class="hk-modal-ft">
+                <button type="button" class="hk-btn-sec" onclick="KspHistoriku.closeSettingsModal()">Batal</button>
+                <button type="button" class="hk-btn-pri" onclick="KspHistoriku.saveSettingsFromModal()">Simpan Pengaturan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IMPOR FILE LAPORAN HISTORIKU (HTML / JSON) -->
+    <div id="historikuImportModal" class="hk-modal-overlay" onclick="if(event.target===this) KspHistoriku.closeImportModal()">
+        <div class="hk-modal-card">
+            <div class="hk-modal-hd">
+                <div class="hk-modal-title">
+                    <span>📥</span> <span>Import Laporan HistoriKu</span>
+                </div>
+                <button type="button" class="hk-modal-close" onclick="KspHistoriku.closeImportModal()">&times;</button>
+            </div>
+            <div class="hk-modal-body">
+                <div class="hk-drop-zone" id="hk-drop-zone" onclick="document.getElementById('file-input-historiku').click()" ondragover="event.preventDefault(); this.classList.add('dragover');" ondragleave="this.classList.remove('dragover');" ondrop="event.preventDefault(); this.classList.remove('dragover'); if(event.dataTransfer.files.length) KspHistoriku.handleFileImport(event.dataTransfer.files[0]);">
+                    <input type="file" id="file-input-historiku" accept=".html,.htm,.json" style="display: none;" onchange="if(this.files.length) KspHistoriku.handleFileImport(this.files[0]); this.value = '';">
+                    <div style="font-size: 2.2rem; margin-bottom: 8px;">📁</div>
+                    <div style="font-weight: 750; font-size: 0.95rem; color: var(--hk-text); margin-bottom: 4px;">Pilih atau Tarik File ke Sini</div>
+                    <p style="font-size: 0.75rem; color: var(--hk-muted); margin: 0;">
+                        Mendukung file laporan <b>.html</b> (Laporan_HistoriKu_*.html) atau <b>.json</b> dari aplikasi Android KSP Check
+                    </p>
+                </div>
+
+                <div style="background: var(--hk-surface2); border: 1px solid var(--hk-border); border-radius: var(--hk-r-sm); padding: 12px; font-size: 0.76rem; color: var(--hk-text2); line-height: 1.45;">
+                    <div style="font-weight: 750; margin-bottom: 4px; color: var(--hk-text);">💡 Cara Mendapatkan File Laporan:</div>
+                    <div>1. Buka aplikasi Android KSP Check &gt; menu Riwayat Transaksi.</div>
+                    <div>2. Klik tombol Titik Tiga (Aksi) di kanan atas &gt; pilih <b>Ekspor Laporan HTML</b>.</div>
+                    <div>3. Kirim atau simpan file laporan, lalu impor di sini untuk verifikasi silang.</div>
+                </div>
+
+                <div style="display: flex; justify-content: center; margin-top: 4px;">
+                    <button type="button" class="hk-btn-sec" onclick="KspHistoriku.loadSampleData(); KspHistoriku.closeImportModal();" style="width: 100%;">
+                        <span>✨</span> <span>Gunakan Contoh Data Riwayat Transaksi</span>
+                    </button>
+                </div>
+            </div>
+            <div class="hk-modal-ft">
+                <button type="button" class="hk-btn-sec" onclick="KspHistoriku.closeImportModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <!-- APP SCRIPT LOGIC -->
     <script>
         let storesData = [];
@@ -4511,7 +4700,7 @@
                                     ${s1AvatarHtml}
                                     <div class="scoreboard-fullshift-info">
                                         <div class="scoreboard-fullshift-badge">
-                                            <span>🌅 FULL SHIFT • KASIR TUNGGAL</span>
+                                            <span>🌅 FULL SHIFT</span>
                                         </div>
                                         <div class="scoreboard-fullshift-name">
                                             ${escapeHtml(empS1)}
@@ -4948,10 +5137,28 @@
                         <span>🟢</span> Jam Kerja Normal: Shift ${status.currentShift.shift_num} (${status.currentShift.start} - ${status.currentShift.end})
                     </div>`;
             }
+
+            // Muat HistoriKu Transaksi Asli untuk cabang ini
+            if (window.KspHistoriku && typeof window.KspHistoriku.loadForStore === 'function') {
+                window.KspHistoriku.loadForStore(store.id, store.name);
+            }
+        }
+
+        function scrollToHistorikuSection() {
+            const el = document.getElementById('branchHistorikuContainer');
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         function backToStoresList() {
             activeStoreId = null;
+
+            if (window.KspHistoriku) {
+                if (typeof window.KspHistoriku.closeItemNavBar === 'function') window.KspHistoriku.closeItemNavBar();
+                if (typeof window.KspHistoriku.stopSpeaking === 'function') window.KspHistoriku.stopSpeaking();
+            }
+
             try {
                 const currentUrl = new URL(window.location.href);
                 if (currentUrl.searchParams.has('store')) {
