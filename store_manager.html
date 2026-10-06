@@ -2564,12 +2564,387 @@
 
         <!-- VIEW 4: HALAMAN PENUH HISTORIKU TRANSAKSI ASLI -->
         <section id="historikuView" class="historiku-full-view" style="display: none;">
-            <div class="historiku-page-header">
-                <button type="button" class="btn-back-stores" onclick="backFromHistorikuView()">
-                    &larr; <span id="historikuBackBtnLabel">Kembali ke Cabang</span>
-                </button>
-            </div>
-            <div id="branchHistorikuContainer"></div>
+<!-- Header -->
+<header>
+  <div class="header-main">
+    <button type="button" class="btn-back-stores" onclick="backFromHistorikuView()" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;font-size:12.5px;font-weight:750;background:var(--bg2);color:var(--text);border:1px solid var(--border);cursor:pointer;flex-shrink:0;">
+      &larr; <span id="historikuBackBtnLabel">Kembali ke Cabang</span>
+    </button>
+    <div class="logo">HistoriKu</div>
+    <div class="h-right">
+      <button class="toggle-btn active" id="btn-hidden-group" onclick="toggleHiddenGroup(this)" title="Sembunyikan / Lipat Semua Tabel Grup Transaksi (Hidden Group)">
+        <span id="btn-hidden-group-icon">📁</span><span class="btn-lbl"> Hidden Group</span>
+      </button>
+      <button class="toggle-btn" id="btn-import-report" onclick="openImportReportDialog()" title="Import File Laporan HTML / JSON dari Android">
+        <span class="btn-icon">📥</span><span class="btn-lbl"> Import</span>
+      </button>
+      <button class="toggle-btn" id="btn-speak-all" title="Bacakan semua nilai (Tekan tahan untuk pengaturan)">
+        <span class="btn-icon">🔊</span><span class="btn-lbl"> Baca Semua</span>
+      </button>
+      <button class="settings-btn" id="btn-open-settings" onclick="openTtsSettingsModal()" title="Pengaturan Laporan & Suara">⚙️</button>
+    </div>
+  </div>
+</header>
+
+<!-- Main Container -->
+<div id="page-listview">
+
+  <!-- Global Summary Bar -->
+  <div class="summary-bar">
+    <div class="sb-meta-chips">
+      <span class="date-chip" id="chip-date">Tanggal</span>
+      <span class="date-chip" id="chip-shift">Shift</span>
+      <span class="date-chip chip-saved" id="chip-local-edits" style="display:none;" onclick="showLocalEditsAction()" title="Perubahan tersimpan otomatis di perangkat. Klik untuk opsi reset data asli.">💾 Tersimpan</span>
+    </div>
+    <div class="sb-it"><span class="sb-l">Total Keluar <span class="sb-rounding-badge" style="display:none;font-size:0.65rem;color:var(--accent);font-weight:700;">(Round)</span></span><span class="sb-v c-out" id="sb-total-keluar">Rp 0</span></div>
+    <div class="sb-it"><span class="sb-l">Total Masuk <span class="sb-rounding-badge" style="display:none;font-size:0.65rem;color:var(--accent);font-weight:700;">(Round)</span></span><span class="sb-v c-in" id="sb-total-masuk">Rp 0</span></div>
+    <div class="sb-it"><span class="sb-l">Selisih <span class="sb-rounding-badge" style="display:none;font-size:0.65rem;color:var(--accent);font-weight:700;">(Round)</span></span><span class="sb-v" id="sb-selisih">Rp 0</span></div>
+    <div class="sb-it"><span class="sb-l">Total Transaksi</span><span class="sb-v" id="sb-total-trx">0</span></div>
+  </div>
+
+  <!-- Module Summary Breakdown (Rekap & Total Modul) -->
+  <div id="rekap-summary-container" class="rekap-card" style="margin-bottom:20px; display:none;">
+    <div class="rekap-hd" onclick="toggleRekapCollapse()" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; padding:10px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--r) var(--r) 0 0;">
+      <span style="font-weight:700; font-size:0.85rem; color:var(--text); display:flex; align-items:center; gap:6px;">📊 Rekap &amp; Total per Modul</span>
+      <span id="rekap-toggle-icon" style="font-size:0.75rem; color:var(--muted);">▼</span>
+    </div>
+    <div id="rekap-body" style="background:var(--surface); border:1px solid var(--border); border-top:none; border-radius:0 0 var(--r) var(--r); overflow-x:auto;">
+      <table class="lv-table" style="width:100%; font-size:0.8rem;">
+        <thead class="lv-thead">
+          <tr>
+            <th class="lv-th l" style="padding:8px 12px;">Modul / Sumber</th>
+            <th class="lv-th c" style="width:70px;">Trx</th>
+            <th class="lv-th r" style="width:120px;">Keluar</th>
+            <th class="lv-th r" style="width:120px;">Masuk</th>
+            <th class="lv-th r" style="width:120px;">Selisih</th>
+          </tr>
+        </thead>
+        <tbody id="rekap-tbody"></tbody>
+        <tfoot id="rekap-tfoot" style="font-weight:bold; background:var(--surface2);"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Groups Container (populated dynamically) -->
+  <div id="groups-container"></div>
+
+  <div class="footer-note" id="footer-note">
+    Laporan dibuat otomatis oleh KSPCheck • HistoriKu Mode List
+  </div>
+</div>
+
+<!-- Modal Pengaturan TTS -->
+<div id="tts-settings-modal" class="ksp-modal-overlay" onclick="onModalOverlayClick(event)">
+  <div class="ksp-modal-card" onclick="event.stopPropagation()">
+    <div class="ksp-modal-hd">
+      <div class="ksp-modal-title">⚙️ Pengaturan Laporan & Suara</div>
+      <button class="ksp-modal-close" onclick="closeTtsSettingsModal()" title="Tutup">✕</button>
+    </div>
+    <div class="ksp-modal-body">
+      <!-- Bagian Tampilan & Kalkulator -->
+      <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin: 4px 0 10px;">
+        📊 Tampilan, Format & Kalkulator
+      </div>
+
+      <div class="ksp-ctrl-grp" id="ctrl-grp-sticky-header">
+        <div class="ksp-ctrl-label-row">
+          <span class="ksp-ctrl-label">📌 Header App Sticky</span>
+          <span class="ksp-badge" id="sticky-header-badge" style="background:var(--accent-lt);color:var(--accent);">Aktif (ON)</span>
+        </div>
+        <div class="ksp-switch-row">
+          <span class="ksp-switch-desc">Header grup aplikasi/bank tetap menempel di atas layar saat menggulir (scroll) transaksi</span>
+          <label class="ksp-switch">
+            <input type="checkbox" id="sticky-header-toggle" checked onchange="toggleStickyAppHeaders()">
+            <span class="ksp-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="ksp-ctrl-grp" id="ctrl-grp-ringkas">
+        <div class="ksp-ctrl-label-row">
+          <span class="ksp-ctrl-label">🔢 Mode Ringkas (Kalkulator)</span>
+          <span class="ksp-badge" id="ringkas-mode-badge" style="background:var(--accent-lt);color:var(--accent);">Aktif (ON)</span>
+        </div>
+        <div class="ksp-switch-row">
+          <span class="ksp-switch-desc">Sembunyikan 3 digit nol di belakang pada nominal (misal 20 untuk 20.000) untuk mempermudah hitungan kasir</span>
+          <label class="ksp-switch">
+            <input type="checkbox" id="ringkas-mode-toggle" checked onchange="toggleRingkas()">
+            <span class="ksp-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="ksp-ctrl-grp" id="ctrl-grp-rounding">
+        <div class="ksp-ctrl-label-row">
+          <span class="ksp-ctrl-label">🔄 Efek Pembulatan (Rounding PDF)</span>
+          <span class="ksp-badge" id="rounding-mode-badge" style="background:var(--border);color:var(--muted);">Nonaktif (OFF)</span>
+        </div>
+        <div class="ksp-switch-row">
+          <span class="ksp-switch-desc">Bulatkan nominal per item ke ribuan terdekat sesuai aturan cetakan PDF</span>
+          <label class="ksp-switch">
+            <input type="checkbox" id="rounding-mode-toggle" onchange="toggleRounding()">
+            <span class="ksp-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="ksp-ctrl-grp" id="ctrl-grp-stepper">
+        <div class="ksp-ctrl-label-row">
+          <span class="ksp-ctrl-label">± Tombol Stepper (+/-)</span>
+          <span class="ksp-badge" id="stepper-mode-badge" style="background:var(--border);color:var(--muted);">Nonaktif (OFF)</span>
+        </div>
+        <div class="ksp-switch-row">
+          <span class="ksp-switch-desc">Menampilkan tombol cepat +/- 1.000 pada baris tabel transaksi</span>
+          <label class="ksp-switch">
+            <input type="checkbox" id="stepper-mode-toggle" onchange="toggleSteppers()">
+            <span class="ksp-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="ksp-ctrl-grp" id="ctrl-grp-theme">
+        <div class="ksp-ctrl-label-row">
+          <span class="ksp-ctrl-label">🌓 Tema Gelap (Dark Mode)</span>
+          <span class="ksp-badge" id="theme-mode-badge" style="background:var(--border);color:var(--muted);">Nonaktif (OFF)</span>
+        </div>
+        <div class="ksp-switch-row">
+          <span class="ksp-switch-desc">Beralih antara mode tampilan terang dan mode gelap yang nyaman untuk mata</span>
+          <label class="ksp-switch">
+            <input type="checkbox" id="theme-mode-toggle" onchange="toggleTheme()">
+            <span class="ksp-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="ksp-ctrl-grp" id="ctrl-grp-local-edits">
+        <div class="ksp-ctrl-label-row">
+          <span class="ksp-ctrl-label">💾 Penyimpanan Edit Otomatis</span>
+          <span class="ksp-badge" id="local-edits-badge" style="background:var(--border);color:var(--muted);">Tidak Ada Perubahan</span>
+        </div>
+        <div class="ksp-switch-row" style="align-items:center;">
+          <span class="ksp-switch-desc">Perubahan nominal/nama disimpan otomatis ke HP ini agar tidak hilang saat keluar / back</span>
+          <button type="button" id="btn-reset-edits" onclick="resetReportEdits()" style="display:none;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);padding:4px 10px;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;">Reset Data</button>
+        </div>
+      </div>
+
+      <!-- Bagian Suara & Navigasi TTS -->
+      <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin: 16px 0 10px;">
+        🔊 Suara & Navigasi TTS
+      </div>
+
+      <div class="ksp-ctrl-grp">
+        <div class="ksp-ctrl-label-row">
+          <span class="ksp-ctrl-label">Kecepatan Bicara (Speed)</span>
+          <span class="ksp-badge" id="tts-speed-val">0.9x</span>
+        </div>
+        <input type="range" class="ksp-range-slider" id="tts-speed-slider" min="0.2" max="4.0" step="0.1" value="0.9" oninput="updateTtsSpeed(this.value)">
+        <div class="ksp-range-hints">
+          <span>0.2x (Lambat)</span>
+          <span>1.0x (Normal)</span>
+          <span>4.0x (Sangat Cepat)</span>
+        </div>
+      </div>
+
+      <div class="ksp-ctrl-grp">
+        <div class="ksp-ctrl-label-row">
+          <span class="ksp-ctrl-label">Jeda Antar Item (Delay)</span>
+          <span class="ksp-badge" id="tts-delay-val">500 ms (0.5s)</span>
+        </div>
+        <input type="range" class="ksp-range-slider" id="tts-delay-slider" min="100" max="2000" step="100" value="500" oninput="updateTtsDelay(this.value)">
+        <div class="ksp-range-hints">
+          <span>100 ms (Cepat)</span>
+          <span>500 ms (Sedang)</span>
+          <span>2000 ms (2.0s)</span>
+        </div>
+      </div>
+
+      <div class="ksp-ctrl-grp">
+        <div class="ksp-ctrl-label-row">
+          <span class="ksp-ctrl-label">Pilihan Suara & Bahasa</span>
+          <span class="ksp-badge" id="tts-voice-count">Otomatis</span>
+        </div>
+        <select class="ksp-select" id="tts-voice-select" onchange="onTtsVoiceChange(this.value)">
+          <option value="">Otomatis (Default id-ID)</option>
+        </select>
+      </div>
+
+      <div class="ksp-ctrl-grp">
+        <div class="ksp-ctrl-label-row">
+          <span class="ksp-ctrl-label">Auto-Hidden Grup Selesai</span>
+          <span class="ksp-badge" id="auto-hide-status-badge" style="background:var(--border);color:var(--muted);">Nonaktif (OFF)</span>
+        </div>
+        <div class="ksp-switch-row">
+          <span class="ksp-switch-desc">Otomatis melipat tabel grup ketika semua transaksinya sudah berstatus dibaca</span>
+          <label class="ksp-switch">
+            <input type="checkbox" id="auto-hide-toggle" onchange="setAutoHideCompleted(this.checked)">
+            <span class="ksp-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="ksp-ctrl-grp" id="ctrl-grp-sambung-multidate">
+        <div class="ksp-ctrl-label-row">
+          <span class="ksp-ctrl-label">Sambung Multi Date (Berdasarkan App)</span>
+          <span class="ksp-badge" id="sambung-multidate-badge" style="background:var(--accent-lt);color:var(--accent);">Aktif (ON)</span>
+        </div>
+        <div class="ksp-switch-row">
+          <span class="ksp-switch-desc">Saat navigasi / TTS, lanjut ke tanggal berikutnya untuk aplikasi yang sama sebelum beralih ke aplikasi lain</span>
+          <label class="ksp-switch">
+            <input type="checkbox" id="sambung-multidate-toggle" checked onchange="setSambungMultiDate(this.checked)">
+            <span class="ksp-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="ksp-ctrl-grp" id="ctrl-grp-wakelock">
+        <div class="ksp-ctrl-label-row">
+          <span class="ksp-ctrl-label">Cegah Layar Mati (Screen Wake Lock)</span>
+          <span class="ksp-badge" id="tts-wakelock-badge" style="background:var(--accent-lt);color:var(--accent);">Aktif (ON)</span>
+        </div>
+        <div class="ksp-switch-row">
+          <span class="ksp-switch-desc">Mencegah layar HP redup atau mati otomatis selama suara pembacaan TTS sedang aktif</span>
+          <label class="ksp-switch">
+            <input type="checkbox" id="tts-wakelock-toggle" checked onchange="setTtsWakeLock(this.checked)">
+            <span class="ksp-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="ksp-modal-hint">
+        💡 <b>Tips:</b> Tekan tahan tombol <b>🔊 Baca Semua</b> kapan saja untuk membuka pengaturan ini.
+      </div>
+    </div>
+    <div class="ksp-modal-ft">
+      <button class="ksp-btn-sec" onclick="clearAllReadStatus()" title="Hapus semua tanda sudah dibaca">🔄 Reset Tanda</button>
+      <button class="ksp-btn-sec" onclick="expandAllGroups()" title="Buka semua grup">📂 Buka Semua</button>
+      <button class="ksp-btn-sec" onclick="collapseAllGroups()" title="Lipat semua grup">📁 Lipat Semua</button>
+      <button class="ksp-btn-sec" onclick="testTtsSample()">🔊 Uji Suara</button>
+      <button class="ksp-btn-pri" onclick="closeTtsSettingsModal()" title="Simpan pengaturan &amp; tutup">✓ Simpan &amp; Selesai</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dialog Detail Lengkap Item (Minimal & Jelas) -->
+<div id="item-detail-modal" class="ksp-modal-overlay" onclick="if(event.target===this)closeItemDetailDialog()">
+  <div class="ksp-modal-card" style="max-width:380px;">
+    <div class="ksp-modal-hd">
+      <div class="ksp-modal-title">
+        <span>📋 Detail Transaksi</span>
+        <span class="ksp-badge" id="dtl-badge-idx">#1</span>
+      </div>
+      <button class="ksp-modal-close" onclick="closeItemDetailDialog()" title="Tutup">✕</button>
+    </div>
+    <div class="ksp-modal-body" id="dtl-modal-content" style="gap:10px;">
+      <!-- Diisi secara dinamis -->
+    </div>
+    <div class="ksp-modal-ft" style="justify-content:space-between;">
+      <div style="display:flex;gap:6px;">
+        <button class="ksp-btn-sec" id="dtl-btn-prev" onclick="dtlNav(-1)" title="Item Sebelumnya">◀</button>
+        <button class="ksp-btn-sec" onclick="speakCurrentNavigatedItem()" title="Dengarkan suara">🔊 Dengar</button>
+        <button class="ksp-btn-sec" id="dtl-btn-next" onclick="dtlNav(1)" title="Item Berikutnya">▶</button>
+      </div>
+      <button class="ksp-btn-pri" onclick="closeItemDetailDialog()">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dialog Ringkasan Margin App (Minimal & Jelas) -->
+<div id="app-margin-modal" class="ksp-modal-overlay" onclick="if(event.target===this)closeAppMarginDialog()">
+  <div class="ksp-modal-card" style="max-width:360px;">
+    <div class="ksp-modal-hd">
+      <div class="ksp-modal-title">
+        <span id="app-margin-title">📱 Transaksi</span>
+        <span class="ksp-badge" id="app-margin-badge">0 Trx</span>
+      </div>
+      <button class="ksp-modal-close" onclick="closeAppMarginDialog()" title="Tutup">✕</button>
+    </div>
+    <div class="ksp-modal-body" id="app-margin-content" style="gap:10px;">
+      <!-- Diisi secara dinamis -->
+    </div>
+    <div class="ksp-modal-ft" style="justify-content:flex-end;">
+      <button class="ksp-btn-pri" onclick="closeAppMarginDialog()">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Controller Bar: Split Action Card with Steppers -->
+<div id="item-nav-bar" class="item-nav-bar">
+  <div class="nav-card-top">
+    <div class="nav-meta-left">
+      <span class="nav-pos-badge" id="nav-pos-badge">1 / 1</span>
+      <span class="nav-meta-status" id="nav-meta-status" style="display:none;"></span>
+      <span class="nav-group-pill" id="nav-group-pill" onclick="openItemDetailDialog()" title="Klik untuk lihat detail lengkap">📱 Transaksi</span>
+      <span class="nav-dot">·</span>
+      <span class="nav-time" id="nav-time" onclick="openItemDetailDialog()" title="Klik untuk lihat detail lengkap">00:00</span>
+    </div>
+    <div class="nav-meta-right">
+      <span class="nav-read-badge" id="nav-read-badge" onclick="toggleCurrentItemRead()" title="Klik untuk ubah status sudah dibaca">✓ Dibaca</span>
+      <span class="nav-type-tag" id="nav-type-tag" onclick="toggleCurrentItemCategory()" title="Klik untuk ubah tipe Masuk / Keluar">Masuk</span>
+      <button class="nav-btn-close" onclick="closeItemNavBar()" title="Tutup Bar (Esc)">✕</button>
+    </div>
+  </div>
+
+  <div class="nav-card-mid">
+    <button class="nav-tool-btn del" id="nav-btn-del" onclick="toggleCurrentItemDeleted()" title="Coret transaksi ini (abaikan dari total)">🗑️</button>
+    <button class="nav-step-btn dec" onclick="navAdjustAmt(-1000, event)" title="Kurang 1.000 (Shift: 5.000)">−</button>
+    <div class="nav-amt-display" onclick="navEditAmt()" title="Klik untuk edit nominal langsung">
+      <span class="nav-amt-val" id="nav-amt-val">Rp 0</span>
+      <span class="nav-amt-sub" id="nav-amt-sub" style="display:none;"></span>
+    </div>
+    <button class="nav-step-btn inc" onclick="navAdjustAmt(1000, event)" title="Tambah 1.000 (Shift: 5.000)">+</button>
+    <button class="nav-tool-btn add" id="nav-btn-add" onclick="addNewItemBelowCurrent()" title="Tambah item baru di bawah ini">➕</button>
+  </div>
+
+  <div class="nav-card-bottom">
+    <button class="nav-split-btn prev" id="nav-btn-prev" onclick="navigateItem(-1)" title="Item Sebelumnya (Panah Kiri)">
+      <span class="nav-split-icon">◀</span>
+      <span class="nav-split-lbl">Sebelumnya</span>
+    </button>
+    <button class="nav-split-btn next" id="nav-btn-next" onclick="navigateItem(1)" title="Item Berikutnya (Panah Kanan)">
+      <span class="nav-split-lbl">Berikutnya</span>
+      <span class="nav-split-icon">▶</span>
+    </button>
+  </div>
+</div>
+
+<!-- Modal Impor File Laporan (HTML / JSON) -->
+<div id="import-report-modal" class="ksp-modal-overlay" onclick="if(event.target===this)closeImportReportDialog()">
+  <div class="ksp-modal-card" style="max-width:440px;" onclick="event.stopPropagation()">
+    <div class="ksp-modal-hd">
+      <div class="ksp-modal-title">
+        <span>📥</span> <span>Import Laporan HistoriKu</span>
+      </div>
+      <button class="ksp-modal-close" onclick="closeImportReportDialog()" title="Tutup">&times;</button>
+    </div>
+    <div class="ksp-modal-body">
+      <div class="hk-drop-zone" id="hk-drop-zone" onclick="document.getElementById('file-input-historiku').click()" ondragover="event.preventDefault(); this.classList.add('dragover');" ondragleave="this.classList.remove('dragover');" ondrop="event.preventDefault(); this.classList.remove('dragover'); if(event.dataTransfer.files.length) handleReportFileImport(event.dataTransfer.files[0]);">
+        <input type="file" id="file-input-historiku" accept=".html,.htm,.json" style="display: none;" onchange="if(this.files.length) handleReportFileImport(this.files[0]); this.value = '';">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">📁</div>
+        <div style="font-weight: 750; font-size: 0.95rem; color: var(--text); margin-bottom: 4px;">Pilih atau Tarik File ke Sini</div>
+        <p style="font-size: 0.75rem; color: var(--muted); margin: 0;">
+          Mendukung file laporan <b>.html</b> (Laporan_HistoriKu_*.html) atau <b>.json</b> dari aplikasi Android KSP Check
+        </p>
+      </div>
+
+      <div style="background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px; font-size: 0.76rem; color: var(--text2); line-height: 1.45;">
+        <div style="font-weight: 750; margin-bottom: 4px; color: var(--text);">💡 Cara Mendapatkan File Laporan:</div>
+        <div>1. Buka aplikasi Android KSP Check &gt; menu Riwayat Transaksi.</div>
+        <div>2. Klik tombol Titik Tiga (Aksi) di kanan atas &gt; pilih <b>Ekspor Laporan HTML</b>.</div>
+        <div>3. Kirim atau simpan file laporan, lalu impor di sini untuk verifikasi silang.</div>
+      </div>
+
+      <div style="display: flex; justify-content: center; margin-top: 4px;">
+        <button type="button" class="ksp-btn-sec" onclick="loadSampleReportForCurrentStore(); closeImportReportDialog();" style="width: 100%;">
+          <span>✨</span> <span>Gunakan Contoh Data Riwayat Transaksi</span>
+        </button>
+      </div>
+    </div>
+    <div class="ksp-modal-ft">
+      <button type="button" class="ksp-btn-sec" onclick="closeImportReportDialog()">Tutup</button>
+    </div>
+  </div>
+</div>
+
         </section>
 
     </div>
@@ -4005,175 +4380,6 @@
                 <button type="button" class="btn-primary" onclick="saveLeaderboardConfig()" style="padding: 8px 16px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;">
                     <span>💾</span> Simpan &amp; Terapkan
                 </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL PENGATURAN HISTORIKU (PARITAS DENGAN HISTORYACTIVITY.JAVA) -->
-    <div id="historikuSettingsModal" class="hk-modal-overlay" onclick="if(event.target===this) KspHistoriku.closeSettingsModal()">
-        <div class="hk-modal-card">
-            <div class="hk-modal-hd">
-                <div class="hk-modal-title">
-                    <span>⚙️</span> <span>Pengaturan HistoriKu</span>
-                </div>
-                <button type="button" class="hk-modal-close" onclick="KspHistoriku.closeSettingsModal()">&times;</button>
-            </div>
-            <div class="hk-modal-body">
-                <!-- Sticky Headers -->
-                <div class="hk-ctrl-grp">
-                    <div class="hk-switch-row">
-                        <div>
-                            <div class="hk-ctrl-label">Sticky App Headers</div>
-                            <div class="hk-switch-desc">Header tabel tetap mengambang di atas saat menggulir layar.</div>
-                        </div>
-                        <label class="hk-switch">
-                            <input type="checkbox" id="hk-set-sticky">
-                            <span class="hk-slider"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Mode Ringkas Angka -->
-                <div class="hk-ctrl-grp">
-                    <div class="hk-switch-row">
-                        <div>
-                            <div class="hk-ctrl-label">Mode Ringkas (Ribuan Kasir)</div>
-                            <div class="hk-switch-desc">Sembunyikan 3 digit '000' (contoh: 50.000 jadi 50) untuk input cepat kasir.</div>
-                        </div>
-                        <label class="hk-switch">
-                            <input type="checkbox" id="hk-set-ringkas">
-                            <span class="hk-slider"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Mode Pembulatan -->
-                <div class="hk-ctrl-grp">
-                    <div class="hk-switch-row">
-                        <div>
-                            <div class="hk-ctrl-label">Mode Pembulatan Nominal</div>
-                            <div class="hk-switch-desc">Bulatkan nilai nominal ke ribuan terdekat pada perhitungan ringkasan.</div>
-                        </div>
-                        <label class="hk-switch">
-                            <input type="checkbox" id="hk-set-round">
-                            <span class="hk-slider"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Tampilkan Stepper +/- di Baris -->
-                <div class="hk-ctrl-grp">
-                    <div class="hk-switch-row">
-                        <div>
-                            <div class="hk-ctrl-label">Tombol Stepper +/- di Baris</div>
-                            <div class="hk-switch-desc">Tampilkan tombol stepper kecil langsung pada setiap baris item tabel.</div>
-                        </div>
-                        <label class="hk-switch">
-                            <input type="checkbox" id="hk-set-steppers">
-                            <span class="hk-slider"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Auto-hide Grup Selesai -->
-                <div class="hk-ctrl-grp">
-                    <div class="hk-switch-row">
-                        <div>
-                            <div class="hk-ctrl-label">Auto-Hide Grup Selesai</div>
-                            <div class="hk-switch-desc">Otomatis sembunyikan grup transaksi saat semua itemnya telah ditandai dibaca.</div>
-                        </div>
-                        <label class="hk-switch">
-                            <input type="checkbox" id="hk-set-autohide">
-                            <span class="hk-slider"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Layar Tetap Menyala (WakeLock) -->
-                <div class="hk-ctrl-grp">
-                    <div class="hk-switch-row">
-                        <div>
-                            <div class="hk-ctrl-label">Layar Tetap Menyala (Wake Lock)</div>
-                            <div class="hk-switch-desc">Cegah layar mati otomatis saat pembacaan suara TTS sedang berlangsung.</div>
-                        </div>
-                        <label class="hk-switch">
-                            <input type="checkbox" id="hk-set-wakelock">
-                            <span class="hk-slider"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Pengaturan Suara TTS -->
-                <div class="hk-ctrl-grp">
-                    <div class="hk-ctrl-label-row">
-                        <span class="hk-ctrl-label">Kecepatan Pembacaan (TTS)</span>
-                        <span class="hk-badge" id="hk-speed-val">0.9x</span>
-                    </div>
-                    <input type="range" id="hk-set-tts-speed" class="hk-range-slider" min="0.5" max="2.0" step="0.1" value="0.9" oninput="document.getElementById('hk-speed-val').textContent = parseFloat(this.value).toFixed(1) + 'x'">
-                    <div class="hk-range-hints">
-                        <span>0.5x Lambat</span>
-                        <span>1.0x Normal</span>
-                        <span>2.0x Cepat</span>
-                    </div>
-
-                    <div class="hk-ctrl-label-row" style="margin-top: 10px;">
-                        <span class="hk-ctrl-label">Jeda Antar Baris</span>
-                        <span class="hk-badge" id="hk-delay-val">500 ms</span>
-                    </div>
-                    <input type="range" id="hk-set-tts-delay" class="hk-range-slider" min="200" max="2000" step="100" value="500" oninput="document.getElementById('hk-delay-val').textContent = this.value + ' ms'">
-                    <div class="hk-range-hints">
-                        <span>200 ms Cepat</span>
-                        <span>500 ms Standar</span>
-                        <span>2000 ms Santai</span>
-                    </div>
-
-                    <div style="margin-top: 10px; display: flex; gap: 8px;">
-                        <button type="button" class="hk-btn-sec" style="flex: 1;" onclick="KspHistoriku.testTtsVoice()">🔊 Tes Suara</button>
-                        <button type="button" class="hk-btn-sec" style="flex: 1;" onclick="KspHistoriku.clearAllReadStatus()">↺ Reset Tanda Dibaca</button>
-                    </div>
-                </div>
-            </div>
-            <div class="hk-modal-ft">
-                <button type="button" class="hk-btn-sec" onclick="KspHistoriku.closeSettingsModal()">Batal</button>
-                <button type="button" class="hk-btn-pri" onclick="KspHistoriku.saveSettingsFromModal()">Simpan Pengaturan</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL IMPOR FILE LAPORAN HISTORIKU (HTML / JSON) -->
-    <div id="historikuImportModal" class="hk-modal-overlay" onclick="if(event.target===this) KspHistoriku.closeImportModal()">
-        <div class="hk-modal-card">
-            <div class="hk-modal-hd">
-                <div class="hk-modal-title">
-                    <span>📥</span> <span>Import Laporan HistoriKu</span>
-                </div>
-                <button type="button" class="hk-modal-close" onclick="KspHistoriku.closeImportModal()">&times;</button>
-            </div>
-            <div class="hk-modal-body">
-                <div class="hk-drop-zone" id="hk-drop-zone" onclick="document.getElementById('file-input-historiku').click()" ondragover="event.preventDefault(); this.classList.add('dragover');" ondragleave="this.classList.remove('dragover');" ondrop="event.preventDefault(); this.classList.remove('dragover'); if(event.dataTransfer.files.length) KspHistoriku.handleFileImport(event.dataTransfer.files[0]);">
-                    <input type="file" id="file-input-historiku" accept=".html,.htm,.json" style="display: none;" onchange="if(this.files.length) KspHistoriku.handleFileImport(this.files[0]); this.value = '';">
-                    <div style="font-size: 2.2rem; margin-bottom: 8px;">📁</div>
-                    <div style="font-weight: 750; font-size: 0.95rem; color: var(--hk-text); margin-bottom: 4px;">Pilih atau Tarik File ke Sini</div>
-                    <p style="font-size: 0.75rem; color: var(--hk-muted); margin: 0;">
-                        Mendukung file laporan <b>.html</b> (Laporan_HistoriKu_*.html) atau <b>.json</b> dari aplikasi Android KSP Check
-                    </p>
-                </div>
-
-                <div style="background: var(--hk-surface2); border: 1px solid var(--hk-border); border-radius: var(--hk-r-sm); padding: 12px; font-size: 0.76rem; color: var(--hk-text2); line-height: 1.45;">
-                    <div style="font-weight: 750; margin-bottom: 4px; color: var(--hk-text);">💡 Cara Mendapatkan File Laporan:</div>
-                    <div>1. Buka aplikasi Android KSP Check &gt; menu Riwayat Transaksi.</div>
-                    <div>2. Klik tombol Titik Tiga (Aksi) di kanan atas &gt; pilih <b>Ekspor Laporan HTML</b>.</div>
-                    <div>3. Kirim atau simpan file laporan, lalu impor di sini untuk verifikasi silang.</div>
-                </div>
-
-                <div style="display: flex; justify-content: center; margin-top: 4px;">
-                    <button type="button" class="hk-btn-sec" onclick="KspHistoriku.loadSampleData(); KspHistoriku.closeImportModal();" style="width: 100%;">
-                        <span>✨</span> <span>Gunakan Contoh Data Riwayat Transaksi</span>
-                    </button>
-                </div>
-            </div>
-            <div class="hk-modal-ft">
-                <button type="button" class="hk-btn-sec" onclick="KspHistoriku.closeImportModal()">Tutup</button>
             </div>
         </div>
     </div>
