@@ -334,14 +334,6 @@
             color: #ffffff;
         }
 
-        .shift-status-banner {
-            padding: 12px 16px;
-            border-radius: 14px;
-            margin-bottom: 14px;
-            font-size: 12px;
-            line-height: 1.45;
-        }
-
         .grid-features {
             display: grid;
             grid-template-columns: 1fr;
@@ -649,9 +641,6 @@
                     <div id="dashEmpShiftBadge" style="font-size: 13px; font-weight: 800; color: var(--primary);">Shift 1</div>
                 </div>
             </div>
-
-            <!-- Realtime Shift Status Banner (Mendeteksi 30 Menit Transisi) -->
-            <div id="shiftStatusBanner" class="shift-status-banner"></div>
 
             <!-- BANNER TARGET TOKO CABANG -->
             <div id="dashStoreTargetBanner" style="display: none; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.08) 100%); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 14px; padding: 12px 14px; margin-bottom: 16px;">
@@ -1234,7 +1223,6 @@
             document.getElementById('dashEmpShiftBadge').innerText = `Shift ${currentEmployee.shift_num}`;
 
             renderDashboardAvatar();
-            updateShiftStatusBanner();
             renderDashStoreTarget();
             renderKaryawanLeaderboard();
         }
@@ -1628,32 +1616,6 @@
                 }
             }
             return { inTransition: false, shiftNum: 1, buffer: buffer };
-        }
-
-        function updateShiftStatusBanner() {
-            if (!currentStore) return;
-            const banner = document.getElementById('shiftStatusBanner');
-            const check = checkTransitionWindow(currentStore);
-
-            if (check.inTransition) {
-                banner.style.background = 'rgba(245, 158, 11, 0.14)';
-                banner.style.border = '1px solid rgba(245, 158, 11, 0.35)';
-                banner.innerHTML = `
-                    <div style="font-weight: 800; color: #F59E0B; margin-bottom: 2px;">
-                        ⚠️ Masa Pergantian Shift Aktif (${check.buffer} Menit)
-                    </div>
-                    <div>Saat ini jam pergantian shift. Setiap transaksi / update data akan meminta verifikasi password &amp; shift penanggung jawab.</div>
-                `;
-            } else {
-                banner.style.background = 'rgba(16, 185, 129, 0.12)';
-                banner.style.border = '1px solid rgba(16, 185, 129, 0.3)';
-                banner.innerHTML = `
-                    <div style="font-weight: 800; color: #10B981; margin-bottom: 2px;">
-                        🟢 Jam Kerja Reguler Aktif
-                    </div>
-                    <div>Sistem operasional shift berjalan normal.</div>
-                `;
-            }
         }
 
         // Action trigger test

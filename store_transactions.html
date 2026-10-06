@@ -1451,11 +1451,38 @@
             border-color: var(--primary);
             transform: translateY(-1px);
         }
+        body.role-employee #btnRollShifts,
         body.role-employee #btnHeaderTargetWa,
-        body.role-employee #btnOpenDedicatedAnalytics {
+        body.role-employee #btnOpenDedicatedAnalytics,
+        body.role-employee #adminStoreSelectorWrap,
+        html.role-employee #btnRollShifts,
+        html.role-employee #btnHeaderTargetWa,
+        html.role-employee #btnOpenDedicatedAnalytics,
+        html.role-employee #adminStoreSelectorWrap {
             display: none !important;
         }
+        html.role-employee #btnHeaderBackStoresText::after,
+        body.role-employee #btnHeaderBackStoresText::after {
+            content: " ke Portal Karyawan";
+        }
+        html:not(.role-employee) body:not(.role-employee) #btnHeaderBackStoresText::after {
+            content: " ke Kelola Cabang";
+        }
     </style>
+    <script>
+        (function() {
+            try {
+                var urlParams = new URLSearchParams(window.location.search);
+                var fromParam = urlParams.get('from');
+                var savedAdminPin = localStorage.getItem('kspcheck_viewer_pin');
+                var hasEmpSession = !!sessionStorage.getItem('kspcheck_active_emp') || !!localStorage.getItem('kspcheck_active_emp');
+                var isEmp = !(fromParam === 'manager' || sessionStorage.getItem('kspcheck_auth_mode') === 'admin' || (savedAdminPin && !hasEmpSession));
+                if (isEmp) {
+                    document.documentElement.classList.add('role-employee');
+                }
+            } catch(e) {}
+        })();
+    </script>
 </head>
 <body>
 
@@ -1506,7 +1533,7 @@
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     <!-- Mode Admin: Pilihan Cabang Cepat -->
-                    <div id="adminStoreSelectorWrap" style="display: flex; align-items: center; gap: 6px; background: var(--input-bg); border: 1px solid var(--card-border); padding: 4px 8px; border-radius: 10px;">
+                    <div id="adminStoreSelectorWrap" style="display: none; align-items: center; gap: 6px; background: var(--input-bg); border: 1px solid var(--card-border); padding: 4px 8px; border-radius: 10px;">
                         <span style="font-size: 12px;">🏬</span>
                         <select id="quickStoreSelector" onchange="switchActiveStore(this.value)" style="border: none; background: transparent; font-size: 12px; font-weight: 800; color: var(--text-main); cursor: pointer; outline: none;" title="Pilih Cabang">
                             <!-- Diisi via JS -->
@@ -1535,7 +1562,7 @@
                 <div class="analytics-header-card">
                     <div>
                         <button type="button" id="btnHeaderBackStores" class="btn-back-stores" onclick="handleTopNavBack()">
-                            &larr; Kembali ke Kelola Cabang
+                            &larr; <span id="btnHeaderBackStoresText">Kembali</span>
                         </button>
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
                             <h2 id="anStoreTitle" style="font-size: 18px; font-weight: 850; margin: 0;">KSP Check - Cabang Utama</h2>
@@ -1543,10 +1570,10 @@
                         <p id="anDateSubtitle" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Analisa Transaksi Karyawan • Hari Ini</p>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <button type="button" id="btnRollShifts" class="btn-preset" onclick="rollActiveStoreShifts()" style="padding: 8px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;" title="Tukar Shift Karyawan Sekarang (Pagi ⇄ Malam)">
+                        <button type="button" id="btnRollShifts" class="btn-preset" onclick="rollActiveStoreShifts()" style="padding: 8px 12px; font-size: 12px; display: none; align-items: center; gap: 6px;" title="Tukar Shift Karyawan Sekarang (Pagi ⇄ Malam)">
                             <span>⇄</span> Roll Shift
                         </button>
-                        <button type="button" id="btnHeaderTargetWa" class="btn-preset" onclick="openBranchTargetModal(activeStoreId)" style="padding: 8px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; border-color: rgba(139, 92, 246, 0.4); color: #8b5cf6;" title="Lihat Target, buat gambar &amp; kirim ke WhatsApp">
+                        <button type="button" id="btnHeaderTargetWa" class="btn-preset" onclick="openBranchTargetModal(activeStoreId)" style="padding: 8px 12px; font-size: 12px; display: none; align-items: center; gap: 6px; border-color: rgba(139, 92, 246, 0.4); color: #8b5cf6;" title="Lihat Target, buat gambar &amp; kirim ke WhatsApp">
                             <span>🎯</span> Target WA
                         </button>
                     </div>
@@ -1586,7 +1613,7 @@
                         <span id="historyTableTitle">History</span>
                                             </div>
                     <!-- TOMBOL ANALISA DI UJUNG CARD-BOX-TITLE HISTORY -->
-                    <button type="button" id="btnOpenDedicatedAnalytics" class="btn-action-primary" onclick="openDedicatedAnalyticsView()" style="padding: 7px 14px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px;" title="Buka Halaman Analisa Grafik & Filter Lengkap">
+                    <button type="button" id="btnOpenDedicatedAnalytics" class="btn-action-primary" onclick="openDedicatedAnalyticsView()" style="padding: 7px 14px; font-size: 11.5px; display: none; align-items: center; gap: 6px;" title="Buka Halaman Analisa Grafik & Filter Lengkap">
                         <span>📊</span>
                         <span>Analytics &rarr;</span>
                     </button>
@@ -2872,6 +2899,7 @@
                         KspAuth.setAdminSession(pass);
                         currentAuthRole = 'admin';
                         document.body.classList.remove('role-employee');
+                        document.documentElement.classList.remove('role-employee');
                         if (errBox) errBox.style.display = 'none';
                         hideEmployeeLoginOverlay();
 
@@ -2995,6 +3023,7 @@
 
             hideEmployeeLoginOverlay();
             document.body.classList.add('role-employee');
+            document.documentElement.classList.add('role-employee');
             openStoreAnalytics(null, activeStoreId);
             showToast(`👋 Selamat datang, ${currentEmployee.name}!`, '👤');
         }
@@ -3017,6 +3046,7 @@
             currentEmployee = null;
             currentAuthRole = 'employee';
             document.body.classList.remove('role-employee');
+            document.documentElement.classList.remove('role-employee');
             const passInput = document.getElementById('loginPasswordInput');
             if (passInput) passInput.value = '';
             const errBox = document.getElementById('loginError');
@@ -3890,6 +3920,7 @@
 
             const isEmployeeRole = (currentAuthRole === 'employee');
             document.body.classList.toggle('role-employee', isEmployeeRole);
+            document.documentElement.classList.toggle('role-employee', isEmployeeRole);
             const shiftCountVal = parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1);
             const hasMultiShift = shiftCountVal > 1;
 
