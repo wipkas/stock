@@ -377,82 +377,230 @@
                 gap: 8px;
             }
             .ksp-lb-row {
+                position: relative;
                 display: flex;
                 align-items: center;
                 gap: 14px;
-                padding: 12px 14px;
-                border-radius: 14px;
+                padding: 14px 14px 12px;
+                border-radius: 16px;
                 border: 1px solid var(--card-border, #E5E7EB);
                 background: var(--card-bg, #FFFFFF);
                 cursor: pointer;
-                transition: all 0.15s ease;
+                overflow: hidden;
+                isolation: isolate;
+                transition: transform 0.15s ease, border-color 0.15s ease;
             }
             .ksp-lb-row:hover {
                 border-color: var(--primary, #4F8EF7);
                 transform: translateX(2px);
             }
-            /* Highlights Top 3 */
+            .ksp-lb-row > * { position: relative; z-index: 2; }
+
+            /* Watermark angka peringkat di belakang kartu */
+            .ksp-lb-watermark {
+                position: absolute !important;
+                right: 8px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 74px;
+                font-weight: 900;
+                font-style: italic;
+                line-height: 1;
+                letter-spacing: -4px;
+                opacity: 0.06;
+                pointer-events: none;
+                z-index: 1 !important;
+            }
+
+            /* ===== Podium: shared (border gradien bergerak + kilau menyapu) ===== */
+            .ksp-lb-row.ksp-gold,
+            .ksp-lb-row.ksp-silver,
+            .ksp-lb-row.ksp-bronze { border-color: transparent; }
+            .ksp-lb-row.ksp-gold::before,
+            .ksp-lb-row.ksp-silver::before,
+            .ksp-lb-row.ksp-bronze::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                border-radius: inherit;
+                padding: 1.5px;
+                z-index: 0;
+                background-size: 300% 300%;
+                -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+                -webkit-mask-composite: xor;
+                mask-composite: exclude;
+                pointer-events: none;
+            }
+            .ksp-lb-row.ksp-gold::after,
+            .ksp-lb-row.ksp-silver::after,
+            .ksp-lb-row.ksp-bronze::after {
+                content: '';
+                position: absolute;
+                top: -20%;
+                bottom: -20%;
+                width: 38%;
+                left: -60%;
+                transform: skewX(-20deg);
+                z-index: 1;
+                pointer-events: none;
+                animation: kspLbSweep 4.2s ease-in-out infinite;
+            }
+            @keyframes kspLbBorderFlow { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
+            @keyframes kspLbSweep { 0% { left: -60%; } 55%, 100% { left: 130%; } }
+
+            /* ===== Juara 1 — Emas ===== */
             .ksp-lb-row.ksp-gold {
-                background: linear-gradient(90deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.02) 100%);
-                border: 1.5px solid rgba(255, 215, 0, 0.55);
-                box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+                --score-color: #F59E0B;
+                background:
+                    radial-gradient(120% 140% at 0% 0%, rgba(255, 214, 10, 0.20) 0%, rgba(255, 214, 10, 0) 55%),
+                    linear-gradient(100deg, rgba(255, 200, 0, 0.10), rgba(255, 200, 0, 0.02) 70%),
+                    var(--card-bg, #FFFFFF);
+                box-shadow: 0 8px 26px -6px rgba(245, 158, 11, 0.45), inset 0 0 0 1px rgba(255, 214, 10, 0.15);
             }
+            .ksp-lb-row.ksp-gold::before {
+                background-image: linear-gradient(115deg, #B45309, #FFE066, #FFF7CC, #F59E0B, #B45309, #FFE066);
+                animation: kspLbBorderFlow 4s linear infinite;
+            }
+            .ksp-lb-row.ksp-gold::after { background: linear-gradient(100deg, transparent 0%, rgba(255, 255, 255, 0.28) 50%, transparent 100%); }
+            .ksp-lb-row.ksp-gold .ksp-lb-watermark { color: #F59E0B; opacity: 0.12; }
+
+            /* ===== Juara 2 — Perak ===== */
             .ksp-lb-row.ksp-silver {
-                background: linear-gradient(90deg, rgba(148, 163, 184, 0.09) 0%, rgba(148, 163, 184, 0.02) 100%);
-                border: 1.5px solid rgba(148, 163, 184, 0.55);
-                box-shadow: 0 4px 12px rgba(148, 163, 184, 0.15);
+                --score-color: #94A3B8;
+                background:
+                    radial-gradient(120% 140% at 0% 0%, rgba(203, 213, 225, 0.18) 0%, rgba(203, 213, 225, 0) 55%),
+                    linear-gradient(100deg, rgba(148, 163, 184, 0.10), rgba(148, 163, 184, 0.02) 70%),
+                    var(--card-bg, #FFFFFF);
+                box-shadow: 0 8px 22px -8px rgba(148, 163, 184, 0.5), inset 0 0 0 1px rgba(203, 213, 225, 0.12);
             }
+            .ksp-lb-row.ksp-silver::before {
+                background-image: linear-gradient(115deg, #64748B, #E2E8F0, #94A3B8, #F8FAFC, #64748B);
+                animation: kspLbBorderFlow 6s linear infinite;
+            }
+            .ksp-lb-row.ksp-silver::after { background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.2), transparent); animation-delay: 1.1s; }
+            .ksp-lb-row.ksp-silver .ksp-lb-watermark { color: #94A3B8; opacity: 0.10; }
+
+            /* ===== Juara 3 — Perunggu ===== */
             .ksp-lb-row.ksp-bronze {
-                background: linear-gradient(90deg, rgba(217, 119, 6, 0.08) 0%, rgba(217, 119, 6, 0.02) 100%);
-                border: 1.5px solid rgba(217, 119, 6, 0.45);
-                box-shadow: 0 4px 12px rgba(217, 119, 6, 0.15);
+                --score-color: #EA8A3C;
+                background:
+                    radial-gradient(120% 140% at 0% 0%, rgba(234, 138, 60, 0.17) 0%, rgba(234, 138, 60, 0) 55%),
+                    linear-gradient(100deg, rgba(217, 119, 6, 0.09), rgba(217, 119, 6, 0.02) 70%),
+                    var(--card-bg, #FFFFFF);
+                box-shadow: 0 8px 22px -8px rgba(217, 119, 6, 0.5), inset 0 0 0 1px rgba(234, 138, 60, 0.12);
             }
-            .ksp-lb-row.ksp-me {
+            .ksp-lb-row.ksp-bronze::before {
+                background-image: linear-gradient(115deg, #7C2D12, #F59E0B, #C2410C, #FDBA74, #7C2D12);
+                animation: kspLbBorderFlow 7s linear infinite;
+            }
+            .ksp-lb-row.ksp-bronze::after { background: linear-gradient(100deg, transparent, rgba(255, 214, 170, 0.2), transparent); animation-delay: 2.1s; }
+            .ksp-lb-row.ksp-bronze .ksp-lb-watermark { color: #EA8A3C; opacity: 0.10; }
+
+            /* Highlight "SAYA" — non-podium tetap biru; podium tetap tampil emas/perak/perunggu */
+            .ksp-lb-row.ksp-me:not(.ksp-gold):not(.ksp-silver):not(.ksp-bronze) {
                 border-color: var(--primary, #4F8EF7) !important;
                 background: rgba(79, 142, 247, 0.08) !important;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .ksp-lb-row::before, .ksp-lb-row::after,
+                .ksp-lb-score-float, .ksp-lb-crown, .ksp-lb-spark,
+                .ksp-lb-avatar.ring-gold { animation: none !important; }
+            }
+            @media (max-width: 380px) {
+                .ksp-lb-row { gap: 10px; padding: 12px 10px 10px; }
+                .ksp-lb-watermark { font-size: 58px; }
             }
             .ksp-lb-avatar-wrap {
                 position: relative;
                 flex-shrink: 0;
             }
             .ksp-lb-avatar {
-                width: 48px;
-                height: 48px;
+                width: 52px;
+                height: 52px;
                 border-radius: 50%;
                 overflow: hidden;
                 background: var(--input-bg, #11141F);
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                border: 2px solid #FFFFFF;
+                border: 2px solid var(--card-border, #FFFFFF);
                 font-weight: 800;
-                font-size: 16px;
+                font-size: 17px;
+                position: relative;
             }
-            .ksp-lb-avatar.ring-gold { border-color: #F59E0B; }
-            .ksp-lb-avatar.ring-silver { border-color: #94A3B8; }
-            .ksp-lb-avatar.ring-bronze { border-color: #D97706; }
+            .ksp-lb-avatar.ring-gold {
+                border: 2.5px solid #F59E0B;
+                box-shadow: 0 0 0 3px rgba(255, 214, 10, 0.18), 0 0 18px rgba(245, 158, 11, 0.65);
+                animation: kspLbGoldPulse 2.4s ease-in-out infinite;
+            }
+            .ksp-lb-avatar.ring-silver { border: 2.5px solid #CBD5E1; box-shadow: 0 0 14px rgba(203, 213, 225, 0.45); }
+            .ksp-lb-avatar.ring-bronze { border: 2.5px solid #EA8A3C; box-shadow: 0 0 14px rgba(234, 138, 60, 0.45); }
+            @keyframes kspLbGoldPulse {
+                0%, 100% { box-shadow: 0 0 0 3px rgba(255, 214, 10, 0.18), 0 0 12px rgba(245, 158, 11, 0.5); }
+                50% { box-shadow: 0 0 0 5px rgba(255, 214, 10, 0.10), 0 0 24px rgba(245, 158, 11, 0.9); }
+            }
             .ksp-lb-avatar img { width: 100%; height: 100%; object-fit: cover; }
             .ksp-lb-rank-badge {
                 position: absolute;
-                bottom: -4px;
+                bottom: -5px;
                 left: 50%;
                 transform: translateX(-50%);
-                width: 19px;
-                height: 19px;
+                width: 20px;
+                height: 20px;
                 border-radius: 50%;
                 font-size: 10.5px;
                 font-weight: 900;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
-                background: #1E293B;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+                background: #334155;
                 color: #FFFFFF;
                 border: 1.5px solid var(--card-bg, #FFFFFF);
             }
-            .ksp-lb-rank-badge.badge-gold { background: linear-gradient(135deg, #FFE066, #F59E0B); color: #78350F; }
-            .ksp-lb-rank-badge.badge-silver { background: linear-gradient(135deg, #F1F5F9, #94A3B8); color: #1E293B; }
-            .ksp-lb-rank-badge.badge-bronze { background: linear-gradient(135deg, #FCD34D, #B45309); color: #FFFFFF; }
+            .ksp-lb-rank-badge.badge-gold { background: linear-gradient(135deg, #FFF1A8, #F59E0B); color: #78350F; }
+            .ksp-lb-rank-badge.badge-silver { background: linear-gradient(135deg, #F8FAFC, #94A3B8); color: #1E293B; }
+            .ksp-lb-rank-badge.badge-bronze { background: linear-gradient(135deg, #FDBA74, #B45309); color: #FFFFFF; }
+
+            /* Mahkota & percikan Juara 1 */
+            .ksp-lb-crown {
+                position: absolute;
+                top: -14px;
+                left: 50%;
+                font-size: 18px;
+                line-height: 1;
+                transform: translateX(-50%) rotate(-8deg);
+                filter: drop-shadow(0 2px 4px rgba(245, 158, 11, 0.7));
+                animation: kspLbCrownBob 2.2s ease-in-out infinite;
+                z-index: 3;
+                pointer-events: none;
+            }
+            @keyframes kspLbCrownBob {
+                0%, 100% { transform: translateX(-50%) translateY(0) rotate(-8deg); }
+                50% { transform: translateX(-50%) translateY(-3px) rotate(6deg); }
+            }
+            .ksp-lb-spark {
+                position: absolute;
+                font-size: 11px;
+                z-index: 3;
+                pointer-events: none;
+                animation: kspLbTwinkle 2.2s ease-in-out infinite;
+            }
+            .ksp-lb-spark.s1 { top: -4px; right: -8px; }
+            .ksp-lb-spark.s2 { bottom: 4px; left: -10px; font-size: 9px; animation-delay: 0.9s; }
+            .ksp-lb-spark.s3 { top: 14px; right: -12px; font-size: 8px; animation-delay: 1.5s; }
+            @keyframes kspLbTwinkle {
+                0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+                50% { opacity: 1; transform: scale(1.1) rotate(25deg); }
+            }
+            /* Nama Juara 1 bergradien emas */
+            .ksp-lb-row.ksp-gold .ksp-lb-name {
+                background: linear-gradient(90deg, #D97706, #F59E0B 50%, #D97706);
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
             
             .ksp-lb-info-col {
                 flex: 1;
@@ -484,17 +632,18 @@
             }
             .ksp-lb-trophy-tag {
                 font-size: 9.5px;
-                font-weight: 850;
-                padding: 1.5px 6px;
-                border-radius: 6px;
+                font-weight: 900;
+                letter-spacing: 0.3px;
+                padding: 2px 8px;
+                border-radius: 20px;
                 display: inline-flex;
                 align-items: center;
                 gap: 3px;
                 flex-shrink: 0;
             }
-            .ksp-lb-trophy-tag.tag-gold { background: rgba(255, 215, 0, 0.2); color: #D97706; border: 1px solid rgba(255, 215, 0, 0.5); }
-            .ksp-lb-trophy-tag.tag-silver { background: rgba(148, 163, 184, 0.2); color: #475569; border: 1px solid rgba(148, 163, 184, 0.4); }
-            .ksp-lb-trophy-tag.tag-bronze { background: rgba(217, 119, 6, 0.18); color: #B45309; border: 1px solid rgba(217, 119, 6, 0.4); }
+            .ksp-lb-trophy-tag.tag-gold { background: linear-gradient(90deg, #F59E0B, #FDE047); color: #78350F; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.45); }
+            .ksp-lb-trophy-tag.tag-silver { background: linear-gradient(90deg, #CBD5E1, #F1F5F9); color: #334155; box-shadow: 0 2px 7px rgba(148, 163, 184, 0.4); }
+            .ksp-lb-trophy-tag.tag-bronze { background: linear-gradient(90deg, #C2410C, #F59E0B); color: #FFFFFF; box-shadow: 0 2px 7px rgba(217, 119, 6, 0.45); }
             .ksp-lb-me-tag {
                 background: var(--primary, #4F8EF7);
                 color: #FFFFFF;
@@ -520,7 +669,7 @@
                 padding: 1.5px 6px;
                 border-radius: 6px;
             }
-            /* Progress Bar dengan Efek Api 🔥 di Ujung */
+            /* Progress Bar dengan Efek Api 🔥 & Skor Melayang di Ujung */
             .ksp-lb-progress-wrap {
                 position: relative;
                 width: 100%;
@@ -528,9 +677,29 @@
                 background: var(--input-bg, #11141F);
                 border-radius: 4px;
                 border: 1px solid var(--card-border, #262B3D);
-                margin: 4px 0 5px 0;
+                margin: 18px 0 5px 0;
                 overflow: visible;
             }
+            /* Skor melayang di atas ujung progress (kecil & miring) */
+            .ksp-lb-score-float {
+                position: absolute;
+                bottom: calc(100% + 5px);
+                right: -4px;
+                font-size: 10px;
+                font-style: italic;
+                font-weight: 700;
+                line-height: 1;
+                white-space: nowrap;
+                color: var(--score-color, var(--primary, #4F8EF7));
+                pointer-events: none;
+                animation: kspScoreBob 2.4s ease-in-out infinite;
+            }
+            .ksp-lb-score-float b { font-weight: 900; font-size: 11px; }
+            .ksp-lb-score-float small { font-size: 8.5px; opacity: 0.8; margin-left: 1px; }
+            .ksp-lb-score-float.pos-left { right: auto; left: 0; }
+            .ksp-lb-score-float.pos-center { right: 0; transform: translateX(50%); animation-name: kspScoreBobCenter; }
+            @keyframes kspScoreBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+            @keyframes kspScoreBobCenter { 0%, 100% { transform: translate(50%, 0); } 50% { transform: translate(50%, -2px); } }
             .ksp-lb-progress-fill {
                 position: relative;
                 height: 100%;
@@ -869,12 +1038,14 @@
             let ringClass = '';
             let badgeClass = '';
             let trophyHtml = '';
+            let crownHtml = '';
 
             if (rank === 1) {
                 rowClass = 'ksp-gold';
                 ringClass = 'ring-gold';
                 badgeClass = 'badge-gold';
-                trophyHtml = `<span class="ksp-lb-trophy-tag tag-gold">🏆 JUARA 1</span>`;
+                trophyHtml = `<span class="ksp-lb-trophy-tag tag-gold">🥇 JUARA 1</span>`;
+                crownHtml = `<span class="ksp-lb-crown">👑</span><span class="ksp-lb-spark s1">✨</span><span class="ksp-lb-spark s2">✦</span><span class="ksp-lb-spark s3">✧</span>`;
             } else if (rank === 2) {
                 rowClass = 'ksp-silver';
                 ringClass = 'ring-silver';
@@ -911,9 +1082,16 @@
                 }
             }
 
+            const fillPct = Math.max(0, Math.min(100, targetPct));
+            const scorePosClass = fillPct <= 14 ? 'pos-left' : (fillPct >= 86 ? '' : 'pos-center');
+            const scoreColorStyle = rank <= 3 ? '' : `--score-color: ${statusInfo.color};`;
+
             rowsHtml += `
                 <div class="ksp-lb-row ${rowClass}" onclick="KspLeaderboard._handleClick('${selector}', '${emp.id}', ${rank})">
+                    <span class="ksp-lb-watermark">${rank}</span>
+
                     <div class="ksp-lb-avatar-wrap">
+                        ${crownHtml}
                         <div class="ksp-lb-avatar ${ringClass}">
                             ${avatarHtml}
                         </div>
@@ -928,9 +1106,6 @@
                                 ${isMe ? '<span class="ksp-lb-me-tag">SAYA</span>' : ''}
                                 ${storeTag}
                             </div>
-                            <div class="ksp-lb-score-group">
-                                <span class="ksp-lb-score-val">${score.toLocaleString('id-ID')} tx</span>
-                            </div>
                         </div>
 
                         <!-- Motto / Kata-kata Kasir jika ada & aktif -->
@@ -940,12 +1115,13 @@
                             </div>
                         ` : ''}
 
-                        <!-- Progress Bar dengan Efek Api 🔥 di Ujung -->
+                        <!-- Progress Bar: Api 🔥 + Skor Melayang di Ujung -->
                         <div class="ksp-lb-progress-wrap" title="Capaian: ${targetPct}%">
-                            <div class="ksp-lb-progress-fill" style="width: ${Math.min(100, targetPct)}%; background: ${statusInfo.color};">
+                            <div class="ksp-lb-progress-fill" style="width: ${fillPct}%; background: ${statusInfo.color};">
                                 ${targetPct > 0 ? `
                                     <span class="ksp-lb-flame-head" title="Capaian: ${targetPct}%">🔥</span>
                                 ` : ''}
+                                <span class="ksp-lb-score-float ${scorePosClass}" style="${scoreColorStyle}"><b>${score.toLocaleString('id-ID')}</b><small>tx</small></span>
                             </div>
                         </div>
 
