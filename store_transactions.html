@@ -438,22 +438,54 @@
         }
 
         .shift-pill {
-            font-size: 10.5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
             font-weight: 750;
-            padding: 2px 8px;
+            padding: 3px 8px;
             border-radius: 6px;
+            white-space: nowrap;
+            line-height: 1.2;
+            letter-spacing: 0.2px;
+            box-sizing: border-box;
+            user-select: none;
         }
 
         .shift-pill.s1 {
             background: rgba(245, 158, 11, 0.15);
-            color: #F59E0B;
-            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #D97706;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+        }
+
+        [data-theme="dark"] .shift-pill.s1 {
+            background: rgba(245, 158, 11, 0.2);
+            color: #FBBF24;
+            border: 1px solid rgba(245, 158, 11, 0.45);
         }
 
         .shift-pill.s2 {
             background: rgba(16, 185, 129, 0.15);
-            color: #10B981;
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+        }
+
+        [data-theme="dark"] .shift-pill.s2 {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34D399;
+            border: 1px solid rgba(16, 185, 129, 0.45);
+        }
+
+        .shift-pill.s-full {
+            background: rgba(99, 102, 241, 0.15);
+            color: #4F46E5;
+            border: 1px solid rgba(99, 102, 241, 0.35);
+        }
+
+        [data-theme="dark"] .shift-pill.s-full {
+            background: rgba(99, 102, 241, 0.2);
+            color: #818CF8;
+            border: 1px solid rgba(99, 102, 241, 0.45);
         }
 
         .tx-val-badge {
@@ -1285,6 +1317,24 @@
                 color: var(--text-muted);
                 font-weight: 600;
                 white-space: nowrap;
+            }
+
+            .history-table td.ht-shift {
+                white-space: nowrap;
+                padding-left: 3px;
+                padding-right: 3px;
+            }
+
+            .history-table td.ht-shift .ht-val {
+                display: flex;
+                align-items: center;
+                white-space: nowrap;
+            }
+
+            .history-table td.ht-shift .shift-pill {
+                white-space: nowrap;
+                font-size: 9.5px;
+                padding: 2.5px 6px;
             }
 
             .history-table td.ht-action {
@@ -3215,7 +3265,7 @@
             }
             const isSingle = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) === 1;
             const sName = isSingle ? 'Full Shift' : (currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam');
-            const sClass = isSingle ? 's1' : (currentEmployee.shift_num === 1 ? 's1' : 's2');
+            const sClass = isSingle ? 's-full' : (currentEmployee.shift_num === 1 ? 's1' : 's2');
             if (shiftBadgeEl) {
                 shiftBadgeEl.className = `shift-pill ${sClass}`;
                 shiftBadgeEl.innerText = sName;
@@ -3998,8 +4048,7 @@
                 const myShiftNum = myRec ? myRec.shift_num : currentEmployee.shift_num;
                 const isSingleShift = (shiftCountVal === 1);
                 const myShiftName = isSingleShift ? 'Full Shift' : (myShiftNum === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam');
-
-                const shiftClass = isSingleShift ? 's1' : (myShiftNum === 1 ? 's1' : 's2');
+                const shiftClass = isSingleShift ? 's-full' : (myShiftNum === 1 ? 's1' : 's2');
                 const myAvatarHtml = getEmployeeAvatarHtml(currentEmployee, currentEmployee.name.charAt(0) || 'K', '#3B82F6', 32);
                 let bHtml = `
                     <div class="emp-tx-item" style="border: 1.5px solid var(--primary); background: rgba(79, 142, 247, 0.04); padding: 16px; border-radius: 14px;">
@@ -5195,11 +5244,11 @@
                 if (thead) {
                     thead.innerHTML = `
                         <tr>
-                            <th style="width: 70px;">Tanggal</th>
-                            <th style="width: 60px;">Shift</th>
-                            <th style="width: 75px;">Disetujui</th>
+                            <th style="width: 72px;">Tanggal</th>
+                            <th style="min-width: 82px; width: 82px;">Shift</th>
+                            <th style="width: 70px;">Disetujui</th>
                             <th>Status Usulan</th>
-                            <th style="text-align: right; width: 55px;">Aksi</th>
+                            <th style="text-align: right; width: 48px;">Aksi</th>
                         </tr>
                     `;
                 }
@@ -5213,15 +5262,32 @@
 
                 let html = '';
                 const todayKey = getTodayKey();
+                const isSingle = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) === 1;
+
                 dateKeys.forEach(dateKey => {
                     const isTodayRow = (dateKey === todayKey);
                     const dayData = (store && store.daily_transactions && store.daily_transactions[dateKey]) ? store.daily_transactions[dateKey] : null;
                     const records = (dayData && dayData.records) ? dayData.records : [];
                     const myRec = records.find(r => r.emp_id === currentEmployee.id);
 
-                    const shiftNum = myRec ? myRec.shift_num : currentEmployee.shift_num;
-                    const shiftName = myRec ? (myRec.shift_name || (myRec.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam')) : (currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam');
-                    const shiftClass = shiftNum === 1 ? 's1' : 's2';
+                    let shiftName = '';
+                    if (myRec && myRec.shift_name) {
+                        shiftName = myRec.shift_name;
+                    } else if (isSingle) {
+                        shiftName = 'Full Shift';
+                    } else {
+                        const sNum = myRec ? myRec.shift_num : currentEmployee.shift_num;
+                        shiftName = (sNum === 1 ? 'Shift 1 Pagi' : (sNum === 2 ? 'Shift 2 Malam' : `Shift ${sNum}`));
+                    }
+
+                    let shiftClass = 's1';
+                    if (shiftName.toLowerCase().includes('full')) {
+                        shiftClass = 's-full';
+                    } else if (shiftName.includes('2') || shiftName.toLowerCase().includes('malam') || shiftName.toLowerCase().includes('siang')) {
+                        shiftClass = 's2';
+                    } else {
+                        shiftClass = 's1';
+                    }
 
                     let approvedHtml = '';
                     if (myRec && myRec.tx !== undefined && myRec.tx !== null) {
@@ -5394,11 +5460,11 @@
                 if (thead) {
                     thead.innerHTML = `
                         <tr>
-                            <th style="width: 70px;">Tanggal</th>
-                            <th style="width: 60px;">Shift</th>
-                            <th style="width: 75px;">Disetujui</th>
+                            <th style="width: 72px;">Tanggal</th>
+                            <th style="min-width: 82px; width: 82px;">Shift</th>
+                            <th style="width: 70px;">Disetujui</th>
                             <th>Status Usulan</th>
-                            <th style="text-align: right; width: 55px;">Aksi</th>
+                            <th style="text-align: right; width: 48px;">Aksi</th>
                         </tr>
                     `;
                 }
@@ -5410,15 +5476,32 @@
 
                 let html = '';
                 const todayKey = getTodayKey();
+                const isSingle = (parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) === 1;
+
                 list.forEach(item => {
                     const isTodayRow = (item.date === todayKey);
                     const dayData = (store.daily_transactions && store.daily_transactions[item.date]) ? store.daily_transactions[item.date] : null;
                     const records = (dayData && dayData.records) ? dayData.records : [];
                     const myRec = records.find(r => r.emp_id === currentEmployee.id);
 
-                    const shiftNum = myRec ? myRec.shift_num : currentEmployee.shift_num;
-                    const shiftName = myRec ? (myRec.shift_name || (myRec.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam')) : (currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam');
-                    const shiftClass = shiftNum === 1 ? 's1' : 's2';
+                    let shiftName = '';
+                    if (myRec && myRec.shift_name) {
+                        shiftName = myRec.shift_name;
+                    } else if (isSingle) {
+                        shiftName = 'Full Shift';
+                    } else {
+                        const sNum = myRec ? myRec.shift_num : currentEmployee.shift_num;
+                        shiftName = (sNum === 1 ? 'Shift 1 Pagi' : (sNum === 2 ? 'Shift 2 Malam' : `Shift ${sNum}`));
+                    }
+
+                    let shiftClass = 's1';
+                    if (shiftName.toLowerCase().includes('full')) {
+                        shiftClass = 's-full';
+                    } else if (shiftName.includes('2') || shiftName.toLowerCase().includes('malam') || shiftName.toLowerCase().includes('siang')) {
+                        shiftClass = 's2';
+                    } else {
+                        shiftClass = 's1';
+                    }
 
                     let approvedHtml = '';
                     if (myRec && myRec.tx !== undefined && myRec.tx !== null) {
