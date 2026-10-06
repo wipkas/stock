@@ -1,32 +1,48 @@
-// --- SAMPLE DUMMY DATA FOR BROWSER LIVE PREVIEW ---
-function getSampleData() {
+function getTodayDbDate() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function formatDateDisplayShort(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+  } catch(e) { return dateStr; }
+}
+
+function formatDateDisplayLong(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  } catch(e) { return dateStr; }
+}
+
+function createEmptyReportData(storeId, storeName, dateDb, shiftNum) {
+  const d = dateDb || getTodayDbDate();
   return {
-    "dateDb": "2026-09-09",
-    "dateDisplay": "09 September 2026",
-    "shift": 0,
-    "shiftLabel": "Semua Shift",
-    "tarik": [
-      { "id": 1, "time": "08:15", "amount": 100000, "type": "outcome", "desc": "Tarik Tunai Bank" },
-      { "id": 2, "time": "09:30", "amount": 250000, "type": "outcome", "desc": "Tarik Tunai E-Wallet" },
-      { "id": 3, "time": "11:00", "amount": 50000,  "type": "income",  "desc": "Setor Tunai" }
-    ],
-    "voucher": [
-      { "id": 101, "provider": "TELKOMSEL", "productName": "Voucher 1.5GB", "time": "09:00", "amount": 15000, "category": "outcome" },
-      { "id": 102, "provider": "TELKOMSEL", "productName": "Voucher 3GB", "time": "10:30", "amount": 25000, "category": "outcome" },
-      { "id": 103, "provider": "AXIS", "productName": "AIGO 2GB", "time": "11:15", "amount": 12000, "category": "outcome" }
-    ],
-    "notif": [
-      { "id": 10, "app": "com.bca", "appName": "BCA", "time": "08:20", "amount": 150000, "category": "income" },
-      { "id": 11, "app": "com.bca", "appName": "BCA", "time": "09:45", "amount": 75000,  "category": "income" },
-      { "id": 12, "app": "id.dana", "appName": "DANA", "time": "10:15", "amount": 50000,  "category": "outcome", "name": "Kirim Uang (DANA)" },
-      { "id": 13, "app": "com.bri", "appName": "BRImo", "time": "11:20", "amount": 300000, "category": "income" }
-    ]
+    dateDb: d,
+    dateDisplay: formatDateDisplayLong(d) || d,
+    shift: shiftNum || 0,
+    shiftLabel: (shiftNum === 1 ? 'Shift 1' : (shiftNum === 2 ? 'Shift 2' : 'Semua Shift')),
+    storeId: storeId || '',
+    storeName: storeName || 'Cabang',
+    tarik: [],
+    notif: [],
+    voucher: [],
+    topup: [],
+    summary: {}
   };
 }
 
-// Fallback to sample data if opened directly in browser without injected data
+function getSampleData() {
+  return createEmptyReportData('', 'Cabang', getTodayDbDate(), 0);
+}
+
+// Inisialisasi awal aman tanpa dummy data 9 September
 if (typeof window.REPORT_DATA === 'undefined' || !window.REPORT_DATA) {
-  window.REPORT_DATA = getSampleData();
+  window.REPORT_DATA = createEmptyReportData('', 'Cabang', getTodayDbDate(), 0);
 }
 
 function formatRupiah(num) {
@@ -4065,6 +4081,32 @@ function renderReport(data) {
   }
   if (elTrx) elTrx.textContent = totalTrx;
 
+  if (totalTrx === 0) {
+    const storeLabel = (data.storeName && data.storeName !== 'Cabang') ? data.storeName : (data.storeId || 'Cabang ini');
+    container.innerHTML = `
+      <div class="empty-history-card" style="text-align: center; padding: 46px 20px; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--r); margin: 16px 0; box-shadow: var(--shadow);">
+        <div style="font-size: 42px; margin-bottom: 12px; line-height: 1;">📭</div>
+        <div style="font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 6px;">
+          Belum Ada Transaksi Tercatat
+        </div>
+        <div style="font-size: 13px; color: var(--muted); max-width: 440px; margin: 0 auto; line-height: 1.6;">
+          Transaksi pada tanggal <strong>${escapeHtml(dateDisplay)}</strong> untuk cabang <strong>${escapeHtml(storeLabel)}</strong> belum tercatat.
+        </div>
+        <div style="margin-top: 20px; display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
+          <button type="button" class="date-nav-btn prev" onclick="KspHistoriku.navigateDate(-1)" style="background: var(--surface2); border: 1px solid var(--border); padding: 8px 16px; font-size: 12px; font-weight: 700; border-radius: 50px; cursor: pointer; color: var(--text); display: inline-flex; align-items: center; gap: 4px;">
+            ◀ Hari Sebelumnya
+          </button>
+          <button type="button" class="date-chip-trigger" onclick="KspHistoriku.openDateRangePickerModal()" style="background: var(--accent-lt); border: 1px solid var(--accent); padding: 8px 16px; font-size: 12px; font-weight: 700; border-radius: 50px; cursor: pointer; color: var(--accent); display: inline-flex; align-items: center; gap: 4px;">
+            📅 Pilih Tanggal Lain
+          </button>
+          <button type="button" class="date-nav-btn next" onclick="KspHistoriku.navigateDate(1)" style="background: var(--surface2); border: 1px solid var(--border); padding: 8px 16px; font-size: 12px; font-weight: 700; border-radius: 50px; cursor: pointer; color: var(--text); display: inline-flex; align-items: center; gap: 4px;">
+            Hari Berikutnya ▶
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
   checkAllGroupsCompletion(false);
   applyRingkasState(null, true);
   applyRoundingState(null, true);
@@ -4347,10 +4389,7 @@ function loadSampleReportForCurrentStore() {
 }
 
 function getSampleDataForStore(storeId, storeName) {
-  const base = getSampleData();
-  base.storeId = storeId || 'store_sample';
-  base.storeName = storeName || 'Cabang';
-  return base;
+  return createEmptyReportData(storeId, storeName, getTodayDbDate(), 0);
 }
 
 // ============================================================================
@@ -4626,13 +4665,7 @@ function loadMultiDayForStore(storeId, storeName, startDate, endDate) {
     } catch(e) {}
   });
 
-  if (!foundAny) {
-    const sample = generateMockMultiDayData(storeId, storeName, dateList);
-    mergedTarik = sample.tarik;
-    mergedNotif = sample.notif;
-    mergedVoucher = sample.voucher;
-  }
-
+  // Data kosong awal tanpa mock data jika belum ada di cache
   const multiData = {
     isMultiDay: true,
     dates: dateList,
@@ -4666,6 +4699,24 @@ function loadMultiDayForStore(storeId, storeName, startDate, endDate) {
       applyInitialGroupCollapse();
       loadAndApplyReportEdits();
       showToast('☁️ Cloud: ' + rows.length + ' transaksi termuat');
+    } else {
+      const emptyData = {
+        isMultiDay: true,
+        dates: dateList,
+        startDate: startDate,
+        endDate: endDate,
+        dateDb: `${startDate} s/d ${endDate}`,
+        dateDisplay: `${formatDateDisplayShort(startDate)} - ${formatDateDisplayShort(endDate)}`,
+        shiftLabel: 'Semua Shift',
+        storeId: storeId,
+        storeName: storeName,
+        tarik: [],
+        notif: [],
+        voucher: [],
+        topup: []
+      };
+      window.REPORT_DATA = emptyData;
+      renderReport(window.REPORT_DATA);
     }
   });
 
@@ -4917,15 +4968,20 @@ window.KspHistoriku = {
 
     try {
       const cached = localStorage.getItem('ksp_historiku_data_' + storeId + '_' + nowKey);
-      if (cached) storeData = JSON.parse(cached);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.dateDb === nowKey) {
+          storeData = parsed;
+        }
+      }
     } catch(e) {}
 
     if (!storeData) {
-      storeData = getSampleDataForStore(storeId, storeName);
+      storeData = createEmptyReportData(storeId, storeName, nowKey, shiftNum);
     }
 
     window.REPORT_DATA = storeData;
-    updateDateDisplayUI(storeData.dateDisplay || storeData.dateDb || nowKey);
+    updateDateDisplayUI(storeData.dateDisplay || formatDateDisplayLong(nowKey) || nowKey);
     renderReport(window.REPORT_DATA);
     applyInitialGroupCollapse();
     loadAndApplyReportEdits();
@@ -4944,6 +5000,13 @@ window.KspHistoriku = {
         applyInitialGroupCollapse();
         loadAndApplyReportEdits();
         showToast('☁️ Cloud: ' + rows.length + ' transaksi termuat');
+      } else {
+        try {
+          localStorage.removeItem('ksp_historiku_data_' + storeId + '_' + nowKey);
+        } catch(e) {}
+        const emptyData = createEmptyReportData(storeId, storeName, nowKey, shiftNum);
+        window.REPORT_DATA = emptyData;
+        renderReport(window.REPORT_DATA);
       }
     });
 
