@@ -69,7 +69,8 @@
             showBreakdownMetrics: false, // DITUNDA SEMENTARA (Data belum ada di DB)
             progressStyle: 'store-target-mini-row',
             showSummaryBoxes: true,
-            compactMode: false
+            compactMode: false,
+            showMotto: true
         }
     };
 
@@ -519,25 +520,62 @@
                 padding: 1.5px 6px;
                 border-radius: 6px;
             }
-            /* Progress Bar gaya store-target-mini-row */
+            /* Progress Bar dengan Efek Api 🔥 di Ujung */
             .ksp-lb-progress-wrap {
+                position: relative;
                 width: 100%;
                 height: 6px;
                 background: var(--input-bg, #11141F);
-                border-radius: 3px;
-                overflow: hidden;
+                border-radius: 4px;
                 border: 1px solid var(--card-border, #262B3D);
-                margin: 2px 0 3px 0;
+                margin: 4px 0 5px 0;
+                overflow: visible;
             }
             .ksp-lb-progress-fill {
+                position: relative;
                 height: 100%;
-                border-radius: 3px;
+                border-radius: 4px;
                 transition: width 0.4s ease;
             }
+            .ksp-lb-flame-head {
+                position: absolute;
+                right: -8px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 13px;
+                line-height: 1;
+                pointer-events: none;
+                filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.75));
+                animation: kspFlameFlicker 1.2s infinite alternate ease-in-out;
+            }
+            @keyframes kspFlameFlicker {
+                0% { transform: translateY(-55%) scale(0.92) rotate(-4deg); filter: drop-shadow(0 0 3px #F59E0B); }
+                50% { transform: translateY(-50%) scale(1.1) rotate(4deg); filter: drop-shadow(0 0 7px #EF4444); }
+                100% { transform: translateY(-45%) scale(1.0) rotate(0deg); filter: drop-shadow(0 0 4px #F59E0B); }
+            }
+
+            /* Kata-kata / Motto Kasir */
+            .ksp-lb-quote-text {
+                font-size: 11px;
+                font-style: italic;
+                color: var(--text-muted, #8A92A6);
+                line-height: 1.35;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                margin: 1px 0 3px 0;
+            }
+            .ksp-lb-quote-quote {
+                color: var(--primary, #4F8EF7);
+                font-weight: 800;
+                font-style: normal;
+                margin: 0 1px;
+            }
+
             .ksp-lb-sub-row {
                 display: flex;
                 align-items: center;
-                justify-content: space-between;
+                justify-content: flex-start;
                 font-size: 11px;
                 color: var(--text-muted, #8A92A6);
                 flex-wrap: wrap;
@@ -783,6 +821,7 @@
         const config = inst.config;
         const employees = inst.employees || [];
         const primaryMetric = (config.scoring && config.scoring.primaryMetric) || 'total_tx';
+        const showMotto = !(config.ui && config.ui.showMotto === false);
 
         // Pre-kalkulasi targetPct sebelum sorting agar sorting berbasis target_pct akurat
         employees.forEach(emp => {
@@ -891,23 +930,28 @@
                             </div>
                             <div class="ksp-lb-score-group">
                                 <span class="ksp-lb-score-val">${score.toLocaleString('id-ID')} tx</span>
-                                <span class="ksp-lb-status-badge" style="background: ${statusInfo.bg}; color: ${statusInfo.color}; border: 1px solid ${statusInfo.color}33;">
-                                    ${statusInfo.text}
-                                </span>
                             </div>
                         </div>
 
-                        <!-- Progress Bar persis store-target-mini-row -->
+                        <!-- Motto / Kata-kata Kasir jika ada & aktif -->
+                        ${(showMotto && emp.quote) ? `
+                            <div class="ksp-lb-quote-text" title="${escapeHtml(emp.quote)}">
+                                <span class="ksp-lb-quote-quote">“</span>${escapeHtml(emp.quote)}<span class="ksp-lb-quote-quote">”</span>
+                            </div>
+                        ` : ''}
+
+                        <!-- Progress Bar dengan Efek Api 🔥 di Ujung -->
                         <div class="ksp-lb-progress-wrap" title="Capaian: ${targetPct}%">
-                            <div class="ksp-lb-progress-fill" style="width: ${Math.min(100, targetPct)}%; background: ${statusInfo.color};"></div>
+                            <div class="ksp-lb-progress-fill" style="width: ${Math.min(100, targetPct)}%; background: ${statusInfo.color};">
+                                ${targetPct > 0 ? `
+                                    <span class="ksp-lb-flame-head" title="Capaian: ${targetPct}%">🔥</span>
+                                ` : ''}
+                            </div>
                         </div>
 
                         <div class="ksp-lb-sub-row">
                             <span class="${bonusInfo.badgeClass}">
                                 ${bonusInfo.statusText}
-                            </span>
-                            <span style="font-size: 10px; color: var(--text-muted, #8A92A6);">
-                                ${emp.shift ? `Shift: ${emp.shift}` : 'Aktif'}
                             </span>
                         </div>
 
@@ -959,14 +1003,6 @@
                                     <line x1="12" y1="17" x2="12.01" y2="17"></line>
                                 </svg>
                             </button>
-                        </div>
-                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                            <span class="ksp-lb-badge" style="background: rgba(16, 185, 129, 0.12); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.25);">
-                                ⏱️ ${getPeriodBadgeLabel(config.period)}
-                            </span>
-                            <span class="ksp-lb-badge">
-                                Skema: ${getModeBadgeLabel(config.rewards.mode)}
-                            </span>
                         </div>
                     </div>
 
@@ -1117,6 +1153,7 @@
                     id: emp.id,
                     name: emp.name || 'Kasir',
                     photo: emp.photo || '',
+                    quote: emp.quote || emp.comment || emp.motto || '',
                     storeId: store.id,
                     storeName: store.name || 'Cabang KSP',
                     shift: emp.shift_num ? `Shift ${emp.shift_num}` : 'Aktif',
@@ -1203,6 +1240,8 @@
             ].join('\n');
         }
 
+        const showMotto = !(cfg.ui && cfg.ui.showMotto === false);
+
         return `🏆 ATURAN & SISTEM LEADERBOARD KASIR KSP
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📌 SISTEM PENILAIAN:
@@ -1210,6 +1249,7 @@
 • Periode Tolak Ukur: ${periodLabel}
 • Lingkup Kompetisi: ${scopeLabel}
 • Podium Juara: Top 3 (🏆 Juara 1, 🥈 Juara 2, 🥉 Juara 3)
+• Motto Kasir: ${showMotto ? '🟢 Aktif (Tampil di profil kasir)' : '🔴 Dinonaktifkan Admin'}
 
 🎁 PENGATURAN BONUS KASIR:
 ${rewardText}
@@ -1239,6 +1279,7 @@ ${rewardText}
 
         const rewards = cfg.rewards || {};
         const mode = rewards.mode || 'percentage';
+        const showMotto = !(cfg.ui && cfg.ui.showMotto === false);
 
         let rewardDetailsHtml = '';
         if (!rewards.enabled) {
@@ -1367,6 +1408,10 @@ ${rewardText}
                         <div class="ksp-lb-info-item">
                             <span class="ksp-lb-info-item-label">Podium Juara:</span>
                             <span>🏆 Juara 1 (Emas), 🥈 Juara 2 (Perak), 🥉 Juara 3 (Perunggu)</span>
+                        </div>
+                        <div class="ksp-lb-info-item">
+                            <span class="ksp-lb-info-item-label">Motto Kasir:</span>
+                            <span>${showMotto ? '🟢 Ditampilkan' : '🔴 Dinonaktifkan Admin'}</span>
                         </div>
                     </div>
 

@@ -267,6 +267,12 @@
             50% { opacity: 0.6; }
         }
 
+        @keyframes kspFlameFlicker {
+            0% { transform: translateY(-50%) scale(0.9) rotate(-3deg); }
+            50% { transform: translateY(-55%) scale(1.15) rotate(4deg); }
+            100% { transform: translateY(-50%) scale(1) rotate(-2deg); }
+        }
+
         /* Clickable Stat Row (Buka Transaksi & Analisa) */
         .store-stat-row {
             display: flex;
@@ -3054,6 +3060,11 @@
                     </div>
 
                     <div class="form-group">
+                        <label class="form-label" for="editEmpQuoteInput">💬 Kata-kata / Motto Kasir (Leaderboard)</label>
+                        <input type="text" id="editEmpQuoteInput" class="form-input" maxlength="60" placeholder="Misal: Senyum, salam, sapa! / Gaspol target!">
+                    </div>
+
+                    <div class="form-group">
                         <label class="form-label" for="editEmpNotesInput">Catatan Tambahan (Opsional)</label>
                         <input type="text" id="editEmpNotesInput" class="form-input" placeholder="Misal: Penanggung jawab kunci, kontak darurat...">
                     </div>
@@ -3698,6 +3709,18 @@
                     </label>
                 </div>
 
+                <!-- Toggle Tampilkan Motto Kasir -->
+                <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 13px; font-weight: 750; color: var(--text-main);">Tampilkan Motto / Kata-kata Kasir</div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Tampilkan pesan motivasi kasir di bawah nama pada leaderboard</div>
+                    </div>
+                    <label style="display: inline-flex; align-items: center; cursor: pointer; gap: 8px;">
+                        <input type="checkbox" id="cfgShowMotto" checked style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
+                        <span style="font-size: 12px; font-weight: 750; color: var(--text-main);">Aktif</span>
+                    </label>
+                </div>
+
                 <!-- 2. Lingkup, Periode & Tolak Ukur Penentu Juara -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div>
@@ -4248,8 +4271,10 @@
                                 ${statusText}
                             </span>
                         </div>
-                        <div style="width: 100%; height: 6px; background: var(--input-bg); border-radius: 3px; overflow: hidden; border: 1px solid var(--card-border);">
-                            <div style="height: 100%; width: ${progressPct}%; background: ${tm.statusColor}; border-radius: 3px; transition: width 0.3s ease;"></div>
+                        <div style="width: 100%; height: 6px; background: var(--input-bg); border-radius: 3px; position: relative; border: 1px solid var(--card-border); margin: 4px 0; overflow: visible;">
+                            <div style="position: relative; height: 100%; width: ${progressPct}%; background: ${tm.statusColor}; border-radius: 3px; transition: width 0.3s ease;">
+                                ${progressPct > 0 ? `<span class="ksp-flame-head" style="position: absolute; right: -7px; top: 50%; transform: translateY(-50%); font-size: 11px; line-height: 1; pointer-events: none; filter: drop-shadow(0 0 4px #F59E0B); animation: kspFlameFlicker 1.2s infinite alternate ease-in-out;">🔥</span>` : ''}
+                            </div>
                         </div>
                     </div>`;
                 }
@@ -6494,6 +6519,7 @@ ${portalUrl}
             document.getElementById('editEmpAddressInput').value = emp.address || '';
             document.getElementById('editEmpShiftSelect').value = emp.shift_num || 1;
             document.getElementById('editEmpRoleSelect').value = emp.role || 'kasir';
+            document.getElementById('editEmpQuoteInput').value = emp.quote || emp.comment || emp.motto || '';
             document.getElementById('editEmpNotesInput').value = emp.notes || '';
 
             openModal('editEmployeeModal');
@@ -6509,6 +6535,7 @@ ${portalUrl}
             const newAddress = document.getElementById('editEmpAddressInput').value.trim();
             const newShift = parseInt(document.getElementById('editEmpShiftSelect').value) || 1;
             const newRole = document.getElementById('editEmpRoleSelect').value || 'kasir';
+            const newQuote = document.getElementById('editEmpQuoteInput')?.value.trim() || '';
             const newNotes = document.getElementById('editEmpNotesInput').value.trim();
 
             if (!newName) {
@@ -6544,6 +6571,7 @@ ${portalUrl}
                     emp.address = newAddress || null;
                     emp.shift_num = newShift;
                     emp.role = newRole;
+                    emp.quote = newQuote || null;
                     emp.notes = newNotes || null;
                     foundEmp = { ...emp, store_id: store.id };
                     break;
@@ -6560,6 +6588,7 @@ ${portalUrl}
                     uList[uIdx].address = newAddress || null;
                     uList[uIdx].shift_num = newShift;
                     uList[uIdx].role = newRole;
+                    uList[uIdx].quote = newQuote || null;
                     uList[uIdx].notes = newNotes || null;
                     saveUnassignedEmployees(uList);
                     foundEmp = { ...uList[uIdx], store_id: null };
@@ -8789,6 +8818,9 @@ ${portalUrl}
             const chkEnabled = document.getElementById('cfgBonusEnabled');
             if (chkEnabled) chkEnabled.checked = enabled;
 
+            const chkMotto = document.getElementById('cfgShowMotto');
+            if (chkMotto) chkMotto.checked = cfg.ui ? (cfg.ui.showMotto !== false) : true;
+
             const selScope = document.getElementById('cfgLeaderboardScope');
             if (selScope) selScope.value = scope;
 
@@ -8856,6 +8888,8 @@ ${portalUrl}
 
         function saveLeaderboardConfig() {
             const chkEnabled = document.getElementById('cfgBonusEnabled');
+            const chkMotto = document.getElementById('cfgShowMotto');
+            const showMotto = chkMotto ? chkMotto.checked : true;
             const selScope = document.getElementById('cfgLeaderboardScope');
             const selPeriod = document.getElementById('cfgLeaderboardPeriod');
             const selMetric = document.getElementById('cfgLeaderboardPrimaryMetric');
@@ -8881,6 +8915,9 @@ ${portalUrl}
                 scoring: {
                     primaryMetric: selMetric?.value || 'total_tx',
                     minTxThreshold: 0
+                },
+                ui: {
+                    showMotto: showMotto
                 },
                 rewards: {
                     enabled: chkEnabled ? chkEnabled.checked : true,
