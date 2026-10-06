@@ -519,6 +519,108 @@
             margin: 8px 0 12px 0;
         }
 
+        .scoreboard-container.single-shift {
+            grid-template-columns: 1fr !important;
+        }
+
+        .scoreboard-fullshift-card {
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            transition: all 0.2s ease;
+            position: relative;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
+            border: 1.5px solid #10B981 !important;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .scoreboard-fullshift-card:hover {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(59, 130, 246, 0.08) 100%) !important;
+            border-color: #10B981 !important;
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.32);
+        }
+
+        .scoreboard-fullshift-emp {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+            border-radius: 10px;
+            padding: 4px 6px;
+            margin: -4px -6px;
+            transition: background 0.15s ease;
+        }
+
+        .scoreboard-fullshift-emp:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .scoreboard-fullshift-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .scoreboard-fullshift-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #10B981;
+            margin-bottom: 2px;
+            letter-spacing: 0.3px;
+        }
+
+        .scoreboard-fullshift-name {
+            font-size: 14px;
+            font-weight: 850;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .scoreboard-fullshift-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 2px;
+        }
+
+        .scoreboard-fullshift-tx {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 3px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .scoreboard-fullshift-tx-btn {
+            background: var(--card-bg);
+            border: 1.5px solid #10B981;
+            border-radius: 12px;
+            padding: 6px 14px;
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .scoreboard-fullshift-tx-btn:hover {
+            transform: scale(1.04);
+            background: rgba(16, 185, 129, 0.15);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
         .scoreboard-col {
             border-radius: 12px;
             padding: 12px 14px;
@@ -4132,7 +4234,7 @@
 
                         const s1EmpObj = mRec ? (store.employees || []).find(e => e.id === mRec.emp_id) : (empS1 || activeEmps[0]);
                         const s1Name = s1EmpObj ? s1EmpObj.name : (mRec ? mRec.emp_name : 'Belum Ditugaskan');
-                        const s1AvatarHtml = getEmployeeAvatarHtml(s1EmpObj, s1Name.charAt(0) || 'F', '#F59E0B', 32);
+                        const s1AvatarHtml = getEmployeeAvatarHtml(s1EmpObj, s1Name.charAt(0) || 'F', '#10B981', 38);
 
                         const s1Tx = mRec ? (Number(mRec.tx) || 0) : (totalTx > 0 ? totalTx : 0);
                         const s1Recorded = Boolean(mRec) || (totalTx > 0);
@@ -4152,36 +4254,38 @@
                         }
 
                         breakdownCont.innerHTML = `
-                            <div class="scoreboard-container" style="grid-template-columns: 1fr;">
-                                <!-- SCOREBOARD FULL SHIFT -->
-                                <div class="scoreboard-col s1">
-                                    <div>
-                                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
-                                            <span style="font-weight: 800; font-size: 12px; color: #F59E0B;">🌅 Full Shift</span>
-                                            ${s1Recorded 
-                                                ? '<span class="badge-status" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 10px;">🟢 Selesai</span>'
-                                                : '<span class="badge-status" style="background: rgba(245, 158, 11, 0.15); color: var(--warning); font-size: 10px;">⏳ Berjalan</span>'}
-                                        </div>
-                                        ${s1Prop ? `<div class="badge-status badge-proposal-pending" style="font-size: 10px; margin-top: 4px; display: inline-block;">🟡 Usulan: ${s1Prop.proposed_tx} tx</div>` : ''}
-                                        <!-- Petugas Kasir (Full Shift) -->
-                                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
-                                            ${s1AvatarHtml}
-                                            <div style="min-width: 0;">
-                                                <div style="font-weight: 800; font-size: 12.5px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(s1Name)}</div>
-                                                <div style="font-size: 10.5px; color: var(--text-muted);">${escapeHtml(s1Time)}</div>
+                            <div class="scoreboard-container single-shift">
+                                <!-- OPSI A: HORIZONTAL HERO CARD FULL SHIFT -->
+                                <div class="scoreboard-fullshift-card" title="Cabang dengan 1 Shift (Full Shift)">
+                                    <div class="scoreboard-fullshift-emp">
+                                        ${s1AvatarHtml}
+                                        <div class="scoreboard-fullshift-info">
+                                            <div class="scoreboard-fullshift-badge">
+                                                <span>🌅 FULL SHIFT • KASIR TUNGGAL</span>
+                                                ${s1Recorded 
+                                                    ? '<span class="badge-status" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 9.5px; padding: 1px 6px; border-radius: 4px; margin-left: 4px;">🟢 Selesai</span>'
+                                                    : '<span class="badge-status" style="background: rgba(245, 158, 11, 0.15); color: var(--warning); font-size: 9.5px; padding: 1px 6px; border-radius: 4px; margin-left: 4px;">⏳ Berjalan</span>'}
+                                            </div>
+                                            ${s1Prop ? `<div class="badge-status badge-proposal-pending" style="font-size: 9.5px; margin-bottom: 2px; display: inline-block;">🟡 Usulan: ${s1Prop.proposed_tx} tx</div>` : ''}
+                                            <div class="scoreboard-fullshift-name">
+                                                ${escapeHtml(s1Name)}
+                                            </div>
+                                            <div class="scoreboard-fullshift-time">
+                                                <span>🕒 ${escapeHtml(s1Time)} WIB</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- Field Angka Transaksi Mandiri (Tengah & Klik untuk Ubah) -->
-                                    <div style="margin-top: 12px; border-top: 1px dashed rgba(245, 158, 11, 0.2); padding-top: 8px;">
-                                        <div class="scoreboard-tx-field s1" onclick="openDailyTxModal('${store.id}', true)" role="button" tabindex="0" title="Klik untuk ubah / input transaksi Full Shift">
-                                            <div style="display: flex; align-items: baseline; justify-content: center; gap: 4px;">
-                                                <span class="scoreboard-tx-num" style="color: #F59E0B;">${s1Tx}</span>
-                                                <span style="font-size: 12px; font-weight: 800; color: var(--text-muted);">tx</span>
-                                                <span style="font-size: 10px; color: #F59E0B; opacity: 0.7; margin-left: 2px;">✏️</span>
-                                            </div>
-                                           
+                                    <!-- Zona Transaksi: Klik untuk Ubah / Input -->
+                                    <div class="scoreboard-fullshift-tx" 
+                                         role="button" tabindex="0"
+                                         onclick="openDailyTxModal('${store.id}', true)"
+                                         title="Klik untuk ubah / input transaksi Full Shift">
+                                        <div style="font-size: 9.5px; font-weight: 750; color: var(--text-muted); text-transform: uppercase;">TRANSAKSI</div>
+                                        <div class="scoreboard-fullshift-tx-btn">
+                                            <span class="scoreboard-tx-num" style="font-size: 19px; font-weight: 900; color: #10B981;">${s1Tx}</span>
+                                            <span style="font-size: 11px; font-weight: 800; color: var(--text-muted);">tx</span>
+                                            <span style="font-size: 10px; opacity: 0.65; margin-left: 2px;">✏️</span>
                                         </div>
                                     </div>
                                 </div>

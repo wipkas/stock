@@ -346,6 +346,109 @@
             cursor: default;
         }
 
+        .scoreboard-container.single-shift {
+            grid-template-columns: 1fr;
+        }
+
+        .scoreboard-fullshift-card {
+            border-radius: 14px;
+            padding: 11px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            transition: all 0.2s ease;
+            position: relative;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
+            border: 1.5px solid #10B981 !important;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .scoreboard-fullshift-card:hover {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(59, 130, 246, 0.08) 100%) !important;
+            border-color: #10B981 !important;
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.32);
+        }
+
+        .scoreboard-fullshift-emp {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+            cursor: pointer;
+            border-radius: 10px;
+            padding: 4px 6px;
+            margin: -4px -6px;
+            transition: background 0.15s ease;
+        }
+
+        .scoreboard-fullshift-emp:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .scoreboard-fullshift-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .scoreboard-fullshift-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #10B981;
+            margin-bottom: 2px;
+            letter-spacing: 0.3px;
+        }
+
+        .scoreboard-fullshift-name {
+            font-size: 14px;
+            font-weight: 850;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .scoreboard-fullshift-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 2px;
+        }
+
+        .scoreboard-fullshift-tx {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 3px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .scoreboard-fullshift-tx-btn {
+            background: var(--card-bg);
+            border: 1.5px solid #10B981;
+            border-radius: 12px;
+            padding: 6px 14px;
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .scoreboard-fullshift-tx-btn:hover {
+            transform: scale(1.04);
+            background: rgba(16, 185, 129, 0.15);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
         .scoreboard-roll-btn-wrap {
             position: absolute;
             left: 50%;
@@ -4312,10 +4415,10 @@
                         ${targetMiniHtml}
 
                         <!-- SCOREBOARD CONTAINER PENGGANTI SHIFT-ROSTER-BOX -->
+                        ${multiShift ? `
                         <div class="scoreboard-container" onclick="event.stopPropagation()">
                             
                             <!-- Central Roll Shift Button (Hanya jika Multi-shift) -->
-                            ${multiShift ? `
                             <div class="scoreboard-roll-btn-wrap">
                                 <button type="button" 
                                         class="scoreboard-roll-btn" 
@@ -4324,19 +4427,19 @@
                                     <span class="roll-icon">⇄</span>
                                     <span>Roll</span>
                                 </button>
-                            </div>` : ''}
+                            </div>
 
                             <!-- KOLOM SHIFT 1 (PAGI) -->
-                            <div class="scoreboard-col ${multiShift ? (isS1Active ? 'active-shift-col' : 'inactive-shift-col') : 'active-shift-col'}"
-                                 title="${(!multiShift || isS1Active) ? 'Shift 1 sedang AKTIF' : 'Shift 1 tidak aktif'}">
+                            <div class="scoreboard-col ${isS1Active ? 'active-shift-col' : 'inactive-shift-col'}"
+                                 title="${isS1Active ? 'Shift 1 sedang AKTIF' : 'Shift 1 tidak aktif'}">
                                 
                                 <!-- Zona 1: Klik Area Karyawan -> Modal Shift Roster -->
                                 <div class="scoreboard-emp-area" 
                                      role="button" tabindex="0"
                                      onclick="openShiftRosterEmployeeModal(event, '${store.id}', 1)"
-                                     title="Klik untuk detail &amp; kelola kasir ${multiShift ? 'Shift 1 (Pagi)' : 'Full Shift'}">
+                                     title="Klik untuk detail &amp; kelola kasir Shift 1 (Pagi)">
                                     <div class="shift-header-mini">
-                                        <span class="shift-title s1">🌅 ${multiShift ? 'Pagi' : 'Full Shift'}</span>
+                                        <span class="shift-title s1">🌅 Pagi</span>
                                     </div>
                                     <div class="emp-profile-row">
                                         ${s1AvatarHtml}
@@ -4352,7 +4455,7 @@
                                 <div class="scoreboard-tx-field s1" 
                                      role="button" tabindex="0"
                                      onclick="openDailyTxModal(event, '${store.id}', 1)"
-                                     title="Klik untuk set transaksi ${multiShift ? 'Shift 1 (Pagi)' : 'Full Shift'}">
+                                     title="Klik untuk set transaksi Shift 1 (Pagi)">
                                     <div style="display: flex; align-items: baseline; justify-content: center; gap: 4px;">
                                         <span class="scoreboard-tx-num" id="score_${store.id}_1">${s1Tx}</span>
                                         <span style="font-size: 11.5px; font-weight: 800; color: var(--text-muted);">tx</span>
@@ -4361,8 +4464,7 @@
                                 </div>
                             </div>
 
-                            <!-- KOLOM SHIFT 2 (MALAM) (Hanya jika Multi-shift) -->
-                            ${multiShift ? `
+                            <!-- KOLOM SHIFT 2 (MALAM) -->
                             <div class="scoreboard-col ${isS2Active ? 'active-shift-col' : 'inactive-shift-col'}"
                                  title="${isS2Active ? 'Shift 2 sedang AKTIF' : 'Shift 2 tidak aktif'}">
                                 
@@ -4395,9 +4497,47 @@
                                         <span style="font-size: 10px; opacity: 0.6; margin-left: 2px;">✏️</span>
                                     </div>
                                 </div>
-                            </div>` : ''}
-
+                            </div>
                         </div>
+                        ` : `
+                        <!-- OPSI A: HORIZONTAL HERO CARD UNTUK SINGLE SHIFT (FULL SHIFT) -->
+                        <div class="scoreboard-container single-shift" onclick="event.stopPropagation()">
+                            <div class="scoreboard-fullshift-card" title="Cabang dengan 1 Shift (Full Shift)">
+                                <!-- Zona 1: Klik Area Karyawan -> Modal Shift Roster -->
+                                <div class="scoreboard-fullshift-emp" 
+                                     role="button" tabindex="0"
+                                     onclick="openShiftRosterEmployeeModal(event, '${store.id}', 1)"
+                                     title="Klik untuk detail &amp; kelola kasir Full Shift">
+                                    ${s1AvatarHtml}
+                                    <div class="scoreboard-fullshift-info">
+                                        <div class="scoreboard-fullshift-badge">
+                                            <span>🌅 FULL SHIFT • KASIR TUNGGAL</span>
+                                        </div>
+                                        <div class="scoreboard-fullshift-name">
+                                            ${escapeHtml(empS1)}
+                                        </div>
+                                        <div class="scoreboard-fullshift-time">
+                                            <span>🕒 ${shift1Info.start || '07:00'} - ${shift1Info.end || '22:00'} WIB</span>
+                                            <span class="emp-action-hint">⚙️</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Zona 2: Klik Field Score -> Modal Set Transaksi Langsung -->
+                                <div class="scoreboard-fullshift-tx" 
+                                     role="button" tabindex="0"
+                                     onclick="openDailyTxModal(event, '${store.id}', 1)"
+                                     title="Klik untuk set transaksi Full Shift">
+                                    <div style="font-size: 9.5px; font-weight: 750; color: var(--text-muted); text-transform: uppercase;">TRANSAKSI</div>
+                                    <div class="scoreboard-fullshift-tx-btn">
+                                        <span class="scoreboard-tx-num" id="score_${store.id}_1" style="font-size: 19px; font-weight: 900; color: #10B981;">${s1Tx}</span>
+                                        <span style="font-size: 11px; font-weight: 800; color: var(--text-muted);">tx</span>
+                                        <span style="font-size: 10px; opacity: 0.65; margin-left: 2px;">✏️</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        `}
                     </div>
                 </div>`;
             });
