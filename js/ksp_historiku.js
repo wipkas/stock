@@ -4362,13 +4362,50 @@ function getSupabaseClient() {
 
 function fetchSupabaseHistory(storeId, startDate, endDate) {
   const cfg = window.KSP_SYNC_CONFIG || {};
+  if (!storeId) return Promise.resolve(null);
+
+  const client = getSupabaseClient();
+  if (client) {
+    try {
+      let query = client.from('ksp_history_transactions')
+        .select('*')
+        .eq('store_id', storeId);
+
+      if (startDate === endDate) {
+        query = query.eq('trx_date', startDate);
+      } else {
+        query = query.gte('trx_date', startDate).lte('trx_date', endDate);
+      }
+
+      return query
+        .order('trx_date', { ascending: true })
+        .order('trx_time', { ascending: true })
+        .order('created_at', { ascending: true })
+        .then(res => {
+          if (res.error) throw res.error;
+          return res.data;
+        })
+        .catch(err => {
+          console.warn('[KspHistoriku] Supabase client query error, fallback direct fetch:', err);
+          return fallbackDirectFetchHistory(storeId, startDate, endDate);
+        });
+    } catch (e) {
+      console.warn('[KspHistoriku] Supabase client error:', e);
+    }
+  }
+
+  return fallbackDirectFetchHistory(storeId, startDate, endDate);
+}
+
+function fallbackDirectFetchHistory(storeId, startDate, endDate) {
+  const cfg = window.KSP_SYNC_CONFIG || {};
   if (!cfg.url || !cfg.key || !storeId) return Promise.resolve(null);
 
   const baseUrl = cfg.url.replace(/\/+$/, '');
-  const headers = {
-    'apikey': cfg.key,
-    'Authorization': 'Bearer ' + cfg.key
-  };
+  const headers = { 'apikey': cfg.key };
+  if (String(cfg.key).indexOf('sb_') !== 0) {
+    headers['Authorization'] = 'Bearer ' + cfg.key;
+  }
 
   let endpoint = `${baseUrl}/rest/v1/ksp_history_transactions?store_id=eq.${encodeURIComponent(storeId)}`;
   if (startDate === endDate) {
@@ -4384,7 +4421,7 @@ function fetchSupabaseHistory(storeId, startDate, endDate) {
       return res.json();
     })
     .catch(err => {
-      console.warn('[KspHistoriku] Gagal fetch Supabase history:', err);
+      console.warn('[KspHistoriku] Gagal direct fetch Supabase history:', err);
       return null;
     });
 }

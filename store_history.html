@@ -847,11 +847,55 @@
                 ];
             }
 
+            renderStoreSelectOptions();
+            fetchStoresFromCloud();
+        }
+
+        function renderStoreSelectOptions() {
             const select = document.getElementById('storeSelect');
             if (!select) return;
             select.innerHTML = storesList.map(s => `
                 <option value="${s.id}">${s.name}</option>
             `).join('');
+            if (currentStoreId) select.value = currentStoreId;
+        }
+
+        function fetchStoresFromCloud() {
+            const cfg = window.KSP_SYNC_CONFIG || {};
+            if (!cfg.url || !cfg.key) return;
+
+            const baseUrl = cfg.url.replace(/\/+$/, '');
+            const headers = { 'apikey': cfg.key };
+            if (String(cfg.key).indexOf('sb_') !== 0) headers['Authorization'] = 'Bearer ' + cfg.key;
+
+            fetch(baseUrl + '/rest/v1/ksp_stores?select=id,name', { headers: headers })
+                .then(r => r.ok ? r.json() : Promise.reject())
+                .then(remoteStores => {
+                    if (Array.isArray(remoteStores) && remoteStores.length > 0) {
+                        storesList = remoteStores;
+                        try { localStorage.setItem('kspcheck_stores_data', JSON.stringify(storesList)); } catch(e) {}
+                        renderStoreSelectOptions();
+                    }
+                })
+                .catch(() => {
+                    // Fallback: Ambil store_id dari transaksi yang ada di Supabase
+                    fetch(baseUrl + '/rest/v1/ksp_history_transactions?select=store_id&limit=100', { headers: headers })
+                        .then(r => r.ok ? r.json() : [])
+                        .then(rows => {
+                            if (Array.isArray(rows) && rows.length > 0) {
+                                const uniqueIds = [...new Set(rows.map(x => x.store_id).filter(Boolean))];
+                                if (uniqueIds.length > 0) {
+                                    uniqueIds.forEach(uid => {
+                                        if (!storesList.some(s => s.id === uid)) {
+                                            storesList.push({ id: uid, name: uid });
+                                        }
+                                    });
+                                    renderStoreSelectOptions();
+                                }
+                            }
+                        })
+                        .catch(() => {});
+                });
         }
 
         function onStoreSelectChange(storeId) {
