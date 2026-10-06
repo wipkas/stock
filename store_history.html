@@ -758,8 +758,43 @@
             if (errBox) errBox.style.display = 'none';
 
             try {
-                await KspAuth.decryptConfig(pin);
-                KspAuth.setAdminSession(pin);
+                let unlocked = false;
+
+                // 1. Coba verifikasi sebagai PIN Admin (decryptConfig)
+                try {
+                    await KspAuth.decryptConfig(pin);
+                    KspAuth.setAdminSession(pin);
+                    unlocked = true;
+                } catch(e) {
+                    unlocked = false;
+                }
+
+                // 2. Jika bukan PIN Admin, verifikasi sebagai Password Karyawan (sama seperti karyawan.html)
+                if (!unlocked) {
+                    if (window.KspSync && KspSync.enabled()) {
+                        const empRes = await KspSync.empLogin(pin);
+                        if (empRes && empRes.ok) {
+                            unlocked = true;
+                            if (empRes.store) {
+                                currentStoreId = empRes.store.id;
+                                currentStoreName = empRes.store.name;
+                                if (Array.isArray(empRes.all_stores) && empRes.all_stores.length > 0) {
+                                    mergeStoresList(empRes.all_stores);
+                                } else {
+                                    mergeStoresList([empRes.store]);
+                                }
+                            }
+                            try {
+                                sessionStorage.setItem('kspcheck_emp_cred', pin);
+                                localStorage.setItem('kspcheck_emp_cred', pin);
+                            } catch(e) {}
+                        } else {
+                            throw new Error('PIN Admin atau Password Karyawan salah!');
+                        }
+                    } else {
+                        throw new Error('PIN Salah!');
+                    }
+                }
 
                 document.getElementById('pinModal').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
@@ -768,7 +803,7 @@
             } catch (err) {
                 console.error(err);
                 if (errBox) {
-                    errBox.innerText = err.message || 'PIN Salah!';
+                    errBox.innerText = err.message || 'PIN / Password Salah!';
                     errBox.style.display = 'block';
                 }
                 document.getElementById('pinModal').style.display = 'flex';
