@@ -124,7 +124,7 @@
         <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
           <button class="grp-toggle-btn">▼</button>
           <span class="lv-group-icon">📱</span>
-          <span class="lv-group-name">${groupTitle || 'TopUp'}</span>
+          <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">${groupTitle || 'TopUp'}</span>
           <span class="grp-done-badge">✓ Selesai</span>
           <span class="lv-group-meta">${meta}</span>
           <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -162,7 +162,7 @@
         <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
           <button class="grp-toggle-btn">▼</button>
           <span class="lv-group-icon">🎫</span>
-          <span class="lv-group-name">${groupTitle || 'Voucher'}</span>
+          <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">${groupTitle || 'Voucher'}</span>
           <span class="grp-done-badge">✓ Selesai</span>
           <span class="lv-group-meta">${meta}</span>
           <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -212,7 +212,7 @@
           <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
             <button class="grp-toggle-btn">▼</button>
             <span class="lv-group-icon">💸</span>
-            <span class="lv-group-name">Tarik</span>
+            <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">Tarik</span>
             <span class="grp-done-badge">✓ Selesai</span>
             <span class="lv-group-meta">${metaHtml}</span>
             <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -261,7 +261,7 @@
             <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
               <button class="grp-toggle-btn">▼</button>
               <span class="lv-group-icon">${icon}</span>
-              <span class="lv-group-name">${displayName}</span>
+              <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">${displayName}</span>
               <span class="grp-done-badge">✓ Selesai</span>
               <span class="lv-group-meta">${metaHtml}</span>
               <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -356,7 +356,7 @@
           <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
             <button class="grp-toggle-btn">▼</button>
             <span class="lv-group-icon">💸</span>
-            <span class="lv-group-name">Tarik</span>
+            <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">Tarik</span>
             <span class="grp-done-badge">✓ Selesai</span>
             <span class="lv-group-meta">${metaHtml}</span>
             <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -430,7 +430,7 @@
             <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
               <button class="grp-toggle-btn">▼</button>
               <span class="lv-group-icon">${icon}</span>
-              <span class="lv-group-name">${displayName}</span>
+              <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">${displayName}</span>
               <span class="grp-done-badge">✓ Selesai</span>
               <span class="lv-group-meta">${metaHtml}</span>
               <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -477,7 +477,7 @@
           <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
             <button class="grp-toggle-btn">▼</button>
             <span class="lv-group-icon">📱</span>
-            <span class="lv-group-name">TopUp</span>
+            <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">TopUp</span>
             <span class="grp-done-badge">✓ Selesai</span>
             <span class="lv-group-meta"><span class="grp-meta-keluar" style="color:var(--outcome)">${opt.fmtAmt(tKeluar)}</span> / <span class="grp-meta-masuk" style="color:var(--income)">${opt.fmtAmt(tMasuk)}</span></span>
             <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -524,7 +524,7 @@
           <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
             <button class="grp-toggle-btn">▼</button>
             <span class="lv-group-icon">🎫</span>
-            <span class="lv-group-name">Voucher</span>
+            <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">Voucher</span>
             <span class="grp-done-badge">✓ Selesai</span>
             <span class="lv-group-meta"><span class="grp-meta-keluar" style="color:var(--outcome)">${opt.fmtAmt(vTotalKeluar)}</span></span>
             <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -616,7 +616,7 @@
             <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
               <button class="grp-toggle-btn">▼</button>
               <span class="lv-group-icon">💸</span>
-              <span class="lv-group-name">Tarik</span>
+              <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">Tarik</span>
               <span class="grp-done-badge">✓ Selesai</span>
               <span class="lv-group-meta">${metaHtml}</span>
               <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -664,7 +664,7 @@
               <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
                 <button class="grp-toggle-btn">▼</button>
                 <span class="lv-group-icon">${icon}</span>
-                <span class="lv-group-name">${displayName}</span>
+                <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">${displayName}</span>
                 <span class="grp-done-badge">✓ Selesai</span>
                 <span class="lv-group-meta">${metaHtml}</span>
                 <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -779,7 +779,7 @@
             <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
               <button class="grp-toggle-btn">▼</button>
               <span class="lv-group-icon">💸</span>
-              <span class="lv-group-name">Tarik</span>
+              <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">Tarik</span>
               <span class="grp-done-badge">✓ Selesai</span>
               <span class="lv-group-meta">${metaHtml}</span>
               <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -827,7 +827,7 @@
               <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
                 <button class="grp-toggle-btn">▼</button>
                 <span class="lv-group-icon">${icon}</span>
-                <span class="lv-group-name">${displayName}</span>
+                <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">${displayName}</span>
                 <span class="grp-done-badge">✓ Selesai</span>
                 <span class="lv-group-meta">${metaHtml}</span>
                 <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -919,7 +919,7 @@
             <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
               <button class="grp-toggle-btn">▼</button>
               <span class="lv-group-icon">💸</span>
-              <span class="lv-group-name">Tarik <span class="lv-group-date-badge">${formatDayShort(dKey)}</span></span>
+              <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">Tarik <span class="lv-group-date-badge">${formatDayShort(dKey)}</span></span>
               <span class="grp-done-badge">✓ Selesai</span>
               <span class="lv-group-meta">${metaHtml}</span>
               <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -972,7 +972,7 @@
             <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
               <button class="grp-toggle-btn">▼</button>
               <span class="lv-group-icon">${icon}</span>
-              <span class="lv-group-name">${displayName} <span class="lv-group-date-badge">${formatDayShort(dKey)}</span></span>
+              <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">${displayName} <span class="lv-group-date-badge">${formatDayShort(dKey)}</span></span>
               <span class="grp-done-badge">✓ Selesai</span>
               <span class="lv-group-meta">${metaHtml}</span>
               <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -1072,7 +1072,7 @@
             <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
               <button class="grp-toggle-btn">▼</button>
               <span class="lv-group-icon">💸</span>
-              <span class="lv-group-name">Tarik</span>
+              <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">Tarik</span>
               <span class="grp-done-badge">✓ Selesai</span>
               <span class="lv-group-meta">${metaHtml}</span>
               <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -1120,7 +1120,7 @@
               <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
                 <button class="grp-toggle-btn">▼</button>
                 <span class="lv-group-icon">${icon}</span>
-                <span class="lv-group-name">${displayName}</span>
+                <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">${displayName}</span>
                 <span class="grp-done-badge">✓ Selesai</span>
                 <span class="lv-group-meta">${metaHtml}</span>
                 <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>

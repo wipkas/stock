@@ -3559,12 +3559,23 @@ function toggleTheme() {
   const cur = html.getAttribute('data-theme');
   const next = cur === 'dark' ? 'light' : 'dark';
   html.setAttribute('data-theme', next);
-  try { localStorage.setItem('ksp_theme', next); } catch(e){}
+  if (document.body) {
+    document.body.classList.toggle('light-theme', next === 'light');
+  }
+  try {
+    localStorage.setItem('ksp_theme', next);
+    localStorage.setItem('kspcheck_theme', next);
+  } catch(e){}
   updateThemeModeBadge();
 }
 try {
-  const saved = localStorage.getItem('ksp_theme');
-  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  const saved = localStorage.getItem('kspcheck_theme') || localStorage.getItem('ksp_theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+    if (document.body) {
+      document.body.classList.toggle('light-theme', saved === 'light');
+    }
+  }
   updateThemeModeBadge();
 } catch(e){}
 

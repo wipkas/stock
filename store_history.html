@@ -264,7 +264,7 @@
                     </select>
                 </div>
 
-                <!-- Right: Date Trigger, Format Trigger, Hidden Group, Tools -->
+                <!-- Right: Date Trigger, Format Trigger, Hidden Group, Speak All, Settings -->
                 <div class="header-main-right">
                     <button class="btn-date-trigger" id="btnDateTrigger" onclick="KspHistoriku.openDateRangePickerModal()" title="Pilih Tanggal / Rentang">
                         📅 <span id="currentDateDisplay">Hari Ini</span> ▾
@@ -278,7 +278,11 @@
                         <span id="btn-hidden-group-icon">📁</span>
                     </button>
 
-                    <button class="settings-btn" id="btnQuickTools" onclick="openToolsModal()" title="Alat &amp; Pengaturan" style="padding: 4px 6px; font-size: 13px;">⚙️</button>
+                    <button class="toggle-btn" id="btn-speak-all" title="Bacakan semua nilai (Tekan tahan untuk pengaturan)" style="padding: 4px 8px; font-size: 13px;">
+                        <span class="btn-icon">🔊</span>
+                    </button>
+
+                    <button class="settings-btn" id="btn-open-settings" onclick="openTtsSettingsModal()" title="Pengaturan Laporan &amp; Suara" style="padding: 4px 6px; font-size: 13px;">⚙️</button>
                 </div>
             </div>
         </header>
@@ -398,55 +402,6 @@
         </div>
     </div>
 
-    <!-- MODAL: QUICK TOOLS SHEET (PROPER KSP-MODAL-OVERLAY) -->
-    <div id="toolsModal" class="ksp-modal-overlay" onclick="if(event.target===this) closeToolsModal()">
-        <div class="ksp-modal-card" style="max-width: 440px;" onclick="event.stopPropagation()">
-            <div class="ksp-modal-hd">
-                <div class="ksp-modal-title">
-                    <span>⚙️</span> <span>Alat &amp; Preferensi HistoriKu</span>
-                </div>
-                <button class="ksp-modal-close" onclick="closeToolsModal()" title="Tutup">✕</button>
-            </div>
-            <div class="ksp-modal-body">
-                <div class="tools-grid">
-                    <div class="tool-btn-card" id="cardToolRingkas" onclick="toggleRingkasFromSheet()">
-                        <span class="tool-card-icon">🧮</span>
-                        <span class="tool-card-title">Mode Ringkas</span>
-                        <span class="tool-card-sub" id="subToolRingkas">Sembunyikan 000</span>
-                    </div>
-                    <div class="tool-btn-card" id="cardToolRounding" onclick="toggleRoundingFromSheet()">
-                        <span class="tool-card-icon">🔢</span>
-                        <span class="tool-card-title">Bulatkan Ribuan</span>
-                        <span class="tool-card-sub" id="subToolRounding">Pembulatan ke ribuan</span>
-                    </div>
-                    <div class="tool-btn-card" onclick="closeToolsModal(); KspHistoriku.openImportModal();">
-                        <span class="tool-card-icon">📥</span>
-                        <span class="tool-card-title">Impor Laporan</span>
-                        <span class="tool-card-sub">HTML / JSON KSP Check</span>
-                    </div>
-                    <div class="tool-btn-card" onclick="closeToolsModal(); openTtsSettingsModal();">
-                        <span class="tool-card-icon">🔊</span>
-                        <span class="tool-card-title">Pengaturan Suara</span>
-                        <span class="tool-card-sub">Atur TTS &amp; kecepatan</span>
-                    </div>
-                    <div class="tool-btn-card" onclick="toggleThemeModeFromHistory();">
-                        <span class="tool-card-icon">🌓</span>
-                        <span class="tool-card-title">Ganti Tema</span>
-                        <span class="tool-card-sub" id="subToolTheme">Gelap / Terang</span>
-                    </div>
-                    <div class="tool-btn-card" onclick="closeToolsModal(); showLocalEditsAction();">
-                        <span class="tool-card-icon">↺</span>
-                        <span class="tool-card-title">Reset Editan</span>
-                        <span class="tool-card-sub">Kembalikan data asli</span>
-                    </div>
-                </div>
-            </div>
-            <div class="ksp-modal-ft">
-                <button type="button" class="ksp-btn-sec" onclick="closeToolsModal()">Tutup</button>
-            </div>
-        </div>
-    </div>
-
     <!-- MODAL: IMPORT LAPORAN (PROPER KSP-MODAL-OVERLAY) -->
     <div id="import-report-modal" class="ksp-modal-overlay" onclick="if(event.target===this) KspHistoriku.closeImportModal()">
         <div class="ksp-modal-card" style="max-width: 440px;" onclick="event.stopPropagation()">
@@ -471,58 +426,279 @@
         </div>
     </div>
 
-    <!-- MODAL: TTS SETTINGS (PROPER KSP-MODAL-OVERLAY) -->
-    <div id="tts-settings-modal" class="ksp-modal-overlay" onclick="if(event.target===this) closeTtsSettingsModal()">
-        <div class="ksp-modal-card" style="max-width: 440px;" onclick="event.stopPropagation()">
-            <div class="ksp-modal-hd">
-                <div class="ksp-modal-title">
-                    <span>⚙️</span> <span>Pengaturan Suara &amp; Laporan</span>
-                </div>
-                <button class="ksp-modal-close" onclick="closeTtsSettingsModal()" title="Tutup">✕</button>
-            </div>
-            <div class="ksp-modal-body">
-                <div>
-                    <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px;">Suara Pembaca:</label>
-                    <select id="tts-voice-select" style="width: 100%; padding: 8px 10px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border); color: var(--text);"></select>
-                </div>
-                <div>
-                    <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px;">Kecepatan Suara: <span id="tts-rate-val">1.0x</span></label>
-                    <input type="range" id="tts-rate-slider" min="0.5" max="1.5" step="0.1" value="1.0" style="width: 100%;">
-                </div>
-            </div>
-            <div class="ksp-modal-ft">
-                <button type="button" class="ksp-btn-sec" onclick="closeTtsSettingsModal()">Selesai</button>
-            </div>
+    <!-- MODAL: PENGATURAN LAPORAN & SUARA (FULL ASLI) -->
+    <div id="tts-settings-modal" class="ksp-modal-overlay" onclick="onModalOverlayClick(event)">
+      <div class="ksp-modal-card" onclick="event.stopPropagation()">
+        <div class="ksp-modal-hd">
+          <div class="ksp-modal-title">⚙️ Pengaturan Laporan &amp; Suara</div>
+          <button class="ksp-modal-close" onclick="closeTtsSettingsModal()" title="Tutup">✕</button>
         </div>
+        <div class="ksp-modal-body">
+          <!-- Bagian Tampilan & Kalkulator -->
+          <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin: 4px 0 10px;">
+            📊 Tampilan, Format &amp; Kalkulator
+          </div>
+
+          <div class="ksp-ctrl-grp" id="ctrl-grp-sticky-header">
+            <div class="ksp-ctrl-label-row">
+              <span class="ksp-ctrl-label">📌 Header App Sticky</span>
+              <span class="ksp-badge" id="sticky-header-badge" style="background:var(--accent-lt);color:var(--accent);">Aktif (ON)</span>
+            </div>
+            <div class="ksp-switch-row">
+              <span class="ksp-switch-desc">Header grup aplikasi/bank tetap menempel di atas layar saat scroll transaksi</span>
+              <label class="ksp-switch">
+                <input type="checkbox" id="sticky-header-toggle" checked onchange="toggleStickyAppHeaders()">
+                <span class="ksp-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="ksp-ctrl-grp" id="ctrl-grp-ringkas">
+            <div class="ksp-ctrl-label-row">
+              <span class="ksp-ctrl-label">🔢 Mode Ringkas (Kalkulator)</span>
+              <span class="ksp-badge" id="ringkas-mode-badge" style="background:var(--accent-lt);color:var(--accent);">Aktif (ON)</span>
+            </div>
+            <div class="ksp-switch-row">
+              <span class="ksp-switch-desc">Sembunyikan 3 digit nol di belakang nominal (misal 20 untuk 20.000) untuk hitungan cepat kasir</span>
+              <label class="ksp-switch">
+                <input type="checkbox" id="ringkas-mode-toggle" checked onchange="toggleRingkas()">
+                <span class="ksp-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="ksp-ctrl-grp" id="ctrl-grp-rounding">
+            <div class="ksp-ctrl-label-row">
+              <span class="ksp-ctrl-label">🔄 Efek Pembulatan (Rounding PDF)</span>
+              <span class="ksp-badge" id="rounding-mode-badge" style="background:var(--border);color:var(--muted);">Nonaktif (OFF)</span>
+            </div>
+            <div class="ksp-switch-row">
+              <span class="ksp-switch-desc">Bulatkan nominal per item ke ribuan terdekat sesuai aturan cetakan PDF</span>
+              <label class="ksp-switch">
+                <input type="checkbox" id="rounding-mode-toggle" onchange="toggleRounding()">
+                <span class="ksp-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="ksp-ctrl-grp" id="ctrl-grp-stepper">
+            <div class="ksp-ctrl-label-row">
+              <span class="ksp-ctrl-label">± Tombol Stepper (+/-)</span>
+              <span class="ksp-badge" id="stepper-mode-badge" style="background:var(--border);color:var(--muted);">Nonaktif (OFF)</span>
+            </div>
+            <div class="ksp-switch-row">
+              <span class="ksp-switch-desc">Menampilkan tombol cepat +/- 1.000 pada baris tabel transaksi</span>
+              <label class="ksp-switch">
+                <input type="checkbox" id="stepper-mode-toggle" onchange="toggleSteppers()">
+                <span class="ksp-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="ksp-ctrl-grp" id="ctrl-grp-theme">
+            <div class="ksp-ctrl-label-row">
+              <span class="ksp-ctrl-label">🌓 Tema Gelap (Dark Mode)</span>
+              <span class="ksp-badge" id="theme-mode-badge" style="background:var(--border);color:var(--muted);">Nonaktif (OFF)</span>
+            </div>
+            <div class="ksp-switch-row">
+              <span class="ksp-switch-desc">Beralih antara mode tampilan terang dan mode gelap yang nyaman untuk mata</span>
+              <label class="ksp-switch">
+                <input type="checkbox" id="theme-mode-toggle" onchange="toggleTheme()">
+                <span class="ksp-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="ksp-ctrl-grp" id="ctrl-grp-local-edits">
+            <div class="ksp-ctrl-label-row">
+              <span class="ksp-ctrl-label">💾 Penyimpanan Edit Otomatis</span>
+              <span class="ksp-badge" id="local-edits-badge" style="background:var(--border);color:var(--muted);">Tidak Ada Perubahan</span>
+            </div>
+            <div class="ksp-switch-row" style="align-items:center;">
+              <span class="ksp-switch-desc">Perubahan nominal/nama disimpan otomatis ke perangkat ini agar tidak hilang saat keluar / back</span>
+              <button type="button" id="btn-reset-edits" onclick="resetReportEdits()" style="display:none;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);padding:4px 10px;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;">Reset Data</button>
+            </div>
+          </div>
+
+          <!-- Bagian Suara & Navigasi TTS -->
+          <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin: 16px 0 10px;">
+            🔊 Suara &amp; Navigasi TTS
+          </div>
+
+          <div class="ksp-ctrl-grp">
+            <div class="ksp-ctrl-label-row">
+              <span class="ksp-ctrl-label">Kecepatan Bicara (Speed)</span>
+              <span class="ksp-badge" id="tts-speed-val">0.9x</span>
+            </div>
+            <input type="range" class="ksp-range-slider" id="tts-speed-slider" min="0.2" max="4.0" step="0.1" value="0.9" oninput="updateTtsSpeed(this.value)">
+            <div class="ksp-range-hints">
+              <span>0.2x (Lambat)</span>
+              <span>1.0x (Normal)</span>
+              <span>4.0x (Sangat Cepat)</span>
+            </div>
+          </div>
+
+          <div class="ksp-ctrl-grp">
+            <div class="ksp-ctrl-label-row">
+              <span class="ksp-ctrl-label">Jeda Antar Item (Delay)</span>
+              <span class="ksp-badge" id="tts-delay-val">500 ms (0.5s)</span>
+            </div>
+            <input type="range" class="ksp-range-slider" id="tts-delay-slider" min="100" max="2000" step="100" value="500" oninput="updateTtsDelay(this.value)">
+            <div class="ksp-range-hints">
+              <span>100 ms (Cepat)</span>
+              <span>500 ms (Sedang)</span>
+              <span>2000 ms (2.0s)</span>
+            </div>
+          </div>
+
+          <div class="ksp-ctrl-grp">
+            <div class="ksp-ctrl-label-row">
+              <span class="ksp-ctrl-label">Pilihan Suara &amp; Bahasa</span>
+              <span class="ksp-badge" id="tts-voice-count">Otomatis</span>
+            </div>
+            <select class="ksp-select" id="tts-voice-select" onchange="onTtsVoiceChange(this.value)">
+              <option value="">Otomatis (Default id-ID)</option>
+            </select>
+          </div>
+
+          <div class="ksp-ctrl-grp">
+            <div class="ksp-ctrl-label-row">
+              <span class="ksp-ctrl-label">Auto-Hidden Grup Selesai</span>
+              <span class="ksp-badge" id="auto-hide-status-badge" style="background:var(--border);color:var(--muted);">Nonaktif (OFF)</span>
+            </div>
+            <div class="ksp-switch-row">
+              <span class="ksp-switch-desc">Otomatis melipat tabel grup ketika semua transaksinya sudah berstatus dibaca</span>
+              <label class="ksp-switch">
+                <input type="checkbox" id="auto-hide-toggle" onchange="setAutoHideCompleted(this.checked)">
+                <span class="ksp-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="ksp-ctrl-grp" id="ctrl-grp-sambung-multidate">
+            <div class="ksp-ctrl-label-row">
+              <span class="ksp-ctrl-label">Sambung Multi Date (Berdasarkan App)</span>
+              <span class="ksp-badge" id="sambung-multidate-badge" style="background:var(--accent-lt);color:var(--accent);">Aktif (ON)</span>
+            </div>
+            <div class="ksp-switch-row">
+              <span class="ksp-switch-desc">Saat navigasi / TTS, lanjut ke tanggal berikutnya untuk aplikasi yang sama sebelum beralih ke aplikasi lain</span>
+              <label class="ksp-switch">
+                <input type="checkbox" id="sambung-multidate-toggle" checked onchange="setSambungMultiDate(this.checked)">
+                <span class="ksp-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="ksp-ctrl-grp" id="ctrl-grp-wakelock">
+            <div class="ksp-ctrl-label-row">
+              <span class="ksp-ctrl-label">Cegah Layar Mati (Screen Wake Lock)</span>
+              <span class="ksp-badge" id="tts-wakelock-badge" style="background:var(--accent-lt);color:var(--accent);">Aktif (ON)</span>
+            </div>
+            <div class="ksp-switch-row">
+              <span class="ksp-switch-desc">Mencegah layar HP redup atau mati otomatis selama suara pembacaan TTS sedang aktif</span>
+              <label class="ksp-switch">
+                <input type="checkbox" id="tts-wakelock-toggle" checked onchange="setTtsWakeLock(this.checked)">
+                <span class="ksp-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="ksp-modal-hint">
+            💡 <b>Tips:</b> Tekan tahan tombol <b>🔊 Baca Semua</b> kapan saja untuk membuka pengaturan ini.
+          </div>
+        </div>
+        <div class="ksp-modal-ft">
+          <button class="ksp-btn-sec" onclick="clearAllReadStatus()" title="Hapus semua tanda sudah dibaca">🔄 Reset Tanda</button>
+          <button class="ksp-btn-sec" onclick="expandAllGroups()" title="Buka semua grup">📂 Buka Semua</button>
+          <button class="ksp-btn-sec" onclick="collapseAllGroups()" title="Lipat semua grup">📁 Lipat Semua</button>
+          <button class="ksp-btn-sec" onclick="testTtsSample()">🔊 Uji Suara</button>
+          <button class="ksp-btn-sec" onclick="closeTtsSettingsModal(); KspHistoriku.openImportModal();" title="Impor file laporan">📥 Impor Laporan</button>
+          <button class="ksp-btn-pri" onclick="closeTtsSettingsModal()" title="Simpan pengaturan &amp; tutup">✓ Simpan &amp; Selesai</button>
+        </div>
+      </div>
     </div>
 
-    <!-- MODAL: APP MARGIN DETAILS (PROPER KSP-MODAL-OVERLAY) -->
-    <div id="app-margin-modal" class="ksp-modal-overlay" onclick="if(event.target===this) closeAppMarginDialog()">
-        <div class="ksp-modal-card" style="max-width: 360px;" onclick="event.stopPropagation()">
-            <div class="ksp-modal-hd">
-                <div class="ksp-modal-title">
-                    <span id="app-margin-title">📊 Rincian Nilai &amp; Margin</span>
-                </div>
-                <button class="ksp-modal-close" onclick="closeAppMarginDialog()" title="Tutup">✕</button>
-            </div>
-            <div id="app-margin-body" style="padding: 14px 16px; font-size: 13px; line-height: 1.6;"></div>
-            <div class="ksp-modal-ft">
-                <button type="button" class="ksp-btn-sec" onclick="closeAppMarginDialog()">Tutup</button>
-            </div>
+    <!-- DIALOG DETAIL LENGKAP ITEM (MINIMAL & JELAS ASLI) -->
+    <div id="item-detail-modal" class="ksp-modal-overlay" onclick="if(event.target===this)closeItemDetailDialog()">
+      <div class="ksp-modal-card" style="max-width:380px;">
+        <div class="ksp-modal-hd">
+          <div class="ksp-modal-title">
+            <span>📋 Detail Transaksi</span>
+            <span class="ksp-badge" id="dtl-badge-idx">#1</span>
+          </div>
+          <button class="ksp-modal-close" onclick="closeItemDetailDialog()" title="Tutup">✕</button>
         </div>
+        <div class="ksp-modal-body" id="dtl-modal-content" style="gap:10px;">
+          <!-- Diisi secara dinamis -->
+        </div>
+        <div class="ksp-modal-ft" style="justify-content:space-between;">
+          <div style="display:flex;gap:6px;">
+            <button class="ksp-btn-sec" id="dtl-btn-prev" onclick="dtlNav(-1)" title="Item Sebelumnya">◀</button>
+            <button class="ksp-btn-sec" onclick="speakCurrentNavigatedItem()" title="Dengarkan suara">🔊 Dengar</button>
+            <button class="ksp-btn-sec" id="dtl-btn-next" onclick="dtlNav(1)" title="Item Berikutnya">▶</button>
+          </div>
+          <button class="ksp-btn-pri" onclick="closeItemDetailDialog()">Tutup</button>
+        </div>
+      </div>
     </div>
 
-    <!-- FLOATING ITEM NAVIGATION BAR -->
-    <div id="item-nav-bar" class="item-nav-bar" style="display:none;">
-        <button class="nav-btn" onclick="prevNavRow()" title="Item Sebelumnya">◀</button>
-        <button class="nav-btn" id="nav-btn-speak" onclick="speakCurrentItem()" title="Dengarkan Item">🔊</button>
-        <div class="nav-info" onclick="focusCurrentNavInput()">
-            <span class="nav-desc" id="nav-item-desc">-</span>
-            <span class="nav-amt" id="nav-amt-val">-</span>
+    <!-- DIALOG RINGKASAN MARGIN APP (ASLI LENGKAP) -->
+    <div id="app-margin-modal" class="ksp-modal-overlay" onclick="if(event.target===this)closeAppMarginDialog()">
+      <div class="ksp-modal-card" style="max-width:360px;">
+        <div class="ksp-modal-hd">
+          <div class="ksp-modal-title">
+            <span id="app-margin-title">📱 Transaksi</span>
+            <span class="ksp-badge" id="app-margin-badge">0 Trx</span>
+          </div>
+          <button class="ksp-modal-close" onclick="closeAppMarginDialog()" title="Tutup">✕</button>
         </div>
-        <button class="nav-btn" onclick="toggleCurrentItemDone()" title="Tandai Selesai">✓</button>
-        <button class="nav-btn" onclick="nextNavRow()" title="Item Berikutnya">▶</button>
-        <button class="nav-btn nav-close" onclick="closeItemNavBar()" title="Tutup Navigasi">✕</button>
+        <div class="ksp-modal-body" id="app-margin-content" style="gap:10px;">
+          <!-- Diisi secara dinamis -->
+        </div>
+        <div class="ksp-modal-ft" style="justify-content:flex-end;">
+          <button class="ksp-btn-pri" onclick="closeAppMarginDialog()">Tutup</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM CONTROLLER BAR: SPLIT ACTION CARD WITH STEPPERS (ASLI LENGKAP) -->
+    <div id="item-nav-bar" class="item-nav-bar">
+      <div class="nav-card-top">
+        <div class="nav-meta-left">
+          <span class="nav-pos-badge" id="nav-pos-badge">1 / 1</span>
+          <span class="nav-meta-status" id="nav-meta-status" style="display:none;"></span>
+          <span class="nav-group-pill" id="nav-group-pill" onclick="openItemDetailDialog()" title="Klik untuk lihat detail lengkap">📱 Transaksi</span>
+          <span class="nav-dot">·</span>
+          <span class="nav-time" id="nav-time" onclick="openItemDetailDialog()" title="Klik untuk lihat detail lengkap">00:00</span>
+        </div>
+        <div class="nav-meta-right">
+          <span class="nav-read-badge" id="nav-read-badge" onclick="toggleCurrentItemRead()" title="Klik untuk ubah status sudah dibaca">✓ Dibaca</span>
+          <span class="nav-type-tag" id="nav-type-tag" onclick="toggleCurrentItemCategory()" title="Klik untuk ubah tipe Masuk / Keluar">Masuk</span>
+          <button class="nav-btn-close" onclick="closeItemNavBar()" title="Tutup Bar (Esc)">✕</button>
+        </div>
+      </div>
+
+      <div class="nav-card-mid">
+        <button class="nav-tool-btn del" id="nav-btn-del" onclick="toggleCurrentItemDeleted()" title="Coret transaksi ini (abaikan dari total)">🗑️</button>
+        <button class="nav-step-btn dec" onclick="navAdjustAmt(-1000, event)" title="Kurang 1.000 (Shift: 5.000)">−</button>
+        <div class="nav-amt-display" onclick="navEditAmt()" title="Klik untuk edit nominal langsung">
+          <span class="nav-amt-val" id="nav-amt-val">Rp 0</span>
+          <span class="nav-amt-sub" id="nav-amt-sub" style="display:none;"></span>
+        </div>
+        <button class="nav-step-btn inc" onclick="navAdjustAmt(1000, event)" title="Tambah 1.000 (Shift: 5.000)">+</button>
+        <button class="nav-tool-btn add" id="nav-btn-add" onclick="addNewItemBelowCurrent()" title="Tambah item baru di bawah ini">➕</button>
+      </div>
+
+      <div class="nav-card-bottom">
+        <button class="nav-split-btn prev" id="nav-btn-prev" onclick="navigateItem(-1)" title="Item Sebelumnya (Panah Kiri)">
+          <span class="nav-split-icon">◀</span>
+          <span class="nav-split-lbl">Sebelumnya</span>
+        </button>
+        <button class="nav-split-btn next" id="nav-btn-next" onclick="navigateItem(1)" title="Item Berikutnya (Panah Kanan)">
+          <span class="nav-split-lbl">Berikutnya</span>
+          <span class="nav-split-icon">▶</span>
+        </button>
+      </div>
     </div>
 
     <!-- INLINE PAGE SCRIPTS -->
@@ -735,59 +911,6 @@
             }
         }
 
-        // Tools Sheet Controller
-        function openToolsModal() {
-            const modal = document.getElementById('toolsModal');
-            if (modal) modal.classList.add('open');
-            updateToolsSheetBadges();
-        }
-
-        function closeToolsModal() {
-            const modal = document.getElementById('toolsModal');
-            if (modal) modal.classList.remove('open');
-        }
-
-        function updateToolsSheetBadges() {
-            const cardRingkas = document.getElementById('cardToolRingkas');
-            const subRingkas = document.getElementById('subToolRingkas');
-            if (cardRingkas && subRingkas) {
-                cardRingkas.classList.toggle('active', Boolean(ringkasMode));
-                subRingkas.textContent = ringkasMode ? 'Aktif (Potong 000)' : 'Nonaktif (Format Penuh)';
-            }
-
-            const cardRounding = document.getElementById('cardToolRounding');
-            const subRounding = document.getElementById('subToolRounding');
-            if (cardRounding && subRounding) {
-                cardRounding.classList.toggle('active', Boolean(roundingMode));
-                subRounding.textContent = roundingMode ? 'Aktif (Ribuan)' : 'Nonaktif (Asli)';
-            }
-
-            const subTheme = document.getElementById('subToolTheme');
-            if (subTheme) {
-                const cur = document.documentElement.getAttribute('data-theme');
-                subTheme.textContent = (cur === 'dark') ? 'Mode Gelap (Aktif)' : 'Mode Terang (Aktif)';
-            }
-        }
-
-        function toggleRingkasFromSheet() {
-            toggleRingkas(null);
-            updateToolsSheetBadges();
-        }
-
-        function toggleRoundingFromSheet() {
-            toggleRounding(null);
-            updateToolsSheetBadges();
-        }
-
-        function openTtsSettingsModal() {
-            const modal = document.getElementById('tts-settings-modal');
-            if (modal) modal.classList.add('open');
-        }
-
-        function closeTtsSettingsModal() {
-            const modal = document.getElementById('tts-settings-modal');
-            if (modal) modal.classList.remove('open');
-        }
     </script>
 </body>
 </html>
