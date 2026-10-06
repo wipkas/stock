@@ -215,9 +215,9 @@ function updateStickyAppHeadersBadge() {
 }
 
 function syncHeaderHeight() {
-  const hdr = document.querySelector('header');
+  const hdr = document.querySelector('#historikuView header, header.historiku-header') || document.querySelector('header');
   if (hdr) {
-    const h = hdr.offsetHeight || 38;
+    const h = hdr.offsetHeight || 34;
     document.documentElement.style.setProperty('--header-h', h + 'px');
   }
 }
