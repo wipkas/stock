@@ -4846,6 +4846,66 @@ function applyDateRange() {
   }
 }
 
+function navigateDate(direction) {
+  const dir = (direction < 0) ? -1 : 1;
+  const storeId = window.ACTIVE_STORE_ID || (typeof currentStoreId !== 'undefined' ? currentStoreId : '');
+  const storeName = window.ACTIVE_STORE_NAME || (typeof currentStoreName !== 'undefined' ? currentStoreName : 'Cabang');
+
+  if (!storeId) {
+    if (typeof showToast === 'function') showToast('⚠️ Silakan pilih cabang terlebih dahulu');
+    return;
+  }
+
+  const formatYmd = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  // Multi-day mode: geser jendela rentang tanggal
+  if (window.ACTIVE_PERIOD_MODE === 'multiday' && window.REPORT_DATA && window.REPORT_DATA.isMultiDay && window.REPORT_DATA.startDate && window.REPORT_DATA.endDate) {
+    const sDate = new Date(window.REPORT_DATA.startDate + 'T00:00:00');
+    const eDate = new Date(window.REPORT_DATA.endDate + 'T00:00:00');
+    const diffDays = Math.max(1, Math.round((eDate - sDate) / (1000 * 60 * 60 * 24)) + 1);
+
+    sDate.setDate(sDate.getDate() + (dir * diffDays));
+    eDate.setDate(eDate.getDate() + (dir * diffDays));
+
+    const newStart = formatYmd(sDate);
+    const newEnd = formatYmd(eDate);
+
+    const startInput = document.getElementById('rangeStartDate');
+    const endInput = document.getElementById('rangeEndDate');
+    if (startInput) startInput.value = newStart;
+    if (endInput) endInput.value = newEnd;
+
+    loadMultiDayForStore(storeId, storeName, newStart, newEnd);
+    return;
+  }
+
+  // Single-day mode: geser 1 hari (+1 atau -1)
+  let curDateStr = '';
+  if (window.REPORT_DATA && window.REPORT_DATA.dateDb && !window.REPORT_DATA.isMultiDay && /^\d{4}-\d{2}-\d{2}$/.test(window.REPORT_DATA.dateDb)) {
+    curDateStr = window.REPORT_DATA.dateDb;
+  } else {
+    const startInput = document.getElementById('rangeStartDate');
+    curDateStr = (startInput && startInput.value) ? startInput.value : getTodayDbDate();
+  }
+
+  const curDate = new Date(curDateStr + 'T00:00:00');
+  curDate.setDate(curDate.getDate() + dir);
+  const newDateStr = formatYmd(curDate);
+
+  const startInput = document.getElementById('rangeStartDate');
+  const endInput = document.getElementById('rangeEndDate');
+  if (startInput) startInput.value = newDateStr;
+  if (endInput) endInput.value = newDateStr;
+
+  const currentShift = (window.REPORT_DATA && typeof window.REPORT_DATA.shift === 'number') ? window.REPORT_DATA.shift : 0;
+  window.KspHistoriku.loadForStore(storeId, storeName, newDateStr, currentShift);
+}
+
 window.KspHistoriku = {
   loadForStore: function(storeId, storeName, dateKey, shiftNum) {
     window.ACTIVE_STORE_ID = storeId;
@@ -4899,6 +4959,7 @@ window.KspHistoriku = {
   closeDateRangePickerModal: closeDateRangePickerModal,
   selectRangePreset: selectRangePreset,
   applyDateRange: applyDateRange,
+  navigateDate: navigateDate,
   closeItemNavBar: function() {
     if (typeof closeItemNavBar === 'function') closeItemNavBar();
   },
