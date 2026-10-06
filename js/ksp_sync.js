@@ -431,14 +431,32 @@
 
     function empUpdateProfile(password, profileData) {
         if (!enabled()) return Promise.reject(new Error('Sinkronisasi cloud tidak dikonfigurasi'));
-        setStatus('busy', '⏳ Menyimpan foto karyawan ke cloud...');
+        setStatus('busy', '⏳ Menyimpan profil karyawan ke cloud...');
         var photo = (typeof profileData === 'string') ? profileData : (profileData ? profileData.photo : null);
-        return rpc('ksp_emp_update_profile', {
+        var quote = (profileData && typeof profileData === 'object')
+            ? (profileData.quote !== undefined ? profileData.quote : (profileData.comment || profileData.motto || null))
+            : null;
+
+        var payload = {
             p_password: password,
-            p_photo: photo || null
+            p_photo: photo || null,
+            p_quote: (quote !== undefined && quote !== null) ? String(quote).trim() : null
+        };
+
+        return rpc('ksp_emp_update_profile', payload).catch(function (err) {
+            // Jika skema RPC database di Supabase belum di-patch ke 3 parameter (p_quote), fallback ke 2 parameter
+            var errMsg = (err && err.message) ? err.message.toLowerCase() : '';
+            if (errMsg.indexOf('function') !== -1 || errMsg.indexOf('argument') !== -1 || errMsg.indexOf('not found') !== -1) {
+                console.warn('[KspSync] RPC 3-param ksp_emp_update_profile belum terpasang di Supabase, fallback ke 2-param photo only:', err);
+                return rpc('ksp_emp_update_profile', {
+                    p_password: password,
+                    p_photo: photo || null
+                });
+            }
+            throw err;
         }).then(function (r) {
-            if (!r || !r.ok) throw new Error(r && r.error === 'invalid_password' ? 'Password karyawan tidak cocok' : 'Gagal memperbarui foto profil');
-            setStatus('ok', '✓ Foto profil karyawan berhasil diperbarui di cloud');
+            if (!r || !r.ok) throw new Error(r && r.error === 'invalid_password' ? 'Password karyawan tidak cocok' : 'Gagal memperbarui profil');
+            setStatus('ok', '✓ Profil karyawan berhasil diperbarui di cloud');
             return r;
         });
     }
