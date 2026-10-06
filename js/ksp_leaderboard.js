@@ -558,6 +558,212 @@
                 padding-top: 4px;
                 border-top: 1px dashed var(--border-subtle, #F0F2F6);
             }
+
+            /* Tombol Info / Bantuan Leaderboard (?) */
+            .ksp-lb-info-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 22px;
+                height: 22px;
+                border-radius: 50%;
+                border: 1px solid var(--card-border, #E5E7EB);
+                background: var(--input-bg, #F8FAFC);
+                color: var(--text-muted, #8A92A6);
+                cursor: pointer;
+                transition: all 0.2s ease;
+                padding: 0;
+                flex-shrink: 0;
+                box-sizing: border-box;
+            }
+            .ksp-lb-info-btn:hover {
+                color: var(--primary, #4F8EF7);
+                border-color: var(--primary, #4F8EF7);
+                background: rgba(79, 142, 247, 0.12);
+                transform: scale(1.08);
+            }
+
+            /* Modal Dialog Penjelasan & Aturan */
+            .ksp-lb-modal-backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 99999;
+                background: rgba(0, 0, 0, 0.75);
+                backdrop-filter: blur(6px);
+                -webkit-backdrop-filter: blur(6px);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 14px;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.2s ease, visibility 0.2s ease;
+                box-sizing: border-box;
+            }
+            .ksp-lb-modal-backdrop.open {
+                opacity: 1;
+                visibility: visible;
+            }
+            .ksp-lb-modal-card {
+                background: var(--card-bg, #1A1F2C);
+                border: 1px solid var(--card-border, #2E384D);
+                border-radius: 18px;
+                max-width: 490px;
+                width: 100%;
+                max-height: calc(100vh - 28px);
+                max-height: calc(100dvh - 28px);
+                display: flex;
+                flex-direction: column;
+                box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+                overflow: hidden;
+                margin: auto;
+                font-family: inherit;
+                color: var(--text-main, #FFFFFF);
+                animation: kspLbModalIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+                box-sizing: border-box;
+            }
+            @keyframes kspLbModalIn {
+                from { transform: scale(0.95); opacity: 0; }
+                to { transform: scale(1); opacity: 1; }
+            }
+            .ksp-lb-modal-header {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                padding: 14px 16px;
+                border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+                gap: 10px;
+                flex-shrink: 0;
+            }
+            .ksp-lb-modal-title {
+                font-size: 14px;
+                font-weight: 850;
+                color: var(--text-main, #FFFFFF);
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                margin: 0;
+            }
+            .ksp-lb-modal-subtitle {
+                font-size: 11px;
+                color: var(--text-muted, #8A92A6);
+                margin: 2px 0 0 0;
+            }
+            .ksp-lb-modal-close {
+                background: transparent;
+                border: none;
+                color: var(--text-muted, #8A92A6);
+                font-size: 22px;
+                font-weight: 700;
+                cursor: pointer;
+                line-height: 1;
+                padding: 2px 6px;
+                border-radius: 6px;
+                transition: all 0.15s ease;
+            }
+            .ksp-lb-modal-close:hover {
+                color: var(--text-main, #FFFFFF);
+                background: rgba(255, 255, 255, 0.1);
+            }
+            .ksp-lb-modal-body {
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                padding: 14px 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                flex: 1;
+                font-size: 11.5px;
+                line-height: 1.5;
+            }
+            .ksp-lb-info-box {
+                background: var(--input-bg, #11141F);
+                border: 1px solid var(--card-border, #2E384D);
+                border-radius: 12px;
+                padding: 12px 14px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .ksp-lb-info-box-title {
+                font-size: 11.5px;
+                font-weight: 800;
+                color: var(--primary, #4F8EF7);
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+            }
+            .ksp-lb-info-item {
+                display: flex;
+                align-items: baseline;
+                gap: 6px;
+                color: var(--text-main, #FFFFFF);
+            }
+            .ksp-lb-info-item-label {
+                font-weight: 750;
+                color: var(--text-muted, #8A92A6);
+                min-width: 120px;
+                flex-shrink: 0;
+            }
+            .ksp-lb-copy-preview {
+                background: rgba(0, 0, 0, 0.25);
+                border: 1px dashed var(--card-border, #2E384D);
+                border-radius: 8px;
+                padding: 10px;
+                font-family: monospace;
+                font-size: 10.5px;
+                line-height: 1.45;
+                white-space: pre-wrap;
+                word-break: break-word;
+                color: var(--text-main, #FFFFFF);
+                max-height: 130px;
+                overflow-y: auto;
+            }
+            .ksp-lb-modal-footer {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 12px 16px;
+                border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+                gap: 8px;
+                flex-shrink: 0;
+                background: var(--card-bg, #1A1F2C);
+            }
+            .ksp-lb-btn-copy {
+                padding: 9px 16px;
+                font-size: 12px;
+                font-weight: 800;
+                border-radius: 8px;
+                border: 1px solid var(--primary, #4F8EF7);
+                background: var(--primary, #4F8EF7);
+                color: #FFFFFF;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s ease;
+                flex: 1;
+                justify-content: center;
+            }
+            .ksp-lb-btn-copy:hover {
+                filter: brightness(1.1);
+            }
+            .ksp-lb-btn-close {
+                padding: 9px 16px;
+                font-size: 12px;
+                font-weight: 750;
+                border-radius: 8px;
+                border: 1px solid var(--card-border, #2E384D);
+                background: var(--input-bg, #11141F);
+                color: var(--text-main, #FFFFFF);
+                cursor: pointer;
+                transition: all 0.15s ease;
+            }
+            .ksp-lb-btn-close:hover {
+                background: rgba(255, 255, 255, 0.08);
+            }
         `;
         document.head.appendChild(styleEl);
     }
@@ -741,9 +947,18 @@
             <div class="ksp-lb-container">
                 <div class="ksp-lb-card">
                     <div class="ksp-lb-header">
-                        <div class="ksp-lb-title">
-                            <span>🏆</span>
-                            <span>${escapeHtml(config.title)}</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="ksp-lb-title">
+                                <span>🏆</span>
+                                <span>${escapeHtml(config.title)}</span>
+                            </div>
+                            <button type="button" class="ksp-lb-info-btn" onclick="KspLeaderboard.openInfoModal('${selector}')" title="Penjelasan &amp; Aturan Leaderboard" aria-label="Penjelasan &amp; Aturan Leaderboard">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                </svg>
+                            </button>
                         </div>
                         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                             <span class="ksp-lb-badge" style="background: rgba(16, 185, 129, 0.12); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.25);">
@@ -923,6 +1138,355 @@
         if (inst && typeof inst.config.onItemClick === 'function') {
             const emp = inst.employees.find(e => e.id === empId);
             inst.config.onItemClick(emp, rank);
+        }
+    };
+
+    /**
+     * Hasilkan Teks Ringkasan Penjelasan & Aturan Leaderboard (Siap Bagikan ke WA)
+     */
+    KspLeaderboard.generateInfoText = function (selector) {
+        let cfg = KspLeaderboard.getConfig();
+        if (selector && instances.has(selector)) {
+            const inst = instances.get(selector);
+            if (inst && inst.config) cfg = inst.config;
+        }
+
+        const periodLabel = getPeriodBadgeLabel(cfg.period || 'today');
+        const scopeLabel = (cfg.scope === 'store') ? 'Per Cabang Masing-Masing' : 'Antar Seluruh Cabang KSP';
+        const primaryMetric = (cfg.scoring && cfg.scoring.primaryMetric) || 'total_tx';
+        const metricLabel = primaryMetric === 'target_pct' 
+            ? 'Persentase Capaian Target Tertinggi (%)' 
+            : 'Jumlah Transaksi Keseluruhan (Total Tx)';
+
+        const rewards = cfg.rewards || {};
+        const mode = rewards.mode || 'percentage';
+        let rewardText = '';
+
+        if (!rewards.enabled) {
+            rewardText = '• Status Bonus: Nonaktif';
+        } else if (mode === 'percentage') {
+            const pct = rewards.percentage || DEFAULT_CONFIG.rewards.percentage;
+            const base = Number(pct.basePool !== undefined ? pct.basePool : 100000);
+            const minPct = Number(pct.minTargetPct !== undefined ? pct.minTargetPct : 0);
+            const cap = Number(pct.maxBonusCap || 250000);
+            rewardText = [
+                '• Skema: Proporsional (% Target)',
+                `• Base Bonus (100% Target): ${formatRupiah(base)}`,
+                `• Syarat Minimal Capaian: ${minPct === 0 ? '0% (Langsung aktif sejak transaksi pertama)' : minPct + '% (Cair setelah tembus ' + minPct + '%)'}`,
+                `• Batas Maksimal (Cap): ${formatRupiah(cap)}`,
+                '• Contoh Perhitungan:',
+                `  - 10% Target = ${formatRupiah(Math.round(base * 0.1))}`,
+                `  - 25% Target = ${formatRupiah(Math.round(base * 0.25))}`,
+                `  - 50% Target = ${formatRupiah(Math.round(base * 0.5))}`,
+                `  - 100% Target = ${formatRupiah(base)}`,
+                `  - > 100% Target bertambah proporsional (maks. ${formatRupiah(cap)})`
+            ].join('\n');
+        } else if (mode === 'fixed') {
+            const fixed = rewards.fixed || DEFAULT_CONFIG.rewards.fixed;
+            const prizes = fixed.prizes || {};
+            const minPct = Number(fixed.minTargetPct || 80);
+            rewardText = [
+                '• Skema: Nilai Tetap per Peringkat Juara',
+                `• Juara 1: ${formatRupiah((prizes[1] && prizes[1].amount) || 150000)}`,
+                `• Juara 2: ${formatRupiah((prizes[2] && prizes[2].amount) || 100000)}`,
+                `• Juara 3: ${formatRupiah((prizes[3] && prizes[3].amount) || 50000)}`,
+                `• Syarat Minimal Target: ${minPct}%`
+            ].join('\n');
+        } else if (mode === 'flat_target') {
+            const flat = rewards.flat_target || DEFAULT_CONFIG.rewards.flat_target;
+            const thresh = Number(flat.targetThresholdPct || 100);
+            const amt = Number(flat.bonusAmount || 100000);
+            rewardText = [
+                '• Skema: Sama Rata untuk Semua Cabang',
+                `• Syarat Target: Minimal ${thresh}%`,
+                `• Hadiah: ${formatRupiah(amt)} per kasir yang mencapai target`
+            ].join('\n');
+        }
+
+        return `🏆 ATURAN & SISTEM LEADERBOARD KASIR KSP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📌 SISTEM PENILAIAN:
+• Dasar Peringkat: ${metricLabel}
+• Periode Tolak Ukur: ${periodLabel}
+• Lingkup Kompetisi: ${scopeLabel}
+• Podium Juara: Top 3 (🏆 Juara 1, 🥈 Juara 2, 🥉 Juara 3)
+
+🎁 PENGATURAN BONUS KASIR:
+${rewardText}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 Catatan: Leaderboard dan bonus diperbarui secara real-time berdasarkan transaksi kasir. Tetap semangat dan tingkatkan penjualan! 🚀`;
+    };
+
+    /**
+     * Buka Modal Dialog Penjelasan & Pengaturan
+     */
+    KspLeaderboard.openInfoModal = function (selector) {
+        ensureStylesInjected();
+
+        let cfg = KspLeaderboard.getConfig();
+        if (selector && instances.has(selector)) {
+            const inst = instances.get(selector);
+            if (inst && inst.config) cfg = inst.config;
+        }
+
+        const periodLabel = getPeriodBadgeLabel(cfg.period || 'today');
+        const scopeLabel = (cfg.scope === 'store') ? 'Per Cabang Masing-Masing' : 'Antar Seluruh Cabang KSP';
+        const primaryMetric = (cfg.scoring && cfg.scoring.primaryMetric) || 'total_tx';
+        const metricLabel = primaryMetric === 'target_pct' 
+            ? 'Persentase Capaian Target Tertinggi (%)' 
+            : 'Jumlah Transaksi Keseluruhan (Total Tx)';
+
+        const rewards = cfg.rewards || {};
+        const mode = rewards.mode || 'percentage';
+
+        let rewardDetailsHtml = '';
+        if (!rewards.enabled) {
+            rewardDetailsHtml = `
+                <div style="color: var(--text-muted, #8A92A6); font-style: italic;">
+                    Sistem bonus saat ini dinonaktifkan oleh manajemen toko.
+                </div>
+            `;
+        } else if (mode === 'percentage') {
+            const pct = rewards.percentage || DEFAULT_CONFIG.rewards.percentage;
+            const base = Number(pct.basePool !== undefined ? pct.basePool : 100000);
+            const minPct = Number(pct.minTargetPct !== undefined ? pct.minTargetPct : 0);
+            const cap = Number(pct.maxBonusCap || 250000);
+
+            rewardDetailsHtml = `
+                <div style="background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.25); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; font-size: 11px;">
+                    📈 <b>Model Proporsional (% Target):</b> Bonus kasir dihitung proporsional secara real-time mengikuti persentase capaian target transaksi.
+                </div>
+                <div class="ksp-lb-info-item">
+                    <span class="ksp-lb-info-item-label">Base Pool (100%):</span>
+                    <span style="font-weight: 800; color: #10B981;">${formatRupiah(base)}</span>
+                </div>
+                <div class="ksp-lb-info-item">
+                    <span class="ksp-lb-info-item-label">Minimal Capaian:</span>
+                    <span>${minPct === 0 ? '0% (Langsung aktif sejak transaksi pertama)' : minPct + '% (Cair setelah mencapai ' + minPct + '%)'}</span>
+                </div>
+                <div class="ksp-lb-info-item">
+                    <span class="ksp-lb-info-item-label">Maksimal Cap:</span>
+                    <span style="font-weight: 750;">${formatRupiah(cap)}</span>
+                </div>
+                <div style="margin-top: 4px; padding-top: 6px; border-top: 1px dashed rgba(255, 255, 255, 0.1); font-size: 11px; color: var(--text-muted, #8A92A6);">
+                    💡 <b>Simulasi:</b> 10% = ${formatRupiah(Math.round(base * 0.1))} | 25% = ${formatRupiah(Math.round(base * 0.25))} | 50% = ${formatRupiah(Math.round(base * 0.5))} | 100% = ${formatRupiah(base)} | 120% = ${formatRupiah(Math.min(cap, Math.round(base * 1.2)))}.
+                </div>
+            `;
+        } else if (mode === 'fixed') {
+            const fixed = rewards.fixed || DEFAULT_CONFIG.rewards.fixed;
+            const prizes = fixed.prizes || {};
+            const minPct = Number(fixed.minTargetPct || 80);
+
+            rewardDetailsHtml = `
+                <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; font-size: 11px;">
+                    🏆 <b>Model Nilai Tetap (Juara 1-3):</b> Hadiah nominal pasti untuk kasir di podium peringkat juara.
+                </div>
+                <div class="ksp-lb-info-item">
+                    <span class="ksp-lb-info-item-label">🏆 Juara 1:</span>
+                    <span style="font-weight: 800; color: #D97706;">${formatRupiah((prizes[1] && prizes[1].amount) || 150000)}</span>
+                </div>
+                <div class="ksp-lb-info-item">
+                    <span class="ksp-lb-info-item-label">🥈 Juara 2:</span>
+                    <span style="font-weight: 800; color: #94A3B8;">${formatRupiah((prizes[2] && prizes[2].amount) || 100000)}</span>
+                </div>
+                <div class="ksp-lb-info-item">
+                    <span class="ksp-lb-info-item-label">🥉 Juara 3:</span>
+                    <span style="font-weight: 800; color: #D97706;">${formatRupiah((prizes[3] && prizes[3].amount) || 50000)}</span>
+                </div>
+                <div class="ksp-lb-info-item">
+                    <span class="ksp-lb-info-item-label">Syarat Target:</span>
+                    <span style="font-weight: 750;">Minimal ${minPct}% Capaian</span>
+                </div>
+            `;
+        } else if (mode === 'flat_target') {
+            const flat = rewards.flat_target || DEFAULT_CONFIG.rewards.flat_target;
+            const thresh = Number(flat.targetThresholdPct || 100);
+            const amt = Number(flat.bonusAmount || 100000);
+
+            rewardDetailsHtml = `
+                <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; font-size: 11px;">
+                    🤝 <b>Model Sama Rata:</b> Semua kasir berhak mendapatkan bonus sama rata begitu target toko tercapai.
+                </div>
+                <div class="ksp-lb-info-item">
+                    <span class="ksp-lb-info-item-label">Syarat Target:</span>
+                    <span style="font-weight: 800; color: #10B981;">Minimal ${thresh}%</span>
+                </div>
+                <div class="ksp-lb-info-item">
+                    <span class="ksp-lb-info-item-label">Nominal Bonus:</span>
+                    <span style="font-weight: 800; color: #10B981;">${formatRupiah(amt)} per kasir</span>
+                </div>
+            `;
+        }
+
+        const infoText = KspLeaderboard.generateInfoText(selector);
+
+        let modalEl = document.getElementById('kspLeaderboardInfoModal');
+        if (!modalEl) {
+            modalEl = document.createElement('div');
+            modalEl.id = 'kspLeaderboardInfoModal';
+            modalEl.className = 'ksp-lb-modal-backdrop';
+            modalEl.setAttribute('role', 'dialog');
+            modalEl.setAttribute('aria-modal', 'true');
+            modalEl.onclick = function (e) {
+                if (e.target === modalEl) KspLeaderboard.closeInfoModal();
+            };
+            document.body.appendChild(modalEl);
+        }
+
+        modalEl.innerHTML = `
+            <div class="ksp-lb-modal-card">
+                <div class="ksp-lb-modal-header">
+                    <div>
+                        <h3 class="ksp-lb-modal-title">
+                            <span>ℹ️</span> Penjelasan &amp; Aturan Leaderboard
+                        </h3>
+                        <p class="ksp-lb-modal-subtitle">Transparansi sistem penilaian performa &amp; perhitungan bonus</p>
+                    </div>
+                    <button type="button" class="ksp-lb-modal-close" onclick="KspLeaderboard.closeInfoModal()" aria-label="Tutup">&times;</button>
+                </div>
+
+                <div class="ksp-lb-modal-body">
+                    <!-- SECTION 1: SISTEM LEADERBOARD -->
+                    <div class="ksp-lb-info-box">
+                        <div class="ksp-lb-info-box-title">
+                            <span>🎯</span> Sistem Peringkat
+                        </div>
+                        <div class="ksp-lb-info-item">
+                            <span class="ksp-lb-info-item-label">Dasar Peringkat:</span>
+                            <span style="font-weight: 750;">${metricLabel}</span>
+                        </div>
+                        <div class="ksp-lb-info-item">
+                            <span class="ksp-lb-info-item-label">Periode Tolak Ukur:</span>
+                            <span style="font-weight: 750; color: #10B981;">⏱️ ${periodLabel}</span>
+                        </div>
+                        <div class="ksp-lb-info-item">
+                            <span class="ksp-lb-info-item-label">Lingkup Kompetisi:</span>
+                            <span>🌐 ${scopeLabel}</span>
+                        </div>
+                        <div class="ksp-lb-info-item">
+                            <span class="ksp-lb-info-item-label">Podium Juara:</span>
+                            <span>🏆 Juara 1 (Emas), 🥈 Juara 2 (Perak), 🥉 Juara 3 (Perunggu)</span>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: PENGATURAN BONUS AKTIF -->
+                    <div class="ksp-lb-info-box">
+                        <div class="ksp-lb-info-box-title">
+                            <span>🎁</span> Pengaturan &amp; Skema Bonus Aktif
+                        </div>
+                        <div class="ksp-lb-info-item">
+                            <span class="ksp-lb-info-item-label">Status Bonus:</span>
+                            <span style="font-weight: 800; color: ${rewards.enabled ? '#10B981' : '#EF4444'};">
+                                ${rewards.enabled ? '🟢 Aktif' : '🔴 Nonaktif'}
+                            </span>
+                        </div>
+                        <div class="ksp-lb-info-item">
+                            <span class="ksp-lb-info-item-label">Model Skema:</span>
+                            <span style="font-weight: 750;">${getModeBadgeLabel(mode)}</span>
+                        </div>
+                        <div style="margin-top: 4px;">
+                            ${rewardDetailsHtml}
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: KOTAK PREVIEW TEKS SALIN -->
+                    <div class="ksp-lb-info-box" style="gap: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="ksp-lb-info-box-title" style="font-size: 11px;">
+                                <span>📋</span> Ringkasan Teks Siap Bagikan
+                            </div>
+                            <span style="font-size: 10px; color: var(--text-muted, #8A92A6);">WhatsApp / Memo</span>
+                        </div>
+                        <div class="ksp-lb-copy-preview" id="kspLbPreviewText">${escapeHtml(infoText)}</div>
+                    </div>
+                </div>
+
+                <div class="ksp-lb-modal-footer">
+                    <button type="button" class="ksp-lb-btn-copy" id="kspLbCopyBtn" onclick="KspLeaderboard.copyInfoText('${selector || ''}')">
+                        <span>📋</span> Salin Penjelasan &amp; Aturan
+                    </button>
+                    <button type="button" class="ksp-lb-btn-close" onclick="KspLeaderboard.closeInfoModal()">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        `;
+
+        requestAnimationFrame(() => {
+            modalEl.classList.add('open');
+        });
+
+        const handleEsc = function (e) {
+            if (e.key === 'Escape') {
+                KspLeaderboard.closeInfoModal();
+                document.removeEventListener('keydown', handleEsc);
+            }
+        };
+        document.addEventListener('keydown', handleEsc);
+    };
+
+    /**
+     * Tutup Modal Penjelasan
+     */
+    KspLeaderboard.closeInfoModal = function () {
+        const modalEl = document.getElementById('kspLeaderboardInfoModal');
+        if (modalEl) {
+            modalEl.classList.remove('open');
+        }
+    };
+
+    /**
+     * Salin Teks Penjelasan & Aturan ke Clipboard
+     */
+    KspLeaderboard.copyInfoText = function (selector) {
+        const text = KspLeaderboard.generateInfoText(selector);
+        const btn = document.getElementById('kspLbCopyBtn');
+
+        const markSuccess = function () {
+            if (btn) {
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<span>✅</span> Berhasil Disalin!';
+                btn.style.background = '#10B981';
+                btn.style.borderColor = '#10B981';
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.style.background = '';
+                    btn.style.borderColor = '';
+                }, 2500);
+            }
+            if (typeof window.showToast === 'function') {
+                window.showToast('📋 Ringkasan aturan leaderboard berhasil disalin!', 'success');
+            }
+        };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(markSuccess).catch(() => {
+                fallbackCopy(text);
+            });
+        } else {
+            fallbackCopy(text);
+        }
+
+        function fallbackCopy(str) {
+            const ta = document.createElement('textarea');
+            ta.value = str;
+            ta.style.position = 'fixed';
+            ta.style.top = '0';
+            ta.style.left = '0';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) markSuccess();
+                else alert('Gagal menyalin secara otomatis. Silakan salin teks dari kotak ringkasan.');
+            } catch (err) {
+                console.error('Gagal menyalin:', err);
+                alert('Gagal menyalin secara otomatis.');
+            }
+            document.body.removeChild(ta);
         }
     };
 

@@ -3678,6 +3678,7 @@
                 <div>
                     <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
                         <span>🏆</span> Pengaturan Leaderboard &amp; Bonus
+                        <button type="button" class="btn-icon" onclick="if (window.KspLeaderboard && typeof KspLeaderboard.openInfoModal === 'function') KspLeaderboard.openInfoModal();" title="Penjelasan &amp; Aturan Leaderboard" aria-label="Penjelasan Leaderboard" style="padding: 2px 6px; font-size: 13px; border-radius: 50%; border: 1px solid var(--card-border); background: var(--input-bg); color: var(--text-muted); cursor: pointer;">❓</button>
                     </h3>
                     <p class="modal-subtitle">Tolak ukur performa kasir, model perhitungan bonus &amp; nominal hadiah</p>
                 </div>
@@ -3810,6 +3811,9 @@
             </div>
 
             <div class="modal-footer" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding: 12px 16px;">
+                <button type="button" class="btn-secondary" onclick="if (window.KspLeaderboard && typeof KspLeaderboard.openInfoModal === 'function') KspLeaderboard.openInfoModal();" style="padding: 8px 12px; font-size: 12px; margin-right: auto; display: inline-flex; align-items: center; gap: 5px;">
+                    <span>ℹ️</span> Penjelasan &amp; Salin Aturan
+                </button>
                 <button type="button" class="btn-secondary" onclick="closeModal('modalLeaderboardConfig')" style="padding: 8px 14px; font-size: 12px;">
                     Batal
                 </button>
