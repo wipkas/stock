@@ -24,7 +24,7 @@
     <script src="js/ksp_theme.js?v=20261005"></script>
     <script src="js/ksp_auth.js?v=20261005"></script>
     <script src="js/ksp_target_card.js?v=20261005"></script>
-    <script src="js/ksp_leaderboard.js?v=20261005"></script>
+    <script src="js/ksp_leaderboard.js?v=20261006"></script>
 
     <style>
         :root {
@@ -3747,16 +3747,17 @@
                 <!-- SECTION 1: PERCENTAGE -->
                 <div id="configSection_percentage" style="display: flex; flex-direction: column; gap: 10px;">
                     <div style="background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.25); border-radius: 10px; padding: 10px 12px; font-size: 11px; line-height: 1.45; color: var(--text-main);">
-                        📈 <b>Model Proporsional (% Target):</b> Bonus kasir dihitung proporsional sesuai persentase tercapainya target. Jika tembus 120%, dapat 120% dari Base Pool.
+                        📈 <b>Model Proporsional (% Target):</b> Bonus kasir dihitung proporsional real-time mengikuti capaian target. Misalnya target 100% = Rp 100.000, maka saat 10% target langsung dapat Rp 10.000, 25% dapat Rp 25.000, dst.
                     </div>
                     <div>
                         <label class="form-label" style="font-size: 11.5px; font-weight: 750; margin-bottom: 4px; display: block;">Base Bonus Pool (100% Target) (Rp) *</label>
-                        <input type="number" id="cfgPctBasePool" class="form-input" value="150000" placeholder="150000" style="width: 100%; padding: 8px 10px; font-size: 12.5px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                        <input type="number" id="cfgPctBasePool" class="form-input" value="100000" placeholder="100000" style="width: 100%; padding: 8px 10px; font-size: 12.5px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);">
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <div>
                             <label class="form-label" style="font-size: 11.5px; font-weight: 750; margin-bottom: 4px; display: block;">Minimal Capaian Aktif (%) *</label>
-                            <input type="number" id="cfgPctMinPct" class="form-input" value="70" placeholder="70" style="width: 100%; padding: 8px 10px; font-size: 12.5px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                            <input type="number" id="cfgPctMinPct" class="form-input" value="0" placeholder="0" style="width: 100%; padding: 8px 10px; font-size: 12.5px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                            <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">*Isi 0 agar bonus langsung tampil sejak 1% capaian target</div>
                         </div>
                         <div>
                             <label class="form-label" style="font-size: 11.5px; font-weight: 750; margin-bottom: 4px; display: block;">Maksimal Cap Bonus (Rp) *</label>
@@ -8798,9 +8799,9 @@ ${portalUrl}
             const inpPctBase = document.getElementById('cfgPctBasePool');
             const inpPctMin = document.getElementById('cfgPctMinPct');
             const inpPctMax = document.getElementById('cfgPctMaxCap');
-            if (inpPctBase) inpPctBase.value = pct.basePool || 150000;
-            if (inpPctMin) inpPctMin.value = pct.minTargetPct || 70;
-            if (inpPctMax) inpPctMax.value = pct.maxBonusCap || 250000;
+            if (inpPctBase) inpPctBase.value = pct.basePool !== undefined ? pct.basePool : 100000;
+            if (inpPctMin) inpPctMin.value = pct.minTargetPct !== undefined ? pct.minTargetPct : 0;
+            if (inpPctMax) inpPctMax.value = pct.maxBonusCap !== undefined ? pct.maxBonusCap : 250000;
 
             // Mode 2: Fixed
             const fixed = rewards.fixed || {};
@@ -8855,9 +8856,12 @@ ${portalUrl}
             const selPeriod = document.getElementById('cfgLeaderboardPeriod');
             const selMetric = document.getElementById('cfgLeaderboardPrimaryMetric');
 
-            const basePool = Math.max(0, parseInt(document.getElementById('cfgPctBasePool')?.value, 10) || 150000);
-            const minPct = Math.max(0, parseInt(document.getElementById('cfgPctMinPct')?.value, 10) || 70);
-            const maxCap = Math.max(0, parseInt(document.getElementById('cfgPctMaxCap')?.value, 10) || 250000);
+            const rawBasePool = document.getElementById('cfgPctBasePool')?.value;
+            const basePool = (rawBasePool !== undefined && rawBasePool !== '') ? Math.max(0, parseInt(rawBasePool, 10) || 0) : 100000;
+            const rawMinPct = document.getElementById('cfgPctMinPct')?.value;
+            const minPct = (rawMinPct !== undefined && rawMinPct !== '') ? Math.max(0, parseInt(rawMinPct, 10) || 0) : 0;
+            const rawMaxCap = document.getElementById('cfgPctMaxCap')?.value;
+            const maxCap = (rawMaxCap !== undefined && rawMaxCap !== '') ? Math.max(0, parseInt(rawMaxCap, 10) || 0) : 250000;
 
             const f1 = Math.max(0, parseInt(document.getElementById('cfgFixedP1')?.value, 10) || 150000);
             const f2 = Math.max(0, parseInt(document.getElementById('cfgFixedP2')?.value, 10) || 100000);

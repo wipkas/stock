@@ -52,8 +52,8 @@
 
             // Mode 2: Proporsional Berdasarkan % Tercapainya Target
             percentage: {
-                basePool: 150000,     // Nominal dasar jika target 100% tercapai
-                minTargetPct: 70,     // Minimal % capaian agar bonus mulai aktif
+                basePool: 100000,     // Nominal dasar jika target 100% tercapai (Rp 100.000)
+                minTargetPct: 0,      // Minimal % capaian agar bonus mulai aktif (0 = langsung tampil dari 1% capaian)
                 maxBonusCap: 250000   // Batas maksimal bonus
             },
 
@@ -189,31 +189,38 @@
         // 2. MODE: PERCENTAGE (Proporsional Berdasarkan % Capaian Target)
         if (mode === 'percentage') {
             const pctCfg = rewards.percentage || DEFAULT_CONFIG.rewards.percentage;
-            const base = Number(pctCfg.basePool || 150000);
-            const minPct = Number(pctCfg.minTargetPct || 70);
+            const base = Number(pctCfg.basePool !== undefined ? pctCfg.basePool : 100000);
+            const minPct = Number(pctCfg.minTargetPct !== undefined ? pctCfg.minTargetPct : 0);
             const cap = Number(pctCfg.maxBonusCap || 250000);
 
-            if (targetPct < minPct) {
+            // Hitung nilai bonus proporsional real-time mengikuti persentase target
+            let calculated = Math.round((targetPct / 100) * base);
+            if (cap && calculated > cap) calculated = cap;
+
+            // Jika ada batas minimal capaian (> 0%) dan target belum tembus batas minimal
+            if (minPct > 0 && targetPct < minPct) {
                 const gap = Math.max(1, Math.round(minPct - targetPct));
                 return {
                     eligible: false,
-                    amount: 0,
-                    amountFormatted: 'Rp 0',
-                    statusText: `⚠️ Butuh +${gap}% lagi untuk unlock bonus`,
+                    amount: calculated,
+                    amountFormatted: formatRupiah(calculated),
+                    statusText: calculated > 0 
+                        ? `⏳ Akumulasi ${formatRupiah(calculated)} (Cair di ${minPct}%)` 
+                        : `⚠️ Butuh +${gap}% lagi untuk unlock bonus`,
                     badgeClass: 'ksp-badge-warning',
                     modeLabel: '% Target'
                 };
             }
 
-            let calculated = Math.round((targetPct / 100) * base);
-            if (cap && calculated > cap) calculated = cap;
-
+            // Jika minimal capaian 0% (langsung aktif dari 1%) atau sudah memenuhi batas minimal
             return {
-                eligible: true,
+                eligible: targetPct > 0,
                 amount: calculated,
                 amountFormatted: formatRupiah(calculated),
-                statusText: `🎁 Bonus ${formatRupiah(calculated)} (${targetPct}%)`,
-                badgeClass: 'ksp-badge-success',
+                statusText: targetPct > 0 
+                    ? `🎁 Bonus ${formatRupiah(calculated)} (${targetPct}%)`
+                    : `🎁 Bonus Rp 0 (0%)`,
+                badgeClass: targetPct > 0 ? 'ksp-badge-success' : 'ksp-badge-muted',
                 modeLabel: '% Target'
             };
         }
