@@ -3752,6 +3752,18 @@
                     </div>
                 </div>
 
+                <!-- Pengaturan Penerima Bonus: Hanya Juara 1, 2, 3 atau Semua Karyawan -->
+                <div>
+                    <label class="form-label" style="font-size: 11.5px; font-weight: 750; margin-bottom: 5px; display: block;">👥 Penerima Bonus:</label>
+                    <select id="cfgBonusRecipientScope" class="form-input" style="width: 100%; padding: 8px 10px; font-size: 12px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                        <option value="all" selected>Semua Karyawan (Sesuai Capaian Target)</option>
+                        <option value="top3">Hanya Juara 1, 2, dan 3 (Podium)</option>
+                    </select>
+                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">
+                        💡 Pilih <b>Hanya Juara 1, 2, dan 3</b> jika bonus hanya diberikan untuk peraih podium. Karyawan peringkat 4 ke bawah tidak akan mendapatkan bonus.
+                    </div>
+                </div>
+
                 <!-- 3. Pemilih Model Bonus (Tab Button Group) -->
                 <div>
                     <label class="form-label" style="font-size: 11.5px; font-weight: 750; margin-bottom: 6px; display: block;">🎁 Model Perhitungan Bonus:</label>
@@ -8830,6 +8842,9 @@ ${portalUrl}
             const selMetric = document.getElementById('cfgLeaderboardPrimaryMetric');
             if (selMetric) selMetric.value = primaryMetric;
 
+            const selRecipient = document.getElementById('cfgBonusRecipientScope');
+            if (selRecipient) selRecipient.value = rewards.recipientScope || 'all';
+
             // Mode 1: Percentage
             const pct = rewards.percentage || {};
             const inpPctBase = document.getElementById('cfgPctBasePool');
@@ -8893,6 +8908,8 @@ ${portalUrl}
             const selScope = document.getElementById('cfgLeaderboardScope');
             const selPeriod = document.getElementById('cfgLeaderboardPeriod');
             const selMetric = document.getElementById('cfgLeaderboardPrimaryMetric');
+            const selRecipient = document.getElementById('cfgBonusRecipientScope');
+            const recipientScope = selRecipient?.value || 'all';
 
             const rawBasePool = document.getElementById('cfgPctBasePool')?.value;
             const basePool = (rawBasePool !== undefined && rawBasePool !== '') ? Math.max(0, parseInt(rawBasePool, 10) || 0) : 100000;
@@ -8921,6 +8938,7 @@ ${portalUrl}
                 },
                 rewards: {
                     enabled: chkEnabled ? chkEnabled.checked : true,
+                    recipientScope: recipientScope,
                     mode: currentBonusModalTab,
                     percentage: {
                         basePool: basePool,

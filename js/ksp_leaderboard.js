@@ -38,6 +38,7 @@
         // Tiga Mode Perhitungan Bonus
         rewards: {
             enabled: true,
+            recipientScope: 'all', // 'all' (Semua Karyawan) | 'top3' (Hanya Juara 1, 2, 3)
             mode: 'percentage', // 'fixed' | 'percentage' | 'flat_target'
 
             // Mode 1: Nilai Tetap per Peringkat
@@ -146,7 +147,20 @@
         }
 
         const mode = rewards.mode || 'percentage';
+        const recipientScope = rewards.recipientScope || 'all';
         const targetPct = Number(emp.targetPct || 0);
+
+        // Filter Penerima Bonus: Jika dibatasi hanya untuk Juara 1, 2, dan 3 (Podium)
+        if (recipientScope === 'top3' && rank > 3) {
+            return {
+                eligible: false,
+                amount: 0,
+                amountFormatted: 'Rp 0',
+                statusText: 'Hanya Juara 1-3',
+                badgeClass: 'ksp-badge-muted',
+                modeLabel: mode === 'percentage' ? '% Target' : (mode === 'fixed' ? 'Nilai Tetap' : 'Sama Rata')
+            };
+        }
 
         // 1. MODE: FIXED (Nilai Tetap per Peringkat Juara 1, 2, 3)
         if (mode === 'fixed') {
@@ -1417,6 +1431,8 @@
         }
 
         const showMotto = !(cfg.ui && cfg.ui.showMotto === false);
+        const recipientScope = rewards.recipientScope || 'all';
+        const recipientLabel = recipientScope === 'top3' ? 'Hanya Juara 1, 2, dan 3 (Podium)' : 'Semua Karyawan (Sesuai Capaian Target)';
 
         return `🏆 ATURAN & SISTEM LEADERBOARD KASIR KSP
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1428,6 +1444,7 @@
 • Motto Kasir: ${showMotto ? '🟢 Aktif (Tampil di profil kasir)' : '🔴 Dinonaktifkan Admin'}
 
 🎁 PENGATURAN BONUS KASIR:
+• Penerima Bonus: ${recipientLabel}
 ${rewardText}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1455,6 +1472,7 @@ ${rewardText}
 
         const rewards = cfg.rewards || {};
         const mode = rewards.mode || 'percentage';
+        const recipientScope = rewards.recipientScope || 'all';
         const showMotto = !(cfg.ui && cfg.ui.showMotto === false);
 
         let rewardDetailsHtml = '';
@@ -1605,6 +1623,12 @@ ${rewardText}
                         <div class="ksp-lb-info-item">
                             <span class="ksp-lb-info-item-label">Model Skema:</span>
                             <span style="font-weight: 750;">${getModeBadgeLabel(mode)}</span>
+                        </div>
+                        <div class="ksp-lb-info-item">
+                            <span class="ksp-lb-info-item-label">Penerima Bonus:</span>
+                            <span style="font-weight: 750; color: ${recipientScope === 'top3' ? '#F59E0B' : 'inherit'};">
+                                ${recipientScope === 'top3' ? '🏆 Hanya Juara 1, 2, dan 3 (Podium)' : '👥 Semua Karyawan (Sesuai Capaian)'}
+                            </span>
                         </div>
                         <div style="margin-top: 4px;">
                             ${rewardDetailsHtml}
