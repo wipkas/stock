@@ -4245,6 +4245,14 @@ function formatDateDisplayShort(dateStr) {
   } catch(e) { return dateStr; }
 }
 
+function formatDateDisplayLong(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  } catch(e) { return dateStr; }
+}
+
 function getDatesInRange(startStr, endStr) {
   const dates = [];
   let curr = new Date(startStr + 'T00:00:00');
