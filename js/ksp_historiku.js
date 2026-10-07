@@ -460,6 +460,7 @@ function adjustAmt(btn, step, event) {
   const orig = parseFloat(tr.dataset.orig) || 0;
   val = Math.max(0, val + step);
   tr.dataset.val = val;
+  if (typeof syncRowEditToReportData === 'function') syncRowEditToReportData(tr, val);
   const amtEl = tr.querySelector('.lv-amt');
   if (amtEl) {
     amtEl.textContent = fmtAmt(val);
@@ -515,6 +516,7 @@ function editAmt(span) {
       }
     }
     tr.dataset.val = val;
+    if (typeof syncRowEditToReportData === 'function') syncRowEditToReportData(tr, val);
     span.textContent = fmtAmt(val);
     if (val !== orig) {
       span.classList.add('changed');
@@ -1261,6 +1263,52 @@ function showToast(msg) {
 // --- AUTO-SAVE LOCAL EDITS & RESTORE ---
 let autoSaveDebounceTimer = null;
 
+function syncRowEditToReportData(row, val, desc, deleted, read) {
+  if (!row || !window.REPORT_DATA) return;
+  const d = window.REPORT_DATA;
+  const rowId = row.dataset.rowId;
+  const rowDate = row.dataset.date || row.closest('[data-date]')?.dataset?.date;
+  const timeCell = row.querySelector('.lv-time-text');
+  const time = timeCell ? timeCell.textContent.trim() : '';
+  const orig = parseFloat(row.dataset.orig) || 0;
+
+  const modules = ['tarik', 'voucher', 'notif', 'topup'];
+  let found = false;
+
+  for (const m of modules) {
+    if (!Array.isArray(d[m])) continue;
+    for (const item of d[m]) {
+      const matchesId = Boolean(rowId && (item.rowId === rowId || item.id === rowId));
+      const matchesSemantic = !matchesId && (!rowId) &&
+        (item.time === time) &&
+        (!rowDate || !item.date || item.date === rowDate) &&
+        (item.orig === orig || item.amount === orig);
+
+      if (matchesId || matchesSemantic) {
+        if (val !== undefined && val !== null) {
+          item.amount = val;
+          if (item.jumtar !== undefined) item.jumtar = val;
+          item.isEdited = (item.orig !== undefined ? item.amount !== item.orig : false);
+        }
+        if (desc !== undefined && desc !== null) {
+          if (item.name !== undefined) item.name = desc;
+          if (item.desc !== undefined) item.desc = desc;
+          if (item.productName !== undefined) item.productName = desc;
+        }
+        if (deleted !== undefined) {
+          item.deleted = Boolean(deleted);
+        }
+        if (read !== undefined) {
+          item.read = Boolean(read);
+        }
+        found = true;
+        break;
+      }
+    }
+    if (found) break;
+  }
+}
+
 function getReportStorageKey() {
   const d = window.REPORT_DATA;
   if (!d) return 'ksp_report_edits_default';
@@ -1273,6 +1321,30 @@ function getRowStorageKey(row) {
   if (!row) return null;
   if (row.dataset.rowKey) return row.dataset.rowKey;
 
+  // 1. Primary stable identifier: rowId (UUID / ID stabil dari database atau saat baris baru dibuat)
+  if (row.dataset.rowId) {
+    const key = `row_${row.dataset.rowId}`;
+    row.dataset.rowKey = key;
+    return key;
+  }
+
+  // 2. Fallback kunci semantik: independen dari DOM group ID / struktur layout tampilan
+  const group = row.closest('.lv-group');
+  const appKey = (group && (group.dataset.appKey || (group.dataset.groupId ? group.dataset.groupId.split('-')[0] : ''))) || 'grp';
+  const rowDate = row.dataset.date || (group && group.dataset.date) || (row.closest('[data-date]')?.dataset?.date) || '';
+  const timeCell = row.querySelector('.lv-time-text');
+  const time = timeCell ? timeCell.textContent.trim() : '';
+  const cat = row.dataset.cat || '';
+  const orig = row.dataset.orig || '0';
+  const desc = (row.dataset.desc || '').trim();
+
+  const key = `sem_${appKey}_${rowDate}_${time}_${cat}_${orig}_${desc}`;
+  row.dataset.rowKey = key;
+  return key;
+}
+
+function getLegacyRowKey(row) {
+  if (!row) return null;
   const group = row.closest('.lv-group');
   const grpId = group ? (group.dataset.groupId || group.dataset.appKey || 'grp') : 'grp';
   const grpDate = group ? (group.dataset.date || '') : '';
@@ -1288,9 +1360,7 @@ function getRowStorageKey(row) {
   const cat = row.dataset.cat || '';
   const orig = row.dataset.orig || '0';
 
-  const key = `${grpId}_${grpDate}_r${rowIdxInGroup}_${time}_${cat}_${orig}`;
-  row.dataset.rowKey = key;
-  return key;
+  return `${grpId}_${grpDate}_r${rowIdxInGroup}_${time}_${cat}_${orig}`;
 }
 
 function saveReportEdits() {
@@ -1329,6 +1399,7 @@ function doSaveReportEdits() {
       if (isChanged || isDel || isRead || isNew) {
         hasEdits = true;
         items[rowKey] = {
+          rowId: row.dataset.rowId || null,
           val: currentVal,
           desc: currentDesc,
           deleted: isDel,
@@ -1655,13 +1726,35 @@ function loadAndApplyReportEdits() {
     let appliedCount = 0;
 
     rows.forEach(row => {
-      const rowKey = getRowStorageKey(row);
-      if (!rowKey || !payload.items[rowKey]) return;
+      const primaryKey = getRowStorageKey(row);
+      const legacyKey = getLegacyRowKey(row);
+      let edit = null;
 
-      const edit = payload.items[rowKey];
+      if (primaryKey && payload.items[primaryKey]) {
+        edit = payload.items[primaryKey];
+      } else if (legacyKey && payload.items[legacyKey]) {
+        edit = payload.items[legacyKey];
+      } else if (row.dataset.rowId) {
+        for (const k in payload.items) {
+          const item = payload.items[k];
+          if (item && item.rowId === row.dataset.rowId) {
+            edit = item;
+            break;
+          }
+        }
+      }
+
+      if (!edit) return;
+
+      let valChanged = false;
+      let descChanged = false;
+      let delChanged = false;
+      let readChanged = false;
+
       if (edit.val !== undefined && edit.val !== null) {
         const val = parseFloat(edit.val) || 0;
         row.dataset.val = val;
+        valChanged = true;
         const amtSpan = row.querySelector('.lv-amt');
         if (amtSpan) {
           amtSpan.textContent = fmtAmt(val);
@@ -1678,6 +1771,7 @@ function loadAndApplyReportEdits() {
       }
       if (edit.desc !== undefined && edit.desc !== null && edit.desc !== '') {
         row.dataset.desc = edit.desc;
+        descChanged = true;
         const nameCell = row.querySelector('.lv-td-itemname');
         if (nameCell) {
           nameCell.textContent = edit.desc;
@@ -1686,10 +1780,24 @@ function loadAndApplyReportEdits() {
       }
       if (edit.deleted !== undefined) {
         row.classList.toggle('item-deleted', Boolean(edit.deleted));
+        delChanged = true;
       }
       if (edit.read !== undefined) {
         row.classList.toggle('item-read', Boolean(edit.read));
+        readChanged = true;
       }
+
+      // Sync to in-memory REPORT_DATA so switching views preserves edits
+      if (typeof syncRowEditToReportData === 'function') {
+        syncRowEditToReportData(
+          row,
+          valChanged ? parseFloat(row.dataset.val) : undefined,
+          descChanged ? row.dataset.desc : undefined,
+          delChanged ? row.classList.contains('item-deleted') : undefined,
+          readChanged ? row.classList.contains('item-read') : undefined
+        );
+      }
+
       updateRowMarkTags(row);
       appliedCount++;
     });
@@ -2898,6 +3006,9 @@ function updateNavBarUI(row, index, total) {
 function toggleCurrentItemRead() {
   if (!currentNavRow) return;
   const isRead = currentNavRow.classList.toggle('item-read');
+  if (typeof syncRowEditToReportData === 'function') {
+    syncRowEditToReportData(currentNavRow, undefined, undefined, undefined, isRead);
+  }
   const readBadge = document.getElementById('nav-read-badge');
   if (readBadge) {
     readBadge.textContent = isRead ? '✓ Dibaca' : 'Belum Dibaca';
@@ -2912,7 +3023,12 @@ function toggleCurrentItemRead() {
 }
 
 function clearAllReadStatus() {
-  document.querySelectorAll('.lv-row.item-read').forEach(r => r.classList.remove('item-read'));
+  document.querySelectorAll('.lv-row.item-read').forEach(r => {
+    r.classList.remove('item-read');
+    if (typeof syncRowEditToReportData === 'function') {
+      syncRowEditToReportData(r, undefined, undefined, undefined, false);
+    }
+  });
   document.querySelectorAll('.lv-group').forEach(g => {
     g.classList.remove('all-read');
   });
@@ -2927,6 +3043,9 @@ function clearAllReadStatus() {
 function toggleCurrentItemDeleted() {
   if (!currentNavRow) return;
   const isDel = currentNavRow.classList.toggle('item-deleted');
+  if (typeof syncRowEditToReportData === 'function') {
+    syncRowEditToReportData(currentNavRow, undefined, undefined, isDel);
+  }
   if (typeof recalcAll === 'function') recalcAll();
   if (typeof saveReportEdits === 'function') saveReportEdits();
   const group = currentNavRow.closest('.lv-group');
@@ -2973,7 +3092,7 @@ function addNewItemBelowCurrent() {
   const group = currentNavRow.closest('.lv-group');
   if (!group) return;
 
-  const isVoucher = group.dataset.groupId === 'voucher';
+  const isVoucher = group.dataset.groupId === 'voucher' || (group.dataset.groupId && group.dataset.groupId.startsWith('voucher'));
   const isOutcomeOnly = isVoucher || !!group.querySelector('.lv-th.l') || !!currentNavRow.querySelector('.lv-td-itemname');
 
   const now = new Date();
@@ -2999,12 +3118,56 @@ function addNewItemBelowCurrent() {
   newRow.classList.add('item-new');
   newRow.dataset.isNew = 'true';
   const sId = window.ACTIVE_STORE_ID || (window.REPORT_DATA && window.REPORT_DATA.storeId) || 'store';
-  newRow.dataset.rowId = 'web_' + sId + '_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+  const newRowId = 'web_' + sId + '_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+  newRow.dataset.rowId = newRowId;
   updateRowMarkTags(newRow);
+
+  // Sync item baru ke window.REPORT_DATA agar tetap muncul saat berganti mode tampilan layout
+  if (window.REPORT_DATA) {
+    const modType = (group.dataset.appKey || (group.dataset.groupId ? group.dataset.groupId.split('-')[0] : 'tarik')) || 'tarik';
+    const rowDate = currentNavRow.dataset.date || (group && group.dataset.date) || (window.REPORT_DATA.dateDb && window.REPORT_DATA.dateDb.indexOf(' s/d ') === -1 ? window.REPORT_DATA.dateDb : (window.REPORT_DATA.startDate || ''));
+
+    const newItemObj = {
+      id: newRowId,
+      rowId: newRowId,
+      date: rowDate,
+      time: timeStr,
+      amount: 0,
+      orig: 0,
+      jumtar: 0,
+      real: 0,
+      cost: 0,
+      fee: 0,
+      adm: 0,
+      name: defaultDesc,
+      desc: defaultDesc,
+      productName: isVoucher ? defaultDesc : undefined,
+      provider: isVoucher ? (provider || 'VOUCHER') : undefined,
+      type: isIncome ? 'income' : 'outcome',
+      category: isIncome ? 'income' : 'outcome',
+      app: currentNavRow.dataset.app || modType,
+      appName: currentNavRow.dataset.appName || (modType === 'tarik' ? 'Tarik Tunai' : defaultDesc),
+      isNew: true,
+      isEdited: false,
+      deleted: false,
+      read: false
+    };
+
+    if (Array.isArray(window.REPORT_DATA[modType])) {
+      const parentRowId = currentNavRow.dataset.rowId;
+      const idx = window.REPORT_DATA[modType].findIndex(x => (x.rowId && x.rowId === parentRowId) || (x.id && x.id === parentRowId));
+      if (idx !== -1) {
+        window.REPORT_DATA[modType].splice(idx + 1, 0, newItemObj);
+      } else {
+        window.REPORT_DATA[modType].push(newItemObj);
+      }
+    }
+  }
 
   renumberAllRows();
   recalcAll();
   selectAndSpeakRow(newRow);
+  if (typeof saveReportEdits === 'function') saveReportEdits();
 
   // Auto trigger edit nominal for instant input
   const amtSpan = newRow.querySelector('.lv-amt');
@@ -3059,6 +3222,9 @@ function startEditItemName(td) {
     td.title = text;
     if (tr) {
       tr.dataset.desc = text;
+      if (typeof syncRowEditToReportData === 'function') {
+        syncRowEditToReportData(tr, undefined, text);
+      }
       if (currentNavRow === tr) {
         const timeEl = document.getElementById('nav-time');
         const rowTime = tr.querySelector('.lv-td-time')?.textContent || '';
@@ -3463,6 +3629,7 @@ function navAdjustAmt(step, event) {
   const orig = parseFloat(currentNavRow.dataset.orig) || 0;
   val = Math.max(0, val + step);
   currentNavRow.dataset.val = val;
+  if (typeof syncRowEditToReportData === 'function') syncRowEditToReportData(currentNavRow, val);
 
   const amtEl = currentNavRow.querySelector('.lv-amt');
   if (amtEl) {
@@ -3482,6 +3649,7 @@ function navAdjustAmt(step, event) {
 
   updateRowMarkTags(currentNavRow);
   recalcAll();
+  if (typeof saveReportEdits === 'function') saveReportEdits();
 }
 
 function navEditAmt() {
@@ -5112,6 +5280,12 @@ function closeFormatLayoutModal() {
 }
 
 function selectFormatLayoutMode(modeId) {
+  if (autoSaveDebounceTimer) {
+    clearTimeout(autoSaveDebounceTimer);
+    autoSaveDebounceTimer = null;
+    doSaveReportEdits();
+  }
+
   window.CURRENT_LAYOUT_MODE = modeId;
   try { localStorage.setItem('ksp_multiday_layout', modeId); } catch(e){}
   updateLayoutModeUI();

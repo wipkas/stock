@@ -109,13 +109,16 @@
     if (!items || items.length === 0) return '';
     let topUpMasuk = 0, topUpKeluar = 0, rowsHtml = '';
     items.forEach(item => {
-      totalsRef.totalTrx++;
+      const isDel = Boolean(item.deleted);
+      if (!isDel) totalsRef.totalTrx++;
       const amtCharged = Math.round(item.amount || (item.nominal + (item.fee || 0)) || 0);
       const amtNominal = Math.round(item.nominal || 0);
       const calcCharged = getCalcAmount(amtCharged, opt);
       const calcNominal = getCalcAmount(amtNominal, opt);
-      topUpMasuk += calcCharged; topUpKeluar += calcNominal;
-      totalsRef.totalMasuk += calcCharged; totalsRef.totalKeluar += calcNominal;
+      if (!isDel) {
+        topUpMasuk += calcCharged; topUpKeluar += calcNominal;
+        totalsRef.totalMasuk += calcCharged; totalsRef.totalKeluar += calcNominal;
+      }
       const desc = (item.customerName ? item.customerName + ' - ' : '') + (item.category || 'TopUp') + (item.destination ? ' (' + item.destination + ')' : '');
       const timeVal = timeColFmt ? formatDisplayTime(item.date, item.time) : (item.time || '00:00');
       rowsHtml += opt.renderRowHtml(globalSeqRef.val++, timeVal, amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee || 0, item.date || dateAttr, item.rowId || item.id);
@@ -147,10 +150,13 @@
     if (!items || items.length === 0) return '';
     let vTotalKeluar = 0, rowsHtml = '';
     items.forEach(item => {
-      totalsRef.totalTrx++;
+      const isDel = Boolean(item.deleted);
+      if (!isDel) totalsRef.totalTrx++;
       const amt = Math.round(item.amount || 0);
       const calcAmt = getCalcAmount(amt, opt);
-      vTotalKeluar += calcAmt; totalsRef.totalKeluar += calcAmt;
+      if (!isDel) {
+        vTotalKeluar += calcAmt; totalsRef.totalKeluar += calcAmt;
+      }
       const prodName = item.productName || item.provider || 'Voucher';
       const timeVal = timeColFmt ? formatDisplayTime(item.date, item.time) : (item.time || '00:00');
       if (typeof opt.renderVoucherRowHtml === 'function') {
@@ -199,11 +205,14 @@
 
       const sortedTarik = data.tarik.slice().sort((a, b) => ((a.date || '') + ' ' + (a.time || '')).localeCompare((b.date || '') + ' ' + (b.time || '')));
       sortedTarik.forEach(item => {
-        totalTrx++;
+        const isDel = Boolean(item.deleted);
+        if (!isDel) totalTrx++;
         const amt = Math.round(item.amount || item.jumtar || 0);
         const isIncome = String(item.type || '').toLowerCase() === 'income';
         const calcAmt = getCalcAmount(amt, opt);
-        if (isIncome) { tarikMasuk += calcAmt; totalMasuk += calcAmt; } else { tarikKeluar += calcAmt; totalKeluar += calcAmt; }
+        if (!isDel) {
+          if (isIncome) { tarikMasuk += calcAmt; totalMasuk += calcAmt; } else { tarikKeluar += calcAmt; totalKeluar += calcAmt; }
+        }
         const desc = item.name || item.desc || item.app || 'Tarik Tunai';
         const timeFmt = formatDisplayTime(item.date, item.time);
         const jumtar = item.jumtar || amt;
@@ -251,11 +260,14 @@
 
         const sortedItems = items.slice().sort((a, b) => ((a.date || '') + ' ' + (a.time || '')).localeCompare((b.date || '') + ' ' + (b.time || '')));
         sortedItems.forEach(item => {
-          totalTrx++;
+          const isDel = Boolean(item.deleted);
+          if (!isDel) totalTrx++;
           const amt = Math.round(item.amount || 0);
           const isIncome = String(item.category || '').toLowerCase() === 'income';
           const calcAmt = getCalcAmount(amt, opt);
-          if (isIncome) { aIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; totalKeluar += calcAmt; }
+          if (!isDel) {
+            if (isIncome) { aIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; totalKeluar += calcAmt; }
+          }
           const desc = item.desc || item.name || displayName;
           const timeFmt = formatDisplayTime(item.date, item.time);
           rowsHtml += opt.renderRowHtml(globalSeqObj.val++, timeFmt, amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, item.date, item.rowId || item.id);
@@ -331,11 +343,14 @@
         let dayIn = 0, dayOut = 0, dayRows = '';
 
         items.forEach(item => {
-          totalTrx++;
+          const isDel = Boolean(item.deleted);
+          if (!isDel) totalTrx++;
           const amt = Math.round(item.amount || item.jumtar || 0);
           const isIncome = String(item.type || '').toLowerCase() === 'income';
           const calcAmt = getCalcAmount(amt, opt);
-          if (isIncome) { dayIn += calcAmt; tarikMasuk += calcAmt; totalMasuk += calcAmt; } else { dayOut += calcAmt; tarikKeluar += calcAmt; totalKeluar += calcAmt; }
+          if (!isDel) {
+            if (isIncome) { dayIn += calcAmt; tarikMasuk += calcAmt; totalMasuk += calcAmt; } else { dayOut += calcAmt; tarikKeluar += calcAmt; totalKeluar += calcAmt; }
+          }
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
@@ -408,11 +423,14 @@
           let dayIn = 0, dayOut = 0, dayRows = '';
 
           items.forEach(item => {
-            totalTrx++;
+            const isDel = Boolean(item.deleted);
+            if (!isDel) totalTrx++;
             const amt = Math.round(item.amount || 0);
             const isIncome = String(item.category || '').toLowerCase() === 'income';
             const calcAmt = getCalcAmount(amt, opt);
-            if (isIncome) { dayIn += calcAmt; aIn += calcAmt; totalMasuk += calcAmt; } else { dayOut += calcAmt; aOut += calcAmt; totalKeluar += calcAmt; }
+            if (!isDel) {
+              if (isIncome) { dayIn += calcAmt; aIn += calcAmt; totalMasuk += calcAmt; } else { dayOut += calcAmt; aOut += calcAmt; totalKeluar += calcAmt; }
+            }
             const desc = item.desc || item.name || displayName;
             dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
           });
@@ -611,11 +629,14 @@
         let rowsHtml = '';
 
         dayTarik.forEach(item => {
-          totalTrx++; dayTrx++;
+          const isDel = Boolean(item.deleted);
+          if (!isDel) { totalTrx++; dayTrx++; }
           const amt = Math.round(item.amount || item.jumtar || 0);
           const isIncome = String(item.type || '').toLowerCase() === 'income';
           const calcAmt = getCalcAmount(amt, opt);
-          if (isIncome) { tMasuk += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { tKeluar += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
+          if (!isDel) {
+            if (isIncome) { tMasuk += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { tKeluar += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
+          }
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
@@ -662,11 +683,14 @@
           let aIn = 0, aOut = 0, rowsHtml = '';
 
           items.forEach(item => {
-            totalTrx++; dayTrx++;
+            const isDel = Boolean(item.deleted);
+            if (!isDel) { totalTrx++; dayTrx++; }
             const amt = Math.round(item.amount || 0);
             const isIncome = String(item.category || '').toLowerCase() === 'income';
             const calcAmt = getCalcAmount(amt, opt);
-            if (isIncome) { aIn += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
+            if (!isDel) {
+              if (isIncome) { aIn += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
+            }
             const desc = item.desc || item.name || displayName;
             rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
           });
@@ -776,11 +800,14 @@
         let rowsHtml = '';
 
         dayTarik.forEach(item => {
-          totalTrx++; dayTrx++;
+          const isDel = Boolean(item.deleted);
+          if (!isDel) { totalTrx++; dayTrx++; }
           const amt = Math.round(item.amount || item.jumtar || 0);
           const isIncome = String(item.type || '').toLowerCase() === 'income';
           const calcAmt = getCalcAmount(amt, opt);
-          if (isIncome) { tMasuk += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { tKeluar += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
+          if (!isDel) {
+            if (isIncome) { tMasuk += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { tKeluar += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
+          }
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
@@ -827,11 +854,14 @@
           let aIn = 0, aOut = 0, rowsHtml = '';
 
           items.forEach(item => {
-            totalTrx++; dayTrx++;
+            const isDel = Boolean(item.deleted);
+            if (!isDel) { totalTrx++; dayTrx++; }
             const amt = Math.round(item.amount || 0);
             const isIncome = String(item.category || '').toLowerCase() === 'income';
             const calcAmt = getCalcAmount(amt, opt);
-            if (isIncome) { aIn += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
+            if (!isDel) {
+              if (isIncome) { aIn += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
+            }
             const desc = item.desc || item.name || displayName;
             rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
           });
@@ -918,11 +948,14 @@
         const isOutcomeOnly = items.every(item => String(item.type || '').toLowerCase() !== 'income');
 
         items.forEach(item => {
-          totalTrx++;
+          const isDel = Boolean(item.deleted);
+          if (!isDel) totalTrx++;
           const amt = Math.round(item.amount || item.jumtar || 0);
           const isIncome = String(item.type || '').toLowerCase() === 'income';
           const calcAmt = getCalcAmount(amt, opt);
-          if (isIncome) { dayIn += calcAmt; totalMasuk += calcAmt; } else { dayOut += calcAmt; totalKeluar += calcAmt; }
+          if (!isDel) {
+            if (isIncome) { dayIn += calcAmt; totalMasuk += calcAmt; } else { dayOut += calcAmt; totalKeluar += calcAmt; }
+          }
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
@@ -974,11 +1007,14 @@
         let aIn = 0, aOut = 0, rowsHtml = '';
 
         items.forEach(item => {
-          totalTrx++;
+          const isDel = Boolean(item.deleted);
+          if (!isDel) totalTrx++;
           const amt = Math.round(item.amount || 0);
           const isIncome = String(item.category || '').toLowerCase() === 'income';
           const calcAmt = getCalcAmount(amt, opt);
-          if (isIncome) { aIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; totalKeluar += calcAmt; }
+          if (!isDel) {
+            if (isIncome) { aIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; totalKeluar += calcAmt; }
+          }
           const desc = item.desc || item.name || displayName;
           rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
         });
@@ -1073,11 +1109,14 @@
         let rowsHtml = '';
 
         dayTarik.forEach(item => {
-          totalTrx++; dayTrx++;
+          const isDel = Boolean(item.deleted);
+          if (!isDel) { totalTrx++; dayTrx++; }
           const amt = Math.round(item.amount || item.jumtar || 0);
           const isIncome = String(item.type || '').toLowerCase() === 'income';
           const calcAmt = getCalcAmount(amt, opt);
-          if (isIncome) { tMasuk += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { tKeluar += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
+          if (!isDel) {
+            if (isIncome) { tMasuk += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { tKeluar += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
+          }
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
@@ -1124,11 +1163,14 @@
           let aIn = 0, aOut = 0, rowsHtml = '';
 
           items.forEach(item => {
-            totalTrx++; dayTrx++;
+            const isDel = Boolean(item.deleted);
+            if (!isDel) { totalTrx++; dayTrx++; }
             const amt = Math.round(item.amount || 0);
             const isIncome = String(item.category || '').toLowerCase() === 'income';
             const calcAmt = getCalcAmount(amt, opt);
-            if (isIncome) { aIn += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
+            if (!isDel) {
+              if (isIncome) { aIn += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
+            }
             const desc = item.desc || item.name || displayName;
             rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
           });
@@ -1184,6 +1226,7 @@
             <div class="side-day-sheet-metrics">
               <span style="color:var(--outcome);">Keluar: <b class="sheet-metric-keluar">${opt.fmtAmt(dayOut)}</b></span>
               <span style="color:var(--income);">Masuk: <b class="sheet-metric-masuk">${opt.fmtAmt(dayIn)}</b></span>
+              <span style="font-weight:700;">Selisih: <b class="sheet-metric-bersih" style="color:${(dayOut - dayIn) >= 0 ? 'var(--income)' : 'var(--outcome)'};">${(dayOut - dayIn > 0 ? '+' : '') + opt.fmtAmt(dayOut - dayIn)}</b></span>
             </div>
           </div>
           <div class="side-day-sheet-body spread-sheet-body">${dayGroupsHtml}</div>
@@ -1192,11 +1235,7 @@
 
     container.innerHTML = `
       <div class="side-spread-wrapper spread-horizontal-wrapper">
-        <div class="side-spread-hint">
-          <span>👈 Geser samping untuk melihat hari lainnya 👉</span>
-          <span class="hint-badge">${dates.length} Hari</span>
-        </div>
-        <div class="side-spread-container spread-sheets-container">
+        <div class="side-spread-container spread-sheets-container" id="side-spread-container">
           ${sheetsHtml}
         </div>
       </div>`;
