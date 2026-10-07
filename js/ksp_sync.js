@@ -466,6 +466,128 @@
         return rpc('ksp_emp_get_leaderboard', { p_password: password || '' });
     }
 
+    // ---------- REALTIME WEBSOCKET LISTENER ----------
+    var realtimeClient = null;
+    var realtimeChannel = null;
+    var pullDebounceTimer = null;
+
+    function debouncePull(delayMs) {
+        clearTimeout(pullDebounceTimer);
+        pullDebounceTimer = setTimeout(function () {
+            if (opts.isAdmin() && !modalOpen()) {
+                adminPull();
+            }
+        }, delayMs || 600);
+    }
+
+    function initRealtime() {
+        if (!enabled() || !window.supabase) return;
+        if (realtimeChannel) return;
+
+        try {
+            if (!realtimeClient) {
+                realtimeClient = window.supabase.createClient(CFG.url, CFG.key);
+            }
+            realtimeChannel = realtimeClient.channel('ksp_admin_live_channel')
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'ksp_daily_transactions'
+                }, function (payload) {
+                    console.log('[KspSync Realtime] ksp_daily_transactions:', payload);
+                    handleDailyTxChange(payload);
+                })
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'ksp_history_transactions'
+                }, function (payload) {
+                    console.log('[KspSync Realtime] ksp_history_transactions:', payload);
+                    debouncePull(500);
+                })
+                .on('postgres_changes', {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'ksp_stores'
+                }, function (payload) {
+                    console.log('[KspSync Realtime] ksp_stores:', payload);
+                    debouncePull(600);
+                })
+                .subscribe(function (status) {
+                    if (status === 'SUBSCRIBED') {
+                        setStatus('ok', '⚡ Realtime Aktif');
+                    }
+                });
+        } catch (e) {
+            console.warn('[KspSync] Gagal inisialisasi Realtime:', e);
+        }
+    }
+
+    function handleDailyTxChange(payload) {
+        var row = payload.new;
+        if (!row || !row.store_id || !opts.getStores) {
+            debouncePull(400);
+            return;
+        }
+
+        var stores = opts.getStores();
+        if (!Array.isArray(stores)) {
+            debouncePull(400);
+            return;
+        }
+
+        var st = stores.find(function (s) { return s.id === row.store_id; });
+        if (st) {
+            if (!st.daily_transactions || typeof st.daily_transactions !== 'object') st.daily_transactions = {};
+            var dateKey = row.tx_date;
+            if (!st.daily_transactions[dateKey]) {
+                st.daily_transactions[dateKey] = {
+                    date: dateKey,
+                    recorded_time: row.recorded_at,
+                    total: 0,
+                    records: []
+                };
+            }
+            var dObj = st.daily_transactions[dateKey];
+            dObj.recorded_time = row.recorded_at;
+            if (!Array.isArray(dObj.records)) dObj.records = [];
+
+            var rec = dObj.records.find(function (r) {
+                return (row.emp_id && r.emp_id === row.emp_id) || (r.shift_num === row.shift_num);
+            });
+
+            if (rec) {
+                rec.tx = Number(row.tx) || 0;
+                rec.recorded_at = row.recorded_at;
+                rec.shift_num = row.shift_num;
+                if (row.shift_name) rec.shift_name = row.shift_name;
+            } else {
+                dObj.records.push({
+                    emp_id: row.emp_id,
+                    shift_num: row.shift_num,
+                    shift_name: row.shift_name,
+                    tx: Number(row.tx) || 0,
+                    recorded_at: row.recorded_at
+                });
+            }
+
+            dObj.total = dObj.records.reduce(function (sum, r) { return sum + (Number(r.tx) || 0); }, 0);
+            st.monthly_tx = Object.values(st.daily_transactions).reduce(function (sum, d) { return sum + (Number(d && d.total) || 0); }, 0);
+
+            writeLocalCache(stores);
+            if (typeof opts.onRemoteUpdate === 'function') {
+                opts.onRemoteUpdate();
+            }
+
+            if (typeof window.triggerTxRealtimeHighlight === 'function') {
+                window.triggerTxRealtimeHighlight(row.store_id, row.shift_num);
+            }
+            setStatus('ok', '⚡ Trx Live (' + row.tx + ' tx)');
+        }
+
+        debouncePull(1200);
+    }
+
     // ---------- INIT ----------
     function hookSave() {
         var orig = window.saveStoresData;
@@ -500,6 +622,18 @@
         if (opts.isAdmin() && !modalOpen()) {
             adminPull();
         }
+
+        // Jalankan koneksi Realtime
+        if (window.supabase) {
+            initRealtime();
+        } else {
+            // Heartbeat poll cadangan jika library Realtime belum dimuat
+            setInterval(function () {
+                if (document.visibilityState === 'visible' && opts.isAdmin() && !modalOpen()) {
+                    adminPull();
+                }
+            }, 15000);
+        }
     }
 
     window.KspSync = {
@@ -514,6 +648,7 @@
         adminTransferEmployee: adminTransferEmployee,
         adminDeactivateEmployee: adminDeactivateEmployee,
         adminGetAllEmployees: adminGetAllEmployees,
+        initRealtime: initRealtime,
         empLogin: empLogin,
         empSubmitProposal: empSubmitProposal,
         empUpdateProfile: empUpdateProfile,
