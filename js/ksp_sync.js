@@ -49,10 +49,16 @@
         if (!badgeEl) {
             badgeEl = document.createElement('div');
             badgeEl.id = 'kspSyncBadge';
-            badgeEl.style.cssText = 'position:fixed;left:10px;bottom:10px;z-index:99999;padding:5px 10px;' +
-                'border-radius:20px;font:700 11px/1.2 system-ui,sans-serif;pointer-events:none;' +
-                'background:rgba(20,24,38,.88);color:#cbd5e1;border:1px solid rgba(148,163,184,.35);' +
-                'box-shadow:0 2px 8px rgba(0,0,0,.25);transition:opacity .4s;';
+            badgeEl.style.cssText = 'position:fixed;left:10px;bottom:10px;z-index:99999;padding:6px 12px;' +
+                'border-radius:20px;font:700 11px/1.2 system-ui,sans-serif;cursor:pointer;pointer-events:auto;' +
+                'background:rgba(20,24,38,.92);color:#cbd5e1;border:1px solid rgba(16,185,129,.45);' +
+                'box-shadow:0 4px 14px rgba(0,0,0,.35);transition:opacity .3s, transform .2s;user-select:none;';
+            badgeEl.title = 'Status Realtime Supabase (Klik untuk uji coba efek visual & audio)';
+            badgeEl.addEventListener('click', function() {
+                if (typeof window.testRealtimeEffect === 'function') {
+                    window.testRealtimeEffect();
+                }
+            });
             document.body.appendChild(badgeEl);
         }
         var colors = { ok: '#34d399', busy: '#fbbf24', err: '#f87171', off: '#94a3b8' };
@@ -60,7 +66,7 @@
         badgeEl.textContent = text;
         badgeEl.style.opacity = '1';
         if (kind === 'ok') {
-            setTimeout(function () { if (badgeEl) badgeEl.style.opacity = '0.45'; }, 2500);
+            setTimeout(function () { if (badgeEl) badgeEl.style.opacity = '0.5'; }, 3000);
         }
     }
 
@@ -503,7 +509,11 @@
                     table: 'ksp_history_transactions'
                 }, function (payload) {
                     console.log('[KspSync Realtime] ksp_history_transactions:', payload);
-                    debouncePull(500);
+                    if (payload.eventType === 'INSERT') {
+                        handleHistoryTxInsert(payload);
+                    } else {
+                        debouncePull(800);
+                    }
                 })
                 .on('postgres_changes', {
                     event: 'UPDATE',
@@ -521,6 +531,51 @@
         } catch (e) {
             console.warn('[KspSync] Gagal inisialisasi Realtime:', e);
         }
+    }
+
+    function handleHistoryTxInsert(payload) {
+        var row = payload.new;
+        if (!row || !row.store_id || !opts.getStores) return;
+
+        var stores = opts.getStores();
+        if (!Array.isArray(stores)) return;
+        var st = stores.find(function (s) { return s.id === row.store_id; });
+        var storeName = st ? st.name : row.store_id;
+        var shiftNum = Number(row.shift) || 1;
+
+        // Optimistic update tx jika tanggal transaksi adalah hari ini
+        var todayStr = new Date().toISOString().slice(0, 10);
+        if (st && row.trx_date === todayStr) {
+            if (!st.daily_transactions || typeof st.daily_transactions !== 'object') st.daily_transactions = {};
+            if (!st.daily_transactions[todayStr]) {
+                st.daily_transactions[todayStr] = { date: todayStr, total: 0, records: [] };
+            }
+            var dObj = st.daily_transactions[todayStr];
+            if (!Array.isArray(dObj.records)) dObj.records = [];
+            var rec = dObj.records.find(function (r) { return r.shift_num === shiftNum; });
+            if (rec) {
+                rec.tx = (Number(rec.tx) || 0) + 1;
+            } else {
+                dObj.records.push({ shift_num: shiftNum, tx: 1 });
+            }
+            dObj.total = (Number(dObj.total) || 0) + 1;
+            st.monthly_tx = (Number(st.monthly_tx) || 0) + 1;
+
+            writeLocalCache(stores);
+            if (typeof opts.onRemoteUpdate === 'function') {
+                opts.onRemoteUpdate();
+            }
+        }
+
+        // Pemicu efek visual modern seketika!
+        if (typeof window.triggerTxRealtimeHighlight === 'function') {
+            var currentTx = (st && st.daily_transactions && st.daily_transactions[todayStr])
+                ? st.daily_transactions[todayStr].total
+                : null;
+            window.triggerTxRealtimeHighlight(row.store_id, shiftNum, currentTx, storeName, row);
+        }
+        setStatus('ok', '⚡ Masuk: ' + (row.item_name || row.title || 'Transaksi'));
+        debouncePull(2500);
     }
 
     function handleDailyTxChange(payload) {
@@ -585,7 +640,7 @@
             setStatus('ok', '⚡ Trx Live (' + row.tx + ' tx)');
         }
 
-        debouncePull(1200);
+        debouncePull(2500);
     }
 
     // ---------- INIT ----------

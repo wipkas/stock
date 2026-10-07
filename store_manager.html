@@ -19,8 +19,8 @@
     <!-- CryptoJS (dekripsi config.enc) & Supabase JS Client & modul bersama di js/ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/ksp_sync_config.js?v=20261007_rt"></script>
-    <script src="js/ksp_sync.js?v=20261007_rt"></script>
+    <script src="js/ksp_sync_config.js?v=20261007_v3"></script>
+    <script src="js/ksp_sync.js?v=20261007_v3"></script>
     <script src="js/ksp_ui.js?v=20261005"></script>
     <script src="js/ksp_theme.js?v=20261005"></script>
     <script src="js/ksp_auth.js?v=20261005"></script>
@@ -4786,7 +4786,7 @@
         // =========================================================
         // MODERN REALTIME TRANSACTION LIVE FEEDBACK
         // =========================================================
-        window.triggerTxRealtimeHighlight = function(storeId, shiftNum, newTxCount, storeName) {
+        window.triggerTxRealtimeHighlight = function(storeId, shiftNum, newTxCount, storeName, trxDetail) {
             // 1. Neon Border Glow & Scale Bounce pada Kartu Toko
             const card = document.getElementById(`storeCard_${storeId}`);
             if (card) {
@@ -4828,7 +4828,22 @@
             // 5. Tampilkan Floating Live Toast Notification (Pojok Kanan Atas)
             const targetStore = (storesData || []).find(s => s.id === storeId);
             const resolvedName = storeName || (targetStore ? targetStore.name : 'Cabang');
-            showLiveTxToast(resolvedName, shiftNum, newTxCount);
+            showLiveTxToast(resolvedName, shiftNum, newTxCount, trxDetail);
+        };
+
+        window.testRealtimeEffect = function(targetStoreId) {
+            const store = (storesData && storesData.length > 0)
+                ? (storesData.find(s => s.id === targetStoreId) || storesData[0])
+                : { id: 'store_pusat', name: 'Cabang Utama' };
+            const currentToday = (typeof calculateStoreTodayTx === 'function') ? calculateStoreTodayTx(store) : 10;
+            const simulatedNew = currentToday + 1;
+            
+            console.log('🧪 [TEST REALTIME EFFECT] Menjalankan simulasi realtime untuk:', store.name);
+            window.triggerTxRealtimeHighlight(store.id, 1, simulatedNew, store.name, {
+                title: 'Tarik Tunai BCA',
+                item_name: 'Simulasi Transaksi ⚡',
+                amount: 50000
+            });
         };
 
         function spawnFloatBadge(targetEl, text) {
@@ -4852,6 +4867,9 @@
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
                 if (!AudioCtx) return;
                 const ctx = new AudioCtx();
+                if (ctx.state === 'suspended') {
+                    ctx.resume().catch(() => {});
+                }
                 const now = ctx.currentTime;
                 
                 // Dua nada berurutan yang sangat elegan & jernih (C6 -> G6)
@@ -4871,7 +4889,7 @@
             } catch(e) {}
         }
 
-        function showLiveTxToast(storeName, shiftNum, txCount) {
+        function showLiveTxToast(storeName, shiftNum, txCount, trxDetail) {
             let container = document.getElementById('kspLiveToastContainer');
             if (!container) {
                 container = document.createElement('div');
@@ -4885,23 +4903,35 @@
             const shiftLabel = shiftNum === 1 ? '🌅 Shift 1' : (shiftNum === 2 ? '🌙 Shift 2' : 'Full Shift');
             const totalText = txCount ? ` • Total: <b>${txCount} tx</b>` : '';
 
+            let detailHtml = '';
+            if (trxDetail) {
+                const item = trxDetail.item_name || trxDetail.title || '';
+                const nominal = (trxDetail.amount && Number(trxDetail.amount) > 0)
+                    ? ' • Rp ' + Number(trxDetail.amount).toLocaleString('id-ID')
+                    : '';
+                if (item || nominal) {
+                    detailHtml = `<div style="font-size: 11px; color: #94A3B8; margin-top: 1.5px;">${escapeHtml(item)}${nominal}</div>`;
+                }
+            }
+
             toast.innerHTML = `
                 <span class="live-ping-dot"></span>
-                <span style="font-size: 16px;">⚡</span>
+                <span style="font-size: 17px;">⚡</span>
                 <div style="display: flex; flex-direction: column; line-height: 1.25;">
-                    <div style="font-size: 10px; color: #10B981; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
+                    <div style="font-size: 9.5px; color: #10B981; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
                         TRANSAKSI MASUK REALTIME
                     </div>
                     <div style="font-size: 12.5px; color: #ffffff;">
                         <b>${escapeHtml(storeName)}</b> (${shiftLabel})${totalText}
                     </div>
+                    ${detailHtml}
                 </div>
             `;
 
             container.appendChild(toast);
             setTimeout(() => {
                 try { toast.remove(); } catch(e) {}
-            }, 3600);
+            }, 3800);
         }
 
         // ==========================================
