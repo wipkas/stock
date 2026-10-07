@@ -908,6 +908,39 @@ function toggleRekapCollapse() {
 }
 window.toggleRekapCollapse = toggleRekapCollapse;
 
+function getCalcValueForCopy(rawNum) {
+  const val = parseFloat(rawNum) || 0;
+  if (roundingMode) {
+    return Math.round(val / 1000);
+  } else if (ringkasMode) {
+    return Math.trunc(val / 1000);
+  }
+  return Math.round(val);
+}
+
+function copyRekapFormula(el, event) {
+  if (event) event.stopPropagation();
+  const target = (el && el.dataset && el.dataset.formula) ? el : ((el && el.querySelector && el.querySelector('[data-formula]')) || el);
+  let formula = target && target.dataset ? (target.dataset.formula || '') : '';
+  if (event && event.shiftKey && target && target.dataset && target.dataset.formulaAlt) {
+    formula = target.dataset.formulaAlt;
+  }
+  if (!formula && target && target.textContent) {
+    formula = target.textContent.trim();
+  }
+  if (!formula || formula === '0') {
+    showToast('Tidak ada nilai untuk disalin');
+    return;
+  }
+  const done = () => showToast('📋 Disalin untuk kalkulator: ' + formula);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(formula).then(done).catch(() => fallbackCopy(formula, done));
+  } else {
+    fallbackCopy(formula, done);
+  }
+}
+window.copyRekapFormula = copyRekapFormula;
+
 function renderRekapSummaryTable() {
   const container = document.getElementById('rekap-summary-container');
   const tbody = document.getElementById('rekap-tbody');
@@ -1002,6 +1035,8 @@ function renderRekapSummaryTable() {
     let totalRekapKeluar = 0;
     let rowsHtml = '';
     let count = 0;
+    const keluarList = [];
+    const masukList = [];
 
     appOrder.forEach(appKey => {
       const item = appAggregates[appKey];
@@ -1012,11 +1047,24 @@ function renderRekapSummaryTable() {
       totalRekapKeluar += item.keluar;
       count++;
 
+      const kVal = getCalcValueForCopy(item.keluar);
+      const mVal = getCalcValueForCopy(item.masuk);
+      if (kVal > 0) keluarList.push(kVal);
+      if (mVal > 0) masukList.push(mVal);
+
+      const kHtml = item.keluar > 0
+        ? `<span class="rekap-copy-val c-out" onclick="copyRekapFormula(this, event)" data-formula="${kVal}" title="Klik untuk salin ${kVal} ke kalkulator">${fmtAmt(item.keluar)}</span>`
+        : fmtAmt(item.keluar);
+
+      const mHtml = item.masuk > 0
+        ? `<span class="rekap-copy-val c-in" onclick="copyRekapFormula(this, event)" data-formula="${mVal}" title="Klik untuk salin ${mVal} ke kalkulator">${fmtAmt(item.masuk)}</span>`
+        : fmtAmt(item.masuk);
+
       rowsHtml += `<tr>
         <td class="lv-td l"><b>${escapeHtml(item.label)}</b></td>
         <td class="lv-td c">${item.trx}</td>
-        <td class="lv-td r" style="color:var(--outcome);">${fmtAmt(item.keluar)}</td>
-        <td class="lv-td r" style="color:${item.masuk > 0 ? 'var(--income)' : 'var(--muted)'};">${fmtAmt(item.masuk)}</td>
+        <td class="lv-td r" style="color:var(--outcome);">${kHtml}</td>
+        <td class="lv-td r" style="color:${item.masuk > 0 ? 'var(--income)' : 'var(--muted)'};">${mHtml}</td>
         <td class="lv-td r" style="font-weight:700; color:${diff >= 0 ? 'var(--income)' : 'var(--outcome)'};">${(diff > 0 ? '+' : '') + fmtAmt(diff)}</td>
       </tr>`;
     });
@@ -1027,12 +1075,19 @@ function renderRekapSummaryTable() {
     }
 
     const grandDiff = totalRekapKeluar - totalRekapMasuk;
+    const formulaKeluar = keluarList.length > 0 ? keluarList.join('+') : String(getCalcValueForCopy(totalRekapKeluar) || 0);
+    const formulaMasuk = masukList.length > 0 ? masukList.join('+') : String(getCalcValueForCopy(totalRekapMasuk) || 0);
+
     tbody.innerHTML = rowsHtml;
     tfoot.innerHTML = `<tr>
       <td class="lv-td l" style="font-weight:800; font-size:0.85rem;">TOTAL GABUNGAN</td>
       <td class="lv-td c" style="font-weight:800;">${totalRekapTrx}</td>
-      <td class="lv-td r" style="font-weight:800; color:var(--outcome);">${fmtAmt(totalRekapKeluar)}</td>
-      <td class="lv-td r" style="font-weight:800; color:var(--income);">${fmtAmt(totalRekapMasuk)}</td>
+      <td class="lv-td r" style="font-weight:800; color:var(--outcome); cursor:pointer;" onclick="copyRekapFormula(this, event)" data-formula="${escapeHtml(formulaKeluar)}" title="Klik untuk salin penjumlahan kalkulator (${escapeHtml(formulaKeluar)})">
+        <span class="rekap-copy-val c-out">${fmtAmt(totalRekapKeluar)}</span>
+      </td>
+      <td class="lv-td r" style="font-weight:800; color:var(--income); cursor:pointer;" onclick="copyRekapFormula(this, event)" data-formula="${escapeHtml(formulaMasuk)}" title="Klik untuk salin penjumlahan kalkulator (${escapeHtml(formulaMasuk)})">
+        <span class="rekap-copy-val c-in">${fmtAmt(totalRekapMasuk)}</span>
+      </td>
       <td class="lv-td r" style="font-weight:800; color:${grandDiff >= 0 ? 'var(--income)' : 'var(--outcome)'};">${(grandDiff > 0 ? '+' : '') + fmtAmt(grandDiff)}</td>
     </tr>`;
     container.style.display = 'block';
@@ -1175,9 +1230,10 @@ function renderRekapSummaryTable() {
   let rowsHtml = '';
   let count = 0;
 
-  if (!window._expandedRekapDates) {
-    window._expandedRekapDates = new Set();
-  }
+  const dateKeluarList = [];
+  const dateMasukList = [];
+  const appTotals = {};
+  const appOrderAll = [];
 
   const sortedDateKeys = Object.keys(dateData).sort();
   sortedDateKeys.forEach(dKey => {
@@ -1190,10 +1246,44 @@ function renderRekapSummaryTable() {
     totalRekapKeluar += dObj.keluar;
     count++;
 
+    const dKVal = getCalcValueForCopy(dObj.keluar);
+    const dMVal = getCalcValueForCopy(dObj.masuk);
+    if (dKVal > 0) dateKeluarList.push(dKVal);
+    if (dMVal > 0) dateMasukList.push(dMVal);
+
+    // Collect module values for this date
+    const dayModuleKeluarList = [];
+    const dayModuleMasukList = [];
+    dObj.appOrder.forEach(appKey => {
+      const item = dObj.modules[appKey];
+      const mKVal = getCalcValueForCopy(item.keluar);
+      const mMVal = getCalcValueForCopy(item.masuk);
+      if (mKVal > 0) dayModuleKeluarList.push(mKVal);
+      if (mMVal > 0) dayModuleMasukList.push(mMVal);
+
+      if (!appTotals[appKey]) {
+        appTotals[appKey] = { label: item.label, keluar: 0, masuk: 0 };
+        appOrderAll.push(appKey);
+      }
+      appTotals[appKey].keluar += item.keluar;
+      appTotals[appKey].masuk += item.masuk;
+    });
+
+    const dayKFormula = dayModuleKeluarList.length > 0 ? dayModuleKeluarList.join('+') : String(dKVal || 0);
+    const dayMFormula = dayModuleMasukList.length > 0 ? dayModuleMasukList.join('+') : String(dMVal || 0);
+
     const isExpanded = window._expandedRekapDates.has(dKey);
     const iconChar = isExpanded ? '▼' : '▶';
     const subDisplay = isExpanded ? '' : 'none';
     const dateLabel = getRekapDateLabel(dKey);
+
+    const dateKHtml = dObj.keluar > 0
+      ? `<span class="rekap-copy-val c-out" onclick="copyRekapFormula(this, event)" data-formula="${escapeHtml(dayKFormula)}" title="Klik untuk salin rincian modul ${escapeHtml(dateLabel)} (${escapeHtml(dayKFormula)})">${fmtAmt(dObj.keluar)}</span>`
+      : fmtAmt(dObj.keluar);
+
+    const dateMHtml = dObj.masuk > 0
+      ? `<span class="rekap-copy-val c-in" onclick="copyRekapFormula(this, event)" data-formula="${escapeHtml(dayMFormula)}" title="Klik untuk salin rincian modul ${escapeHtml(dateLabel)} (${escapeHtml(dayMFormula)})">${fmtAmt(dObj.masuk)}</span>`
+      : fmtAmt(dObj.masuk);
 
     rowsHtml += `
       <tr class="rekap-date-hd" onclick="toggleRekapDateRows('${escapeHtml(dKey)}')" title="Klik untuk lihat / sembunyikan rincian modul ${escapeHtml(dateLabel)}" style="cursor:pointer; background:var(--surface2); font-weight:700; user-select:none;">
@@ -1202,20 +1292,31 @@ function renderRekapSummaryTable() {
           <span style="color:var(--text);">📅 ${escapeHtml(dateLabel)}</span>
         </td>
         <td class="lv-td c" style="font-weight:700;">${dObj.trx}</td>
-        <td class="lv-td r" style="font-weight:700; color:var(--outcome);">${fmtAmt(dObj.keluar)}</td>
-        <td class="lv-td r" style="font-weight:700; color:${dObj.masuk > 0 ? 'var(--income)' : 'var(--muted)'};">${fmtAmt(dObj.masuk)}</td>
+        <td class="lv-td r" style="font-weight:700; color:var(--outcome);">${dateKHtml}</td>
+        <td class="lv-td r" style="font-weight:700; color:${dObj.masuk > 0 ? 'var(--income)' : 'var(--muted)'};">${dateMHtml}</td>
         <td class="lv-td r" style="font-weight:700; color:${dayDiff >= 0 ? 'var(--income)' : 'var(--outcome)'};">${(dayDiff > 0 ? '+' : '') + fmtAmt(dayDiff)}</td>
       </tr>`;
 
     dObj.appOrder.forEach(appKey => {
       const item = dObj.modules[appKey];
       const diff = item.keluar - item.masuk;
+      const subKVal = getCalcValueForCopy(item.keluar);
+      const subMVal = getCalcValueForCopy(item.masuk);
+
+      const subKHtml = item.keluar > 0
+        ? `<span class="rekap-copy-val c-out" onclick="copyRekapFormula(this, event)" data-formula="${subKVal}" title="Klik untuk salin nilai ${subKVal}">${fmtAmt(item.keluar)}</span>`
+        : fmtAmt(item.keluar);
+
+      const subMHtml = item.masuk > 0
+        ? `<span class="rekap-copy-val c-in" onclick="copyRekapFormula(this, event)" data-formula="${subMVal}" title="Klik untuk salin nilai ${subMVal}">${fmtAmt(item.masuk)}</span>`
+        : fmtAmt(item.masuk);
+
       rowsHtml += `
         <tr class="rekap-subrow rekap-subrow-${escapeHtml(dKey)}" style="display:${subDisplay};">
           <td class="lv-td l" style="padding-left:32px;">${escapeHtml(item.label)}</td>
           <td class="lv-td c">${item.trx}</td>
-          <td class="lv-td r" style="color:var(--outcome);">${fmtAmt(item.keluar)}</td>
-          <td class="lv-td r" style="color:${item.masuk > 0 ? 'var(--income)' : 'var(--muted)'};">${fmtAmt(item.masuk)}</td>
+          <td class="lv-td r" style="color:var(--outcome);">${subKHtml}</td>
+          <td class="lv-td r" style="color:${item.masuk > 0 ? 'var(--income)' : 'var(--muted)'};">${subMHtml}</td>
           <td class="lv-td r" style="font-weight:700; color:${diff >= 0 ? 'var(--income)' : 'var(--outcome)'};">${(diff > 0 ? '+' : '') + fmtAmt(diff)}</td>
         </tr>`;
     });
@@ -1227,12 +1328,32 @@ function renderRekapSummaryTable() {
   }
 
   const grandDiff = totalRekapKeluar - totalRekapMasuk;
+
+  // Module aggregates across all dates in multi-day
+  const appKeluarList = appOrderAll.map(k => getCalcValueForCopy(appTotals[k].keluar)).filter(v => v > 0);
+  const appMasukList = appOrderAll.map(k => getCalcValueForCopy(appTotals[k].masuk)).filter(v => v > 0);
+
+  const multiFormulaKeluar = dateKeluarList.length > 1
+    ? dateKeluarList.join('+')
+    : (appKeluarList.length > 0 ? appKeluarList.join('+') : String(getCalcValueForCopy(totalRekapKeluar) || 0));
+
+  const multiFormulaMasuk = dateMasukList.length > 1
+    ? dateMasukList.join('+')
+    : (appMasukList.length > 0 ? appMasukList.join('+') : String(getCalcValueForCopy(totalRekapMasuk) || 0));
+
+  const altFormulaKeluar = appKeluarList.length > 0 ? appKeluarList.join('+') : multiFormulaKeluar;
+  const altFormulaMasuk = appMasukList.length > 0 ? appMasukList.join('+') : multiFormulaMasuk;
+
   tbody.innerHTML = rowsHtml;
   tfoot.innerHTML = `<tr>
     <td class="lv-td l" style="font-weight:800; font-size:0.85rem;">TOTAL GABUNGAN</td>
     <td class="lv-td c" style="font-weight:800;">${totalRekapTrx}</td>
-    <td class="lv-td r" style="font-weight:800; color:var(--outcome);">${fmtAmt(totalRekapKeluar)}</td>
-    <td class="lv-td r" style="font-weight:800; color:var(--income);">${fmtAmt(totalRekapMasuk)}</td>
+    <td class="lv-td r" style="font-weight:800; color:var(--outcome); cursor:pointer;" onclick="copyRekapFormula(this, event)" data-formula="${escapeHtml(multiFormulaKeluar)}" data-formula-alt="${escapeHtml(altFormulaKeluar)}" title="Klik untuk salin kalkulator (${escapeHtml(multiFormulaKeluar)})${dateKeluarList.length > 1 ? '. Shift+Klik untuk rincian modul (' + escapeHtml(altFormulaKeluar) + ').' : ''}">
+      <span class="rekap-copy-val c-out">${fmtAmt(totalRekapKeluar)}</span>
+    </td>
+    <td class="lv-td r" style="font-weight:800; color:var(--income); cursor:pointer;" onclick="copyRekapFormula(this, event)" data-formula="${escapeHtml(multiFormulaMasuk)}" data-formula-alt="${escapeHtml(altFormulaMasuk)}" title="Klik untuk salin kalkulator (${escapeHtml(multiFormulaMasuk)})${dateMasukList.length > 1 ? '. Shift+Klik untuk rincian modul (' + escapeHtml(altFormulaMasuk) + ').' : ''}">
+      <span class="rekap-copy-val c-in">${fmtAmt(totalRekapMasuk)}</span>
+    </td>
     <td class="lv-td r" style="font-weight:800; color:${grandDiff >= 0 ? 'var(--income)' : 'var(--outcome)'};">${(grandDiff > 0 ? '+' : '') + fmtAmt(grandDiff)}</td>
   </tr>`;
 
@@ -5550,5 +5671,6 @@ window.KspHistoriku = {
   },
   openImportModal: openImportReportDialog,
   closeImportModal: closeImportReportDialog,
-  handleFileImport: handleReportFileImport
+  handleFileImport: handleReportFileImport,
+  copyRekapFormula: copyRekapFormula
 };
