@@ -281,23 +281,167 @@
             100% { transform: translateY(-50%) scale(1) rotate(-2deg); }
         }
 
-        @keyframes txHighlightPulse {
-            0% { transform: scale(1); }
-            35% { transform: scale(1.22); color: #10B981 !important; filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.85)); }
-            100% { transform: scale(1); }
+        /* =========================================================
+           MODERN REALTIME TRANSACTION LIVE FEEDBACK ANIMATIONS
+           ========================================================= */
+        @keyframes modernCardHighlight {
+            0% {
+                transform: scale(1);
+                border-color: var(--card-border);
+                box-shadow: 0 0 0 rgba(16, 185, 129, 0);
+            }
+            18% {
+                transform: scale(1.025);
+                border-color: #10B981 !important;
+                box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.35), 0 14px 32px rgba(16, 185, 129, 0.35);
+            }
+            45% {
+                transform: scale(1.01);
+                border-color: #34D399;
+                box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2), 0 8px 20px rgba(16, 185, 129, 0.2);
+            }
+            100% {
+                transform: scale(1);
+                border-color: var(--card-border);
+                box-shadow: 0 0 0 rgba(16, 185, 129, 0);
+            }
         }
 
-        .tx-highlight {
-            animation: txHighlightPulse 1.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+        .store-card-modern-live {
+            animation: modernCardHighlight 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+            position: relative;
+            z-index: 10;
         }
 
-        @keyframes storeCardFlash {
-            0% { border-color: rgba(16, 185, 129, 0.95); box-shadow: 0 0 20px rgba(16, 185, 129, 0.45); }
-            100% { border-color: var(--card-border); box-shadow: none; }
+        @keyframes numberPopModern {
+            0% {
+                transform: scale(1);
+                filter: none;
+            }
+            25% {
+                transform: scale(1.38) rotate(-3deg);
+                color: #34D399 !important;
+                text-shadow: 0 0 14px rgba(52, 211, 153, 0.95), 0 0 24px rgba(16, 185, 129, 0.7);
+            }
+            50% {
+                transform: scale(1.15) rotate(1.5deg);
+                color: #10B981 !important;
+                text-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+            }
+            75% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                filter: none;
+            }
         }
 
-        .store-card-flash {
-            animation: storeCardFlash 1.6s ease-out;
+        .tx-number-pop {
+            display: inline-block;
+            animation: numberPopModern 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+        }
+
+        @keyframes floatUpFade {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, 4px) scale(0.6);
+            }
+            22% {
+                opacity: 1;
+                transform: translate(-50%, -12px) scale(1.18);
+            }
+            45% {
+                transform: translate(-50%, -18px) scale(1);
+            }
+            80% {
+                opacity: 1;
+                transform: translate(-50%, -28px) scale(0.95);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -38px) scale(0.8);
+            }
+        }
+
+        .ksp-tx-float-badge {
+            position: absolute;
+            left: 50%;
+            top: -4px;
+            pointer-events: none;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 850;
+            padding: 3.5px 9px;
+            border-radius: 20px;
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            z-index: 100;
+            animation: floatUpFade 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* Floating Modern Live Snack Notification Container */
+        .ksp-live-toast-container {
+            position: fixed;
+            top: 22px;
+            right: 22px;
+            z-index: 999999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .ksp-live-toast {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(16, 185, 129, 0.6);
+            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5), 0 0 24px rgba(16, 185, 129, 0.3);
+            color: #f8fafc;
+            padding: 10px 18px;
+            border-radius: 999px;
+            animation: liveToastIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), liveToastOut 0.45s ease forwards 3.3s;
+            pointer-events: auto;
+        }
+
+        @keyframes liveToastIn {
+            from { opacity: 0; transform: translateY(-24px) scale(0.88); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes liveToastOut {
+            from { opacity: 1; transform: translateY(0) scale(1); }
+            to { opacity: 0; transform: translateY(-16px) scale(0.9); }
+        }
+
+        .live-ping-dot {
+            width: 9px;
+            height: 9px;
+            background: #10B981;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 0 10px #10B981;
+            flex-shrink: 0;
+        }
+
+        .live-ping-dot::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.6);
+            animation: pingCircle 1.25s infinite ease-out;
+        }
+
+        @keyframes pingCircle {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2.4); opacity: 0; }
         }
 
         /* Clickable Stat Row (Buka Transaksi & Analisa) */
@@ -4639,26 +4783,126 @@
             container.innerHTML = html;
         }
 
-        window.triggerTxRealtimeHighlight = function(storeId, shiftNum) {
+        // =========================================================
+        // MODERN REALTIME TRANSACTION LIVE FEEDBACK
+        // =========================================================
+        window.triggerTxRealtimeHighlight = function(storeId, shiftNum, newTxCount, storeName) {
+            // 1. Neon Border Glow & Scale Bounce pada Kartu Toko
             const card = document.getElementById(`storeCard_${storeId}`);
             if (card) {
-                card.classList.remove('store-card-flash');
+                card.classList.remove('store-card-modern-live');
                 void card.offsetWidth;
-                card.classList.add('store-card-flash');
+                card.classList.add('store-card-modern-live');
+                setTimeout(() => {
+                    try { card.classList.remove('store-card-modern-live'); } catch(e) {}
+                }, 2200);
             }
+
+            // 2. Number Pop & Float-Up Badge pada Scoreboard Shift
             const scoreEl = document.getElementById(`score_${storeId}_${shiftNum || 1}`);
             if (scoreEl) {
-                scoreEl.classList.remove('tx-highlight');
+                scoreEl.classList.remove('tx-number-pop');
                 void scoreEl.offsetWidth;
-                scoreEl.classList.add('tx-highlight');
+                scoreEl.classList.add('tx-number-pop');
+                spawnFloatBadge(scoreEl, '+1 Trx! ⚡');
+                setTimeout(() => {
+                    try { scoreEl.classList.remove('tx-number-pop'); } catch(e) {}
+                }, 1600);
             }
+
+            // 3. Number Pop pada Total Transaksi Hari Ini
             const todayEl = document.getElementById(`todayTxVal_${storeId}`);
             if (todayEl) {
-                todayEl.classList.remove('tx-highlight');
+                todayEl.classList.remove('tx-number-pop');
                 void todayEl.offsetWidth;
-                todayEl.classList.add('tx-highlight');
+                todayEl.classList.add('tx-number-pop');
+                if (!scoreEl) spawnFloatBadge(todayEl, '+1 Trx! ⚡');
+                setTimeout(() => {
+                    try { todayEl.classList.remove('tx-number-pop'); } catch(e) {}
+                }, 1600);
             }
+
+            // 4. Mainkan Audio Chime Lembut (Synthesized Crystal Chime via Web Audio API)
+            playModernTxChime();
+
+            // 5. Tampilkan Floating Live Toast Notification (Pojok Kanan Atas)
+            const targetStore = (storesData || []).find(s => s.id === storeId);
+            const resolvedName = storeName || (targetStore ? targetStore.name : 'Cabang');
+            showLiveTxToast(resolvedName, shiftNum, newTxCount);
         };
+
+        function spawnFloatBadge(targetEl, text) {
+            if (!targetEl) return;
+            const parent = targetEl.parentElement;
+            if (!parent) return;
+            if (getComputedStyle(parent).position === 'static') {
+                parent.style.position = 'relative';
+            }
+            const badge = document.createElement('span');
+            badge.className = 'ksp-tx-float-badge';
+            badge.innerText = text;
+            parent.appendChild(badge);
+            setTimeout(() => {
+                try { badge.remove(); } catch(e) {}
+            }, 1800);
+        }
+
+        function playModernTxChime() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                const now = ctx.currentTime;
+                
+                // Dua nada berurutan yang sangat elegan & jernih (C6 -> G6)
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1046.50, now); // C6
+                osc.frequency.exponentialRampToValueAtTime(1567.98, now + 0.12); // G6
+                
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.38);
+            } catch(e) {}
+        }
+
+        function showLiveTxToast(storeName, shiftNum, txCount) {
+            let container = document.getElementById('kspLiveToastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'kspLiveToastContainer';
+                container.className = 'ksp-live-toast-container';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'ksp-live-toast';
+            const shiftLabel = shiftNum === 1 ? '🌅 Shift 1' : (shiftNum === 2 ? '🌙 Shift 2' : 'Full Shift');
+            const totalText = txCount ? ` • Total: <b>${txCount} tx</b>` : '';
+
+            toast.innerHTML = `
+                <span class="live-ping-dot"></span>
+                <span style="font-size: 16px;">⚡</span>
+                <div style="display: flex; flex-direction: column; line-height: 1.25;">
+                    <div style="font-size: 10px; color: #10B981; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
+                        TRANSAKSI MASUK REALTIME
+                    </div>
+                    <div style="font-size: 12.5px; color: #ffffff;">
+                        <b>${escapeHtml(storeName)}</b> (${shiftLabel})${totalText}
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                try { toast.remove(); } catch(e) {}
+            }, 3600);
+        }
 
         // ==========================================
         // MODAL SET TRANSAKSI HARIAN KASIR

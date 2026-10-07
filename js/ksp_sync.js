@@ -580,7 +580,7 @@
             }
 
             if (typeof window.triggerTxRealtimeHighlight === 'function') {
-                window.triggerTxRealtimeHighlight(row.store_id, row.shift_num);
+                window.triggerTxRealtimeHighlight(row.store_id, row.shift_num, row.tx, st.name);
             }
             setStatus('ok', '⚡ Trx Live (' + row.tx + ' tx)');
         }
