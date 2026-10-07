@@ -268,6 +268,75 @@ try {
   stickyAppHeaders = true;
 }
 
+// --- TEXT SIZE / FONT SIZE CONTROLS ---
+let currentTextSize = 100;
+try {
+  const savedSize = localStorage.getItem('ksp_text_size');
+  if (savedSize) {
+    const n = parseInt(savedSize, 10);
+    if (!isNaN(n) && n >= 70 && n <= 160) {
+      currentTextSize = n;
+    }
+  }
+} catch(e) {}
+
+function updateTextSizeUI() {
+  const slider = document.getElementById('text-size-slider');
+  if (slider && String(slider.value) !== String(currentTextSize)) {
+    slider.value = currentTextSize;
+  }
+  const badge = document.getElementById('text-size-val');
+  if (badge) {
+    let label = currentTextSize + '%';
+    if (currentTextSize <= 85) label = 'Kecil (' + currentTextSize + '%)';
+    else if (currentTextSize === 100) label = 'Normal (100%)';
+    else if (currentTextSize >= 125) label = 'Ekstra (' + currentTextSize + '%)';
+    else if (currentTextSize >= 110) label = 'Besar (' + currentTextSize + '%)';
+
+    badge.textContent = label;
+    if (currentTextSize === 100) {
+      badge.style.background = 'var(--border)';
+      badge.style.color = 'var(--muted)';
+    } else {
+      badge.style.background = 'var(--accent-lt)';
+      badge.style.color = 'var(--accent)';
+    }
+  }
+  document.querySelectorAll('.btn-preset-size').forEach(btn => {
+    const bSize = parseInt(btn.dataset.size, 10);
+    btn.classList.toggle('active', bSize === currentTextSize);
+  });
+}
+
+function setTextSize(val, skipToast) {
+  let num = parseInt(val, 10);
+  if (isNaN(num) || num < 70 || num > 160) {
+    num = 100;
+  }
+  currentTextSize = num;
+
+  if (num === 100) {
+    document.documentElement.style.fontSize = '';
+  } else {
+    document.documentElement.style.fontSize = num + '%';
+  }
+
+  updateTextSizeUI();
+
+  try {
+    localStorage.setItem('ksp_text_size', String(num));
+  } catch(e) {}
+
+  if (typeof syncHeaderHeight === 'function') {
+    syncHeaderHeight();
+  }
+
+  if (!skipToast) {
+    showToast('🔤 Ukuran teks: ' + num + '%');
+  }
+}
+window.setTextSize = setTextSize;
+
 function updateSideSpreadStickyHeaders() {
   const container = document.getElementById('side-spread-container') || document.getElementById('book-carousel');
   if (!container || typeof container.querySelectorAll !== 'function') return;
@@ -2839,6 +2908,7 @@ function openTtsSettingsModal() {
   updateStepperModeBadge();
   updateThemeModeBadge();
   updateStickyAppHeadersBadge();
+  updateTextSizeUI();
 
   modal.classList.add('open');
   try { document.body.style.overflow = 'hidden'; } catch(e){}
@@ -4758,6 +4828,9 @@ function applyInjectedReportConfig() {
     ttsDelay = cfg.ttsDelay;
     try { localStorage.setItem('ksp_tts_delay', ttsDelay); } catch(e){}
   }
+  if (typeof cfg.textSize === 'number' && cfg.textSize >= 70 && cfg.textSize <= 160) {
+    setTextSize(cfg.textSize, true);
+  }
   if (typeof cfg.theme === 'string' && (cfg.theme === 'dark' || cfg.theme === 'light')) {
     document.documentElement.setAttribute('data-theme', cfg.theme);
     try { localStorage.setItem('ksp_theme', cfg.theme); } catch(e){}
@@ -4765,6 +4838,7 @@ function applyInjectedReportConfig() {
 }
 function initHistorikuApp() {
   applyInjectedReportConfig();
+  setTextSize(currentTextSize, true);
   const autoHideToggle = document.getElementById('auto-hide-toggle');
   if (autoHideToggle) autoHideToggle.checked = autoHideCompleted;
   updateAutoHideBadge();
@@ -5672,5 +5746,6 @@ window.KspHistoriku = {
   openImportModal: openImportReportDialog,
   closeImportModal: closeImportReportDialog,
   handleFileImport: handleReportFileImport,
-  copyRekapFormula: copyRekapFormula
+  copyRekapFormula: copyRekapFormula,
+  setTextSize: setTextSize
 };

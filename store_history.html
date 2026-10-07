@@ -14,8 +14,8 @@
     <meta name="mobile-web-app-capable" content="yes">
 
     <!-- CSS Dependencies -->
-    <link rel="stylesheet" href="css/ksp_historiku.css?v=20261007_v3">
-    <link rel="stylesheet" href="css/ksp_multiday_layouts.css?v=20261007_v3">
+    <link rel="stylesheet" href="css/ksp_historiku.css?v=20261007_v4">
+    <link rel="stylesheet" href="css/ksp_multiday_layouts.css?v=20261007_v4">
 
     <!-- Core Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
@@ -25,8 +25,8 @@
     <script src="js/ksp_ui.js?v=20261005"></script>
     <script src="js/ksp_theme.js?v=20261005"></script>
     <script src="js/ksp_auth.js?v=20261005"></script>
-    <script src="js/ksp_multiday_layouts.js?v=20261007_v3"></script>
-    <script src="js/ksp_historiku.js?v=20261007_v3"></script>
+    <script src="js/ksp_multiday_layouts.js?v=20261007_v4"></script>
+    <script src="js/ksp_historiku.js?v=20261007_v4"></script>
 
     <style>
         /* PIN Security Gate Modal */
@@ -512,6 +512,28 @@
           <!-- Bagian Tampilan & Kalkulator -->
           <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin: 4px 0 10px;">
             📊 Tampilan, Format &amp; Kalkulator
+          </div>
+
+          <div class="ksp-ctrl-grp" id="ctrl-grp-text-size">
+            <div class="ksp-ctrl-label-row">
+              <span class="ksp-ctrl-label">🔤 Ukuran Teks (Font Size)</span>
+              <span class="ksp-badge" id="text-size-val" style="background:var(--border);color:var(--muted);">Normal (100%)</span>
+            </div>
+            <div class="ksp-switch-row" style="margin-bottom:4px;">
+              <span class="ksp-switch-desc">Atur perbesaran ukuran huruf tabel dan teks laporan agar nyaman dibaca di layar HP</span>
+            </div>
+            <input type="range" class="ksp-range-slider" id="text-size-slider" min="80" max="130" step="5" value="100" oninput="setTextSize(this.value)">
+            <div class="ksp-range-hints">
+              <span>80% (Kecil)</span>
+              <span>100% (Normal)</span>
+              <span>130% (Besar)</span>
+            </div>
+            <div class="text-size-presets" style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+              <button type="button" class="btn-preset-size" data-size="85" onclick="setTextSize(85)">Kecil (85%)</button>
+              <button type="button" class="btn-preset-size active" data-size="100" onclick="setTextSize(100)">Normal (100%)</button>
+              <button type="button" class="btn-preset-size" data-size="115" onclick="setTextSize(115)">Besar (115%)</button>
+              <button type="button" class="btn-preset-size" data-size="130" onclick="setTextSize(130)">Ekstra (130%)</button>
+            </div>
           </div>
 
           <div class="ksp-ctrl-grp" id="ctrl-grp-sticky-header">

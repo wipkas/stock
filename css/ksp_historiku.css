@@ -708,6 +708,30 @@ body.has-nav-bar #ksp-toast{bottom:175px;}
   font-weight: 600;
   color: var(--muted);
 }
+.btn-preset-size {
+  flex: 1 1 auto;
+  padding: 5px 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  user-select: none;
+}
+.btn-preset-size:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-preset-size.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
 .ksp-switch-row {
   display: flex;
   align-items: center;
