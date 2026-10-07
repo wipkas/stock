@@ -4610,22 +4610,50 @@
                 let targetMiniHtml = '';
                 if (window.KspTarget) {
                     const tm = KspTarget.calculateStoreMetrics(store);
+                    const todayTxNum = (typeof calculateStoreTodayTx === 'function') ? calculateStoreTodayTx(store) : 0;
                     const targetDisplay = tm.target > 0 ? `${tm.target.toLocaleString('id-ID')} tx` : 'Belum diset';
-                    const progressPct = Math.min(100, Math.round(tm.percentage));
-                    const statusText = tm.target > 0 ? `${tm.status} (Wajib: ${tm.requiredPerDay}/hr)` : 'Set Target 🎯';
+                    
+                    let statusText = 'Set Target 🎯';
+                    let badgeColor = '#64748B';
+                    let badgeBg = 'rgba(100, 116, 139, 0.12)';
+                    let targetDaily = 0;
+                    let progressPct = 0;
+                    let barColor = '#64748B';
+
+                    if (tm.target > 0) {
+                        targetDaily = tm.requiredPerDay > 0 
+                            ? tm.requiredPerDay 
+                            : Math.max(1, Math.round(tm.target / (tm.totalDaysInMonth || 30)));
+                        
+                        const diffToday = todayTxNum - targetDaily;
+                        progressPct = Math.min(100, Math.round((todayTxNum / targetDaily) * 100));
+
+                        if (diffToday >= 0) {
+                            statusText = `Tercapai! (+${diffToday.toLocaleString('id-ID')})`;
+                            badgeColor = '#10B981';
+                            badgeBg = 'rgba(16, 185, 129, 0.15)';
+                            barColor = '#10B981';
+                        } else {
+                            const kurang = Math.abs(diffToday);
+                            statusText = `Kurang ${kurang.toLocaleString('id-ID')} trx`;
+                            badgeColor = '#EF4444';
+                            badgeBg = 'rgba(239, 68, 68, 0.12)';
+                            barColor = progressPct >= 70 ? '#F59E0B' : '#EF4444';
+                        }
+                    }
                     
                     targetMiniHtml = `
-                    <div class="store-target-mini-row" role="button" tabindex="0" onclick="event.stopPropagation(); openBranchTargetModal('${store.id}')" title="Klik untuk lihat detail Target, buat gambar &amp; kirim WA">
+                    <div class="store-target-mini-row" role="button" tabindex="0" onclick="event.stopPropagation(); openBranchTargetModal('${store.id}')" title="Target Hari Ini: ${targetDaily.toLocaleString('id-ID')} tx • Realisasi: ${todayTxNum.toLocaleString('id-ID')} tx (Klik untuk detail)">
                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-bottom: 4px;">
                             <span style="font-weight: 750; color: var(--text-main); display: flex; align-items: center; gap: 4px;">
-                                <span>🎯</span> Target: <b>${targetDisplay}</b>
+                                <span>🎯</span> Target: <b>${targetDisplay}</b>${targetDaily > 0 ? `<span style="font-size: 9.5px; color: var(--text-muted); font-weight: 600;">(${targetDaily.toLocaleString('id-ID')}/hr)</span>` : ''}
                             </span>
-                            <span style="font-weight: 800; color: ${tm.statusColor}; font-size: 10px; background: ${tm.statusBg}; padding: 1.5px 6px; border-radius: 6px; border: 1px solid ${tm.statusColor}33;">
+                            <span style="font-weight: 800; color: ${badgeColor}; font-size: 10px; background: ${badgeBg}; padding: 1.5px 6px; border-radius: 6px; border: 1px solid ${badgeColor}33; white-space: nowrap;">
                                 ${statusText}
                             </span>
                         </div>
                         <div style="width: 100%; height: 6px; background: var(--input-bg); border-radius: 3px; position: relative; border: 1px solid var(--card-border); margin: 4px 0; overflow: visible;">
-                            <div style="position: relative; height: 100%; width: ${progressPct}%; background: ${tm.statusColor}; border-radius: 3px; transition: width 0.3s ease;">
+                            <div style="position: relative; height: 100%; width: ${progressPct}%; background: ${barColor}; border-radius: 3px; transition: width 0.3s ease;">
                                 ${progressPct > 0 ? `<span class="ksp-flame-head" style="position: absolute; right: -7px; top: 50%; transform: translateY(-50%); font-size: 11px; line-height: 1; pointer-events: none; filter: drop-shadow(0 0 4px #F59E0B); animation: kspFlameFlicker 1.2s infinite alternate ease-in-out;">🔥</span>` : ''}
                             </div>
                         </div>
