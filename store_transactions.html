@@ -758,6 +758,42 @@
             display: none;
         }
 
+        /* Badge Kolom Target Delta */
+        .ht-target-delta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5px 7.5px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            white-space: nowrap;
+            letter-spacing: 0.2px;
+            line-height: 1.25;
+        }
+
+        .ht-target-delta.surplus {
+            color: #10B981;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .ht-target-delta.deficit {
+            color: #EF4444;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.28);
+        }
+
+        .ht-target-delta.neutral {
+            color: var(--text-muted);
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+        }
+
+        .history-table td.ht-target {
+            white-space: nowrap;
+        }
+
         .ht-date-wrap {
             display: flex;
             align-items: center;
@@ -1459,6 +1495,22 @@
                 border-radius: 5px;
             }
 
+            .history-table td.ht-target {
+                white-space: nowrap;
+                padding-left: 3px;
+                padding-right: 3px;
+            }
+
+            .history-table td.ht-target .ht-val {
+                display: flex;
+                align-items: center;
+            }
+
+            .history-table td.ht-target .ht-target-delta {
+                font-size: 10px;
+                padding: 2px 5.5px;
+            }
+
             .ht-mobile-lbl {
                 display: none !important;
             }
@@ -1976,6 +2028,7 @@
                                 <th>Shift 1 (Pagi)</th>
                                 <th>Shift 2 (Malam)</th>
                                 <th>Total Toko</th>
+                                <th>Target</th>
                             </tr>
                         </thead>
                         <tbody id="filteredAnalyticsTableBody">
@@ -5553,6 +5606,67 @@
             }
         }
 
+        function getDailyTargetDeltaBadge(store, dateKey, dayTotalFallback) {
+            if (!store || !dateKey) {
+                return '<span class="ht-target-delta neutral">-</span>';
+            }
+
+            const parts = dateKey.split('-');
+            if (parts.length < 3) {
+                return '<span class="ht-target-delta neutral">-</span>';
+            }
+
+            const rowYear = parseInt(parts[0], 10);
+            const rowMonthIdx = parseInt(parts[1], 10) - 1; // 0-based
+            const yearMonth = `${parts[0]}-${parts[1]}`;
+
+            let monthlyTarget = 0;
+            if (window.KspTarget && typeof KspTarget.getStoreMonthlyTarget === 'function') {
+                monthlyTarget = KspTarget.getStoreMonthlyTarget(store, yearMonth);
+            } else if (store.monthly_targets && store.monthly_targets[yearMonth]) {
+                monthlyTarget = Number(store.monthly_targets[yearMonth]) || 0;
+            } else if (typeof store.monthly_target === 'number') {
+                monthlyTarget = store.monthly_target;
+            }
+
+            const daysInMonth = (window.KspTarget && typeof KspTarget.getDaysInMonth === 'function')
+                ? KspTarget.getDaysInMonth(rowYear, rowMonthIdx)
+                : new Date(rowYear, rowMonthIdx + 1, 0).getDate();
+
+            const dailyTarget = (monthlyTarget > 0 && daysInMonth > 0) ? Math.round(monthlyTarget / daysInMonth) : 0;
+
+            if (dailyTarget <= 0) {
+                return '<span class="ht-target-delta neutral" title="Target bulanan belum diset">-</span>';
+            }
+
+            // Hitung akumulasi total toko pada tanggal tersebut
+            let storeDayTotal = 0;
+            const dayData = (store.daily_transactions && store.daily_transactions[dateKey]) ? store.daily_transactions[dateKey] : null;
+            if (dayData && Array.isArray(dayData.records) && dayData.records.length > 0) {
+                storeDayTotal = dayData.records.reduce((sum, r) => sum + (Number(r && r.tx) || 0), 0);
+            } else if (dayData && typeof dayData.total === 'number') {
+                storeDayTotal = dayData.total;
+            } else if (typeof dayTotalFallback === 'number') {
+                storeDayTotal = dayTotalFallback;
+            }
+
+            const delta = storeDayTotal - dailyTarget;
+            const absDelta = Math.abs(delta).toLocaleString('id-ID');
+            const dailyTargetStr = dailyTarget.toLocaleString('id-ID');
+            const storeDayTotalStr = storeDayTotal.toLocaleString('id-ID');
+
+            if (delta > 0) {
+                const tooltip = `Target Harian: ${dailyTargetStr} tx • Total Toko: ${storeDayTotalStr} tx (Surplus +${absDelta} tx)`;
+                return `<span class="ht-target-delta surplus" title="${tooltip}">+${absDelta} trx</span>`;
+            } else if (delta < 0) {
+                const tooltip = `Target Harian: ${dailyTargetStr} tx • Total Toko: ${storeDayTotalStr} tx (Kurang ${absDelta} tx)`;
+                return `<span class="ht-target-delta deficit" title="${tooltip}">-${absDelta} trx</span>`;
+            } else {
+                const tooltip = `Target Harian: ${dailyTargetStr} tx • Total Toko: ${storeDayTotalStr} tx (Pas tercapai)`;
+                return `<span class="ht-target-delta surplus" title="${tooltip}">0 trx</span>`;
+            }
+        }
+
         function renderFilteredHistoryTable(store, agg) {
             const tbody = document.getElementById('filteredAnalyticsTableBody');
             const thead = document.getElementById('filteredAnalyticsTableHeader');
@@ -5572,6 +5686,7 @@
                             <th style="width: 72px;">Tanggal</th>
                             <th style="min-width: 82px; width: 82px;">Shift</th>
                             <th style="width: 70px;">Disetujui</th>
+                            <th>Target Toko</th>
                             <th>Status Usulan</th>
                             <th style="text-align: right; width: 48px;">Aksi</th>
                         </tr>
@@ -5579,7 +5694,7 @@
                 }
 
                 if (list.length === 0 || (agg.overallTotalTx === 0 && list.every(item => !item.hasData))) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 18px;">Tidak ada History transaksi pada rentang filter ini.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 18px;">Tidak ada History transaksi pada rentang filter ini.</td></tr>`;
                     return;
                 }
 
@@ -5649,6 +5764,7 @@
 
                     const actionBtnLabel = isTodayRow ? 'Input' : 'Usulkan';
                     const rowTooltip = isTodayRow ? `Input / Edit transaksi hari ini (${item.date})` : `Usulkan transaksi ${item.date}`;
+                    const targetBadgeHtml = getDailyTargetDeltaBadge(store, item.date, item.total);
 
                     html += `
                         <tr class="clickable-history-row history-row-emp ${isTodayRow ? 'history-row-today' : ''}">
@@ -5666,6 +5782,10 @@
                             <td class="ht-cell ht-approved">
                                 <span class="ht-mobile-lbl">Disetujui Admin:</span>
                                 <div class="ht-val">${approvedHtml}</div>
+                            </td>
+                            <td class="ht-cell ht-target">
+                                <span class="ht-mobile-lbl">Target Toko:</span>
+                                <div class="ht-val">${targetBadgeHtml}</div>
                             </td>
                             <td class="ht-cell ht-status">
                                 <span class="ht-mobile-lbl">Status Usulan:</span>
@@ -5689,6 +5809,7 @@
                             <th>Tanggal</th>
                             <th>Full Shift</th>
                             <th>Total Toko</th>
+                            <th>Target</th>
                         </tr>
                     ` : `
                         <tr>
@@ -5696,12 +5817,13 @@
                             <th>Shift 1 (Pagi)</th>
                             <th>Shift 2 (Malam)</th>
                             <th>Total Toko</th>
+                            <th>Target</th>
                         </tr>
                     `;
                 }
 
                 if (list.length === 0 || (agg.overallTotalTx === 0 && list.every(item => !item.hasData))) {
-                    tbody.innerHTML = `<tr><td colspan="${isSingleShift ? 3 : 4}" style="text-align: center; color: var(--text-muted); padding: 18px;">Tidak ada History transaksi pada rentang filter ini.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="${isSingleShift ? 4 : 5}" style="text-align: center; color: var(--text-muted); padding: 18px;">Tidak ada History transaksi pada rentang filter ini.</td></tr>`;
                     return;
                 }
 
@@ -5720,6 +5842,7 @@
                         : `<span style="color: var(--text-muted); font-size: 12px;">0 tx</span>`;
 
                     const pendingOnDate = (store.tx_proposals || []).filter(p => p.date === item.date && p.status === 'pending');
+                    const targetBadgeHtml = getDailyTargetDeltaBadge(store, item.date, item.total);
 
                     html += `
                         <tr class="clickable-history-row history-row-admin">
@@ -5748,6 +5871,10 @@
                                         <span>✏️</span> <span>Edit</span>
                                     </button>
                                 </div>
+                            </td>
+                            <td class="ht-cell ht-target">
+                                <span class="ht-mobile-lbl">Target:</span>
+                                <div class="ht-val">${targetBadgeHtml}</div>
                             </td>
                         </tr>
                     `;
