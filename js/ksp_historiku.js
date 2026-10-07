@@ -586,7 +586,7 @@ function recalcAll() {
     let grpMasuk = 0;
     let grpKeluar = 0;
     let grpTrx = 0;
-    const isTopUpGroup = (group.dataset.groupId === 'topup');
+    const isTopUpGroup = (group.dataset.groupId === 'topup' || group.dataset.appKey === 'topup' || (group.dataset.groupId && group.dataset.groupId.startsWith('topup')));
     group.querySelectorAll('.lv-row').forEach(row => {
       if (row.classList.contains('item-deleted')) return;
       grpTrx++;
@@ -664,21 +664,45 @@ function updateMultiDayMetrics() {
   // 1. Mode Lembar Berdampingan (.side-day-sheet)
   document.querySelectorAll('.side-day-sheet').forEach(sheet => {
     let dayMasuk = 0, dayKeluar = 0, dayTrx = 0;
-    sheet.querySelectorAll('.lv-row').forEach(row => {
-      if (row.classList.contains('item-deleted')) return;
-      dayTrx++;
-      let val = parseFloat(row.dataset.val) || 0;
-      if (roundingMode) val = Math.round(val / 1000) * 1000;
-      else if (ringkasMode) val = Math.trunc(val / 1000) * 1000;
-      if (row.dataset.cat === 'income') dayMasuk += val;
-      else dayKeluar += val;
-    });
+    const groups = sheet.querySelectorAll('.lv-group');
+    if (groups.length > 0) {
+      groups.forEach(group => {
+        dayMasuk += parseFloat(group.dataset.calcMasuk) || 0;
+        dayKeluar += parseFloat(group.dataset.calcKeluar) || 0;
+        dayTrx += parseInt(group.dataset.calcTrx) || 0;
+      });
+    } else {
+      sheet.querySelectorAll('.lv-row').forEach(row => {
+        if (row.classList.contains('item-deleted')) return;
+        dayTrx++;
+        let val = parseFloat(row.dataset.val) || 0;
+        let realVal = parseFloat(row.dataset.real) || 0;
+        if (roundingMode) {
+          val = Math.round(val / 1000) * 1000;
+          realVal = Math.round(realVal / 1000) * 1000;
+        } else if (ringkasMode) {
+          val = Math.trunc(val / 1000) * 1000;
+          realVal = Math.trunc(realVal / 1000) * 1000;
+        }
+        const parentGroup = row.closest('.lv-group');
+        const isTopUp = parentGroup && (parentGroup.dataset.groupId === 'topup' || parentGroup.dataset.appKey === 'topup' || (parentGroup.dataset.groupId && parentGroup.dataset.groupId.startsWith('topup')));
+        const cat = row.dataset.cat;
+        if (isTopUp) {
+          dayMasuk += val;
+          dayKeluar += realVal;
+        } else if (cat === 'income') {
+          dayMasuk += val;
+        } else {
+          dayKeluar += val;
+        }
+      });
+    }
     const dayNet = dayKeluar - dayMasuk;
 
     const elKeluar = sheet.querySelector('.sheet-metric-keluar');
     const elMasuk = sheet.querySelector('.sheet-metric-masuk');
     const elBersih = sheet.querySelector('.sheet-metric-bersih');
-    const elTrx = sheet.querySelector('.sheet-metric-trx');
+    const elTrx = sheet.querySelector('.sheet-metric-trx, .side-day-sheet-num');
 
     if (elKeluar) elKeluar.textContent = fmtAmt(dayKeluar);
     if (elMasuk) elMasuk.textContent = fmtAmt(dayMasuk);
@@ -686,16 +710,18 @@ function updateMultiDayMetrics() {
       elBersih.textContent = (dayNet > 0 ? '+' : '') + fmtAmt(dayNet);
       elBersih.style.color = dayNet >= 0 ? 'var(--income)' : 'var(--outcome)';
     }
-    if (elTrx) elTrx.textContent = `${dayTrx} transaksi`;
+    if (elTrx) elTrx.textContent = `${dayTrx} trx`;
 
     // Fallback if specific classes are not present
-    if (!elKeluar || !elMasuk || !elBersih) {
+    if (!elKeluar || !elMasuk) {
       const bTags = sheet.querySelectorAll('.side-day-sheet-metrics b');
-      if (bTags.length >= 3) {
+      if (bTags.length >= 2) {
         bTags[0].textContent = fmtAmt(dayKeluar);
         bTags[1].textContent = fmtAmt(dayMasuk);
-        bTags[2].textContent = fmtAmt(dayNet);
-        bTags[2].style.color = dayNet >= 0 ? 'var(--income)' : 'var(--outcome)';
+        if (bTags.length >= 3) {
+          bTags[2].textContent = (dayNet > 0 ? '+' : '') + fmtAmt(dayNet);
+          bTags[2].style.color = dayNet >= 0 ? 'var(--income)' : 'var(--outcome)';
+        }
       }
     }
   });
@@ -703,41 +729,82 @@ function updateMultiDayMetrics() {
   // 2. Mode Susun Bawah (.stack-day-card)
   document.querySelectorAll('.stack-day-card').forEach(card => {
     let dayMasuk = 0, dayKeluar = 0, dayTrx = 0;
-    card.querySelectorAll('.lv-row').forEach(row => {
-      if (row.classList.contains('item-deleted')) return;
-      dayTrx++;
-      let val = parseFloat(row.dataset.val) || 0;
-      if (roundingMode) val = Math.round(val / 1000) * 1000;
-      else if (ringkasMode) val = Math.trunc(val / 1000) * 1000;
-      if (row.dataset.cat === 'income') dayMasuk += val;
-      else dayKeluar += val;
-    });
-    const pill = card.querySelector('.stack-summary-pill');
+    const groups = card.querySelectorAll('.lv-group');
+    if (groups.length > 0) {
+      groups.forEach(group => {
+        dayMasuk += parseFloat(group.dataset.calcMasuk) || 0;
+        dayKeluar += parseFloat(group.dataset.calcKeluar) || 0;
+        dayTrx += parseInt(group.dataset.calcTrx) || 0;
+      });
+    } else {
+      card.querySelectorAll('.lv-row').forEach(row => {
+        if (row.classList.contains('item-deleted')) return;
+        dayTrx++;
+        let val = parseFloat(row.dataset.val) || 0;
+        let realVal = parseFloat(row.dataset.real) || 0;
+        if (roundingMode) { val = Math.round(val / 1000) * 1000; realVal = Math.round(realVal / 1000) * 1000; }
+        else if (ringkasMode) { val = Math.trunc(val / 1000) * 1000; realVal = Math.trunc(realVal / 1000) * 1000; }
+        const parentGroup = row.closest('.lv-group');
+        const isTopUp = parentGroup && (parentGroup.dataset.groupId === 'topup' || parentGroup.dataset.appKey === 'topup' || (parentGroup.dataset.groupId && parentGroup.dataset.groupId.startsWith('topup')));
+        if (isTopUp) { dayMasuk += val; dayKeluar += realVal; }
+        else if (row.dataset.cat === 'income') dayMasuk += val;
+        else dayKeluar += val;
+      });
+    }
+    const elKeluar = card.querySelector('.stack-metric-keluar');
+    const elMasuk = card.querySelector('.stack-metric-masuk');
+    const pill = card.querySelector('.stack-summary-pill, .stack-metric-trx');
+    if (elKeluar) elKeluar.textContent = fmtAmt(dayKeluar);
+    if (elMasuk) elMasuk.textContent = fmtAmt(dayMasuk);
     if (pill) {
-      pill.textContent = `${dayTrx} trx • Keluar: ${fmtAmt(dayKeluar)} • Masuk: ${fmtAmt(dayMasuk)}`;
+      if (elKeluar && elMasuk) {
+        pill.textContent = `${dayTrx} trx`;
+      } else {
+        pill.textContent = `${dayTrx} trx • Keluar: ${fmtAmt(dayKeluar)} • Masuk: ${fmtAmt(dayMasuk)}`;
+      }
     }
   });
 
   // 3. Mode Buku (.book-page)
   document.querySelectorAll('.book-page').forEach(page => {
     let dayMasuk = 0, dayKeluar = 0, dayTrx = 0;
-    page.querySelectorAll('.lv-row').forEach(row => {
-      if (row.classList.contains('item-deleted')) return;
-      dayTrx++;
-      let val = parseFloat(row.dataset.val) || 0;
-      if (roundingMode) val = Math.round(val / 1000) * 1000;
-      else if (ringkasMode) val = Math.trunc(val / 1000) * 1000;
-      if (row.dataset.cat === 'income') dayMasuk += val;
-      else dayKeluar += val;
-    });
+    const groups = page.querySelectorAll('.lv-group');
+    if (groups.length > 0) {
+      groups.forEach(group => {
+        dayMasuk += parseFloat(group.dataset.calcMasuk) || 0;
+        dayKeluar += parseFloat(group.dataset.calcKeluar) || 0;
+        dayTrx += parseInt(group.dataset.calcTrx) || 0;
+      });
+    } else {
+      page.querySelectorAll('.lv-row').forEach(row => {
+        if (row.classList.contains('item-deleted')) return;
+        dayTrx++;
+        let val = parseFloat(row.dataset.val) || 0;
+        let realVal = parseFloat(row.dataset.real) || 0;
+        if (roundingMode) { val = Math.round(val / 1000) * 1000; realVal = Math.round(realVal / 1000) * 1000; }
+        else if (ringkasMode) { val = Math.trunc(val / 1000) * 1000; realVal = Math.trunc(realVal / 1000) * 1000; }
+        const parentGroup = row.closest('.lv-group');
+        const isTopUp = parentGroup && (parentGroup.dataset.groupId === 'topup' || parentGroup.dataset.appKey === 'topup' || (parentGroup.dataset.groupId && parentGroup.dataset.groupId.startsWith('topup')));
+        if (isTopUp) { dayMasuk += val; dayKeluar += realVal; }
+        else if (row.dataset.cat === 'income') dayMasuk += val;
+        else dayKeluar += val;
+      });
+    }
     const badge = page.querySelector('.book-page-badge');
-    if (badge) {
-      badge.textContent = `${dayTrx} trx • Keluar: ${fmtAmt(dayKeluar)} • Masuk: ${fmtAmt(dayMasuk)}`;
+    const elKeluar = page.querySelector('.book-metric-keluar');
+    const elMasuk = page.querySelector('.book-metric-masuk');
+    const elTrx = page.querySelector('.book-metric-trx');
+    if (elKeluar) elKeluar.textContent = fmtAmt(dayKeluar);
+    if (elMasuk) elMasuk.textContent = fmtAmt(dayMasuk);
+    if (elTrx) elTrx.textContent = `${dayTrx} trx`;
+    if (badge && (!elKeluar || !elMasuk)) {
+      badge.innerHTML = `${dayTrx} trx · Keluar: <b style="color:var(--outcome)">${fmtAmt(dayKeluar)}</b> | Masuk: <b style="color:var(--income)">${fmtAmt(dayMasuk)}</b>`;
     }
   });
 
   // 4. Mode Sekat (.lv-date-subhd-row)
   document.querySelectorAll('.lv-group').forEach(grp => {
+    const isTopUpGroup = (grp.dataset.groupId === 'topup' || grp.dataset.appKey === 'topup' || (grp.dataset.groupId && grp.dataset.groupId.startsWith('topup')));
     grp.querySelectorAll('.lv-table tbody').forEach(tbody => {
       let curSubhdMeta = null;
       let curIn = 0, curOut = 0, curCount = 0;
@@ -754,9 +821,19 @@ function updateMultiDayMetrics() {
         } else if (tr.classList.contains('lv-row') && !tr.classList.contains('item-deleted')) {
           curCount++;
           let val = parseFloat(tr.dataset.val) || 0;
-          if (roundingMode) val = Math.round(val / 1000) * 1000;
-          else if (ringkasMode) val = Math.trunc(val / 1000) * 1000;
-          if (tr.dataset.cat === 'income') {
+          let realVal = parseFloat(tr.dataset.real) || 0;
+          if (roundingMode) {
+            val = Math.round(val / 1000) * 1000;
+            realVal = Math.round(realVal / 1000) * 1000;
+          } else if (ringkasMode) {
+            val = Math.trunc(val / 1000) * 1000;
+            realVal = Math.trunc(realVal / 1000) * 1000;
+          }
+          if (isTopUpGroup) {
+            curIn += val;
+            curOut += realVal;
+            hasIncome = true;
+          } else if (tr.dataset.cat === 'income') {
             curIn += val;
             hasIncome = true;
           } else {
@@ -3987,6 +4064,7 @@ function renderReport(data) {
       renderRowHtml: renderRowHtml,
       renderVoucherRowHtml: renderVoucherRowHtml,
       ringkasMode: ringkasMode,
+      roundingMode: roundingMode,
       fmtAmt: fmtAmt,
       getAppIcon: getAppIcon,
       escapeHtml: escapeHtml

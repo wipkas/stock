@@ -97,6 +97,14 @@
   // ==========================================================================
   // SHARED MODULAR SUB-RENDERERS (TOPUP & VOUCHER)
   // ==========================================================================
+  function getCalcAmount(rawAmount, opt) {
+    const amt = Math.round(rawAmount || 0);
+    if (!opt) return amt;
+    if (opt.roundingMode) return Math.round(amt / 1000) * 1000;
+    if (opt.ringkasMode) return Math.trunc(amt / 1000) * 1000;
+    return amt;
+  }
+
   function renderTopupGroupHtml(items, groupTitle, dateAttr, opt, globalSeqRef, totalsRef, timeColFmt) {
     if (!items || items.length === 0) return '';
     let topUpMasuk = 0, topUpKeluar = 0, rowsHtml = '';
@@ -104,8 +112,10 @@
       totalsRef.totalTrx++;
       const amtCharged = Math.round(item.amount || (item.nominal + (item.fee || 0)) || 0);
       const amtNominal = Math.round(item.nominal || 0);
-      topUpMasuk += amtCharged; topUpKeluar += amtNominal;
-      totalsRef.totalMasuk += amtCharged; totalsRef.totalKeluar += amtNominal;
+      const calcCharged = getCalcAmount(amtCharged, opt);
+      const calcNominal = getCalcAmount(amtNominal, opt);
+      topUpMasuk += calcCharged; topUpKeluar += calcNominal;
+      totalsRef.totalMasuk += calcCharged; totalsRef.totalKeluar += calcNominal;
       const desc = (item.customerName ? item.customerName + ' - ' : '') + (item.category || 'TopUp') + (item.destination ? ' (' + item.destination + ')' : '');
       const timeVal = timeColFmt ? formatDisplayTime(item.date, item.time) : (item.time || '00:00');
       rowsHtml += opt.renderRowHtml(globalSeqRef.val++, timeVal, amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee || 0, item.date || dateAttr, item.rowId || item.id);
@@ -139,7 +149,8 @@
     items.forEach(item => {
       totalsRef.totalTrx++;
       const amt = Math.round(item.amount || 0);
-      vTotalKeluar += amt; totalsRef.totalKeluar += amt;
+      const calcAmt = getCalcAmount(amt, opt);
+      vTotalKeluar += calcAmt; totalsRef.totalKeluar += calcAmt;
       const prodName = item.productName || item.provider || 'Voucher';
       const timeVal = timeColFmt ? formatDisplayTime(item.date, item.time) : (item.time || '00:00');
       if (typeof opt.renderVoucherRowHtml === 'function') {
@@ -191,7 +202,8 @@
         totalTrx++;
         const amt = Math.round(item.amount || item.jumtar || 0);
         const isIncome = String(item.type || '').toLowerCase() === 'income';
-        if (isIncome) { tarikMasuk += amt; totalMasuk += amt; } else { tarikKeluar += amt; totalKeluar += amt; }
+        const calcAmt = getCalcAmount(amt, opt);
+        if (isIncome) { tarikMasuk += calcAmt; totalMasuk += calcAmt; } else { tarikKeluar += calcAmt; totalKeluar += calcAmt; }
         const desc = item.name || item.desc || item.app || 'Tarik Tunai';
         const timeFmt = formatDisplayTime(item.date, item.time);
         const jumtar = item.jumtar || amt;
@@ -242,7 +254,8 @@
           totalTrx++;
           const amt = Math.round(item.amount || 0);
           const isIncome = String(item.category || '').toLowerCase() === 'income';
-          if (isIncome) { aIn += amt; totalMasuk += amt; } else { aOut += amt; totalKeluar += amt; }
+          const calcAmt = getCalcAmount(amt, opt);
+          if (isIncome) { aIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; totalKeluar += calcAmt; }
           const desc = item.desc || item.name || displayName;
           const timeFmt = formatDisplayTime(item.date, item.time);
           rowsHtml += opt.renderRowHtml(globalSeqObj.val++, timeFmt, amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, item.date, item.rowId || item.id);
@@ -321,7 +334,8 @@
           totalTrx++;
           const amt = Math.round(item.amount || item.jumtar || 0);
           const isIncome = String(item.type || '').toLowerCase() === 'income';
-          if (isIncome) { dayIn += amt; tarikMasuk += amt; totalMasuk += amt; } else { dayOut += amt; tarikKeluar += amt; totalKeluar += amt; }
+          const calcAmt = getCalcAmount(amt, opt);
+          if (isIncome) { dayIn += calcAmt; tarikMasuk += calcAmt; totalMasuk += calcAmt; } else { dayOut += calcAmt; tarikKeluar += calcAmt; totalKeluar += calcAmt; }
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
@@ -397,7 +411,8 @@
             totalTrx++;
             const amt = Math.round(item.amount || 0);
             const isIncome = String(item.category || '').toLowerCase() === 'income';
-            if (isIncome) { dayIn += amt; aIn += amt; totalMasuk += amt; } else { dayOut += amt; aOut += amt; totalKeluar += amt; }
+            const calcAmt = getCalcAmount(amt, opt);
+            if (isIncome) { dayIn += calcAmt; aIn += calcAmt; totalMasuk += calcAmt; } else { dayOut += calcAmt; aOut += calcAmt; totalKeluar += calcAmt; }
             const desc = item.desc || item.name || displayName;
             dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
           });
@@ -456,9 +471,11 @@
           totalTrx++;
           const amtCharged = Math.round(item.amount || (item.nominal + (item.fee || 0)) || 0);
           const amtNominal = Math.round(item.nominal || 0);
-          dayIn += amtCharged; dayOut += amtNominal;
-          tMasuk += amtCharged; tKeluar += amtNominal;
-          totalMasuk += amtCharged; totalKeluar += amtNominal;
+          const calcCharged = getCalcAmount(amtCharged, opt);
+          const calcNominal = getCalcAmount(amtNominal, opt);
+          dayIn += calcCharged; dayOut += calcNominal;
+          tMasuk += calcCharged; tKeluar += calcNominal;
+          totalMasuk += calcCharged; totalKeluar += calcNominal;
           const desc = (item.customerName ? item.customerName + ' - ' : '') + (item.category || 'TopUp') + (item.destination ? ' (' + item.destination + ')' : '');
           dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee || 0, dKey, item.rowId || item.id);
         });
@@ -501,7 +518,8 @@
         items.forEach(item => {
           totalTrx++;
           const amt = Math.round(item.amount || 0);
-          dayOut += amt; vTotalKeluar += amt; totalKeluar += amt;
+          const calcAmt = getCalcAmount(amt, opt);
+          dayOut += calcAmt; vTotalKeluar += calcAmt; totalKeluar += calcAmt;
           const prodName = item.productName || item.provider || 'Voucher';
           if (typeof opt.renderVoucherRowHtml === 'function') {
             dayRows += opt.renderVoucherRowHtml(globalSeqObj.val++, item.time || '00:00', prodName, amt, item.provider || 'VOUCHER', item.orig, item.deleted, item.read, item.isNew, item.cost, dKey, item.rowId || item.id);
@@ -596,7 +614,8 @@
           totalTrx++; dayTrx++;
           const amt = Math.round(item.amount || item.jumtar || 0);
           const isIncome = String(item.type || '').toLowerCase() === 'income';
-          if (isIncome) { tMasuk += amt; dayIn += amt; totalMasuk += amt; } else { tKeluar += amt; dayOut += amt; totalKeluar += amt; }
+          const calcAmt = getCalcAmount(amt, opt);
+          if (isIncome) { tMasuk += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { tKeluar += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
@@ -616,7 +635,7 @@
             <div class="lv-group-hd" onclick="toggleGroupCollapse(this, event)">
               <button class="grp-toggle-btn">▼</button>
               <span class="lv-group-icon">💸</span>
-              <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">Tarik</span>
+              <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">${displayName || 'Tarik'}</span>
               <span class="grp-done-badge">✓ Selesai</span>
               <span class="lv-group-meta">${metaHtml}</span>
               <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
@@ -646,7 +665,8 @@
             totalTrx++; dayTrx++;
             const amt = Math.round(item.amount || 0);
             const isIncome = String(item.category || '').toLowerCase() === 'income';
-            if (isIncome) { aIn += amt; dayIn += amt; totalMasuk += amt; } else { aOut += amt; dayOut += amt; totalKeluar += amt; }
+            const calcAmt = getCalcAmount(amt, opt);
+            if (isIncome) { aIn += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
             const desc = item.desc || item.name || displayName;
             rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
           });
@@ -696,7 +716,7 @@
         <div class="book-page-header book-page-hd">
           <div class="book-page-title book-page-hd-title">📅 ${formatDayFull(dKey)}</div>
           <div class="book-page-badge book-page-hd-meta">
-            ${dayTrx} trx · Keluar: <b style="color:var(--outcome)">${opt.fmtAmt(dayOut)}</b> | Masuk: <b style="color:var(--income)">${opt.fmtAmt(dayIn)}</b>
+            <span class="book-metric-trx">${dayTrx} trx</span> · Keluar: <b class="book-metric-keluar" style="color:var(--outcome)">${opt.fmtAmt(dayOut)}</b> | Masuk: <b class="book-metric-masuk" style="color:var(--income)">${opt.fmtAmt(dayIn)}</b>
           </div>
         </div>`;
 
@@ -759,7 +779,8 @@
           totalTrx++; dayTrx++;
           const amt = Math.round(item.amount || item.jumtar || 0);
           const isIncome = String(item.type || '').toLowerCase() === 'income';
-          if (isIncome) { tMasuk += amt; dayIn += amt; totalMasuk += amt; } else { tKeluar += amt; dayOut += amt; totalKeluar += amt; }
+          const calcAmt = getCalcAmount(amt, opt);
+          if (isIncome) { tMasuk += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { tKeluar += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
@@ -809,7 +830,8 @@
             totalTrx++; dayTrx++;
             const amt = Math.round(item.amount || 0);
             const isIncome = String(item.category || '').toLowerCase() === 'income';
-            if (isIncome) { aIn += amt; dayIn += amt; totalMasuk += amt; } else { aOut += amt; dayOut += amt; totalKeluar += amt; }
+            const calcAmt = getCalcAmount(amt, opt);
+            if (isIncome) { aIn += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
             const desc = item.desc || item.name || displayName;
             rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
           });
@@ -860,9 +882,9 @@
           <div class="stack-day-header stack-day-hd" onclick="this.parentElement.classList.toggle('collapsed')">
             <span class="stack-day-title">📅 ${formatDayFull(dKey)}</span>
             <div class="stack-day-meta">
-              <span class="stack-summary-pill">${dayTrx} trx</span>
-              <span style="font-size:0.75rem; color:var(--outcome);">Keluar: <b>${opt.fmtAmt(dayOut)}</b></span>
-              <span style="font-size:0.75rem; color:var(--income);">Masuk: <b>${opt.fmtAmt(dayIn)}</b></span>
+              <span class="stack-summary-pill stack-metric-trx">${dayTrx} trx</span>
+              <span style="font-size:0.75rem; color:var(--outcome);">Keluar: <b class="stack-metric-keluar">${opt.fmtAmt(dayOut)}</b></span>
+              <span style="font-size:0.75rem; color:var(--income);">Masuk: <b class="stack-metric-masuk">${opt.fmtAmt(dayIn)}</b></span>
               <span class="stack-day-toggle-arrow">▼</span>
             </div>
           </div>
@@ -899,7 +921,8 @@
           totalTrx++;
           const amt = Math.round(item.amount || item.jumtar || 0);
           const isIncome = String(item.type || '').toLowerCase() === 'income';
-          if (isIncome) { dayIn += amt; totalMasuk += amt; } else { dayOut += amt; totalKeluar += amt; }
+          const calcAmt = getCalcAmount(amt, opt);
+          if (isIncome) { dayIn += calcAmt; totalMasuk += calcAmt; } else { dayOut += calcAmt; totalKeluar += calcAmt; }
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
@@ -954,7 +977,8 @@
           totalTrx++;
           const amt = Math.round(item.amount || 0);
           const isIncome = String(item.category || '').toLowerCase() === 'income';
-          if (isIncome) { aIn += amt; totalMasuk += amt; } else { aOut += amt; totalKeluar += amt; }
+          const calcAmt = getCalcAmount(amt, opt);
+          if (isIncome) { aIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; totalKeluar += calcAmt; }
           const desc = item.desc || item.name || displayName;
           rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
         });
@@ -1052,7 +1076,8 @@
           totalTrx++; dayTrx++;
           const amt = Math.round(item.amount || item.jumtar || 0);
           const isIncome = String(item.type || '').toLowerCase() === 'income';
-          if (isIncome) { tMasuk += amt; dayIn += amt; totalMasuk += amt; } else { tKeluar += amt; dayOut += amt; totalKeluar += amt; }
+          const calcAmt = getCalcAmount(amt, opt);
+          if (isIncome) { tMasuk += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { tKeluar += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
@@ -1102,7 +1127,8 @@
             totalTrx++; dayTrx++;
             const amt = Math.round(item.amount || 0);
             const isIncome = String(item.category || '').toLowerCase() === 'income';
-            if (isIncome) { aIn += amt; dayIn += amt; totalMasuk += amt; } else { aOut += amt; dayOut += amt; totalKeluar += amt; }
+            const calcAmt = getCalcAmount(amt, opt);
+            if (isIncome) { aIn += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
             const desc = item.desc || item.name || displayName;
             rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
           });
@@ -1153,11 +1179,11 @@
           <div class="side-day-sheet-header spread-sheet-hd">
             <div class="side-day-sheet-title-row">
               <span class="side-day-sheet-title spread-sheet-title">📅 ${formatDayFull(dKey)}</span>
-              <span class="side-day-sheet-num spread-sheet-meta">${dayTrx} trx</span>
+              <span class="side-day-sheet-num spread-sheet-meta sheet-metric-trx">${dayTrx} trx</span>
             </div>
             <div class="side-day-sheet-metrics">
-              <span style="color:var(--outcome);">Keluar: <b>${opt.fmtAmt(dayOut)}</b></span>
-              <span style="color:var(--income);">Masuk: <b>${opt.fmtAmt(dayIn)}</b></span>
+              <span style="color:var(--outcome);">Keluar: <b class="sheet-metric-keluar">${opt.fmtAmt(dayOut)}</b></span>
+              <span style="color:var(--income);">Masuk: <b class="sheet-metric-masuk">${opt.fmtAmt(dayIn)}</b></span>
             </div>
           </div>
           <div class="side-day-sheet-body spread-sheet-body">${dayGroupsHtml}</div>
