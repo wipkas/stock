@@ -506,9 +506,18 @@
             <div class="ksp-modal-body">
                 <p style="font-size: 12px; color: var(--muted); margin: 0;">Pilih file laporan HTML atau JSON hasil ekspor dari aplikasi Android KSP Check untuk ditampilkan dan dikelola di cabang ini.</p>
                 <input type="file" id="report-file-input" accept=".html,.htm,.json" style="width: 100%; font-size: 12px;" onchange="KspHistoriku.handleFileImport(this.files[0])">
-                <div style="border-top: 1px dashed var(--border); padding-top: 10px;">
-                    <button type="button" class="ksp-btn-pri" onclick="KspHistoriku.exportHistoryJson();" style="width: 100%; margin-bottom: 8px;">
-                        <span>📤</span> <span>Unduh Riwayat Aktif ke File JSON</span>
+                <div style="border-top: 1px dashed var(--border); padding-top: 12px; margin-top: 6px;">
+                    <div style="font-size: 12px; font-weight: 700; margin-bottom: 8px; color: var(--text);">⚙️ Opsi Ekspor JSON:</div>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 6px; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="export-opt-ringkas" style="accent-color: var(--accent);">
+                        <span>Mode Ringkas (potong 000 / satuan ribuan)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 12px; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="export-opt-include-deleted" style="accent-color: var(--accent);">
+                        <span>Sertakan transaksi yang telah dihapus</span>
+                    </label>
+                    <button type="button" class="ksp-btn-pri" onclick="KspHistoriku.exportHistoryJson({ ringkas: document.getElementById('export-opt-ringkas')?.checked, includeDeleted: document.getElementById('export-opt-include-deleted')?.checked });" style="width: 100%; margin-bottom: 8px;">
+                        <span>📤</span> <span>Unduh Riwayat ke File JSON</span>
                     </button>
                     <button type="button" class="ksp-btn-sec" onclick="loadSampleReportForCurrentStore(); KspHistoriku.closeImportModal();" style="width: 100%;">
                         <span>✨</span> <span>Gunakan Contoh Data Riwayat Transaksi</span>

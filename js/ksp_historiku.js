@@ -5024,7 +5024,13 @@ getReportStorageKey = function() {
 
 function openImportReportDialog() {
   const modal = document.getElementById('import-report-modal');
-  if (modal) modal.classList.add('open');
+  if (modal) {
+    const chkRingkas = document.getElementById('export-opt-ringkas');
+    if (chkRingkas) chkRingkas.checked = Boolean(ringkasMode);
+    const chkDel = document.getElementById('export-opt-include-deleted');
+    if (chkDel) chkDel.checked = false;
+    modal.classList.add('open');
+  }
 }
 
 function closeImportReportDialog() {
@@ -5040,16 +5046,40 @@ function exportHistoryJson(options) {
     return;
   }
 
-  const tarik = Array.isArray(data.tarik) ? data.tarik : [];
-  const notif = Array.isArray(data.notif) ? data.notif : [];
-  const voucher = Array.isArray(data.voucher) ? data.voucher : [];
-  const topup = Array.isArray(data.topup) ? data.topup : [];
+  const rawTarik = Array.isArray(data.tarik) ? data.tarik : [];
+  const rawNotif = Array.isArray(data.notif) ? data.notif : [];
+  const rawVoucher = Array.isArray(data.voucher) ? data.voucher : [];
+  const rawTopup = Array.isArray(data.topup) ? data.topup : [];
 
-  const totalTrxCount = tarik.length + notif.length + voucher.length + topup.length;
-  if (totalTrxCount === 0) {
+  const totalRawCount = rawTarik.length + rawNotif.length + rawVoucher.length + rawTopup.length;
+  if (totalRawCount === 0) {
     showToast('⚠️ Data riwayat kosong, tidak ada transaksi untuk diunduh');
     return;
   }
+
+  const isRingkas = (typeof options.ringkas === 'boolean') ? options.ringkas : Boolean(ringkasMode);
+  // Default: exclude transaksi berstatus deleted (includeDeleted === false)
+  const includeDeleted = Boolean(options.includeDeleted);
+
+  // Filter transaksi berdasarkan opsi includeDeleted
+  const filterList = (list) => includeDeleted ? list : list.filter(item => !item.deleted);
+
+  const tarik = filterList(rawTarik);
+  const notif = filterList(rawNotif);
+  const voucher = filterList(rawVoucher);
+  const topup = filterList(rawTopup);
+
+  // Hitung jumlah aktif vs terhapus
+  let activeTrxCount = 0;
+  let deletedTrxCount = 0;
+  [rawTarik, rawNotif, rawVoucher, rawTopup].forEach(arr => {
+    arr.forEach(item => {
+      if (item && item.deleted) deletedTrxCount++;
+      else activeTrxCount++;
+    });
+  });
+
+  const exportTrxCount = tarik.length + notif.length + voucher.length + topup.length;
 
   const storeId = window.ACTIVE_STORE_ID || data.storeId || (typeof currentStoreId !== 'undefined' ? currentStoreId : 'store');
   const storeName = window.ACTIVE_STORE_NAME || data.storeName || (typeof currentStoreName !== 'undefined' ? currentStoreName : 'Cabang');
@@ -5058,44 +5088,79 @@ function exportHistoryJson(options) {
   const startDate = data.startDate || (isMultiDay ? (data.dates && data.dates[0]) : (data.dateDb && data.dateDb.indexOf(' s/d ') > -1 ? data.dateDb.split(' s/d ')[0] : data.dateDb)) || getTodayDbDate();
   const endDate = data.endDate || (isMultiDay ? (data.dates && data.dates[data.dates.length - 1]) : (data.dateDb && data.dateDb.indexOf(' s/d ') > -1 ? data.dateDb.split(' s/d ')[1] : startDate)) || startDate;
 
-  // Hitung ulang ringkasan totalMasuk dan totalKeluar agar selalu presisi
+  // Hitung ulang ringkasan totalMasuk dan totalKeluar (hanya transaksi aktif / tidak deleted)
   let sumMasuk = 0;
   let sumKeluar = 0;
 
-  tarik.forEach(item => {
+  rawTarik.forEach(item => {
     if (item.deleted) return;
-    const amt = Math.round(item.amount || item.jumtar || 0);
+    const amt = Math.round(Number(item.amount || item.jumtar) || 0);
     const isInc = String(item.type || item.category || '').toLowerCase() === 'income';
     if (isInc) sumMasuk += amt; else sumKeluar += amt;
   });
 
-  notif.forEach(item => {
+  rawNotif.forEach(item => {
     if (item.deleted) return;
-    const amt = Math.round(item.amount || 0);
+    const amt = Math.round(Number(item.amount) || 0);
     const isInc = String(item.category || item.type || '').toLowerCase() === 'income';
     if (isInc) sumMasuk += amt; else sumKeluar += amt;
   });
 
-  voucher.forEach(item => {
+  rawVoucher.forEach(item => {
     if (item.deleted) return;
-    const amt = Math.round(item.amount || 0);
+    const amt = Math.round(Number(item.amount) || 0);
     sumKeluar += amt;
   });
 
-  topup.forEach(item => {
+  rawTopup.forEach(item => {
     if (item.deleted) return;
-    const amtCharged = Math.round(item.amount || (item.nominal + item.fee) || 0);
-    const amtNominal = Math.round(item.nominal || 0);
+    const amtCharged = Math.round(Number(item.amount || ((item.nominal || 0) + (item.fee || 0))) || 0);
+    const amtNominal = Math.round(Number(item.nominal) || 0);
     sumMasuk += amtCharged;
     sumKeluar += amtNominal;
   });
 
+  const finalMasuk = isRingkas ? Math.trunc(sumMasuk / 1000) : sumMasuk;
+  const finalKeluar = isRingkas ? Math.trunc(sumKeluar / 1000) : sumKeluar;
+  const finalBersih = isRingkas ? Math.trunc((sumKeluar - sumMasuk) / 1000) : (sumKeluar - sumMasuk);
+
   const summary = {
-    totalTrx: totalTrxCount,
-    totalMasuk: sumMasuk,
-    totalKeluar: sumKeluar,
-    totalBersih: sumKeluar - sumMasuk
+    totalTrx: activeTrxCount,
+    totalActiveTrx: activeTrxCount,
+    totalDeletedTrx: deletedTrxCount,
+    totalAllTrx: totalRawCount,
+    totalMasuk: finalMasuk,
+    totalKeluar: finalKeluar,
+    totalBersih: finalBersih
   };
+
+  function formatExportItem(item) {
+    const copy = Object.assign({}, item);
+    if (copy.extraData && typeof copy.extraData === 'object') {
+      copy.extraData = Object.assign({}, copy.extraData);
+    }
+    if (isRingkas) {
+      const keys = ['amount', 'orig', 'jumtar', 'adm', 'cost', 'real', 'fee', 'nominal'];
+      keys.forEach(k => {
+        if (typeof copy[k] === 'number') {
+          copy[k] = Math.trunc(copy[k] / 1000);
+        } else if (typeof copy[k] === 'string' && copy[k].trim() !== '' && !isNaN(Number(copy[k]))) {
+          copy[k] = Math.trunc(Number(copy[k]) / 1000);
+        }
+      });
+      if (copy.extraData && typeof copy.extraData.orig_amount === 'number') {
+        copy.extraData.orig_amount = Math.trunc(copy.extraData.orig_amount / 1000);
+      } else if (copy.extraData && typeof copy.extraData.orig_amount === 'string' && copy.extraData.orig_amount.trim() !== '' && !isNaN(Number(copy.extraData.orig_amount))) {
+        copy.extraData.orig_amount = Math.trunc(Number(copy.extraData.orig_amount) / 1000);
+      }
+    }
+    return copy;
+  }
+
+  const exportedTarik = tarik.map(formatExportItem);
+  const exportedNotif = notif.map(formatExportItem);
+  const exportedVoucher = voucher.map(formatExportItem);
+  const exportedTopup = topup.map(formatExportItem);
 
   const exportPayload = {
     app: 'kspcheck',
@@ -5106,6 +5171,8 @@ function exportHistoryJson(options) {
     storeName: storeName,
     periodMode: isMultiDay ? 'multiday' : 'singleday',
     isMultiDay: isMultiDay,
+    ringkasMode: isRingkas,
+    includeDeleted: includeDeleted,
     startDate: startDate,
     endDate: endDate,
     dates: isMultiDay ? (data.dates || (typeof getDatesInRange === 'function' ? getDatesInRange(startDate, endDate) : [startDate])) : [startDate],
@@ -5114,16 +5181,18 @@ function exportHistoryJson(options) {
     shift: data.shift || 0,
     shiftLabel: data.shiftLabel || 'Semua Shift',
     summary: summary,
-    tarik: tarik,
-    notif: notif,
-    voucher: voucher,
-    topup: topup
+    tarik: exportedTarik,
+    notif: exportedNotif,
+    voucher: exportedVoucher,
+    topup: exportedTopup
   };
 
   const cleanStoreId = String(storeId).replace(/[^a-zA-Z0-9_-]/g, '_');
+  const ringkasSuffix = isRingkas ? '_ringkas' : '';
+  const deletedSuffix = includeDeleted ? '_with_deleted' : '';
   const fileName = isMultiDay
-    ? `ksp_history_${cleanStoreId}_${startDate}_sd_${endDate}.json`
-    : `ksp_history_${cleanStoreId}_${startDate}.json`;
+    ? `ksp_history_${cleanStoreId}_${startDate}_sd_${endDate}${ringkasSuffix}${deletedSuffix}.json`
+    : `ksp_history_${cleanStoreId}_${startDate}${ringkasSuffix}${deletedSuffix}.json`;
 
   try {
     const jsonStr = JSON.stringify(exportPayload, null, 2);
@@ -5138,7 +5207,8 @@ function exportHistoryJson(options) {
     setTimeout(() => URL.revokeObjectURL(url), 2000);
 
     const periodLabel = isMultiDay ? `Rentang ${startDate} s/d ${endDate}` : startDate;
-    showToast(`✓ Riwayat (${totalTrxCount} trx, ${periodLabel}) berhasil diunduh: ${fileName}`);
+    const ringkasInfo = isRingkas ? ' [Ringkas]' : '';
+    showToast(`✓ Riwayat (${exportTrxCount} trx${ringkasInfo}, ${periodLabel}) berhasil diunduh: ${fileName}`);
   } catch (err) {
     console.error('[KspHistoriku] Gagal mengekspor riwayat JSON:', err);
     alert('Gagal mengunduh file JSON: ' + err.message);
@@ -5173,6 +5243,39 @@ function parseAndLoadImportContent(text, fileName) {
     }
 
     if (parsedData && (parsedData.tarik || parsedData.topup || parsedData.voucher || parsedData.notif)) {
+      if (parsedData.ringkasMode === true) {
+        // Pulihkan nilai ribuan kembali ke satuan Rupiah penuh (* 1000) untuk konsistensi database & kalkulasi internal
+        const restoreItem = (item) => {
+          if (!item) return;
+          const keys = ['amount', 'orig', 'jumtar', 'adm', 'cost', 'real', 'fee', 'nominal'];
+          keys.forEach(k => {
+            if (typeof item[k] === 'number') {
+              item[k] = item[k] * 1000;
+            } else if (typeof item[k] === 'string' && item[k].trim() !== '' && !isNaN(Number(item[k]))) {
+              item[k] = Number(item[k]) * 1000;
+            }
+          });
+          if (item.extraData && typeof item.extraData.orig_amount === 'number') {
+            item.extraData.orig_amount = item.extraData.orig_amount * 1000;
+          } else if (item.extraData && typeof item.extraData.orig_amount === 'string' && item.extraData.orig_amount.trim() !== '' && !isNaN(Number(item.extraData.orig_amount))) {
+            item.extraData.orig_amount = Number(item.extraData.orig_amount) * 1000;
+          }
+        };
+        (parsedData.tarik || []).forEach(restoreItem);
+        (parsedData.notif || []).forEach(restoreItem);
+        (parsedData.voucher || []).forEach(restoreItem);
+        (parsedData.topup || []).forEach(restoreItem);
+        if (parsedData.summary) {
+          if (typeof parsedData.summary.totalMasuk === 'number') parsedData.summary.totalMasuk *= 1000;
+          if (typeof parsedData.summary.totalKeluar === 'number') parsedData.summary.totalKeluar *= 1000;
+          if (typeof parsedData.summary.totalBersih === 'number') parsedData.summary.totalBersih *= 1000;
+        }
+        // Aktifkan mode ringkas di UI agar tetap tampil ringkas sesuai asal file
+        ringkasMode = true;
+        try { localStorage.setItem('ksp_ringkas_mode', '1'); } catch(e) {}
+        applyRingkasState();
+      }
+
       window.REPORT_DATA = parsedData;
       const isMulti = Boolean(parsedData.isMultiDay || (parsedData.dates && parsedData.dates.length > 1) || (parsedData.dateDb && parsedData.dateDb.indexOf(' s/d ') > -1));
       if (isMulti) {
