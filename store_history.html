@@ -277,6 +277,18 @@
             color: var(--accent);
         }
 
+        #chip-download-json {
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s ease;
+        }
+
+        #chip-download-json:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-lt);
+        }
+
         @media (max-width: 480px) {
             header.historiku-header {
                 padding: 3px 6px;
@@ -337,10 +349,14 @@
                     </select>
                 </div>
 
-                <!-- Right: Format Trigger, Hidden Group, Speak All, Settings -->
+                <!-- Right: Format Trigger, Download JSON, Hidden Group, Speak All, Settings -->
                 <div class="header-main-right">
                     <button class="btn-format-trigger" id="btnFormatLayout" onclick="KspHistoriku.openFormatLayoutModal()" style="display: none;" title="Pilih Format Layout">
                         📖 <span id="formatLayoutCurrentLabel">Lembar Buku</span> ▾
+                    </button>
+
+                    <button class="toggle-btn" id="btn-download-json" onclick="KspHistoriku.exportHistoryJson()" title="Unduh Riwayat ke File JSON (1 Hari / Rentang Tanggal)" style="padding: 4px 8px; font-size: 13px;">
+                        <span class="btn-icon">⬇️</span>
                     </button>
 
                     <button class="toggle-btn" id="btn-hidden-group" onclick="toggleHiddenGroup(this)" title="Lipat / Buka Semua Tabel" style="padding: 4px 8px; font-size: 13px;">
@@ -370,6 +386,7 @@
                         <button type="button" class="date-nav-btn next" id="btnDateNext" onclick="KspHistoriku.navigateDate(1)" title="Hari / Periode Berikutnya">▶</button>
                     </div>
                     <span class="date-chip" id="chip-shift">Semua Shift</span>
+                    <span class="date-chip" id="chip-download-json" onclick="KspHistoriku.exportHistoryJson()" title="Unduh data riwayat ini sebagai file JSON (1 Hari atau Rentang Tanggal)">⬇️ Unduh JSON</span>
                     <span class="date-chip chip-saved" id="chip-local-edits" style="display:none;" onclick="showLocalEditsAction()" title="Perubahan tersimpan otomatis di perangkat. Klik untuk opsi reset data asli.">💾 Tersimpan</span>
                 </div>
                 <div class="sb-it"><span class="sb-l">Total Keluar <span class="sb-rounding-badge" style="display:none;font-size:0.65rem;color:var(--accent);font-weight:700;">(Round)</span></span><span class="sb-v c-out" id="sb-total-keluar">Rp 0</span></div>
@@ -490,6 +507,9 @@
                 <p style="font-size: 12px; color: var(--muted); margin: 0;">Pilih file laporan HTML atau JSON hasil ekspor dari aplikasi Android KSP Check untuk ditampilkan dan dikelola di cabang ini.</p>
                 <input type="file" id="report-file-input" accept=".html,.htm,.json" style="width: 100%; font-size: 12px;" onchange="KspHistoriku.handleFileImport(this.files[0])">
                 <div style="border-top: 1px dashed var(--border); padding-top: 10px;">
+                    <button type="button" class="ksp-btn-pri" onclick="KspHistoriku.exportHistoryJson();" style="width: 100%; margin-bottom: 8px;">
+                        <span>📤</span> <span>Unduh Riwayat Aktif ke File JSON</span>
+                    </button>
                     <button type="button" class="ksp-btn-sec" onclick="loadSampleReportForCurrentStore(); KspHistoriku.closeImportModal();" style="width: 100%;">
                         <span>✨</span> <span>Gunakan Contoh Data Riwayat Transaksi</span>
                     </button>
@@ -709,6 +729,7 @@
           <button class="ksp-btn-sec" onclick="expandAllGroups()" title="Buka semua grup">📂 Buka Semua</button>
           <button class="ksp-btn-sec" onclick="collapseAllGroups()" title="Lipat semua grup">📁 Lipat Semua</button>
           <button class="ksp-btn-sec" onclick="testTtsSample()">🔊 Uji Suara</button>
+          <button class="ksp-btn-sec" onclick="KspHistoriku.exportHistoryJson()" title="Unduh riwayat transaksi aktif ke file JSON">📤 Unduh JSON</button>
           <button class="ksp-btn-sec" onclick="closeTtsSettingsModal(); KspHistoriku.openImportModal();" title="Impor file laporan">📥 Impor Laporan</button>
           <button class="ksp-btn-pri" onclick="closeTtsSettingsModal()" title="Simpan pengaturan &amp; tutup">✓ Simpan &amp; Selesai</button>
         </div>

@@ -5032,6 +5032,119 @@ function closeImportReportDialog() {
   if (modal) modal.classList.remove('open');
 }
 
+function exportHistoryJson(options) {
+  options = options || {};
+  const data = window.REPORT_DATA;
+  if (!data) {
+    showToast('⚠️ Belum ada data riwayat untuk diunduh');
+    return;
+  }
+
+  const tarik = Array.isArray(data.tarik) ? data.tarik : [];
+  const notif = Array.isArray(data.notif) ? data.notif : [];
+  const voucher = Array.isArray(data.voucher) ? data.voucher : [];
+  const topup = Array.isArray(data.topup) ? data.topup : [];
+
+  const totalTrxCount = tarik.length + notif.length + voucher.length + topup.length;
+  if (totalTrxCount === 0) {
+    showToast('⚠️ Data riwayat kosong, tidak ada transaksi untuk diunduh');
+    return;
+  }
+
+  const storeId = window.ACTIVE_STORE_ID || data.storeId || (typeof currentStoreId !== 'undefined' ? currentStoreId : 'store');
+  const storeName = window.ACTIVE_STORE_NAME || data.storeName || (typeof currentStoreName !== 'undefined' ? currentStoreName : 'Cabang');
+
+  const isMultiDay = Boolean(data.isMultiDay || (data.dates && data.dates.length > 1) || (window.ACTIVE_PERIOD_MODE === 'multiday'));
+  const startDate = data.startDate || (isMultiDay ? (data.dates && data.dates[0]) : (data.dateDb && data.dateDb.indexOf(' s/d ') > -1 ? data.dateDb.split(' s/d ')[0] : data.dateDb)) || getTodayDbDate();
+  const endDate = data.endDate || (isMultiDay ? (data.dates && data.dates[data.dates.length - 1]) : (data.dateDb && data.dateDb.indexOf(' s/d ') > -1 ? data.dateDb.split(' s/d ')[1] : startDate)) || startDate;
+
+  // Hitung ulang ringkasan totalMasuk dan totalKeluar agar selalu presisi
+  let sumMasuk = 0;
+  let sumKeluar = 0;
+
+  tarik.forEach(item => {
+    if (item.deleted) return;
+    const amt = Math.round(item.amount || item.jumtar || 0);
+    const isInc = String(item.type || item.category || '').toLowerCase() === 'income';
+    if (isInc) sumMasuk += amt; else sumKeluar += amt;
+  });
+
+  notif.forEach(item => {
+    if (item.deleted) return;
+    const amt = Math.round(item.amount || 0);
+    const isInc = String(item.category || item.type || '').toLowerCase() === 'income';
+    if (isInc) sumMasuk += amt; else sumKeluar += amt;
+  });
+
+  voucher.forEach(item => {
+    if (item.deleted) return;
+    const amt = Math.round(item.amount || 0);
+    sumKeluar += amt;
+  });
+
+  topup.forEach(item => {
+    if (item.deleted) return;
+    const amtCharged = Math.round(item.amount || (item.nominal + item.fee) || 0);
+    const amtNominal = Math.round(item.nominal || 0);
+    sumMasuk += amtCharged;
+    sumKeluar += amtNominal;
+  });
+
+  const summary = {
+    totalTrx: totalTrxCount,
+    totalMasuk: sumMasuk,
+    totalKeluar: sumKeluar,
+    totalBersih: sumKeluar - sumMasuk
+  };
+
+  const exportPayload = {
+    app: 'kspcheck',
+    type: 'history_export',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    storeId: storeId,
+    storeName: storeName,
+    periodMode: isMultiDay ? 'multiday' : 'singleday',
+    isMultiDay: isMultiDay,
+    startDate: startDate,
+    endDate: endDate,
+    dates: isMultiDay ? (data.dates || (typeof getDatesInRange === 'function' ? getDatesInRange(startDate, endDate) : [startDate])) : [startDate],
+    dateDb: data.dateDb || (isMultiDay ? `${startDate} s/d ${endDate}` : startDate),
+    dateDisplay: data.dateDisplay || (isMultiDay ? `${formatDateDisplayShort(startDate)} - ${formatDateDisplayShort(endDate)}` : formatDateDisplayLong(startDate)),
+    shift: data.shift || 0,
+    shiftLabel: data.shiftLabel || 'Semua Shift',
+    summary: summary,
+    tarik: tarik,
+    notif: notif,
+    voucher: voucher,
+    topup: topup
+  };
+
+  const cleanStoreId = String(storeId).replace(/[^a-zA-Z0-9_-]/g, '_');
+  const fileName = isMultiDay
+    ? `ksp_history_${cleanStoreId}_${startDate}_sd_${endDate}.json`
+    : `ksp_history_${cleanStoreId}_${startDate}.json`;
+
+  try {
+    const jsonStr = JSON.stringify(exportPayload, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+    const periodLabel = isMultiDay ? `Rentang ${startDate} s/d ${endDate}` : startDate;
+    showToast(`✓ Riwayat (${totalTrxCount} trx, ${periodLabel}) berhasil diunduh: ${fileName}`);
+  } catch (err) {
+    console.error('[KspHistoriku] Gagal mengekspor riwayat JSON:', err);
+    alert('Gagal mengunduh file JSON: ' + err.message);
+  }
+}
+
 function handleReportFileImport(file) {
   if (!file) return;
   const reader = new FileReader();
@@ -5061,6 +5174,17 @@ function parseAndLoadImportContent(text, fileName) {
 
     if (parsedData && (parsedData.tarik || parsedData.topup || parsedData.voucher || parsedData.notif)) {
       window.REPORT_DATA = parsedData;
+      const isMulti = Boolean(parsedData.isMultiDay || (parsedData.dates && parsedData.dates.length > 1) || (parsedData.dateDb && parsedData.dateDb.indexOf(' s/d ') > -1));
+      if (isMulti) {
+        window.ACTIVE_PERIOD_MODE = 'multiday';
+        if (typeof setPeriodMode === 'function') setPeriodMode('multiday');
+      } else {
+        window.ACTIVE_PERIOD_MODE = 'singleday';
+        if (typeof setPeriodMode === 'function') setPeriodMode('singleday');
+      }
+      if (parsedData.dateDisplay && typeof updateDateDisplayUI === 'function') {
+        updateDateDisplayUI(parsedData.dateDisplay);
+      }
       if (window.ACTIVE_STORE_ID && parsedData.dateDb) {
         try {
           localStorage.setItem('ksp_historiku_data_' + window.ACTIVE_STORE_ID + '_' + parsedData.dateDb, JSON.stringify(parsedData));
@@ -5886,6 +6010,11 @@ window.KspHistoriku = {
   openImportModal: openImportReportDialog,
   closeImportModal: closeImportReportDialog,
   handleFileImport: handleReportFileImport,
+  exportHistoryJson: exportHistoryJson,
   copyRekapFormula: copyRekapFormula,
   setTextSize: setTextSize
 };
+
+if (typeof window !== 'undefined') {
+  window.exportHistoryJson = exportHistoryJson;
+}
