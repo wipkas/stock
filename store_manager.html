@@ -4112,15 +4112,18 @@
                 <!-- 3. Pemilih Model Bonus (Tab Button Group) -->
                 <div>
                     <label class="form-label" style="font-size: 11.5px; font-weight: 750; margin-bottom: 6px; display: block;">🎁 Model Perhitungan Bonus:</label>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: var(--input-bg); padding: 4px; border-radius: 10px; border: 1px solid var(--card-border);">
-                        <button type="button" id="tabBonusBtn_percentage" class="btn-bonus-tab active" onclick="setModalBonusTab('percentage')" style="padding: 8px 6px; font-size: 11px; font-weight: 750; border-radius: 8px; border: 1px solid var(--primary); background: var(--primary); color: #fff; cursor: pointer; transition: all 0.15s;">
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: var(--input-bg); padding: 4px; border-radius: 10px; border: 1px solid var(--card-border);">
+                        <button type="button" id="tabBonusBtn_percentage" class="btn-bonus-tab active" onclick="setModalBonusTab('percentage')" style="padding: 8px 4px; font-size: 11px; font-weight: 750; border-radius: 8px; border: 1px solid var(--primary); background: var(--primary); color: #fff; cursor: pointer; transition: all 0.15s;">
                             % Target
                         </button>
-                        <button type="button" id="tabBonusBtn_fixed" class="btn-bonus-tab" onclick="setModalBonusTab('fixed')" style="padding: 8px 6px; font-size: 11px; font-weight: 750; border-radius: 8px; border: 1px solid var(--card-border); background: var(--input-bg); color: var(--text-main); cursor: pointer; transition: all 0.15s;">
+                        <button type="button" id="tabBonusBtn_fixed" class="btn-bonus-tab" onclick="setModalBonusTab('fixed')" style="padding: 8px 4px; font-size: 11px; font-weight: 750; border-radius: 8px; border: 1px solid var(--card-border); background: var(--input-bg); color: var(--text-main); cursor: pointer; transition: all 0.15s;">
                             Nilai Tetap
                         </button>
-                        <button type="button" id="tabBonusBtn_flat_target" class="btn-bonus-tab" onclick="setModalBonusTab('flat_target')" style="padding: 8px 6px; font-size: 11px; font-weight: 750; border-radius: 8px; border: 1px solid var(--card-border); background: var(--input-bg); color: var(--text-main); cursor: pointer; transition: all 0.15s;">
+                        <button type="button" id="tabBonusBtn_flat_target" class="btn-bonus-tab" onclick="setModalBonusTab('flat_target')" style="padding: 8px 4px; font-size: 11px; font-weight: 750; border-radius: 8px; border: 1px solid var(--card-border); background: var(--input-bg); color: var(--text-main); cursor: pointer; transition: all 0.15s;">
                             Sama Rata
+                        </button>
+                        <button type="button" id="tabBonusBtn_hybrid" class="btn-bonus-tab" onclick="setModalBonusTab('hybrid')" style="padding: 8px 4px; font-size: 11px; font-weight: 750; border-radius: 8px; border: 1px solid var(--card-border); background: var(--input-bg); color: var(--text-main); cursor: pointer; transition: all 0.15s;">
+                            Hibrida 🔥
                         </button>
                     </div>
                 </div>
@@ -4186,6 +4189,37 @@
                             <label class="form-label" style="font-size: 11.5px; font-weight: 750; margin-bottom: 4px; display: block;">Nominal Bonus (Rp) *</label>
                             <input type="number" id="cfgFlatAmount" class="form-input" value="100000" placeholder="100000" style="width: 100%; padding: 8px 10px; font-size: 12.5px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);">
                         </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 4: HYBRID -->
+                <div id="configSection_hybrid" style="display: none; flex-direction: column; gap: 10px;">
+                    <div style="background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 10px; padding: 10px 12px; font-size: 11px; line-height: 1.45; color: var(--text-main);">
+                        🎯 <b>Model Hibrida (Sangat Fair &amp; Kompetitif):</b><br>
+                        • <b>Semua Kasir:</b> Wajib mencapai target minimal (%) untuk membuka bonus.<br>
+                        • <b>Juara 1, 2, 3 (Podium):</b> Bonus <b>Dinamis</b> proporsional sesuai capaian target (% Target &times; Base).<br>
+                        • <b>Peringkat 4 ke Bawah:</b> Bonus <b>Tetap (Flat)</b> asalkan target tercapai (tidak ada yang zonk jika target tercapai).
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size: 11.5px; font-weight: 750; margin-bottom: 4px; display: block;">Syarat Minimal Target Agar Bonus Cair (%) *</label>
+                        <input type="number" id="cfgHybMinPct" class="form-input" value="100" placeholder="100" style="width: 100%; padding: 8px 10px; font-size: 12.5px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                        <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">*Default 100% (Bonus cair jika kasir berhasil mencapai target)</div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label class="form-label" style="font-size: 11.5px; font-weight: 750; margin-bottom: 4px; display: block;">Base Bonus Top 3 saat 100% (Rp) *</label>
+                            <input type="number" id="cfgHybTop3Base" class="form-input" value="100000" placeholder="100000" style="width: 100%; padding: 8px 10px; font-size: 12.5px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                            <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">*Dikalikan % capaian target kasir Top 3</div>
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size: 11.5px; font-weight: 750; margin-bottom: 4px; display: block;">Maksimal Cap Bonus Top 3 (Rp) *</label>
+                            <input type="number" id="cfgHybTop3MaxCap" class="form-input" value="300000" placeholder="300000" style="width: 100%; padding: 8px 10px; font-size: 12.5px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size: 11.5px; font-weight: 750; margin-bottom: 4px; display: block;">Bonus Tetap Peringkat 4 ke Bawah jika Target Tercapai (Rp) *</label>
+                        <input type="number" id="cfgHybOtherAmt" class="form-input" value="50000" placeholder="50000" style="width: 100%; padding: 8px 10px; font-size: 12.5px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                        <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">*Diterima kasir non-podium yang berhasil mencapai minimal target</div>
                     </div>
                 </div>
             </div>
@@ -9534,13 +9568,24 @@ ${portalUrl}
             if (inpFlatThresh) inpFlatThresh.value = flat.targetThresholdPct || 100;
             if (inpFlatAmt) inpFlatAmt.value = flat.bonusAmount || 100000;
 
+            // Mode 4: Hybrid
+            const hyb = rewards.hybrid || {};
+            const inpHybMin = document.getElementById('cfgHybMinPct');
+            const inpHybTop3Base = document.getElementById('cfgHybTop3Base');
+            const inpHybTop3Cap = document.getElementById('cfgHybTop3MaxCap');
+            const inpHybOther = document.getElementById('cfgHybOtherAmt');
+            if (inpHybMin) inpHybMin.value = hyb.minTargetPct !== undefined ? hyb.minTargetPct : 100;
+            if (inpHybTop3Base) inpHybTop3Base.value = hyb.top3BasePool !== undefined ? hyb.top3BasePool : 100000;
+            if (inpHybTop3Cap) inpHybTop3Cap.value = hyb.top3MaxCap !== undefined ? hyb.top3MaxCap : 300000;
+            if (inpHybOther) inpHybOther.value = hyb.otherBonusAmount !== undefined ? hyb.otherBonusAmount : 50000;
+
             setModalBonusTab(mode);
             openModal('modalLeaderboardConfig');
         }
 
         function setModalBonusTab(mode) {
             currentBonusModalTab = mode;
-            ['percentage', 'fixed', 'flat_target'].forEach(m => {
+            ['percentage', 'fixed', 'flat_target', 'hybrid'].forEach(m => {
                 const btn = document.getElementById('tabBonusBtn_' + m);
                 const sec = document.getElementById('configSection_' + m);
                 if (btn) {
@@ -9587,6 +9632,11 @@ ${portalUrl}
             const flatThresh = Math.max(0, parseInt(document.getElementById('cfgFlatThreshold')?.value, 10) || 100);
             const flatAmt = Math.max(0, parseInt(document.getElementById('cfgFlatAmount')?.value, 10) || 100000);
 
+            const hybMin = Math.max(0, parseInt(document.getElementById('cfgHybMinPct')?.value, 10) || 100);
+            const hybTop3Base = Math.max(0, parseInt(document.getElementById('cfgHybTop3Base')?.value, 10) || 100000);
+            const hybTop3Cap = Math.max(0, parseInt(document.getElementById('cfgHybTop3MaxCap')?.value, 10) || 300000);
+            const hybOther = Math.max(0, parseInt(document.getElementById('cfgHybOtherAmt')?.value, 10) || 50000);
+
             const newConfig = {
                 scope: selScope?.value || 'all',
                 period: selPeriod?.value || 'today',
@@ -9618,6 +9668,12 @@ ${portalUrl}
                         targetThresholdPct: flatThresh,
                         bonusAmount: flatAmt,
                         label: 'Bonus Target Tercapai'
+                    },
+                    hybrid: {
+                        minTargetPct: hybMin,
+                        top3BasePool: hybTop3Base,
+                        top3MaxCap: hybTop3Cap,
+                        otherBonusAmount: hybOther
                     }
                 }
             };

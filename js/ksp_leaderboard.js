@@ -63,6 +63,14 @@
                 targetThresholdPct: 100, // Syarat target (100% tercapai)
                 bonusAmount: 100000,     // Nominal bonus sama rata (Rp 100.000)
                 label: 'Bonus Target Tercapai'
+            },
+
+            // Mode 4: Hibrida (Top 3 Dinamis + Non-Top 3 Tetap jika Target Tercapai)
+            hybrid: {
+                minTargetPct: 100,      // Minimal % capaian target agar bonus cair (default 100%)
+                top3BasePool: 100000,   // Nominal dasar Top 3 saat 100% target (Rp 100.000)
+                top3MaxCap: 300000,     // Batas maksimal bonus Top 3
+                otherBonusAmount: 50000 // Bonus tetap untuk peringkat 4 ke bawah jika target tercapai
             }
         },
 
@@ -151,7 +159,7 @@
         const targetPct = Number(emp.targetPct || 0);
 
         // Filter Penerima Bonus: Jika dibatasi hanya untuk Juara 1, 2, dan 3 (Podium)
-        if (recipientScope === 'top3' && rank > 3) {
+        if (mode !== 'hybrid' && mode !== 'hybrid_podium' && recipientScope === 'top3' && rank > 3) {
             return {
                 eligible: false,
                 amount: 0,
@@ -264,6 +272,57 @@
                     statusText: `🔥 Kurang ${gap}% lagi menuju Target & Bonus!`,
                     badgeClass: 'ksp-badge-warning',
                     modeLabel: 'Sama Rata'
+                };
+            }
+        }
+
+        // 4. MODE: HYBRID (Top 3 Dinamis Berbasis % Target + Non-Top 3 Tetap jika Target Tercapai)
+        if (mode === 'hybrid' || mode === 'hybrid_podium') {
+            const hybCfg = rewards.hybrid || rewards.hybrid_podium || DEFAULT_CONFIG.rewards.hybrid;
+            const threshold = Number(hybCfg.minTargetPct !== undefined ? hybCfg.minTargetPct : 100);
+            const top3Base = Number(hybCfg.top3BasePool !== undefined ? hybCfg.top3BasePool : 100000);
+            const top3Cap = Number(hybCfg.top3MaxCap !== undefined ? hybCfg.top3MaxCap : 300000);
+            const otherAmt = Number(hybCfg.otherBonusAmount !== undefined ? hybCfg.otherBonusAmount : 50000);
+
+            const isTop3 = rank <= 3;
+
+            if (targetPct >= threshold) {
+                if (isTop3) {
+                    // Top 3: Dinamis proporsional mengikuti persentase capaian target
+                    let calculated = Math.round((targetPct / 100) * top3Base);
+                    if (top3Cap && calculated > top3Cap) calculated = top3Cap;
+
+                    const medalEmoji = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : '🥉');
+                    return {
+                        eligible: true,
+                        amount: calculated,
+                        amountFormatted: formatRupiah(calculated),
+                        statusText: `🎁 ${medalEmoji} Bonus Juara ${formatRupiah(calculated)} (${targetPct}%)`,
+                        badgeClass: 'ksp-badge-success',
+                        modeLabel: 'Hibrida (Top 3 Dinamis)'
+                    };
+                } else {
+                    // Non-Top 3: Tetap (Flat) asalkan target tercapai
+                    return {
+                        eligible: true,
+                        amount: otherAmt,
+                        amountFormatted: formatRupiah(otherAmt),
+                        statusText: `🎁 Bonus Target ${formatRupiah(otherAmt)} (Tetap)`,
+                        badgeClass: 'ksp-badge-success',
+                        modeLabel: 'Hibrida (Target Tetap)'
+                    };
+                }
+            } else {
+                // Target belum tercapai (< threshold)
+                const gap = Math.max(1, Math.round(threshold - targetPct));
+                const expectedAmt = isTop3 ? Math.round((threshold / 100) * top3Base) : otherAmt;
+                return {
+                    eligible: false,
+                    amount: expectedAmt,
+                    amountFormatted: formatRupiah(expectedAmt),
+                    statusText: `⚠️ Butuh +${gap}% target lagi agar bonus cair`,
+                    badgeClass: 'ksp-badge-warning',
+                    modeLabel: isTop3 ? 'Hibrida (Top 3 Dinamis)' : 'Hibrida (Target Tetap)'
                 };
             }
         }
@@ -1481,6 +1540,19 @@
                 `• Syarat Target: Minimal ${thresh}%`,
                 `• Hadiah: ${formatRupiah(amt)} per kasir yang mencapai target`
             ].join('\n');
+        } else if (mode === 'hybrid' || mode === 'hybrid_podium') {
+            const hyb = rewards.hybrid || rewards.hybrid_podium || DEFAULT_CONFIG.rewards.hybrid;
+            const thresh = Number(hyb.minTargetPct !== undefined ? hyb.minTargetPct : 100);
+            const base = Number(hyb.top3BasePool !== undefined ? hyb.top3BasePool : 100000);
+            const cap = Number(hyb.top3MaxCap !== undefined ? hyb.top3MaxCap : 300000);
+            const other = Number(hyb.otherBonusAmount !== undefined ? hyb.otherBonusAmount : 50000);
+            rewardText = [
+                '• Skema: Hibrida (Top 3 Dinamis + Non-Top 3 Tetap)',
+                `• Syarat Minimal Target: ${thresh}% (Wajib tercapai agar bonus cair)`,
+                `• Juara 1, 2, 3 (Podium): Dinamis berbasis % Target (Base: ${formatRupiah(base)}, Maks: ${formatRupiah(cap)})`,
+                `• Peringkat 4 ke Bawah: ${formatRupiah(other)} (Bonus Tetap jika target tercapai)`,
+                '• Keterangan: Adil untuk semua kasir yang mencapai target, dengan apresiasi ekstra untuk top 3 performer.'
+            ].join('\n');
         }
 
         const showMotto = !(cfg.ui && cfg.ui.showMotto === false);
@@ -1603,6 +1675,30 @@ ${rewardText}
                 <div class="ksp-lb-info-item">
                     <span class="ksp-lb-info-item-label">Nominal Bonus:</span>
                     <span style="font-weight: 800; color: #10B981;">${formatRupiah(amt)} per kasir</span>
+                </div>
+            `;
+        } else if (mode === 'hybrid' || mode === 'hybrid_podium') {
+            const hyb = rewards.hybrid || rewards.hybrid_podium || DEFAULT_CONFIG.rewards.hybrid;
+            const thresh = Number(hyb.minTargetPct !== undefined ? hyb.minTargetPct : 100);
+            const base = Number(hyb.top3BasePool !== undefined ? hyb.top3BasePool : 100000);
+            const cap = Number(hyb.top3MaxCap !== undefined ? hyb.top3MaxCap : 300000);
+            const other = Number(hyb.otherBonusAmount !== undefined ? hyb.otherBonusAmount : 50000);
+
+            rewardDetailsHtml = `
+                <div style="background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; font-size: 11px;">
+                    🎯 <b>Model Hibrida (Fair &amp; Kompetitif):</b> Semua kasir yang mencapai target ($\ge ${thresh}%$) berhak mendapatkan bonus. Kasir <b>Top 3</b> mendapatkan bonus dinamis proporsional, sedangkan kasir peringkat 4 ke bawah mendapatkan bonus tetap.
+                </div>
+                <div class="ksp-lb-info-item">
+                    <span class="ksp-lb-info-item-label">Syarat Target:</span>
+                    <span style="font-weight: 750;">Minimal ${thresh}% Capaian</span>
+                </div>
+                <div class="ksp-lb-info-item">
+                    <span class="ksp-lb-info-item-label">🥇 Top 3 (Dinamis):</span>
+                    <span style="font-weight: 800; color: #8B5CF6;">Base ${formatRupiah(base)} &times; % Target (Maks. ${formatRupiah(cap)})</span>
+                </div>
+                <div class="ksp-lb-info-item">
+                    <span class="ksp-lb-info-item-label">👥 Peringkat 4+ (Tetap):</span>
+                    <span style="font-weight: 800; color: #10B981;">${formatRupiah(other)} (Flat)</span>
                 </div>
             `;
         }
@@ -1798,6 +1894,7 @@ ${rewardText}
     function getModeBadgeLabel(mode) {
         if (mode === 'percentage') return 'Proporsional (% Target)';
         if (mode === 'flat_target') return 'Sama Rata (Target Tercapai)';
+        if (mode === 'hybrid' || mode === 'hybrid_podium') return 'Hibrida (Top 3 Dinamis + Tetap)';
         return 'Nilai Tetap (Peringkat)';
     }
 
