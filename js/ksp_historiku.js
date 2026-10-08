@@ -5089,40 +5089,47 @@ function exportHistoryJson(options) {
   const endDate = data.endDate || (isMultiDay ? (data.dates && data.dates[data.dates.length - 1]) : (data.dateDb && data.dateDb.indexOf(' s/d ') > -1 ? data.dateDb.split(' s/d ')[1] : startDate)) || startDate;
 
   // Hitung ulang ringkasan totalMasuk dan totalKeluar (hanya transaksi aktif / tidak deleted)
+  // Saat mode ringkas aktif, terapkan efek truncated per item (Math.trunc(amt / 1000))
+  // persis seperti yang dilakukan recalcAll() di web agar totalKeluar dan totalBersih sinkron (12351 dan 5153)
   let sumMasuk = 0;
   let sumKeluar = 0;
 
   rawTarik.forEach(item => {
     if (item.deleted) return;
-    const amt = Math.round(Number(item.amount || item.jumtar) || 0);
+    const rawAmt = Number(item.amount || item.jumtar) || 0;
+    const amt = isRingkas ? Math.trunc(rawAmt / 1000) : Math.round(rawAmt);
     const isInc = String(item.type || item.category || '').toLowerCase() === 'income';
     if (isInc) sumMasuk += amt; else sumKeluar += amt;
   });
 
   rawNotif.forEach(item => {
     if (item.deleted) return;
-    const amt = Math.round(Number(item.amount) || 0);
+    const rawAmt = Number(item.amount) || 0;
+    const amt = isRingkas ? Math.trunc(rawAmt / 1000) : Math.round(rawAmt);
     const isInc = String(item.category || item.type || '').toLowerCase() === 'income';
     if (isInc) sumMasuk += amt; else sumKeluar += amt;
   });
 
   rawVoucher.forEach(item => {
     if (item.deleted) return;
-    const amt = Math.round(Number(item.amount) || 0);
+    const rawAmt = Number(item.amount) || 0;
+    const amt = isRingkas ? Math.trunc(rawAmt / 1000) : Math.round(rawAmt);
     sumKeluar += amt;
   });
 
   rawTopup.forEach(item => {
     if (item.deleted) return;
-    const amtCharged = Math.round(Number(item.amount || ((item.nominal || 0) + (item.fee || 0))) || 0);
-    const amtNominal = Math.round(Number(item.nominal) || 0);
+    const rawCharged = Number(item.amount || ((item.nominal || 0) + (item.fee || 0))) || 0;
+    const rawNominal = Number(item.nominal) || 0;
+    const amtCharged = isRingkas ? Math.trunc(rawCharged / 1000) : Math.round(rawCharged);
+    const amtNominal = isRingkas ? Math.trunc(rawNominal / 1000) : Math.round(rawNominal);
     sumMasuk += amtCharged;
     sumKeluar += amtNominal;
   });
 
-  const finalMasuk = isRingkas ? Math.trunc(sumMasuk / 1000) : sumMasuk;
-  const finalKeluar = isRingkas ? Math.trunc(sumKeluar / 1000) : sumKeluar;
-  const finalBersih = isRingkas ? Math.trunc((sumKeluar - sumMasuk) / 1000) : (sumKeluar - sumMasuk);
+  const finalMasuk = sumMasuk;
+  const finalKeluar = sumKeluar;
+  const finalBersih = sumKeluar - sumMasuk;
 
   const summary = {
     totalTrx: activeTrxCount,
