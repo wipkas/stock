@@ -1007,9 +1007,12 @@
         const showMotto = !(config.ui && config.ui.showMotto === false);
 
         // Pre-kalkulasi targetPct sebelum sorting agar sorting berbasis target_pct akurat
+        const currentPeriod = config.period || 'today';
+        const defaultFallbackTarget = currentPeriod === 'monthly' ? 1500 : (currentPeriod === 'month_to_date' ? 400 : 50);
+
         employees.forEach(emp => {
             const score = emp.todayTx || emp.score || 0;
-            const targetVal = emp.target || 50;
+            const targetVal = (emp.target && emp.target > 0) ? emp.target : defaultFallbackTarget;
             if (emp.targetPct === undefined || emp.targetPct === null) {
                 emp.targetPct = targetVal > 0 ? Math.round((score / targetVal) * 100) : 0;
             }
@@ -1033,7 +1036,7 @@
         sorted.forEach((emp, index) => {
             const rank = index + 1;
             const score = emp.todayTx || emp.score || 0;
-            const targetVal = emp.target || 50;
+            const targetVal = (emp.target && emp.target > 0) ? emp.target : defaultFallbackTarget;
             const targetPct = (emp.targetPct !== undefined && emp.targetPct !== null)
                 ? Number(emp.targetPct)
                 : (targetVal > 0 ? Math.round((score / targetVal) * 100) : 0);
@@ -1268,13 +1271,24 @@
             if (!store) return;
             if (scope === 'store' && targetStoreId && store.id !== targetStoreId) return;
 
-            const targetMonthly = Number(store.target_monthly) || 0;
+            const yearMonth = `${year}-${month}`;
+            let targetMonthly = 0;
+            if (typeof KspTarget !== 'undefined' && typeof KspTarget.getStoreMonthlyTarget === 'function') {
+                targetMonthly = KspTarget.getStoreMonthlyTarget(store, yearMonth);
+            } else if (store.monthly_targets && typeof store.monthly_targets === 'object' && store.monthly_targets[yearMonth]) {
+                targetMonthly = Number(store.monthly_targets[yearMonth]) || 0;
+            } else if (typeof store.monthly_target === 'number' && store.monthly_target > 0) {
+                targetMonthly = store.monthly_target;
+            } else {
+                targetMonthly = Number(store.monthly_target || store.target_monthly) || 0;
+            }
+
             const dailyTargetStore = targetMonthly > 0 ? Math.round(targetMonthly / totalDaysInMonth) : 0;
 
             const employees = (Array.isArray(store.employees) ? store.employees : [])
                 .filter(e => e && e.status !== 'inactive');
 
-            const shiftCount = employees.length > 0 ? employees.length : (Array.isArray(store.shifts) ? store.shifts.length : 2);
+            const shiftCount = employees.length > 0 ? employees.length : (Array.isArray(store.shifts) ? store.shifts.length : (store.shift_count || 2));
             const dailyTargetPerEmployee = shiftCount > 0 ? Math.round(dailyTargetStore / shiftCount) : dailyTargetStore;
 
             // Hitung jumlah hari unik yang memiliki data transaksi di bulan ini
@@ -1292,22 +1306,43 @@
 
             let targetPerEmployee = 50;
             if (period === 'monthly') {
-                targetPerEmployee = shiftCount > 0 ? Math.round(targetMonthly / shiftCount) : targetMonthly;
+                targetPerEmployee = targetMonthly > 0 
+                    ? (shiftCount > 0 ? Math.round(targetMonthly / shiftCount) : targetMonthly)
+                    : (50 * totalDaysInMonth);
             } else if (period === 'month_to_date') {
                 // Proporsional dari tanggal 1 s/d hari ini
-                targetPerEmployee = Math.round(dailyTargetPerEmployee * daysToDate);
+                targetPerEmployee = dailyTargetPerEmployee > 0 
+                    ? Math.round(dailyTargetPerEmployee * daysToDate)
+                    : (50 * daysToDate);
             } else if (period === 'recorded_days') {
                 // Proporsional HANYA untuk hari-hari yang tercatat di sistem
-                targetPerEmployee = Math.round(dailyTargetPerEmployee * activeRecordedDays);
+                targetPerEmployee = dailyTargetPerEmployee > 0 
+                    ? Math.round(dailyTargetPerEmployee * activeRecordedDays)
+                    : (50 * activeRecordedDays);
             } else {
                 // 'today' (target shift harian)
-                targetPerEmployee = dailyTargetPerEmployee;
+                targetPerEmployee = dailyTargetPerEmployee > 0 ? dailyTargetPerEmployee : 50;
             }
 
             const todayData = (store.daily_transactions && store.daily_transactions[todayKey]) || null;
             const todayRecords = todayData && Array.isArray(todayData.records) ? todayData.records : [];
 
-            employees.forEach(emp => {
+            // Jika belum ada karyawan terdaftar, buat representasi per shift
+            let empList = employees;
+            if (empList.length === 0) {
+                const sCount = shiftCount || 1;
+                empList = [];
+                for (let i = 1; i <= sCount; i++) {
+                    empList.push({
+                        id: `${store.id}_shift_${i}`,
+                        name: `${store.name || 'Cabang'} (Shift ${i})`,
+                        shift_num: i,
+                        status: 'active'
+                    });
+                }
+            }
+
+            empList.forEach(emp => {
                 let empTx = 0;
 
                 if (period === 'monthly' || period === 'month_to_date' || period === 'recorded_days') {
@@ -1326,6 +1361,11 @@
                             }
                         });
                     }
+
+                    // Fallback jika belum ada daily breakdown tapi monthly_tx toko terisi
+                    if (empTx === 0 && emp.shift_num === 1 && typeof store.monthly_tx === 'number' && store.monthly_tx > 0) {
+                        empTx = store.monthly_tx;
+                    }
                 } else {
                     // 'today'
                     const rec = todayRecords.find(r => r && (r.emp_id === emp.id || r.shift_num === emp.shift_num));
@@ -1336,7 +1376,20 @@
                     }
                 }
 
-                const targetVal = targetPerEmployee > 0 ? targetPerEmployee : 50;
+                // Cek apakah karyawan memiliki target khusus tersendiri
+                let targetVal = targetPerEmployee;
+                if (emp.monthly_target && period === 'monthly') {
+                    targetVal = Number(emp.monthly_target);
+                } else if (emp.daily_target && period === 'today') {
+                    targetVal = Number(emp.daily_target);
+                } else if (emp.target) {
+                    targetVal = Number(emp.target);
+                }
+
+                if (targetVal <= 0) {
+                    targetVal = period === 'monthly' ? (50 * totalDaysInMonth) : (period === 'month_to_date' ? (50 * daysToDate) : 50);
+                }
+
                 const targetPct = targetVal > 0 ? Math.round((empTx / targetVal) * 100) : 0;
 
                 result.push({
