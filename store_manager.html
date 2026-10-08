@@ -2171,7 +2171,8 @@
                 border-radius: 8px !important;
             }
 
-            #btnTopMasterEmp {
+            #btnTopMasterEmp,
+            #btnTopLeaderboard {
                 padding: 5px 8px !important;
                 font-size: 11px !important;
                 white-space: nowrap !important;
@@ -2484,6 +2485,9 @@
             </div>
 
             <div class="top-actions">
+                <button class="btn-primary" id="btnTopLeaderboard" onclick="openLeaderboardModal()" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #f59e0b;" title="Buka Leaderboard Kasir &amp; Target">
+                    <span>🏆</span> Leaderboard
+                </button>
                 <button class="btn-primary" id="btnTopMasterEmp" onclick="openMasterEmployeesView()" style="background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.4); color: #0ea5e9;">
                     <span>👥</span> Kelola Karyawan
                 </button>
@@ -2492,6 +2496,13 @@
                         ⚙️
                     </button>
                     <div class="top-menu-dropdown" id="topMenuDropdown" role="menu">
+                        <div class="top-menu-item" role="menuitem" tabindex="0" onclick="closeTopMenu(); openLeaderboardModal();">
+                            <span class="top-menu-icon">🏆</span>
+                            <div style="flex: 1;">
+                                <div class="top-menu-label">Leaderboard Kasir</div>
+                                <div class="top-menu-sub">Peringkat, capaian target &amp; perolehan bonus</div>
+                            </div>
+                        </div>
                         <div class="top-menu-item" role="menuitem" tabindex="0" onclick="closeTopMenu(); openBranchTargetModal();">
                             <span class="top-menu-icon">🎯</span>
                             <div style="flex: 1;">
@@ -2500,9 +2511,9 @@
                             </div>
                         </div>
                         <div class="top-menu-item" role="menuitem" tabindex="0" onclick="closeTopMenu(); openLeaderboardConfigModal();">
-                            <span class="top-menu-icon">🏆</span>
+                            <span class="top-menu-icon">⚙️</span>
                             <div style="flex: 1;">
-                                <div class="top-menu-label">Leaderboard &amp; Skema Bonus</div>
+                                <div class="top-menu-label">Pengaturan Skema Bonus</div>
                                 <div class="top-menu-sub">Atur tolak ukur, model &amp; hadiah bonus</div>
                             </div>
                         </div>
@@ -2603,6 +2614,21 @@
                     </div>
                     <div class="feature-action">
                         <span>Buka Halaman HistoriKu</span>
+                        <span>&rarr;</span>
+                    </div>
+                </div>
+
+                <!-- Leaderboard & Peringkat Kasir -->
+                <div class="feature-card" style="--feature-accent: #F59E0B; cursor: pointer;" onclick="openLeaderboardModal(activeStoreId)">
+                    <div>
+                        <div class="feature-card-top">
+                            <div class="feature-icon">🏆</div>
+                            <div class="feature-title">Leaderboard Kasir</div>
+                        </div>
+                        <p class="feature-desc">Lihat peringkat transaksi, capaian target harian/bulanan, dan perolehan hadiah bonus kasir cabang ini.</p>
+                    </div>
+                    <div class="feature-action">
+                        <span>Buka Leaderboard</span>
                         <span>&rarr;</span>
                     </div>
                 </div>
@@ -4178,6 +4204,69 @@
         </div>
     </div>
 
+    <!-- MODAL DIALOG: LEADERBOARD & PERFORMA KASIR -->
+    <div id="modalLeaderboardView" class="modal-backdrop" onclick="handleBackdropClose(event, 'modalLeaderboardView')">
+        <div class="modal-card" style="max-width: 640px; max-height: 94vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                        <span>🏆</span> Leaderboard &amp; Target Kasir
+                        <button type="button" class="btn-icon" onclick="openLeaderboardConfigModal()" title="Pengaturan Skema Hadiah &amp; Bonus" aria-label="Pengaturan Bonus" style="padding: 2px 6px; font-size: 13px; border-radius: 50%; border: 1px solid var(--card-border); background: var(--input-bg); color: var(--text-muted); cursor: pointer;">⚙️</button>
+                        <button type="button" class="btn-icon" onclick="if (window.KspLeaderboard && typeof KspLeaderboard.openInfoModal === 'function') KspLeaderboard.openInfoModal('#managerLeaderboardMount');" title="Penjelasan &amp; Aturan Leaderboard" aria-label="Penjelasan Leaderboard" style="padding: 2px 6px; font-size: 13px; border-radius: 50%; border: 1px solid var(--card-border); background: var(--input-bg); color: var(--text-muted); cursor: pointer;">❓</button>
+                    </h3>
+                    <p class="modal-subtitle">Peringkat kasir, realisasi target shift/bulanan &amp; perolehan hadiah bonus</p>
+                </div>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('modalLeaderboardView')">&times;</button>
+            </div>
+
+            <!-- Toolbar Filter Periode & Cabang -->
+            <div style="padding: 10px 16px; background: var(--input-bg); border-bottom: 1px solid var(--card-border); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between;">
+                <!-- Filter Cabang -->
+                <div style="display: flex; align-items: center; gap: 6px; flex: 1; min-width: 170px;">
+                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); white-space: nowrap;">🏢 Cabang:</span>
+                    <select id="lbFilterStore" class="form-input" onchange="refreshManagerLeaderboard()" style="padding: 5px 8px; font-size: 11.5px; border-radius: 8px; background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-main); flex: 1; cursor: pointer;">
+                        <option value="all">🌐 Semua Cabang</option>
+                    </select>
+                </div>
+
+                <!-- Filter Periode (Pill Tabs) -->
+                <div style="display: inline-flex; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 2px; gap: 2px;">
+                    <button type="button" id="btnLbPeriodToday" class="filter-chip active" onclick="setLeaderboardPeriod('today')" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; border: none; margin: 0; cursor: pointer;">
+                        Hari Ini
+                    </button>
+                    <button type="button" id="btnLbPeriodMonthToDate" class="filter-chip" onclick="setLeaderboardPeriod('month_to_date')" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; border: none; margin: 0; cursor: pointer;">
+                        s/d Hari Ini
+                    </button>
+                    <button type="button" id="btnLbPeriodMonthly" class="filter-chip" onclick="setLeaderboardPeriod('monthly')" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; border: none; margin: 0; cursor: pointer;">
+                        Bulan Ini
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area: Leaderboard Mount Container -->
+            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 14px; display: flex; flex-direction: column;">
+                <div id="managerLeaderboardMount" style="width: 100%;">
+                    <!-- Di-render oleh KspLeaderboard.mount -->
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 16px;">
+                <button type="button" class="btn-secondary" onclick="openLeaderboardConfigModal()" style="padding: 8px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;" title="Buka pengaturan tolak ukur dan skema hadiah bonus">
+                    <span>⚙️</span> Atur Skema Bonus
+                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn-secondary" onclick="copyLeaderboardText()" style="padding: 8px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;" title="Salin teks peringkat ke format WhatsApp">
+                        <span>📋</span> Salin WA
+                    </button>
+                    <button type="button" class="btn-primary" onclick="closeModal('modalLeaderboardView')" style="padding: 8px 16px; font-size: 12px; font-weight: 800;">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- APP SCRIPT LOGIC -->
     <script>
         let storesData = [];
@@ -4310,6 +4399,8 @@
                     openMasterEmployeesView(storeParam);
                 } else if (viewParam === 'historiku') {
                     openHistorikuView(storeParam);
+                } else if (viewParam === 'leaderboard') {
+                    openLeaderboardModal(storeParam);
                 } else if (storeParam && storesData.some(s => s.id === storeParam)) {
                     selectStore(storeParam);
                 }
@@ -9548,6 +9639,183 @@ ${portalUrl}
 
             closeModal('modalLeaderboardConfig');
             showToast('🏆 Pengaturan Leaderboard berhasil disimpan & disinkronkan ke Cloud!', '✅');
+            if (typeof refreshManagerLeaderboard === 'function') {
+                refreshManagerLeaderboard();
+            }
+        }
+
+        // ============================================================
+        // LEADERBOARD VIEW & INTEGRATION
+        // ============================================================
+        let currentManagerLbPeriod = 'today';
+
+        function openLeaderboardModal(initialStoreId = null) {
+            const selStore = document.getElementById('lbFilterStore');
+            if (selStore) {
+                let opts = `<option value="all">🌐 Semua Cabang</option>`;
+                if (Array.isArray(storesData)) {
+                    storesData.forEach(st => {
+                        opts += `<option value="${st.id}">🏢 ${escapeHtml(st.name)}</option>`;
+                    });
+                }
+                selStore.innerHTML = opts;
+                if (initialStoreId && storesData.some(s => s.id === initialStoreId)) {
+                    selStore.value = initialStoreId;
+                } else {
+                    selStore.value = 'all';
+                }
+            }
+
+            currentManagerLbPeriod = 'today';
+            updateLeaderboardPeriodButtons();
+            refreshManagerLeaderboard();
+            openModal('modalLeaderboardView');
+        }
+
+        function setLeaderboardPeriod(periodKey) {
+            currentManagerLbPeriod = periodKey;
+            updateLeaderboardPeriodButtons();
+            refreshManagerLeaderboard();
+        }
+
+        function updateLeaderboardPeriodButtons() {
+            const bToday = document.getElementById('btnLbPeriodToday');
+            const bMtd = document.getElementById('btnLbPeriodMonthToDate');
+            const bMonthly = document.getElementById('btnLbPeriodMonthly');
+            if (bToday) bToday.classList.toggle('active', currentManagerLbPeriod === 'today');
+            if (bMtd) bMtd.classList.toggle('active', currentManagerLbPeriod === 'month_to_date');
+            if (bMonthly) bMonthly.classList.toggle('active', currentManagerLbPeriod === 'monthly');
+        }
+
+        function refreshManagerLeaderboard() {
+            if (!window.KspLeaderboard || typeof KspLeaderboard.mount !== 'function') return;
+
+            const selStore = document.getElementById('lbFilterStore');
+            const storeId = selStore?.value || 'all';
+            const period = currentManagerLbPeriod || 'today';
+            const cfg = (typeof KspLeaderboard.getConfig === 'function') ? KspLeaderboard.getConfig() : {};
+
+            const storeObj = storesData.find(s => s.id === storeId);
+            const scopeTitle = (storeId === 'all' || !storeObj)
+                ? 'Leaderboard Seluruh Cabang'
+                : `Leaderboard ${storeObj.name}`;
+
+            const employees = (typeof KspLeaderboard.extractEmployeesFromStores === 'function')
+                ? KspLeaderboard.extractEmployeesFromStores(storesData, {
+                    period: period,
+                    scope: storeId === 'all' ? 'all' : 'store',
+                    storeId: storeId === 'all' ? null : storeId,
+                    config: cfg
+                })
+                : [];
+
+            KspLeaderboard.mount('#managerLeaderboardMount', {
+                title: scopeTitle,
+                period: period,
+                scope: storeId === 'all' ? 'all' : 'store',
+                employees: employees,
+                scoring: cfg.scoring,
+                rewards: cfg.rewards,
+                ui: {
+                    showSummaryBoxes: true,
+                    progressStyle: 'store-target-mini-row',
+                    showMotto: cfg.ui ? cfg.ui.showMotto : true
+                },
+                onItemClick: function(emp, rank) {
+                    if (!emp) return;
+                    const bonus = (typeof KspLeaderboard.calculateBonus === 'function')
+                        ? KspLeaderboard.calculateBonus(emp, rank, cfg)
+                        : { statusText: '-' };
+                    showToast(`👤 #${rank} ${emp.name}: ${emp.todayTx} tx (${emp.targetPct}%) • ${bonus.statusText}`, '🏆');
+                }
+            });
+        }
+
+        function copyLeaderboardText() {
+            const period = currentManagerLbPeriod || 'today';
+            const storeId = document.getElementById('lbFilterStore')?.value || 'all';
+            const cfg = (window.KspLeaderboard && typeof KspLeaderboard.getConfig === 'function')
+                ? KspLeaderboard.getConfig()
+                : {};
+
+            const employees = (window.KspLeaderboard && typeof KspLeaderboard.extractEmployeesFromStores === 'function')
+                ? KspLeaderboard.extractEmployeesFromStores(storesData, {
+                    period: period,
+                    scope: storeId === 'all' ? 'all' : 'store',
+                    storeId: storeId === 'all' ? null : storeId,
+                    config: cfg
+                })
+                : [];
+
+            if (employees.length === 0) {
+                showToast('⚠️ Belum ada data kasir untuk disalin', 'warning');
+                return;
+            }
+
+            const primaryMetric = (cfg.scoring && cfg.scoring.primaryMetric) || 'total_tx';
+            const sorted = [...employees].sort((a, b) => {
+                if (primaryMetric === 'target_pct') {
+                    const diffPct = (b.targetPct || 0) - (a.targetPct || 0);
+                    if (diffPct !== 0) return diffPct;
+                }
+                return (b.todayTx || b.score || 0) - (a.todayTx || a.score || 0);
+            });
+
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            const periodLabel = period === 'monthly' ? 'Bulan Ini' : (period === 'month_to_date' ? 'Bulan Berjalan (s/d Hari Ini)' : 'Hari Ini');
+            const storeObj = storesData.find(s => s.id === storeId);
+            const scopeLabel = storeObj ? storeObj.name : 'Seluruh Cabang KSP';
+
+            let text = `🏆 *LEADERBOARD KASIR & TARGET*\n`;
+            text += `🏢 *Cabang:* ${scopeLabel}\n`;
+            text += `📅 *Periode:* ${periodLabel} (${dateStr})\n`;
+            text += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+            sorted.forEach((emp, index) => {
+                const rank = index + 1;
+                const medal = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : `*#${rank}*`));
+                const bonus = (window.KspLeaderboard && typeof KspLeaderboard.calculateBonus === 'function')
+                    ? KspLeaderboard.calculateBonus(emp, rank, cfg)
+                    : { eligible: false, statusText: '' };
+
+                text += `${medal} *${emp.name}* (${emp.storeName || ''} - ${emp.shift || ''})\n`;
+                text += `   📊 Transaksi: *${(emp.todayTx || 0).toLocaleString('id-ID')} tx* / Target: ${emp.target || 0} tx (${emp.targetPct || 0}%)\n`;
+                if (bonus.eligible && bonus.amount > 0) {
+                    text += `   🎁 Bonus: *Rp ${bonus.amount.toLocaleString('id-ID')}* (${bonus.statusText})\n`;
+                }
+                text += `\n`;
+            });
+
+            text += `━━━━━━━━━━━━━━━━━━━━━\n`;
+            text += `_Diperbarui secara realtime via KSP Check Store Manager._ 🔥`;
+
+            if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('📋 Ringkasan Leaderboard berhasil disalin ke WhatsApp!', '✅');
+                }).catch(() => {
+                    execCommandCopyLeaderboard(text);
+                });
+            } else {
+                execCommandCopyLeaderboard(text);
+            }
+        }
+
+        function execCommandCopyLeaderboard(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try {
+                document.execCommand('copy');
+                showToast('📋 Ringkasan Leaderboard berhasil disalin ke WhatsApp!', '✅');
+            } catch(e) {
+                prompt('Salin teks Leaderboard secara manual:', text);
+            }
+            document.body.removeChild(ta);
         }
     </script>
 </body>
