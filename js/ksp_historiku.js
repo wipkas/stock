@@ -1704,11 +1704,18 @@ async function saveRowToSupabase(rowId, currentVal, origVal, currentDesc, isDel,
   };
 
   const group = rowEl ? rowEl.closest('.lv-group') : null;
-  const modType = group ? (group.dataset.groupId || 'tarik').split('-')[0] : 'tarik';
-  const trxDate = (rowEl && rowEl.dataset.date) || (window.REPORT_DATA && window.REPORT_DATA.dateDb) || getTodayDbDate();
+  const rawMod = group ? (group.dataset.groupId || group.dataset.appKey || 'tarik').split('-')[0] : 'tarik';
+  let supabaseModType = 'notif';
+  if (rawMod === 'tarik') supabaseModType = 'tarik';
+  else if (rawMod === 'voucher') supabaseModType = 'voucher';
+
+  const trxDate = (rowEl && rowEl.dataset.date) || (group && group.dataset.date) || 
+                  (window.REPORT_DATA && window.REPORT_DATA.dateDb && window.REPORT_DATA.dateDb.indexOf(' s/d ') === -1 ? window.REPORT_DATA.dateDb : '') || 
+                  (window.REPORT_DATA && window.REPORT_DATA.startDate) || getTodayDbDate();
   const timeCell = rowEl ? rowEl.querySelector('.lv-time-text') : null;
-  const timeStr = timeCell ? timeCell.textContent.trim() : '00:00';
+  const timeStr = (rowEl && rowEl.dataset.time) || (timeCell ? timeCell.textContent.trim() : '00:00');
   const cat = (rowEl && rowEl.dataset.cat) || 'outcome';
+  const appLabel = (group && group.dataset.rekapLabel) ? group.dataset.rekapLabel.replace(/^[^\w\s]+\s*/, '') : 'Input Web';
 
   if (isNew) {
     const newRecord = {
@@ -1716,21 +1723,21 @@ async function saveRowToSupabase(rowId, currentVal, origVal, currentDesc, isDel,
       store_id: storeId,
       device_id: 'web_client',
       device_name: 'Web Dashboard',
-      module_type: modType,
+      module_type: supabaseModType,
       local_id: rowId,
       trx_date: trxDate.indexOf(' s/d ') > -1 ? getTodayDbDate() : trxDate,
       trx_time: timeStr.length === 5 ? timeStr + ':00' : timeStr,
       timestamp: Date.now(),
-      shift: (window.REPORT_DATA && window.REPORT_DATA.shift) || 0,
+      shift: (rowEl && rowEl.dataset.shift) ? parseInt(rowEl.dataset.shift, 10) : ((window.REPORT_DATA && window.REPORT_DATA.shift) || 0),
       category: cat,
       amount: currentVal,
       real_amount: currentVal,
       fee: 0,
       cost: 0,
       quantity: 1,
-      app_package: 'com.kspcheck.' + modType,
-      app_name: 'Input Web',
-      title: 'Input Web',
+      app_package: 'com.kspcheck.' + rawMod,
+      app_name: appLabel,
+      title: appLabel,
       item_name: currentDesc || 'Item Baru',
       customer_name: currentDesc || 'Item Baru',
       is_edited: true,
@@ -1740,14 +1747,19 @@ async function saveRowToSupabase(rowId, currentVal, origVal, currentDesc, isDel,
     };
 
     if (client) {
-      let res = await client.from('ksp_history_transactions').insert([newRecord]);
+      let res = await client.from('ksp_history_transactions').upsert([newRecord], { onConflict: 'id' });
       if (res.error) {
+        console.warn('[KspHistoriku] Upsert dengan web flags gagal, coba tanpa flags:', res.error);
         delete newRecord.is_edited;
         delete newRecord.is_deleted_by_web;
         delete newRecord.web_edited_at;
-        await client.from('ksp_history_transactions').insert([newRecord]);
+        let resRetry = await client.from('ksp_history_transactions').upsert([newRecord], { onConflict: 'id' });
+        if (resRetry.error) {
+          console.error('[KspHistoriku] Gagal upsert newRecord ke Supabase:', resRetry.error);
+        }
       }
     } else {
+      headers['Prefer'] = 'resolution=merge-duplicates,return=minimal';
       await fetch(`${baseUrl}/rest/v1/ksp_history_transactions`, {
         method: 'POST',
         headers: headers,
@@ -3273,6 +3285,27 @@ function renumberAllRows() {
   if (elTrx) elTrx.textContent = totalTrx;
 }
 
+function calculateIncrementedTime(prevTimeStr) {
+  if (prevTimeStr && typeof prevTimeStr === 'string') {
+    const match = prevTimeStr.trim().match(/^(\d{1,2}):(\d{2})/);
+    if (match) {
+      let hh = parseInt(match[1], 10);
+      let mm = parseInt(match[2], 10);
+      mm += 1;
+      if (mm >= 60) {
+        mm = 0;
+        hh = (hh + 1) % 24;
+      }
+      return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    }
+  }
+
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
 function addNewItemBelowCurrent() {
   if (!currentNavRow) {
     const all = getAllReportRows();
@@ -3286,20 +3319,30 @@ function addNewItemBelowCurrent() {
   const isVoucher = group.dataset.groupId === 'voucher' || (group.dataset.groupId && group.dataset.groupId.startsWith('voucher'));
   const isOutcomeOnly = isVoucher || !!group.querySelector('.lv-th.l') || !!currentNavRow.querySelector('.lv-td-itemname');
 
-  const now = new Date();
-  const hh = String(now.getHours()).padStart(2, '0');
-  const mm = String(now.getMinutes()).padStart(2, '0');
-  const timeStr = `${hh}:${mm}`;
+  // 1. Ambil waktu dari baris aktif di atasnya lalu increment 1 menit
+  const prevTime = currentNavRow.dataset.time ||
+                   (currentNavRow.querySelector('.lv-time-text') ? currentNavRow.querySelector('.lv-time-text').textContent.trim() : '');
+  const timeStr = calculateIncrementedTime(prevTime);
+
+  // 2. Dapatkan tanggal baris yang konsisten
+  const rowDate = currentNavRow.dataset.date || (group && group.dataset.date) ||
+                  (window.REPORT_DATA && window.REPORT_DATA.dateDb && window.REPORT_DATA.dateDb.indexOf(' s/d ') === -1 ? window.REPORT_DATA.dateDb : '') ||
+                  (window.REPORT_DATA && window.REPORT_DATA.startDate) || getTodayDbDate();
+
+  // 3. ID Unik Baru
+  const sId = window.ACTIVE_STORE_ID || (window.REPORT_DATA && window.REPORT_DATA.storeId) || (typeof currentStoreId !== 'undefined' ? currentStoreId : 'store');
+  const newRowId = 'web_' + sId + '_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
 
   const provider = currentNavRow.dataset.provider || '';
   const defaultDesc = isVoucher ? (provider ? `${provider} Baru` : 'Voucher Baru') : 'Transaksi Baru';
   const isIncome = !isOutcomeOnly && currentNavRow.dataset.cat === 'income';
 
+  // 4. Render HTML dengan menyertakan isNew=true, dateVal, dan rowId
   let newRowHtml = '';
   if (isVoucher) {
-    newRowHtml = renderVoucherRowHtml(0, timeStr, defaultDesc, 0, provider || 'VOUCHER');
+    newRowHtml = renderVoucherRowHtml(0, timeStr, defaultDesc, 0, provider || 'VOUCHER', 0, false, false, true, 0, rowDate, newRowId);
   } else {
-    newRowHtml = renderRowHtml(0, timeStr, 0, isIncome, defaultDesc, isOutcomeOnly);
+    newRowHtml = renderRowHtml(0, timeStr, 0, isIncome, defaultDesc, isOutcomeOnly, 0, false, false, true, 0, 0, rowDate, newRowId);
   }
 
   currentNavRow.insertAdjacentHTML('afterend', newRowHtml);
@@ -3308,15 +3351,19 @@ function addNewItemBelowCurrent() {
 
   newRow.classList.add('item-new');
   newRow.dataset.isNew = 'true';
-  const sId = window.ACTIVE_STORE_ID || (window.REPORT_DATA && window.REPORT_DATA.storeId) || 'store';
-  const newRowId = 'web_' + sId + '_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
   newRow.dataset.rowId = newRowId;
+  newRow.dataset.date = rowDate;
+  newRow.dataset.time = timeStr;
+  newRow.dataset.cat = isIncome ? 'income' : 'outcome';
+  newRow.dataset.val = '0';
+  newRow.dataset.orig = '0';
+  newRow.dataset.desc = defaultDesc;
+  if (isVoucher) newRow.dataset.provider = provider || 'VOUCHER';
   updateRowMarkTags(newRow);
 
-  // Sync item baru ke window.REPORT_DATA agar tetap muncul saat berganti mode tampilan layout
+  // 5. Sync item baru ke window.REPORT_DATA agar tetap muncul saat berganti mode tampilan layout
   if (window.REPORT_DATA) {
     const modType = (group.dataset.appKey || (group.dataset.groupId ? group.dataset.groupId.split('-')[0] : 'tarik')) || 'tarik';
-    const rowDate = currentNavRow.dataset.date || (group && group.dataset.date) || (window.REPORT_DATA.dateDb && window.REPORT_DATA.dateDb.indexOf(' s/d ') === -1 ? window.REPORT_DATA.dateDb : (window.REPORT_DATA.startDate || ''));
 
     const newItemObj = {
       id: newRowId,
@@ -3339,7 +3386,7 @@ function addNewItemBelowCurrent() {
       app: currentNavRow.dataset.app || modType,
       appName: currentNavRow.dataset.appName || (modType === 'tarik' ? 'Tarik Tunai' : defaultDesc),
       isNew: true,
-      isEdited: false,
+      isEdited: true,
       deleted: false,
       read: false
     };
@@ -3365,7 +3412,7 @@ function addNewItemBelowCurrent() {
   if (amtSpan) {
     setTimeout(() => editAmt(amtSpan), 100);
   }
-  showToast('Item baru disisipkan di bawah');
+  showToast(`Item baru (${timeStr}) disisipkan di bawah`);
 }
 
 function onNameClick(td, event) {
@@ -5208,7 +5255,7 @@ function transformSupabaseRowsToReportData(rows, dateDb, shift, isMultiDay, star
       if (!isDeleted) {
         totalKeluar += amt;
       }
-    } else if (r.module_type === 'notif') {
+    } else { // 'notif' atau modul aplikasi lainnya (bca, dana, dll)
       notif.push({
         id: r.local_id || r.id,
         rowId: r.id,
