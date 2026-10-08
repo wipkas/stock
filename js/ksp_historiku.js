@@ -1704,10 +1704,37 @@ async function saveRowToSupabase(rowId, currentVal, origVal, currentDesc, isDel,
   };
 
   const group = rowEl ? rowEl.closest('.lv-group') : null;
-  const rawMod = group ? (group.dataset.groupId || group.dataset.appKey || 'tarik').split('-')[0] : 'tarik';
+  const grpId = group ? (group.dataset.groupId || '').toLowerCase() : '';
+  const grpAppKey = group ? (group.dataset.appKey || '') : '';
+
   let supabaseModType = 'notif';
-  if (rawMod === 'tarik') supabaseModType = 'tarik';
-  else if (rawMod === 'voucher') supabaseModType = 'voucher';
+  let resolvedAppPkg = (rowEl && (rowEl.dataset.appPackage || rowEl.dataset.app)) || '';
+  let resolvedAppName = (rowEl && rowEl.dataset.appName) || '';
+
+  if (grpId === 'tarik' || grpId.startsWith('tarik') || grpAppKey === 'tarik') {
+    supabaseModType = 'tarik';
+    resolvedAppPkg = 'com.kspcheck.tarik';
+    resolvedAppName = 'Tarik Tunai';
+  } else if (grpId === 'voucher' || grpId.startsWith('voucher') || grpAppKey === 'voucher') {
+    supabaseModType = 'voucher';
+    resolvedAppPkg = 'com.kspcheck.voucher';
+    resolvedAppName = (rowEl && rowEl.dataset.provider) || 'VOUCHER';
+  } else if (grpId === 'topup' || grpId.startsWith('topup') || grpAppKey === 'topup') {
+    supabaseModType = 'topup';
+    resolvedAppPkg = resolvedAppPkg || 'com.kspcheck.topup';
+    resolvedAppName = resolvedAppName || 'TopUp';
+  } else {
+    supabaseModType = 'notif';
+    if (!resolvedAppPkg) {
+      resolvedAppPkg = grpAppKey || (grpId ? grpId.replace(/^notif-/, '').split('-')[0] : 'other');
+    }
+    if (!resolvedAppName) {
+      const gName = group && group.querySelector('.lv-group-name') ? group.querySelector('.lv-group-name').textContent.trim() : '';
+      resolvedAppName = (rowEl && rowEl.dataset.appName) || gName || ((group && group.dataset.rekapLabel) 
+        ? group.dataset.rekapLabel.replace(/^[^\w\s]+\s*/, '').trim() 
+        : 'Notifikasi');
+    }
+  }
 
   const trxDate = (rowEl && rowEl.dataset.date) || (group && group.dataset.date) || 
                   (window.REPORT_DATA && window.REPORT_DATA.dateDb && window.REPORT_DATA.dateDb.indexOf(' s/d ') === -1 ? window.REPORT_DATA.dateDb : '') || 
@@ -1715,7 +1742,6 @@ async function saveRowToSupabase(rowId, currentVal, origVal, currentDesc, isDel,
   const timeCell = rowEl ? rowEl.querySelector('.lv-time-text') : null;
   const timeStr = (rowEl && rowEl.dataset.time) || (timeCell ? timeCell.textContent.trim() : '00:00');
   const cat = (rowEl && rowEl.dataset.cat) || 'outcome';
-  const appLabel = (group && group.dataset.rekapLabel) ? group.dataset.rekapLabel.replace(/^[^\w\s]+\s*/, '') : 'Input Web';
 
   if (isNew) {
     const newRecord = {
@@ -1735,11 +1761,12 @@ async function saveRowToSupabase(rowId, currentVal, origVal, currentDesc, isDel,
       fee: 0,
       cost: 0,
       quantity: 1,
-      app_package: 'com.kspcheck.' + rawMod,
-      app_name: appLabel,
-      title: appLabel,
+      app_package: resolvedAppPkg,
+      app_name: resolvedAppName,
+      title: resolvedAppName,
       item_name: currentDesc || 'Item Baru',
       customer_name: currentDesc || 'Item Baru',
+      provider: (supabaseModType === 'voucher') ? ((rowEl && rowEl.dataset.provider) || resolvedAppName) : undefined,
       is_edited: true,
       is_deleted_by_web: isDel,
       web_edited_at: new Date().toISOString(),
@@ -3316,7 +3343,11 @@ function addNewItemBelowCurrent() {
   const group = currentNavRow.closest('.lv-group');
   if (!group) return;
 
-  const isVoucher = group.dataset.groupId === 'voucher' || (group.dataset.groupId && group.dataset.groupId.startsWith('voucher'));
+  const grpId = (group.dataset.groupId || '').toLowerCase();
+  const grpAppKey = group.dataset.appKey || '';
+  const isVoucher = grpId === 'voucher' || grpId.startsWith('voucher') || grpAppKey === 'voucher';
+  const isTarik = grpId === 'tarik' || grpId.startsWith('tarik') || grpAppKey === 'tarik';
+  const isTopup = grpId === 'topup' || grpId.startsWith('topup') || grpAppKey === 'topup';
   const isOutcomeOnly = isVoucher || !!group.querySelector('.lv-th.l') || !!currentNavRow.querySelector('.lv-td-itemname');
 
   // 1. Ambil waktu dari baris aktif di atasnya lalu increment 1 menit
@@ -3333,16 +3364,73 @@ function addNewItemBelowCurrent() {
   const sId = window.ACTIVE_STORE_ID || (window.REPORT_DATA && window.REPORT_DATA.storeId) || (typeof currentStoreId !== 'undefined' ? currentStoreId : 'store');
   const newRowId = 'web_' + sId + '_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
 
-  const provider = currentNavRow.dataset.provider || '';
+  // 4. Deteksi grup dan parent item dari window.REPORT_DATA
+  const parentRowId = currentNavRow.dataset.rowId;
+  let parentItem = null;
+  let targetArrayName = '';
+
+  if (window.REPORT_DATA && parentRowId) {
+    const candidateArrays = ['tarik', 'voucher', 'notif', 'topup'];
+    for (const arrKey of candidateArrays) {
+      if (Array.isArray(window.REPORT_DATA[arrKey])) {
+        const found = window.REPORT_DATA[arrKey].find(x => (x.rowId && x.rowId === parentRowId) || (x.id && x.id === parentRowId));
+        if (found) {
+          parentItem = found;
+          targetArrayName = arrKey;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!targetArrayName) {
+    if (isVoucher) targetArrayName = 'voucher';
+    else if (isTarik) targetArrayName = 'tarik';
+    else if (isTopup) targetArrayName = 'topup';
+    else targetArrayName = 'notif';
+  }
+
+  // 5. Tentukan targetAppPkg dan targetAppName secara akurat sesuai lokasi penambahan
+  let targetAppPkg = '';
+  let targetAppName = '';
+  const provider = currentNavRow.dataset.provider || (parentItem && parentItem.provider) || '';
+
+  if (targetArrayName === 'tarik') {
+    targetAppPkg = 'com.kspcheck.tarik';
+    targetAppName = 'Tarik Tunai';
+  } else if (targetArrayName === 'voucher') {
+    targetAppPkg = 'com.kspcheck.voucher';
+    targetAppName = provider || 'VOUCHER';
+  } else if (targetArrayName === 'topup') {
+    targetAppPkg = (parentItem && parentItem.app) || currentNavRow.dataset.app || currentNavRow.dataset.appPackage || 'com.kspcheck.topup';
+    targetAppName = (parentItem && parentItem.appName) || currentNavRow.dataset.appName || 'TopUp';
+  } else {
+    // Notification app group (BCA, DANA, BRI, Mandiri, ShopeePay, dll)
+    targetAppPkg = (parentItem && parentItem.app) ||
+                   currentNavRow.dataset.appPackage ||
+                   currentNavRow.dataset.app ||
+                   grpAppKey ||
+                   (grpId ? grpId.replace(/^notif-/, '').split('-')[0] : 'other');
+
+    const groupTitle = group.querySelector('.lv-group-name') ? group.querySelector('.lv-group-name').textContent.trim() : '';
+    const rekapTitle = group.dataset.rekapLabel ? group.dataset.rekapLabel.replace(/^[^\w\s]+\s*/, '').trim() : '';
+
+    targetAppName = (parentItem && parentItem.appName) ||
+                    currentNavRow.dataset.appName ||
+                    groupTitle ||
+                    rekapTitle ||
+                    'Notifikasi';
+  }
+
   const defaultDesc = isVoucher ? (provider ? `${provider} Baru` : 'Voucher Baru') : 'Transaksi Baru';
   const isIncome = !isOutcomeOnly && currentNavRow.dataset.cat === 'income';
 
-  // 4. Render HTML dengan menyertakan isNew=true, dateVal, dan rowId
+  // 6. Render HTML dengan menyertakan isNew=true, dateVal, rowId, targetAppPkg, targetAppName
   let newRowHtml = '';
   if (isVoucher) {
-    newRowHtml = renderVoucherRowHtml(0, timeStr, defaultDesc, 0, provider || 'VOUCHER', 0, false, false, true, 0, rowDate, newRowId);
+    newRowHtml = renderVoucherRowHtml(0, timeStr, defaultDesc, 0, provider || 'VOUCHER', 0, false, false, true, 0, rowDate, newRowId, targetAppPkg, targetAppName);
   } else {
-    newRowHtml = renderRowHtml(0, timeStr, 0, isIncome, defaultDesc, isOutcomeOnly, 0, false, false, true, 0, 0, rowDate, newRowId);
+    newRowHtml = renderRowHtml(0, timeStr, 0, isIncome, defaultDesc, isOutcomeOnly, 0, false, false, true, 0, 0, rowDate, newRowId, targetAppPkg, targetAppName);
   }
 
   currentNavRow.insertAdjacentHTML('afterend', newRowHtml);
@@ -3358,13 +3446,14 @@ function addNewItemBelowCurrent() {
   newRow.dataset.val = '0';
   newRow.dataset.orig = '0';
   newRow.dataset.desc = defaultDesc;
+  newRow.dataset.app = targetAppPkg;
+  newRow.dataset.appPackage = targetAppPkg;
+  newRow.dataset.appName = targetAppName;
   if (isVoucher) newRow.dataset.provider = provider || 'VOUCHER';
   updateRowMarkTags(newRow);
 
-  // 5. Sync item baru ke window.REPORT_DATA agar tetap muncul saat berganti mode tampilan layout
+  // 7. Sync item baru ke window.REPORT_DATA di array yang tepat (notif, tarik, voucher, topup)
   if (window.REPORT_DATA) {
-    const modType = (group.dataset.appKey || (group.dataset.groupId ? group.dataset.groupId.split('-')[0] : 'tarik')) || 'tarik';
-
     const newItemObj = {
       id: newRowId,
       rowId: newRowId,
@@ -3383,22 +3472,22 @@ function addNewItemBelowCurrent() {
       provider: isVoucher ? (provider || 'VOUCHER') : undefined,
       type: isIncome ? 'income' : 'outcome',
       category: isIncome ? 'income' : 'outcome',
-      app: currentNavRow.dataset.app || modType,
-      appName: currentNavRow.dataset.appName || (modType === 'tarik' ? 'Tarik Tunai' : defaultDesc),
+      app: targetAppPkg,
+      appName: targetAppName,
       isNew: true,
       isEdited: true,
       deleted: false,
       read: false
     };
 
-    if (Array.isArray(window.REPORT_DATA[modType])) {
-      const parentRowId = currentNavRow.dataset.rowId;
-      const idx = window.REPORT_DATA[modType].findIndex(x => (x.rowId && x.rowId === parentRowId) || (x.id && x.id === parentRowId));
-      if (idx !== -1) {
-        window.REPORT_DATA[modType].splice(idx + 1, 0, newItemObj);
-      } else {
-        window.REPORT_DATA[modType].push(newItemObj);
-      }
+    if (!Array.isArray(window.REPORT_DATA[targetArrayName])) {
+      window.REPORT_DATA[targetArrayName] = [];
+    }
+    const idx = window.REPORT_DATA[targetArrayName].findIndex(x => (x.rowId && x.rowId === parentRowId) || (x.id && x.id === parentRowId));
+    if (idx !== -1) {
+      window.REPORT_DATA[targetArrayName].splice(idx + 1, 0, newItemObj);
+    } else {
+      window.REPORT_DATA[targetArrayName].push(newItemObj);
     }
   }
 
@@ -3412,7 +3501,7 @@ function addNewItemBelowCurrent() {
   if (amtSpan) {
     setTimeout(() => editAmt(amtSpan), 100);
   }
-  showToast(`Item baru (${timeStr}) disisipkan di bawah`);
+  showToast(`Item baru (${timeStr}) disisipkan di bawah [${targetAppName}]`);
 }
 
 function onNameClick(td, event) {
@@ -4324,7 +4413,7 @@ function getAppIcon(appPackage) {
   return '📱';
 }
 
-function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmount, isDeleted, isRead, isNew, realVal, feeVal, dateVal, rowId) {
+function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmount, isDeleted, isRead, isNew, realVal, feeVal, dateVal, rowId, appVal, appNameVal) {
   const cat = isIncome ? 'income' : 'outcome';
   const descAttr = desc ? ` data-desc="${escapeHtml(desc)}"` : '';
   const timeTitle = desc ? `${escapeHtml(time)} · ${escapeHtml(desc)}` : escapeHtml(time);
@@ -4342,6 +4431,8 @@ function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmo
   const feeAttr = (feeVal !== undefined && feeVal !== null && feeVal > 0) ? ` data-fee="${feeVal}"` : '';
   const dateAttr = dateVal ? ` data-date="${escapeHtml(dateVal)}"` : '';
   const rowIdAttr = rowId ? ` data-row-id="${escapeHtml(rowId)}"` : '';
+  const appAttr = appVal ? ` data-app="${escapeHtml(appVal)}" data-app-package="${escapeHtml(appVal)}"` : '';
+  const appNameAttr = appNameVal ? ` data-app-name="${escapeHtml(appNameVal)}"` : '';
 
   let statusTagHtml = '';
   if (isItemNew) {
@@ -4363,7 +4454,7 @@ function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmo
 
   if (isOutcomeOnly) {
     return `
-      <tr class="lv-row${rowExtraClass}" data-cat="${cat}" data-orig="${orig}" data-val="${amount}"${descAttr}${newAttr}${realAttr}${feeAttr}${dateAttr}${rowIdAttr}>
+      <tr class="lv-row${rowExtraClass}" data-cat="${cat}" data-orig="${orig}" data-val="${amount}"${descAttr}${newAttr}${realAttr}${feeAttr}${dateAttr}${rowIdAttr}${appAttr}${appNameAttr}>
         <td class="lv-td lv-td-idx">${idx}</td>
         <td class="lv-td lv-td-time" title="${timeTitle}"><span class="lv-time-text">${escapeHtml(time)}</span>${statusTagHtml}</td>
         <td class="lv-td lv-td-itemname" onclick="onNameClick(this, event)" title="Klik untuk dengar / ubah: ${escapeHtml(desc || '—')}">${escapeHtml(desc || '—')}</td>
@@ -4382,7 +4473,7 @@ function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmo
     : `<td class="lv-td lv-td-in"><span class="lv-empty-cell">—</span></td>`;
 
   return `
-    <tr class="lv-row${rowExtraClass}" data-cat="${cat}" data-orig="${orig}" data-val="${amount}"${descAttr}${newAttr}${realAttr}${feeAttr}${dateAttr}${rowIdAttr}>
+    <tr class="lv-row${rowExtraClass}" data-cat="${cat}" data-orig="${orig}" data-val="${amount}"${descAttr}${newAttr}${realAttr}${feeAttr}${dateAttr}${rowIdAttr}${appAttr}${appNameAttr}>
       <td class="lv-td lv-td-idx">${idx}</td>
       <td class="lv-td lv-td-time" title="${timeTitle}"><span class="lv-time-text">${escapeHtml(time)}</span>${statusTagHtml}</td>
       ${outCell}
@@ -4390,7 +4481,7 @@ function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmo
     </tr>`;
 }
 
-function renderVoucherRowHtml(idx, time, prodName, amount, provider, origAmount, isDeleted, isRead, isNew, costVal, dateVal, rowId) {
+function renderVoucherRowHtml(idx, time, prodName, amount, provider, origAmount, isDeleted, isRead, isNew, costVal, dateVal, rowId, appVal, appNameVal) {
   const timeTitle = `${escapeHtml(time)} · ${escapeHtml(provider)} - ${escapeHtml(prodName)}`;
   const orig = (origAmount !== undefined && origAmount !== null) ? origAmount : amount;
   const isItemNew = (isNew === true || isNew === 'true');
@@ -4405,6 +4496,8 @@ function renderVoucherRowHtml(idx, time, prodName, amount, provider, origAmount,
   const costAttr = (costVal !== undefined && costVal !== null && costVal > 0) ? ` data-cost="${costVal}"` : '';
   const dateAttr = dateVal ? ` data-date="${escapeHtml(dateVal)}"` : '';
   const rowIdAttr = rowId ? ` data-row-id="${escapeHtml(rowId)}"` : '';
+  const appAttr = ` data-app="${escapeHtml(appVal || 'com.kspcheck.voucher')}" data-app-package="${escapeHtml(appVal || 'com.kspcheck.voucher')}"`;
+  const appNameAttr = ` data-app-name="${escapeHtml(appNameVal || provider || 'VOUCHER')}"`;
 
   let statusTagHtml = '';
   if (isItemNew) {
@@ -4423,7 +4516,7 @@ function renderVoucherRowHtml(idx, time, prodName, amount, provider, origAmount,
     </td>`;
 
   return `
-    <tr class="lv-row${rowExtraClass}" data-cat="outcome" data-orig="${orig}" data-val="${amount}" data-desc="${escapeHtml(prodName)}" data-provider="${escapeHtml(provider)}"${newAttr}${costAttr}${dateAttr}${rowIdAttr}>
+    <tr class="lv-row${rowExtraClass}" data-cat="outcome" data-orig="${orig}" data-val="${amount}" data-desc="${escapeHtml(prodName)}" data-provider="${escapeHtml(provider)}"${appAttr}${appNameAttr}${newAttr}${costAttr}${dateAttr}${rowIdAttr}>
       <td class="lv-td lv-td-idx">${idx}</td>
       <td class="lv-td lv-td-time" title="${timeTitle}"><span class="lv-time-text">${escapeHtml(time)}</span>${statusTagHtml}</td>
       <td class="lv-td lv-td-itemname" onclick="onNameClick(this, event)" title="Klik untuk dengar / ubah: ${escapeHtml(prodName)}">${escapeHtml(prodName)}</td>
@@ -4504,7 +4597,7 @@ function renderReport(data) {
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, item.date, item.rowId || item.id);
+          rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, item.date, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai');
         });
 
         const theadHtml = isOutcomeOnly
@@ -4593,7 +4686,7 @@ function renderReport(data) {
               totalKeluar += amt;
             }
             const desc = item.name || item.title || displayName;
-            rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, item.date, item.rowId || item.id);
+            rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, item.date, item.rowId || item.id, item.app || appKey, item.appName || displayName);
           });
 
           const theadHtml = isOutcomeOnly
@@ -4655,7 +4748,7 @@ function renderReport(data) {
           totalKeluar += amtNominal;
 
           const desc = (item.customerName ? item.customerName + ' - ' : '') + (item.category || 'TopUp') + (item.destination ? ' (' + item.destination + ')' : '');
-          topUpRowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee, item.date, item.rowId || item.id);
+          topUpRowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee, item.date, item.rowId || item.id, item.app || 'com.kspcheck.topup', item.appName || 'TopUp');
         });
 
         const topUpTheadHtml = `<thead class="lv-thead"><tr>
@@ -4719,7 +4812,7 @@ function renderReport(data) {
 
             const prodName = item.productName || provKey;
             const time = item.time || '00:00';
-            provRowsHtml += renderVoucherRowHtml(voucherSeqIdx++, time, prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost, item.date, item.rowId || item.id);
+            provRowsHtml += renderVoucherRowHtml(voucherSeqIdx++, time, prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost, item.date, item.rowId || item.id, 'com.kspcheck.voucher', provKey);
           });
 
           const subHeaderHtml = `
