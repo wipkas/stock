@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>KSP Check - Supabase Cloud Viewer (Tanpa Password)</title>
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-karyawan.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Supabase Config -->
+    <script src="js/ksp_sync_config.js"></script>
+
+    <style>
+        :root {
+            --bg-page: #0F172A;
+            --bg-card: #1E293B;
+            --bg-card-hover: #243248;
+            --bg-subtle: #0B1120;
+            --border: #334155;
+            --border-subtle: #1E293B;
+            --text-main: #F8FAFC;
+            --text-sub: #94A3B8;
+            --text-muted: #64748B;
+            --accent: #38BDF8;
+            --accent-gradient: linear-gradient(135deg, #38BDF8 0%, #3B82F6 100%);
+            --success: #10B981;
+            --success-bg: rgba(16, 185, 129, 0.12);
+            --warning: #F59E0B;
+            --warning-bg: rgba(245, 158, 11, 0.12);
+            --danger: #EF4444;
+            --danger-bg: rgba(239, 68, 68, 0.12);
+            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
+
+        body.light-theme {
+            --bg-page: #F1F5F9;
+            --bg-card: #FFFFFF;
+            --bg-card-hover: #F8FAFC;
+            --bg-subtle: #E2E8F0;
+            --border: #CBD5E1;
+            --border-subtle: #E2E8F0;
+            --text-main: #0F172A;
+            --text-sub: #475569;
+            --text-muted: #94A3B8;
+            --accent: #0284C7;
+            --accent-gradient: linear-gradient(135deg, #0284C7 0%, #2563EB 100%);
+            --card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 24px 16px 64px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* HEADER */
+        .app-header {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 22px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--card-shadow);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-title-box {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--accent-gradient);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .public-badge {
+            background: var(--success-bg);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.02em;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .header-desc {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-top: 3px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 9px 16px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent);
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: #FFFFFF;
+            border: none;
+            box-shadow: 0 4px 14px rgba(56, 189, 248, 0.25);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        /* KPI STATS GRID */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 18px 20px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-gradient);
+            opacity: 0.8;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-val {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* TABS */
+        .tabs-bar {
+            display: flex;
+            gap: 8px;
+            background: var(--bg-card);
+            padding: 6px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 9px 18px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--accent-gradient);
+            color: #FFFFFF;
+        }
+
+        /* CONTENT PANELS */
+        .panel {
+            display: none;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .panel.active {
+            display: flex;
+        }
+
+        /* STORE CARDS */
+        .store-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .store-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .store-title-area {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .store-avatar {
+            width: 44px;
+            height: 44px;
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .store-name {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .store-meta {
+            font-size: 12px;
+            color: var(--text-sub);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .store-progress-box {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            min-width: 200px;
+        }
+
+        .progress-numbers {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-subtle);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--accent-gradient);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .store-body {
+            padding: 20px 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .store-body {
+                grid-template-columns: 1fr;
+            }
+            .store-progress-box {
+                align-items: flex-start;
+                width: 100%;
+            }
+        }
+
+        .section-subhead {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-sub);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* EMPLOYEES LIST */
+        .emp-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .emp-item {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .emp-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .emp-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            overflow: hidden;
+        }
+
+        .emp-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .emp-name {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .emp-role {
+            font-size: 11px;
+            color: var(--text-sub);
+        }
+
+        .shift-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: var(--radius-sm);
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        /* SHIFTS SCHEDULE */
+        .shifts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .shift-pill {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: var(--radius-md);
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .shift-pill-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .shift-pill-hours {
+            font-size: 11px;
+            color: var(--text-sub);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* DAILY TRANSACTIONS TABLE */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--bg-card);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background: var(--bg-subtle);
+            padding: 12px 16px;
+            font-weight: 700;
+            color: var(--text-sub);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: var(--bg-card-hover);
+        }
+
+        /* JSON INSPECTOR */
+        .json-box {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #38BDF8;
+            max-height: 480px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* STATUS / NOTICE BAR */
+        .notice-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+            border-radius: var(--radius-md);
+            padding: 14px 18px;
+            font-size: 13px;
+            color: var(--text-sub);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            line-height: 1.5;
+        }
+
+        .notice-icon {
+            font-size: 18px;
+            color: var(--accent);
+        }
+
+        /* ADMIN OPTIONAL SECTION */
+        .admin-gate-card {
+            background: var(--bg-card);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-lg);
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .admin-input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .admin-input {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            padding: 9px 14px;
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            font-size: 13px;
+            width: 160px;
+            outline: none;
+        }
+
+        .admin-input:focus {
+            border-color: var(--accent);
+        }
+
+        /* LOADING SPINNER */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #FFFFFF;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- APP HEADER -->
+    <header class="app-header">
+        <div class="header-title-box">
+            <div class="header-icon">⚡</div>
+            <div>
+                <h1 class="header-title">
+                    KSP Check — Supabase Viewer
+                    <span class="public-badge" id="authModeBadge">
+                        <span>●</span> Publik (Tanpa Password)
+                    </span>
+                </h1>
+                <p class="header-desc" id="serverInfoText">
+                    Menghubungkan ke Supabase Cloud RPC <code>ksp_emp_get_leaderboard</code>...
+                </p>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button class="btn" id="btnThemeToggle" onclick="toggleTheme()" title="Ubah Tema Gelap / Terang">
+                <span id="themeIcon">☀️</span> Tema
+            </button>
+            <button class="btn btn-primary" id="btnRefresh" onclick="loadSupabaseData(true)">
+                <span id="refreshIcon">🔄</span> Muat Ulang
+            </button>
+        </div>
+    </header>
+
+    <!-- INFO BANNER -->
+    <div class="notice-card">
+        <div class="notice-icon">💡</div>
+        <div>
+            <strong>Akses Langsung Tanpa Password:</strong>
+            Data ini ditarik secara otomatis menggunakan kunci publik dari <code>ksp_sync_config.js</code> melalui RPC Supabase <code>ksp_emp_get_leaderboard()</code>. Anda tidak perlu memasukkan PIN ataupun password apapun untuk melihat nama cabang, target bulanan, jadwal shift, dan transaksi kasir.
+        </div>
+    </div>
+
+    <!-- KPI STATS -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-label">Total Cabang</span>
+            <span class="stat-val" id="statTotalStores">-</span>
+            <span class="stat-sub">🏪 Toko aktif terdaftar</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Total Kasir Aktif</span>
+            <span class="stat-val" id="statTotalEmployees">-</span>
+            <span class="stat-sub">👥 Personel operasional</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Total Transaksi</span>
+            <span class="stat-val" id="statTotalTx">-</span>
+            <span class="stat-sub">📈 Realisasi bulan berjalan</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Pencapaian Target</span>
+            <span class="stat-val" id="statTargetPct">-%</span>
+            <span class="stat-sub" id="statTargetSub">🎯 Dari target gabungan</span>
+        </div>
+    </div>
+
+    <!-- TABS NAVIGATION -->
+    <div class="tabs-bar">
+        <button class="tab-btn active" onclick="switchTab('stores')">🏢 Ringkasan Cabang &amp; Kasir</button>
+        <button class="tab-btn" onclick="switchTab('transactions')">📊 Rekap Transaksi Harian</button>
+        <button class="tab-btn" onclick="switchTab('leaderboard')">🏆 Peringkat &amp; Target</button>
+        <button class="tab-btn" onclick="switchTab('json')">📜 Raw JSON Supabase</button>
+    </div>
+
+    <!-- PANEL 1: STORES & EMPLOYEES -->
+    <div id="panel-stores" class="panel active">
+        <div id="storesContainer" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="empty-state">
+                <div class="spinner" style="margin: 0 auto 12px auto; border-top-color: var(--accent);"></div>
+                Memuat data cabang dari Supabase Cloud...
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL 2: TRANSACTIONS -->
+    <div id="panel-transactions" class="panel">
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Cabang</th>
+                        <th>Kasir</th>
+                        <th>Shift</th>
+                        <th>Jumlah Transaksi</th>
+                        <th>Waktu Catat</th>
+                    </tr>
+                </thead>
+                <tbody id="txTableBody">
+                    <tr><td colspan="6" class="empty-state">Memuat riwayat transaksi...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PANEL 3: LEADERBOARD -->
+    <div id="panel-leaderboard" class="panel">
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Peringkat</th>
+                        <th>Cabang Toko</th>
+                        <th>Target Bulanan</th>
+                        <th>Realisasi (Tx)</th>
+                        <th>Pencapaian</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardTableBody">
+                    <tr><td colspan="6" class="empty-state">Memuat data peringkat...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PANEL 4: RAW JSON -->
+    <div id="panel-json" class="panel">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13px; color: var(--text-sub);">Response Asli dari Supabase RPC:</span>
+            <button class="btn" onclick="copyJsonData()">📋 Salin JSON</button>
+        </div>
+        <pre class="json-box" id="jsonViewer">Memuat JSON...</pre>
+    </div>
+
+    <!-- OPSIONAL ADMIN GATE -->
+    <div class="admin-gate-card">
+        <div>
+            <div style="font-weight: 700; font-size: 14px;">Ingin Akses Mode Admin Penuh? (Opsional)</div>
+            <div style="font-size: 12px; color: var(--text-sub);">
+                Secara default halaman ini menampilkan data publik. Masukkan PIN Admin jika ingin memverifikasi hak akses administratif (<code>ksp_admin_get_stores</code>).
+            </div>
+        </div>
+        <div class="admin-input-group">
+            <input type="password" id="adminPinInput" class="admin-input" placeholder="Masukkan PIN Admin" maxlength="10">
+            <button class="btn btn-primary" onclick="testAdminAuth()">Uji PIN</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Konfigurasi Supabase Fallback jika ksp_sync_config.js tidak termuat
+    const DEFAULT_CONFIG = {
+        url: "https://nigvcwpxswvwzqtteanj.supabase.co",
+        key: "sb_publishable_TVMTb_JhsDbcbz5hLjIHWQ_kthdNAJF"
+    };
+
+    function getConfig() {
+        return window.KSP_SYNC_CONFIG || DEFAULT_CONFIG;
+    }
+
+    let globalStores = [];
+    let rawApiResponse = null;
+    let currentAuthMode = 'public'; // 'public' | 'admin'
+
+    // Format Angka Ribuan
+    function fmt(n) {
+        return Number(n || 0).toLocaleString('id-ID');
+    }
+
+    // Toggle Tema
+    function toggleTheme() {
+        document.body.classList.toggle('light-theme');
+        const isLight = document.body.classList.contains('light-theme');
+        document.getElementById('themeIcon').textContent = isLight ? '🌙' : '☀️';
+        localStorage.setItem('ksp_viewer_theme', isLight ? 'light' : 'dark');
+    }
+
+    // Inisialisasi Tema Tersimpan
+    if (localStorage.getItem('ksp_viewer_theme') === 'light') {
+        document.body.classList.add('light-theme');
+        document.getElementById('themeIcon').textContent = '🌙';
+    }
+
+    // Navigasi Tab
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+            btn.classList.toggle('active', btn.getAttribute('onclick').includes(tabName));
+        });
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        const activePanel = document.getElementById('panel-' + tabName);
+        if (activePanel) activePanel.classList.add('active');
+    }
+
+    // Request RPC ke Supabase
+    async function callSupabaseRpc(fnName, params = {}) {
+        const cfg = getConfig();
+        const endpoint = cfg.url.replace(/\/+$/, '') + '/rest/v1/rpc/' + fnName;
+        const headers = {
+            'Content-Type': 'application/json',
+            'apikey': cfg.key
+        };
+        if (!String(cfg.key).startsWith('sb_')) {
+            headers['Authorization'] = 'Bearer ' + cfg.key;
+        }
+
+        const tStart = performance.now();
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(params)
+        });
+        const duration = Math.round(performance.now() - tStart);
+
+        if (!res.ok) {
+            const errTxt = await res.text();
+            throw new Error(`HTTP ${res.status}: ${errTxt || res.statusText}`);
+        }
+
+        const json = await res.json();
+        return { data: json, latency: duration };
+    }
+
+    // Memuat Data Supabase Tanpa Password
+    async function loadSupabaseData(isInteractive = false) {
+        const refreshIcon = document.getElementById('refreshIcon');
+        if (refreshIcon) refreshIcon.textContent = '⏳';
+        const serverInfo = document.getElementById('serverInfoText');
+
+        try {
+            serverInfo.textContent = 'Menarik data publik dari Supabase Cloud...';
+            // Panggil RPC publik ksp_emp_get_leaderboard tanpa password
+            const result = await callSupabaseRpc('ksp_emp_get_leaderboard', { p_password: '' });
+            rawApiResponse = result.data;
+
+            if (result.data && result.data.stores) {
+                globalStores = result.data.stores;
+            } else if (Array.isArray(result.data)) {
+                globalStores = result.data;
+            } else {
+                globalStores = [];
+            }
+
+            renderDashboard(result.latency);
+            if (isInteractive) {
+                serverInfo.textContent = `✅ Berhasil diperbarui dalam ${result.latency} ms (${getConfig().url})`;
+            }
+        } catch (err) {
+            console.error('Error loadSupabaseData:', err);
+            serverInfo.textContent = '❌ Gagal memuat data: ' + err.message;
+            document.getElementById('storesContainer').innerHTML = `
+                <div class="empty-state" style="color: var(--danger);">
+                    ⚠️ Gagal terhubung ke Supabase Cloud: ${err.message}
+                </div>
+            `;
+        } finally {
+            if (refreshIcon) refreshIcon.textContent = '🔄';
+        }
+    }
+
+    // Render Semua Tampilan
+    function renderDashboard(latencyMs) {
+        const cfg = getConfig();
+        document.getElementById('serverInfoText').textContent =
+            `Terhubung ke ${new URL(cfg.url).hostname} (${latencyMs ? latencyMs + ' ms' : 'OK'})`;
+
+        // Kalkulasi Statistik Keseluruhan
+        let totalEmployees = 0;
+        let totalTx = 0;
+        let totalTarget = 0;
+
+        globalStores.forEach(s => {
+            const emps = Array.isArray(s.employees) ? s.employees : [];
+            totalEmployees += emps.filter(e => e.status === 'active').length;
+            totalTx += Number(s.monthly_tx || 0);
+            totalTarget += Number(s.monthly_target || s.target_monthly || 0);
+        });
+
+        const overallPct = totalTarget > 0 ? ((totalTx / totalTarget) * 100).toFixed(1) : '0';
+
+        document.getElementById('statTotalStores').textContent = globalStores.length;
+        document.getElementById('statTotalEmployees').textContent = totalEmployees;
+        document.getElementById('statTotalTx').textContent = fmt(totalTx);
+        document.getElementById('statTargetPct').textContent = overallPct + '%';
+        document.getElementById('statTargetSub').textContent = `Target: ${fmt(totalTarget)} tx`;
+
+        // 1. Render Store Cards
+        renderStoreCards();
+
+        // 2. Render Tabel Transaksi Harian
+        renderTransactionsTable();
+
+        // 3. Render Tabel Leaderboard
+        renderLeaderboardTable();
+
+        // 4. Render Raw JSON
+        document.getElementById('jsonViewer').textContent = JSON.stringify(rawApiResponse, null, 2);
+    }
+
+    // Render Store Cards
+    function renderStoreCards() {
+        const container = document.getElementById('storesContainer');
+        if (!globalStores || globalStores.length === 0) {
+            container.innerHTML = '<div class="empty-state">Tidak ada cabang toko yang ditemukan di cloud.</div>';
+            return;
+        }
+
+        container.innerHTML = globalStores.map(store => {
+            const target = Number(store.monthly_target || store.target_monthly || 0);
+            const tx = Number(store.monthly_tx || 0);
+            const pct = target > 0 ? Math.min(100, Math.round((tx / target) * 100)) : 0;
+            const emps = Array.isArray(store.employees) ? store.employees : [];
+            const shifts = Array.isArray(store.shifts) ? store.shifts : [];
+
+            return `
+                <div class="store-card">
+                    <div class="store-header">
+                        <div class="store-title-area">
+                            <div class="store-avatar">${escapeHtml(store.name.substring(0, 2).toUpperCase())}</div>
+                            <div>
+                                <div class="store-name">${escapeHtml(store.name)}</div>
+                                <div class="store-meta">ID: ${escapeHtml(store.id)}</div>
+                            </div>
+                        </div>
+                        <div class="store-progress-box">
+                            <div class="progress-numbers">
+                                <span>${fmt(tx)} / ${fmt(target)} Tx</span>
+                                <span style="color: var(--accent); margin-left: 8px;">(${pct}%)</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" style="width: ${pct}%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="store-body">
+                        <!-- Kolom Kasir -->
+                        <div>
+                            <div class="section-subhead">👥 Kasir &amp; Personel (${emps.length})</div>
+                            <div class="emp-list">
+                                ${emps.length === 0 ? '<div style="font-size: 12px; color: var(--text-muted);">Belum ada kasir terdaftar.</div>' : ''}
+                                ${emps.map(e => `
+                                    <div class="emp-item">
+                                        <div class="emp-info">
+                                            <div class="emp-avatar">
+                                                ${e.photo ? `<img src="${e.photo}" alt="${escapeHtml(e.name)}">` : escapeHtml((e.name || '?')[0].toUpperCase())}
+                                            </div>
+                                            <div>
+                                                <div class="emp-name">${escapeHtml(e.name || 'Tanpa Nama')}</div>
+                                                <div class="emp-role">${escapeHtml(e.role || 'Kasir')} • Status: ${escapeHtml(e.status || 'Active')}</div>
+                                            </div>
+                                        </div>
+                                        <span class="shift-badge">Shift ${e.shift_num || 1}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Kolom Shift & Target -->
+                        <div>
+                            <div class="section-subhead">⏰ Jadwal Shift Cabang</div>
+                            <div class="shifts-grid">
+                                ${shifts.length === 0 ? '<div style="font-size: 12px; color: var(--text-muted);">Shift default.</div>' : ''}
+                                ${shifts.map(s => `
+                                    <div class="shift-pill">
+                                        <span class="shift-pill-title">${escapeHtml(s.name || 'Shift ' + s.shift_num)}</span>
+                                        <span class="shift-pill-hours">${escapeHtml(s.start || '--:--')} - ${escapeHtml(s.end || '--:--')}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <div style="margin-top: 14px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px;">
+                                <div style="font-size: 11px; color: var(--text-sub); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Konfigurasi Target</div>
+                                <div style="font-size: 13px; font-weight: 600;">Target Bulanan: <span style="color: var(--accent);">${fmt(target)} Transaksi</span></div>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Tercapai Saat Ini: ${fmt(tx)} Transaksi</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Render Tabel Transaksi Harian
+    function renderTransactionsTable() {
+        const tbody = document.getElementById('txTableBody');
+        const rows = [];
+
+        globalStores.forEach(store => {
+            const daily = store.daily_transactions || {};
+            Object.keys(daily).sort().reverse().forEach(dateStr => {
+                const dayObj = daily[dateStr];
+                const records = Array.isArray(dayObj.records) ? dayObj.records : [];
+                records.forEach(r => {
+                    rows.push({
+                        date: dateStr,
+                        storeName: store.name,
+                        empName: r.emp_name || 'Kasir',
+                        shiftName: r.shift_name || ('Shift ' + (r.shift_num || 1)),
+                        tx: Number(r.tx || 0),
+                        time: r.recorded_at || dayObj.recorded_time || '-'
+                    });
+                });
+            });
+        });
+
+        if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Belum ada catatan transaksi harian di cloud.</td></tr>';
+            return;
+        }
+
+        // Urutkan tanggal terbaru paling atas
+        rows.sort((a, b) => b.date.localeCompare(a.date));
+
+        tbody.innerHTML = rows.slice(0, 100).map(r => `
+            <tr>
+                <td style="font-family: 'JetBrains Mono', monospace; font-weight: 600;">${r.date}</td>
+                <td><strong>${escapeHtml(r.storeName)}</strong></td>
+                <td>${escapeHtml(r.empName)}</td>
+                <td><span class="shift-badge">${escapeHtml(r.shiftName)}</span></td>
+                <td><strong style="color: var(--accent);">${fmt(r.tx)}</strong></td>
+                <td style="font-size: 12px; color: var(--text-sub);">${escapeHtml(r.time)}</td>
+            </tr>
+        `).join('');
+    }
+
+    // Render Tabel Leaderboard
+    function renderLeaderboardTable() {
+        const tbody = document.getElementById('leaderboardTableBody');
+        const ranked = [...globalStores].map(s => {
+            const target = Number(s.monthly_target || s.target_monthly || 0);
+            const tx = Number(s.monthly_tx || 0);
+            const pct = target > 0 ? (tx / target) * 100 : 0;
+            return { ...s, target, tx, pct };
+        });
+
+        // Urutkan persentase tertinggi
+        ranked.sort((a, b) => b.pct - a.pct);
+
+        tbody.innerHTML = ranked.map((s, idx) => {
+            const medal = idx === 0 ? '🥇 #1' : idx === 1 ? '🥈 #2' : idx === 2 ? '🥉 #3' : `#${idx + 1}`;
+            const pctFormatted = s.pct.toFixed(1) + '%';
+            const statusLabel = s.pct >= 100 ? '🎉 Tercapai' : s.pct >= 75 ? '⚡ Dekat Target' : '🏃 Berproses';
+            const statusColor = s.pct >= 100 ? 'var(--success)' : s.pct >= 75 ? 'var(--accent)' : 'var(--warning)';
+
+            return `
+                <tr>
+                    <td style="font-weight: 800; font-size: 15px;">${medal}</td>
+                    <td><strong>${escapeHtml(s.name)}</strong></td>
+                    <td>${fmt(s.target)} Tx</td>
+                    <td><strong style="color: var(--accent);">${fmt(s.tx)} Tx</strong></td>
+                    <td style="font-weight: 700; color: ${statusColor};">${pctFormatted}</td>
+                    <td><span style="font-size: 11px; font-weight: 700; color: ${statusColor};">${statusLabel}</span></td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // Salin JSON
+    function copyJsonData() {
+        if (!rawApiResponse) return;
+        navigator.clipboard.writeText(JSON.stringify(rawApiResponse, null, 2))
+            .then(() => alert('✅ JSON berhasil disalin ke clipboard!'))
+            .catch(() => alert('Gagal menyalin JSON.'));
+    }
+
+    // Uji Hak Akses Admin (Opsional)
+    async function testAdminAuth() {
+        const pinInput = document.getElementById('adminPinInput');
+        const pin = (pinInput.value || '').trim();
+        if (!pin) {
+            alert('Silakan masukkan PIN Admin terlebih dahulu.');
+            return;
+        }
+
+        try {
+            const result = await callSupabaseRpc('ksp_admin_get_stores', { p_pin: pin });
+            if (result.data && result.data.ok) {
+                alert(`✅ PIN Admin VALID!\nBerhasil mengakses data internal admin (${result.data.stores.length} toko).`);
+                document.getElementById('authModeBadge').innerHTML = '<span>●</span> Mode Admin Aktif';
+                document.getElementById('authModeBadge').style.color = 'var(--accent)';
+                document.getElementById('authModeBadge').style.borderColor = 'var(--accent)';
+                globalStores = result.data.stores;
+                rawApiResponse = result.data;
+                renderDashboard(result.latency);
+            } else {
+                alert('❌ PIN Ditolak oleh server Supabase (Unauthorized).');
+            }
+        } catch (err) {
+            alert('❌ Gagal verifikasi admin: ' + err.message);
+        }
+    }
+
+    // Utility escape HTML
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    // Eksekusi otomatis saat halaman selesai dimuat (TANPA PASSWORD)
+    window.addEventListener('DOMContentLoaded', () => {
+        loadSupabaseData(false);
+    });
+</script>
+
+</body>
+</html>
