@@ -3667,13 +3667,7 @@
     <!-- MODAL: SET TRANSAKSI HARIAN KASIR -->
     <div id="dailyTxModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'dailyTxModal')">
         <div class="modal-card" style="max-width: 420px; width: 100%;">
-            <div class="modal-header">
-                <div>
-                    <h3 class="modal-title" id="dailyTxModalTitle">✏️ Set Transaksi Harian</h3>
-                    <p class="modal-subtitle" id="dailyTxModalSubtitle">Update catatan transaksi kasir shift hari ini</p>
-                </div>
-                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('dailyTxModal')">&times;</button>
-            </div>
+            
             <form onsubmit="handleSaveDailyTx(event)">
                 <input type="hidden" id="dailyTxStoreId">
                 <input type="hidden" id="dailyTxShiftNum">
@@ -3720,13 +3714,7 @@
                                style="font-size: 26px; font-weight: 850; text-align: center; height: 52px; letter-spacing: -0.5px; border-radius: 12px;">
                     </div>
 
-                    <!-- Quick Add Buttons -->
-                    <div style="display: flex; gap: 8px; margin-top: 8px;">
-                        <button type="button" class="btn-secondary" style="flex: 1; padding: 6px 0; font-size: 12px; font-weight: 800;" onclick="quickAddDailyTx(5)">+5</button>
-                        <button type="button" class="btn-secondary" style="flex: 1; padding: 6px 0; font-size: 12px; font-weight: 800;" onclick="quickAddDailyTx(10)">+10</button>
-                        <button type="button" class="btn-secondary" style="flex: 1; padding: 6px 0; font-size: 12px; font-weight: 800;" onclick="quickAddDailyTx(25)">+25</button>
-                        <button type="button" class="btn-secondary" style="flex: 1; padding: 6px 0; font-size: 12px; font-weight: 800;" onclick="quickAddDailyTx(50)">+50</button>
-                    </div>
+                    
                 </div>
                 <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
                     <button type="button" class="btn-secondary" onclick="closeModal('dailyTxModal')">Batal</button>
