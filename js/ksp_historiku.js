@@ -4811,6 +4811,15 @@ function renderReport(data) {
           let provKeluar = 0;
           let provRowsHtml = '';
 
+          // Hitung frekuensi nama produk dalam provider ini untuk penomoran urut item duplikat
+          const nameCounts = {};
+          items.forEach(item => {
+            const baseName = (item.productName || provKey || 'Voucher').trim();
+            const normKey = baseName.toLowerCase().replace(/\s+/g, ' ');
+            nameCounts[normKey] = (nameCounts[normKey] || 0) + 1;
+          });
+          const nameSeq = {};
+
           items.forEach((item) => {
             totalTrx++;
             voucherTotalTrx++;
@@ -4819,7 +4828,14 @@ function renderReport(data) {
             voucherTotalKeluar += amt;
             totalKeluar += amt;
 
-            const prodName = item.productName || provKey;
+            const baseName = (item.productName || provKey || 'Voucher').trim();
+            const normKey = baseName.toLowerCase().replace(/\s+/g, ' ');
+            let prodName = baseName;
+            if (nameCounts[normKey] > 1) {
+              nameSeq[normKey] = (nameSeq[normKey] || 0) + 1;
+              prodName = `${baseName} (${nameSeq[normKey]})`;
+            }
+
             const time = item.time || '00:00';
             provRowsHtml += renderVoucherRowHtml(voucherSeqIdx++, time, prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost, item.date, item.rowId || item.id, 'com.kspcheck.voucher', provKey);
           });

@@ -168,6 +168,15 @@
       let provKeluar = 0;
       let provRowsHtml = '';
 
+      // Hitung frekuensi nama produk dalam provider ini untuk penomoran urut item duplikat
+      const nameCounts = {};
+      provItems.forEach(item => {
+        const baseName = (item.productName || item.provider || 'Voucher').trim();
+        const normKey = baseName.toLowerCase().replace(/\s+/g, ' ');
+        nameCounts[normKey] = (nameCounts[normKey] || 0) + 1;
+      });
+      const nameSeq = {};
+
       provItems.forEach(item => {
         const isDel = Boolean(item.deleted);
         if (!isDel) totalsRef.totalTrx++;
@@ -178,7 +187,15 @@
           vTotalKeluar += calcAmt;
           totalsRef.totalKeluar += calcAmt;
         }
-        const prodName = item.productName || item.provider || 'Voucher';
+
+        const baseName = (item.productName || item.provider || 'Voucher').trim();
+        const normKey = baseName.toLowerCase().replace(/\s+/g, ' ');
+        let prodName = baseName;
+        if (nameCounts[normKey] > 1) {
+          nameSeq[normKey] = (nameSeq[normKey] || 0) + 1;
+          prodName = `${baseName} (${nameSeq[normKey]})`;
+        }
+
         const timeVal = timeColFmt ? formatDisplayTime(item.date, item.time) : (item.time || '00:00');
         if (typeof opt.renderVoucherRowHtml === 'function') {
           provRowsHtml += opt.renderVoucherRowHtml(globalSeqRef.val++, timeVal, prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost, item.date || dateAttr, item.rowId || item.id, 'com.kspcheck.voucher', provKey);
@@ -584,6 +601,15 @@
           let provKeluar = 0;
           let provRowsHtml = '';
 
+          // Hitung frekuensi nama produk dalam provider ini pada tanggal ini untuk penomoran urut item duplikat
+          const nameCounts = {};
+          provItems.forEach(item => {
+            const baseName = (item.productName || item.provider || 'Voucher').trim();
+            const normKey = baseName.toLowerCase().replace(/\s+/g, ' ');
+            nameCounts[normKey] = (nameCounts[normKey] || 0) + 1;
+          });
+          const nameSeq = {};
+
           provItems.forEach(item => {
             const isDel = Boolean(item.deleted);
             if (!isDel) totalTrx++;
@@ -595,7 +621,15 @@
               vTotalKeluar += calcAmt;
               totalKeluar += calcAmt;
             }
-            const prodName = item.productName || item.provider || 'Voucher';
+
+            const baseName = (item.productName || item.provider || 'Voucher').trim();
+            const normKey = baseName.toLowerCase().replace(/\s+/g, ' ');
+            let prodName = baseName;
+            if (nameCounts[normKey] > 1) {
+              nameSeq[normKey] = (nameSeq[normKey] || 0) + 1;
+              prodName = `${baseName} (${nameSeq[normKey]})`;
+            }
+
             if (typeof opt.renderVoucherRowHtml === 'function') {
               provRowsHtml += opt.renderVoucherRowHtml(globalSeqObj.val++, item.time || '00:00', prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost, dKey, item.rowId || item.id, 'com.kspcheck.voucher', provKey);
             } else {
