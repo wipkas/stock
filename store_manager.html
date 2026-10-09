@@ -4016,7 +4016,7 @@
     </div>
 
     <!-- MODAL DIALOG: PENGATURAN LEADERBOARD & SKEMA BONUS -->
-    <div id="modalLeaderboardConfig" class="modal-backdrop" onclick="handleBackdropClose(event, 'modalLeaderboardConfig')">
+    <div id="modalLeaderboardConfig" class="modal-backdrop" style="z-index: 1250;" onclick="handleBackdropClose(event, 'modalLeaderboardConfig')">
         <div class="modal-card" style="max-width: 540px; max-height: 92vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <div>
@@ -8691,6 +8691,24 @@ ${portalUrl}
             __modalReturnFocus[id] = document.activeElement;
             el.classList.add('open');
             document.body.classList.add('modal-open');
+
+            // Pastikan jika ada modal lain yang sedang terbuka, modal ini berada di atasnya
+            const otherOpen = Array.from(document.querySelectorAll('.modal-backdrop.open')).filter(m => m !== el);
+            if (otherOpen.length > 0) {
+                let maxZ = 1000;
+                otherOpen.forEach(m => {
+                    const z = parseFloat(window.getComputedStyle(m).zIndex) || 1000;
+                    if (z > maxZ) maxZ = z;
+                });
+                const myZ = parseFloat(el.style.zIndex || window.getComputedStyle(el).zIndex) || 1000;
+                if (myZ <= maxZ) {
+                    if (!el.dataset.origZIndex) {
+                        el.dataset.origZIndex = el.style.zIndex || '';
+                    }
+                    el.style.zIndex = String(maxZ + 50);
+                }
+            }
+
             setTimeout(() => {
                 const target = el.querySelector('input:not([type="hidden"]):not([readonly]):not([disabled]), select, textarea') || el.querySelector('.modal-close-btn');
                 if (target && typeof target.focus === 'function') target.focus({ preventScroll: true });
@@ -8705,6 +8723,10 @@ ${portalUrl}
             const el = document.getElementById(id);
             if (!el) return;
             el.classList.remove('open');
+            if (el.dataset.origZIndex !== undefined) {
+                el.style.zIndex = el.dataset.origZIndex;
+                delete el.dataset.origZIndex;
+            }
             if (!document.querySelector('.modal-backdrop.open')) document.body.classList.remove('modal-open');
             const back = __modalReturnFocus[id];
             delete __modalReturnFocus[id];
@@ -8842,6 +8864,11 @@ ${portalUrl}
             if (document.getElementById('uiConfirmModal')) return;
             const open = Array.from(document.querySelectorAll('.modal-backdrop.open'));
             if (!open.length) return;
+            open.sort((a, b) => {
+                const za = parseFloat(window.getComputedStyle(a).zIndex) || 1000;
+                const zb = parseFloat(window.getComputedStyle(b).zIndex) || 1000;
+                return za - zb;
+            });
             const top = open[open.length - 1];
             if (top.id) closeModal(top.id);
         });
