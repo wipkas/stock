@@ -46,6 +46,10 @@
     return timeStr || '00:00';
   }
 
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
   // Registry Konfigurasi 6 Mode Layout
   const MODES = [
     {
@@ -148,23 +152,54 @@
 
   function renderVoucherGroupHtml(items, groupTitle, dateAttr, opt, globalSeqRef, totalsRef, timeColFmt) {
     if (!items || items.length === 0) return '';
-    let vTotalKeluar = 0, rowsHtml = '';
+    const voucherByProv = {};
     items.forEach(item => {
-      const isDel = Boolean(item.deleted);
-      if (!isDel) totalsRef.totalTrx++;
-      const amt = Math.round(item.amount || 0);
-      const calcAmt = getCalcAmount(amt, opt);
-      if (!isDel) {
-        vTotalKeluar += calcAmt; totalsRef.totalKeluar += calcAmt;
-      }
-      const prodName = item.productName || item.provider || 'Voucher';
-      const timeVal = timeColFmt ? formatDisplayTime(item.date, item.time) : (item.time || '00:00');
-      if (typeof opt.renderVoucherRowHtml === 'function') {
-        rowsHtml += opt.renderVoucherRowHtml(globalSeqRef.val++, timeVal, prodName, amt, item.provider || 'VOUCHER', item.orig, item.deleted, item.read, item.isNew, item.cost, item.date || dateAttr, item.rowId || item.id);
-      } else {
-        rowsHtml += opt.renderRowHtml(globalSeqRef.val++, timeVal, amt, false, prodName, true, item.orig, item.deleted, item.read, item.isNew, item.cost || 0, 0, item.date || dateAttr, item.rowId || item.id);
-      }
+      let provKey = (item.provider || 'VOUCHER').trim().toUpperCase();
+      if (!voucherByProv[provKey]) voucherByProv[provKey] = [];
+      voucherByProv[provKey].push(item);
     });
+
+    const esc = (opt && typeof opt.escapeHtml === 'function') ? opt.escapeHtml : escapeHtml;
+    let vTotalKeluar = 0, rowsHtml = '';
+    const provKeys = Object.keys(voucherByProv).sort();
+    for (const provKey of provKeys) {
+      const provItems = voucherByProv[provKey];
+      const provLabel = (provKey === 'VOUCHER') ? 'Umum' : provKey;
+      let provKeluar = 0;
+      let provRowsHtml = '';
+
+      provItems.forEach(item => {
+        const isDel = Boolean(item.deleted);
+        if (!isDel) totalsRef.totalTrx++;
+        const amt = Math.round(item.amount || 0);
+        const calcAmt = getCalcAmount(amt, opt);
+        if (!isDel) {
+          provKeluar += calcAmt;
+          vTotalKeluar += calcAmt;
+          totalsRef.totalKeluar += calcAmt;
+        }
+        const prodName = item.productName || item.provider || 'Voucher';
+        const timeVal = timeColFmt ? formatDisplayTime(item.date, item.time) : (item.time || '00:00');
+        if (typeof opt.renderVoucherRowHtml === 'function') {
+          provRowsHtml += opt.renderVoucherRowHtml(globalSeqRef.val++, timeVal, prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost, item.date || dateAttr, item.rowId || item.id, 'com.kspcheck.voucher', provKey);
+        } else {
+          provRowsHtml += opt.renderRowHtml(globalSeqRef.val++, timeVal, amt, false, prodName, true, item.orig, item.deleted, item.read, item.isNew, item.cost || 0, 0, item.date || dateAttr, item.rowId || item.id);
+        }
+      });
+
+      const subHeaderHtml = `
+        <tr class="lv-subhd-row">
+          <td colspan="4" class="lv-subhd">
+            <div class="lv-subhd-inner">
+              <span class="lv-subhd-title">📶 ${esc(provLabel)}</span>
+              <span class="lv-subhd-meta">${provItems.length} item · ${opt.fmtAmt(provKeluar)}</span>
+            </div>
+          </td>
+        </tr>`;
+
+      rowsHtml += subHeaderHtml + provRowsHtml;
+    }
+
     const thead = `<thead class="lv-thead"><tr>
       <th class="lv-th c" style="width:36px;">#</th>
       <th class="lv-th c" style="width:${timeColFmt ? '92px' : '65px'};">Waktu</th>
@@ -529,22 +564,58 @@
         if (!byDate[d]) byDate[d] = [];
         byDate[d].push(item);
       });
+      const esc = (opt && typeof opt.escapeHtml === 'function') ? opt.escapeHtml : escapeHtml;
       let vTotalKeluar = 0, rowsHtml = '';
       for (const dKey of Object.keys(byDate).sort()) {
         const items = byDate[dKey];
-        let dayOut = 0, dayRows = '';
+        let dayOut = 0;
+
+        const voucherByProv = {};
         items.forEach(item => {
-          totalTrx++;
-          const amt = Math.round(item.amount || 0);
-          const calcAmt = getCalcAmount(amt, opt);
-          dayOut += calcAmt; vTotalKeluar += calcAmt; totalKeluar += calcAmt;
-          const prodName = item.productName || item.provider || 'Voucher';
-          if (typeof opt.renderVoucherRowHtml === 'function') {
-            dayRows += opt.renderVoucherRowHtml(globalSeqObj.val++, item.time || '00:00', prodName, amt, item.provider || 'VOUCHER', item.orig, item.deleted, item.read, item.isNew, item.cost, dKey, item.rowId || item.id);
-          } else {
-            dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, false, prodName, true, item.orig, item.deleted, item.read, item.isNew, item.cost || 0, 0, dKey, item.rowId || item.id);
-          }
+          let provKey = (item.provider || 'VOUCHER').trim().toUpperCase();
+          if (!voucherByProv[provKey]) voucherByProv[provKey] = [];
+          voucherByProv[provKey].push(item);
         });
+
+        let provRowsForDay = '';
+        for (const provKey of Object.keys(voucherByProv).sort()) {
+          const provItems = voucherByProv[provKey];
+          const provLabel = (provKey === 'VOUCHER') ? 'Umum' : provKey;
+          let provKeluar = 0;
+          let provRowsHtml = '';
+
+          provItems.forEach(item => {
+            const isDel = Boolean(item.deleted);
+            if (!isDel) totalTrx++;
+            const amt = Math.round(item.amount || 0);
+            const calcAmt = getCalcAmount(amt, opt);
+            if (!isDel) {
+              provKeluar += calcAmt;
+              dayOut += calcAmt;
+              vTotalKeluar += calcAmt;
+              totalKeluar += calcAmt;
+            }
+            const prodName = item.productName || item.provider || 'Voucher';
+            if (typeof opt.renderVoucherRowHtml === 'function') {
+              provRowsHtml += opt.renderVoucherRowHtml(globalSeqObj.val++, item.time || '00:00', prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost, dKey, item.rowId || item.id, 'com.kspcheck.voucher', provKey);
+            } else {
+              provRowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, false, prodName, true, item.orig, item.deleted, item.read, item.isNew, item.cost || 0, 0, dKey, item.rowId || item.id);
+            }
+          });
+
+          const subHeaderHtml = `
+            <tr class="lv-subhd-row">
+              <td colspan="4" class="lv-subhd">
+                <div class="lv-subhd-inner">
+                  <span class="lv-subhd-title">📶 ${esc(provLabel)}</span>
+                  <span class="lv-subhd-meta">${provItems.length} item · ${opt.fmtAmt(provKeluar)}</span>
+                </div>
+              </td>
+            </tr>`;
+
+          provRowsForDay += subHeaderHtml + provRowsHtml;
+        }
+
         rowsHtml += `
           <tr class="lv-date-subhd-row" data-date="${dKey}">
             <td colspan="4" class="lv-date-subhd">
@@ -553,7 +624,7 @@
                 <span class="lv-date-subhd-meta">${items.length} item · Keluar: ${opt.fmtAmt(dayOut)}</span>
               </div>
             </td>
-          </tr>` + dayRows;
+          </tr>` + provRowsForDay;
       }
       container.innerHTML += `
         <div class="lv-group" data-group-id="voucher" data-app-key="voucher" data-rekap-label="🎫 Voucher Fisik">
@@ -562,7 +633,7 @@
             <span class="lv-group-icon">🎫</span>
             <span class="lv-group-name" onclick="openAppMarginDialog(this, event)" title="Klik untuk lihat total harga jual, modal & margin">Voucher</span>
             <span class="grp-done-badge">✓ Selesai</span>
-            <span class="lv-group-meta"><span class="grp-meta-keluar" style="color:var(--outcome)">${opt.fmtAmt(vTotalKeluar)}</span></span>
+            <span class="lv-group-meta"><span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.ringkasMode ? '' : 'Keluar: '}${opt.fmtAmt(vTotalKeluar)}</span></span>
             <button class="g-act-btn" onclick="speakGroup(this, event)">🔊</button>
           </div>
           <div class="lv-group-body"><table class="lv-table lv-table-voucher"><thead class="lv-thead"><tr><th class="lv-th c" style="width:36px;">#</th><th class="lv-th c" style="width:65px;">Waktu</th><th class="lv-th l">Nama</th><th class="lv-th r" style="width:140px;">Keluar</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>

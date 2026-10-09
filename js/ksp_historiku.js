@@ -615,38 +615,47 @@ function editAmt(span) {
 }
 
 function updateVoucherSubheaders() {
-  const vGroup = document.querySelector('.lv-group[data-group-id="voucher"]');
-  if (!vGroup) return;
-  const tbody = vGroup.querySelector('tbody');
-  if (!tbody) return;
-  let currentSubhdMeta = null;
-  let provCount = 0;
-  let provTotal = 0;
+  const vGroups = document.querySelectorAll('.lv-group[data-group-id^="voucher"], .lv-group[data-app-key="voucher"]');
+  if (!vGroups || vGroups.length === 0) return;
+  vGroups.forEach(vGroup => {
+    const tbody = vGroup.querySelector('tbody');
+    if (!tbody) return;
+    let currentSubhdMeta = null;
+    let provCount = 0;
+    let provTotal = 0;
 
-  Array.from(tbody.children).forEach(tr => {
-    if (tr.classList.contains('lv-subhd-row')) {
-      if (currentSubhdMeta) {
-        currentSubhdMeta.textContent = `${provCount} item · ${fmtAmt(provTotal)}`;
-      }
-      currentSubhdMeta = tr.querySelector('.lv-subhd-meta');
-      provCount = 0;
-      provTotal = 0;
-    } else if (tr.classList.contains('lv-row')) {
-      if (!tr.classList.contains('item-deleted')) {
-        provCount++;
-        let val = parseFloat(tr.dataset.val) || 0;
-        if (roundingMode) {
-          val = Math.round(val / 1000) * 1000;
-        } else if (ringkasMode) {
-          val = Math.trunc(val / 1000) * 1000;
+    Array.from(tbody.children).forEach(tr => {
+      if (tr.classList.contains('lv-date-subhd-row')) {
+        if (currentSubhdMeta) {
+          currentSubhdMeta.textContent = `${provCount} item · ${fmtAmt(provTotal)}`;
+          currentSubhdMeta = null;
+          provCount = 0;
+          provTotal = 0;
         }
-        provTotal += val;
+      } else if (tr.classList.contains('lv-subhd-row')) {
+        if (currentSubhdMeta) {
+          currentSubhdMeta.textContent = `${provCount} item · ${fmtAmt(provTotal)}`;
+        }
+        currentSubhdMeta = tr.querySelector('.lv-subhd-meta');
+        provCount = 0;
+        provTotal = 0;
+      } else if (tr.classList.contains('lv-row')) {
+        if (!tr.classList.contains('item-deleted')) {
+          provCount++;
+          let val = parseFloat(tr.dataset.val) || 0;
+          if (roundingMode) {
+            val = Math.round(val / 1000) * 1000;
+          } else if (ringkasMode) {
+            val = Math.trunc(val / 1000) * 1000;
+          }
+          provTotal += val;
+        }
       }
+    });
+    if (currentSubhdMeta) {
+      currentSubhdMeta.textContent = `${provCount} item · ${fmtAmt(provTotal)}`;
     }
   });
-  if (currentSubhdMeta) {
-    currentSubhdMeta.textContent = `${provCount} item · ${fmtAmt(provTotal)}`;
-  }
 }
 
 function recalcAll() {
