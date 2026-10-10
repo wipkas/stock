@@ -220,6 +220,20 @@
     const weatherCache = new Map();
     const WEATHER_CACHE_TTL = 15 * 60 * 1000; // 15 menit cache
 
+    /**
+     * Konfigurasi kalibrasi cuaca (dapat diubah dari luar: KspReasons.weatherConfig.rainHourThresholdMm = 0.5)
+     * - rainHourThresholdMm: 1 jam baru dihitung "jam hujan" jika curah hujan model >= nilai ini (mm/jam).
+     *   Kode cuaca (mis. "Badai Petir") TANPA curah hujan berarti tidak lagi dihitung sebagai jam hujan.
+     * - dailyRainMinMm: total curah hujan harian minimum agar hari dianggap "ada hujan" walau tidak ada jam yang lolos ambang.
+     * - timezone: 'auto' = zona waktu lokal sesuai koordinat cabang (WIB/WITA/WIT).
+     */
+    const WEATHER_CONFIG = {
+        rainHourThresholdMm: 0.3,
+        dailyRainMinMm: 1.0,
+        timezone: 'auto'
+    };
+    KspReasons.weatherConfig = WEATHER_CONFIG;
+
     // WMO Weather interpretation codes
     const WMO_CODE_MAP = {
         0:  { desc: 'Cerah', icon: '☀️', rainLevel: 0 },
@@ -348,7 +362,7 @@
 
         const isFloodingRisk = dailyTotalRainMm >= 25.0 || peakPoint.rainMm >= 12.0 || shiftsAnalysis.some(s => s.impact === 'flood_risk');
         const isHeavyRain = dailyTotalRainMm >= 10.0 || peakPoint.rainMm >= 4.0 || shiftsAnalysis.some(s => s.impact === 'high' || s.impact === 'flood_risk');
-        const isRaining = dailyTotalRainHours > 0 || dailyTotalRainMm >= 0.5;
+        const isRaining = dailyTotalRainHours > 0 || dailyTotalRainMm >= WEATHER_CONFIG.dailyRainMinMm;
 
         return {
             dailyTotalRainHours,
@@ -392,8 +406,11 @@
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 4500); // 4.5 detik timeout
 
-            // Endpoint Open-Meteo untuk tanggal terpilih
-            let url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lng)}&start_date=${dateStr}&end_date=${dateStr}&hourly=precipitation,rain,showers,weather_code,temperature_2m&timezone=Asia%2FJakarta`;
+            // Endpoint Open-Meteo untuk tanggal terpilih.
+            // timezone=auto → jam per jam dikembalikan dalam zona waktu lokal koordinat cabang (WIB/WITA/WIT),
+            // sehingga cocok dengan jam shift toko yang dicatat dalam waktu lokal.
+            const tzParam = encodeURIComponent(WEATHER_CONFIG.timezone || 'auto');
+            let url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lng)}&start_date=${dateStr}&end_date=${dateStr}&hourly=precipitation,rain,showers,weather_code,temperature_2m&timezone=${tzParam}`;
             if (isToday) {
                 url += '&current=temperature_2m,relative_humidity_2m,precipitation,rain,showers,weather_code,wind_speed_10m';
             }
@@ -401,7 +418,7 @@
             let resp = await fetch(url, { signal: controller.signal });
             // Fallback ke archive API jika tanggal lebih dari 92 hari lalu
             if (!resp.ok && resp.status >= 400 && dateStr < todayStr) {
-                const archiveUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lng)}&start_date=${dateStr}&end_date=${dateStr}&hourly=precipitation,rain,weather_code,temperature_2m&timezone=Asia%2FJakarta`;
+                const archiveUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lng)}&start_date=${dateStr}&end_date=${dateStr}&hourly=precipitation,rain,weather_code,temperature_2m&timezone=${tzParam}`;
                 resp = await fetch(archiveUrl, { signal: controller.signal });
             }
             clearTimeout(timeoutId);
@@ -417,14 +434,30 @@
             const codes = hourly.weather_code || [];
             const temps = hourly.temperature_2m || [];
 
+            // Petakan jam lokal → index berdasarkan string waktu API ("YYYY-MM-DDTHH:00"),
+            // bukan berdasarkan posisi array, agar tetap benar apa pun zona waktunya.
+            const hourIndex = {};
+            hourly.time.forEach((t, idx) => {
+                const m = String(t).match(/T(\d{2}):/);
+                if (m && String(t).startsWith(dateStr)) {
+                    const hh = parseInt(m[1], 10);
+                    if (hourIndex[hh] === undefined) hourIndex[hh] = idx;
+                }
+            });
+
+            const threshold = Number(WEATHER_CONFIG.rainHourThresholdMm) || 0.3;
             const hourlyPoints = [];
             for (let h = 0; h < 24; h++) {
-                const pMm = precips[h] || 0;
-                const rMm = (rains[h] || 0) + (showers[h] || 0);
+                const i = (hourIndex[h] !== undefined) ? hourIndex[h] : h;
+                const pMm = precips[i] || 0;
+                const rMm = (rains[i] || 0) + (showers[i] || 0);
                 const rainMm = Math.max(pMm, rMm);
-                const code = codes[h] || 0;
+                const code = codes[i] || 0;
                 const wmo = WMO_CODE_MAP[code] || { desc: 'Cerah', icon: '☀️', rainLevel: 0 };
-                const isRain = (rainMm >= 0.1 || wmo.rainLevel > 0);
+                // Jam hujan HANYA jika curah hujan model mencapai ambang.
+                // Kode cuaca hujan/badai tanpa curah hujan berarti ditandai sebagai "sinyal model" saja.
+                const isRain = rainMm >= threshold;
+                const modelSignalOnly = !isRain && wmo.rainLevel > 0;
                 hourlyPoints.push({
                     hour: h,
                     timeStr: String(h).padStart(2, '0') + ':00',
@@ -433,12 +466,19 @@
                     weatherDesc: wmo.desc,
                     weatherIcon: wmo.icon,
                     rainLevel: wmo.rainLevel,
-                    temperature: Math.round(temps[h] || 0),
-                    isRain
+                    temperature: Math.round(temps[i] || 0),
+                    isRain,
+                    modelSignalOnly
                 });
             }
 
             const analysis = analyzeRainAndShifts(hourlyPoints, options.shifts || []);
+
+            // Info zona waktu lokal cabang
+            const offsetSec = Number(json.utc_offset_seconds);
+            const TZ_ABBR_BY_OFFSET = { 25200: 'WIB', 28800: 'WITA', 32400: 'WIT' };
+            const tzAbbr = TZ_ABBR_BY_OFFSET[offsetSec] || json.timezone_abbreviation || '';
+            const tzName = json.timezone || '';
 
             // Cuaca representatif hari itu (atau current jika hari ini)
             let currTemp = null;
@@ -455,7 +495,7 @@
                 currIcon = w.icon;
             } else {
                 const mid = hourlyPoints[12] || hourlyPoints[0] || {};
-                const peak = analysis.peakPoint && analysis.peakPoint.rainMm > 0 ? analysis.peakPoint : mid;
+                const peak = analysis.peakPoint && analysis.peakPoint.rainMm >= threshold ? analysis.peakPoint : mid;
                 currTemp = mid.temperature || 28;
                 currCode = peak.weatherCode || 0;
                 currDesc = peak.weatherDesc || 'Cerah';
@@ -474,6 +514,9 @@
                 lng,
                 dateKey: dateStr,
                 isToday,
+                timezone: tzName,
+                tzAbbr,
+                rainHourThresholdMm: threshold,
                 temperature: currTemp,
                 weatherCode: currCode,
                 weatherDesc: currDesc,
@@ -686,6 +729,11 @@
             .weather-hour-segment.clear {
                 background: rgba(148, 163, 184, 0.25);
             }
+            .weather-hour-segment.model-signal {
+                background: repeating-linear-gradient(45deg, rgba(147, 197, 253, 0.35) 0 2px, transparent 2px 4px);
+                outline: 1px dashed rgba(59, 130, 246, 0.45);
+                outline-offset: -1px;
+            }
             body.dark-theme .weather-hour-segment.in-shift {
                 outline-color: rgba(255, 255, 255, 0.6);
             }
@@ -877,7 +925,7 @@
             } else if (weatherData.dailyTotalRainHours > 0) {
                 detailHtml += `<div>ℹ️ Hujan turun di luar shift ini (${weatherData.dailyRainRanges.join(', ')}, total ${weatherData.dailyTotalRainHours} jam, ${weatherData.dailyTotalRainMm} mm).</div>`;
                 autoNoteText = `[Hujan di shift lain (${weatherData.dailyRainRanges.join(', ')}, ${weatherData.dailyTotalRainHours} jam)]`;
-            } else if (weatherData.isRaining || (weatherData.dailyTotalRainMm && weatherData.dailyTotalRainMm > 0)) {
+            } else if (weatherData.isRaining) {
                 detailHtml += `<div>🌦️ Curah hujan harian terdeteksi ${weatherData.dailyTotalRainMm || 0} mm (${weatherData.weatherDesc || 'Hujan'}).</div>`;
                 autoNoteText = `[Cuaca ${weatherData.weatherDesc || 'Hujan'} (${weatherData.temperature ? weatherData.temperature + '°C' : ''}), curah hujan ${weatherData.dailyTotalRainMm || 0} mm]`;
             } else {
@@ -893,7 +941,7 @@
                     detailHtml += `<div style="font-size: 10px; margin-top: 2px;">👥 <strong>Per Shift:</strong> ${shiftsInfo}</div>`;
                 }
                 autoNoteText = `[Hujan ${weatherData.dailyRainRanges.join(', ')} (Total ${weatherData.dailyTotalRainHours} jam, ${weatherData.dailyTotalRainMm} mm)]`;
-            } else if (weatherData.isRaining || (weatherData.dailyTotalRainMm && weatherData.dailyTotalRainMm > 0)) {
+            } else if (weatherData.isRaining) {
                 detailHtml += `<div>🌦️ Terdeteksi hujan/gerimis (${weatherData.dailyTotalRainMm || 0} mm, ${weatherData.weatherDesc}).</div>`;
                 autoNoteText = `[Cuaca ${weatherData.weatherDesc || 'Hujan'} (${weatherData.temperature ? weatherData.temperature + '°C' : ''}), curah hujan ${weatherData.dailyTotalRainMm || 0} mm]`;
             } else {
@@ -916,6 +964,9 @@
             ? `https://zoom.earth/maps/radar/#view=${encodeURIComponent(Number(lat).toFixed(4))},${encodeURIComponent(Number(lng).toFixed(4))},10z`
             : 'https://zoom.earth';
 
+        const tzLabel = weatherData.tzAbbr || '';
+        const thresholdLabel = weatherData.rainHourThresholdMm || WEATHER_CONFIG.rainHourThresholdMm;
+
         let timelineBars = '';
         if (Array.isArray(weatherData.hourlyPoints)) {
             timelineBars = weatherData.hourlyPoints.map(p => {
@@ -923,14 +974,16 @@
                 if (p.rainMm >= 7.5) cls = 'rain-extreme';
                 else if (p.rainMm >= 2.5) cls = 'rain-heavy';
                 else if (p.rainMm >= 1.0) cls = 'rain-medium';
-                else if (p.rainMm > 0.1 || p.isRain) cls = 'rain-light';
+                else if (p.isRain) cls = 'rain-light';
+                else if (p.modelSignalOnly) cls = 'clear model-signal';
 
                 let inTargetShift = false;
                 if (shiftData) {
                     inTargetShift = isHourInShift(p.hour, shiftData);
                 }
 
-                const tip = `${p.timeStr} • ${p.weatherDesc} • ${p.rainMm} mm${inTargetShift ? ' (Jam Shift)' : ''}`;
+                const signalNote = p.modelSignalOnly ? ' • sinyal model saja (curah hujan di bawah ambang, tidak dihitung)' : '';
+                const tip = `${p.timeStr}${tzLabel ? ' ' + tzLabel : ''} • ${p.weatherDesc} • ${p.rainMm} mm${inTargetShift ? ' (Jam Shift)' : ''}${signalNote}`;
                 return `<div class="weather-hour-segment ${cls} ${inTargetShift ? 'in-shift' : ''}" title="${tip}" data-hour="${p.hour}"></div>`;
             }).join('');
         }
@@ -943,7 +996,7 @@
                         <div style="display: flex; align-items: center; gap: 6px; color: ${color}; font-weight: 750; font-size: 12px; margin-bottom: 3px; flex-wrap: wrap;">
                             <span style="font-size: 16px;">${statusIcon}</span>
                             <span>${statusTitle}</span>
-                            <span style="font-size: 10px; opacity: 0.8; font-weight: 600;">(${weatherData.dateKey || ''})</span>
+                            <span style="font-size: 10px; opacity: 0.8; font-weight: 600;">(${weatherData.dateKey || ''}${tzLabel ? ' · ' + tzLabel : ''})</span>
                         </div>
                         <div style="color: var(--text-color); font-size: 10.5px; line-height: 1.45; opacity: 0.9;">
                             ${detailHtml}
@@ -956,7 +1009,7 @@
                             </button>
                         ` : `
                             <span style="font-size: 9.5px; color: var(--text-muted); background: rgba(0,0,0,0.04); padding: 2px 6px; border-radius: 4px;">
-                                ${weatherData.isToday ? 'Real-time ' + weatherData.fetchedAt : 'Data Historis'}
+                                ${weatherData.isToday ? 'Real-time ' + weatherData.fetchedAt + (tzLabel ? ' ' + tzLabel : '') : 'Data Historis'}
                             </span>
                         `}
                         <div style="display: flex; align-items: center; gap: 4px;">
@@ -977,22 +1030,23 @@
                         <span>06:00 (Pagi)</span>
                         <span>12:00 (Siang)</span>
                         <span>18:00 (Sore)</span>
-                        <span>23:00</span>
+                        <span>23:00${tzLabel ? ' (' + tzLabel + ')' : ''}</span>
                     </div>
                     <div class="weather-timeline-bar">
                         ${timelineBars}
                     </div>
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 9px; color: var(--text-muted); flex-wrap: wrap; gap: 4px;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <span style="display: inline-block; width: 8px; height: 8px; background: #93c5fd; border-radius: 2px;"></span> Gerimis
-                            <span style="display: inline-block; width: 8px; height: 8px; background: #3b82f6; border-radius: 2px;"></span> Sedang
-                            <span style="display: inline-block; width: 8px; height: 8px; background: #1d4ed8; border-radius: 2px;"></span> Deras
-                            <span style="display: inline-block; width: 8px; height: 8px; background: #1e1b4b; border-radius: 2px;"></span> Sangat Lebat
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display: inline-block; width: 8px; height: 8px; background: #93c5fd; border-radius: 2px;"></span> Gerimis</span>
+                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display: inline-block; width: 8px; height: 8px; background: #3b82f6; border-radius: 2px;"></span> Sedang</span>
+                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display: inline-block; width: 8px; height: 8px; background: #1d4ed8; border-radius: 2px;"></span> Deras</span>
+                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display: inline-block; width: 8px; height: 8px; background: #1e1b4b; border-radius: 2px;"></span> Sangat Lebat</span>
+                            <span style="display: inline-flex; align-items: center; gap: 3px;" title="Kode cuaca mendung/badai tapi curah hujan di bawah ambang ${thresholdLabel} mm (tidak dihitung jam hujan)"><span style="display: inline-block; width: 8px; height: 8px; background: repeating-linear-gradient(45deg, rgba(147, 197, 253, 0.35) 0 2px, transparent 2px 4px); outline: 1px dashed rgba(59, 130, 246, 0.45); border-radius: 2px;"></span> Sinyal Model (< ${thresholdLabel} mm)</span>
                         </div>
                         ${shiftData ? `<span>Highlight border = Jam ${shiftData.shiftName} (${shiftData.shiftHours})</span>` : ''}
                     </div>
                     <div style="font-size: 9px; color: var(--text-muted); opacity: 0.85; margin-top: 5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 4px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
-                        <span>💡 Model atmosfer Open-Meteo. Gunakan tombol radar satelit di atas jika jam konveksi hujan lokal bergeser.</span>
+                        <span>💡 Model atmosfer Open-Meteo (${tzLabel || 'Waktu Lokal'}). Ambang jam hujan: ≥ ${thresholdLabel} mm/jam. Cek tombol radar di atas jika jam konveksi hujan lokal bergeser.</span>
                     </div>
                 </div>
             </div>
