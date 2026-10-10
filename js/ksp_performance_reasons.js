@@ -242,59 +242,245 @@
         99: { desc: 'Badai Petir Dahsyat', icon: '⛈️', rainLevel: 3 }
     };
 
+    function groupContiguousHours(hours) {
+        if (!hours || hours.length === 0) return [];
+        const sorted = Array.from(new Set(hours)).sort((a, b) => a - b);
+        const ranges = [];
+        let start = sorted[0];
+        let prev = sorted[0];
+        for (let i = 1; i < sorted.length; i++) {
+            if (sorted[i] === prev + 1) {
+                prev = sorted[i];
+            } else {
+                const end = prev + 1;
+                ranges.push(String(start).padStart(2, '0') + ':00 - ' + String(end).padStart(2, '0') + ':00');
+                start = sorted[i];
+                prev = sorted[i];
+            }
+        }
+        const end = prev + 1;
+        ranges.push(String(start).padStart(2, '0') + ':00 - ' + String(end).padStart(2, '0') + ':00');
+        return ranges;
+    }
+
+    function parseShiftHours(s, idx) {
+        const num = (s && s.shift_num) ? parseInt(s.shift_num, 10) : (idx + 1);
+        const name = (s && s.name) ? s.name : `Shift ${num}`;
+        let startStr = (s && s.start) ? String(s.start).trim() : (num === 1 ? '07:00' : '15:00');
+        let endStr = (s && s.end) ? String(s.end).trim() : (num === 1 ? '15:00' : '23:00');
+        const startH = parseInt(startStr.split(':')[0], 10) || (num === 1 ? 7 : 15);
+        const endH = parseInt(endStr.split(':')[0], 10) || (num === 1 ? 15 : 23);
+        const isOvernight = endH < startH;
+        return { shiftNum: num, shiftName: name, startH, endH, startStr, endStr, isOvernight };
+    }
+
+    function isHourInShift(h, shift) {
+        if (shift.isOvernight) {
+            return h >= shift.startH || h < shift.endH;
+        }
+        return h >= shift.startH && h < shift.endH;
+    }
+
+    function analyzeRainAndShifts(hourlyPoints, storeShifts) {
+        const rainHours = hourlyPoints.filter(p => p.isRain).map(p => p.hour);
+        const dailyTotalRainHours = rainHours.length;
+        const dailyTotalRainMm = Number(hourlyPoints.reduce((sum, p) => sum + (p.rainMm || 0), 0).toFixed(1));
+        const dailyRainRanges = groupContiguousHours(rainHours);
+        const peakPoint = hourlyPoints.reduce((max, p) => (p.rainMm > max.rainMm ? p : max), hourlyPoints[0] || { rainMm: 0, hour: 0 });
+
+        let rawShifts = Array.isArray(storeShifts) && storeShifts.length > 0 ? storeShifts : [
+            { shift_num: 1, name: 'Shift 1 Pagi', start: '07:00', end: '15:00' },
+            { shift_num: 2, name: 'Shift 2 Malam', start: '15:00', end: '23:00' }
+        ];
+
+        const parsedShifts = rawShifts.map((s, idx) => parseShiftHours(s, idx));
+
+        const shiftsAnalysis = parsedShifts.map(shift => {
+            const shiftRainList = rainHours.filter(h => isHourInShift(h, shift));
+            const shiftPoints = hourlyPoints.filter(p => isHourInShift(p.hour, shift));
+            const shiftRainHours = shiftRainList.length;
+            const shiftRainMm = Number(shiftPoints.reduce((sum, p) => sum + (p.rainMm || 0), 0).toFixed(1));
+            const shiftRainRanges = groupContiguousHours(shiftRainList);
+
+            // Cek hujan sebelum buka shift (2 jam sebelumnya)
+            const preH1 = (shift.startH - 2 + 24) % 24;
+            const preH2 = (shift.startH - 1 + 24) % 24;
+            const preHours = [preH1, preH2];
+            const preRainList = rainHours.filter(h => preHours.includes(h));
+            const prePoints = hourlyPoints.filter(p => preHours.includes(p.hour));
+            const rainBeforeShiftHours = preRainList.length;
+            const rainBeforeShiftMm = Number(prePoints.reduce((sum, p) => sum + (p.rainMm || 0), 0).toFixed(1));
+            const rainBeforeShiftRanges = groupContiguousHours(preRainList);
+
+            let impact = 'none';
+            if (shiftRainMm >= 15.0 || shiftRainHours >= 4) {
+                impact = 'flood_risk';
+            } else if (shiftRainHours >= 2 || shiftRainMm >= 5.0) {
+                impact = 'high';
+            } else if (shiftRainHours >= 1 && shiftRainMm >= 2.0) {
+                impact = 'medium';
+            } else if (shiftRainHours >= 1) {
+                impact = 'low';
+            }
+
+            let summaryText = 'Cerah / tidak ada hujan di jam kerja ini';
+            if (shiftRainHours > 0) {
+                summaryText = `Hujan ${shiftRainHours} jam (${shiftRainRanges.join(', ')}, ${shiftRainMm} mm)`;
+            }
+
+            return {
+                shiftNum: shift.shiftNum,
+                shiftName: shift.shiftName,
+                shiftHours: `${shift.startStr} - ${shift.endStr}`,
+                startH: shift.startH,
+                endH: shift.endH,
+                isOvernight: shift.isOvernight,
+                rainHoursDuringShift: shiftRainHours,
+                rainMmDuringShift: shiftRainMm,
+                rainRangesDuringShift: shiftRainRanges,
+                rainBeforeShiftHours,
+                rainBeforeShiftMm,
+                rainBeforeShiftRanges,
+                impact,
+                summaryText
+            };
+        });
+
+        const isFloodingRisk = dailyTotalRainMm >= 25.0 || peakPoint.rainMm >= 12.0 || shiftsAnalysis.some(s => s.impact === 'flood_risk');
+        const isHeavyRain = dailyTotalRainMm >= 10.0 || peakPoint.rainMm >= 4.0 || shiftsAnalysis.some(s => s.impact === 'high' || s.impact === 'flood_risk');
+        const isRaining = dailyTotalRainHours > 0 || dailyTotalRainMm >= 0.5;
+
+        return {
+            dailyTotalRainHours,
+            dailyTotalRainMm,
+            dailyRainRanges,
+            peakPoint,
+            isRaining,
+            isHeavyRain,
+            isFloodingRisk,
+            shiftsAnalysis
+        };
+    }
+
     /**
-     * Mengambil kondisi cuaca terkini berdasarkan koordinat cabang toko.
+     * Mengambil riwayat kondisi cuaca per tanggal dan jam, lengkap dengan pencocokan shift toko.
      * @param {number} lat - Latitude (contoh: 0.5071)
      * @param {number} lng - Longitude (contoh: 101.4478)
+     * @param {string|null} targetDate - Tanggal YYYY-MM-DD (opsional, default hari ini)
+     * @param {Object} options - { shifts: Array }
      * @returns {Promise<Object|null>} Detail cuaca atau null jika offline/gagal
      */
-    KspReasons.fetchStoreWeather = async function (lat, lng) {
+    KspReasons.fetchStoreWeather = async function (lat, lng, targetDate = null, options = {}) {
         if (!lat || !lng || isNaN(lat) || isNaN(lng)) return null;
 
-        const cacheKey = `${Number(lat).toFixed(3)}_${Number(lng).toFixed(3)}`;
+        let dateStr = targetDate;
+        if (!dateStr || typeof dateStr !== 'string' || !dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            dateStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+        }
+
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        const isToday = (dateStr === todayStr);
+
+        const cacheKey = `${Number(lat).toFixed(3)}_${Number(lng).toFixed(3)}_${dateStr}`;
         const cached = weatherCache.get(cacheKey);
-        if (cached && (Date.now() - cached.timestamp < WEATHER_CACHE_TTL)) {
+        const ttl = isToday ? WEATHER_CACHE_TTL : (12 * 60 * 60 * 1000); // 12 jam untuk riwayat lampau
+        if (cached && (Date.now() - cached.timestamp < ttl)) {
             return cached.data;
         }
 
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 detik timeout
+            const timeoutId = setTimeout(() => controller.abort(), 4500); // 4.5 detik timeout
 
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lng)}&current=temperature_2m,relative_humidity_2m,precipitation,rain,showers,weather_code,wind_speed_10m&timezone=Asia%2FJakarta`;
-            const resp = await fetch(url, { signal: controller.signal });
+            // Endpoint Open-Meteo untuk tanggal terpilih
+            let url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lng)}&start_date=${dateStr}&end_date=${dateStr}&hourly=precipitation,rain,showers,weather_code,temperature_2m&timezone=Asia%2FJakarta`;
+            if (isToday) {
+                url += '&current=temperature_2m,relative_humidity_2m,precipitation,rain,showers,weather_code,wind_speed_10m';
+            }
+
+            let resp = await fetch(url, { signal: controller.signal });
+            // Fallback ke archive API jika tanggal lebih dari 92 hari lalu
+            if (!resp.ok && resp.status >= 400 && dateStr < todayStr) {
+                const archiveUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lng)}&start_date=${dateStr}&end_date=${dateStr}&hourly=precipitation,rain,weather_code,temperature_2m&timezone=Asia%2FJakarta`;
+                resp = await fetch(archiveUrl, { signal: controller.signal });
+            }
             clearTimeout(timeoutId);
 
             if (!resp.ok) return null;
             const json = await resp.json();
-            const curr = json.current;
-            if (!curr) return null;
+            const hourly = json.hourly;
+            if (!hourly || !Array.isArray(hourly.time)) return null;
 
-            const wmo = WMO_CODE_MAP[curr.weather_code] || { desc: 'Biasa', icon: '🌤️', rainLevel: 0 };
-            const rainAmount = (curr.rain || 0) + (curr.showers || 0) + (curr.precipitation || 0);
-            const isRaining = wmo.rainLevel > 0 || rainAmount > 0.4;
-            const isHeavyRain = wmo.rainLevel >= 2 || rainAmount >= 2.5;
-            const isFloodingRisk = rainAmount >= 12.0;
+            const precips = hourly.precipitation || [];
+            const rains = hourly.rain || [];
+            const showers = hourly.showers || [];
+            const codes = hourly.weather_code || [];
+            const temps = hourly.temperature_2m || [];
+
+            const hourlyPoints = [];
+            for (let h = 0; h < 24; h++) {
+                const pMm = precips[h] || 0;
+                const rMm = (rains[h] || 0) + (showers[h] || 0);
+                const rainMm = Math.max(pMm, rMm);
+                const code = codes[h] || 0;
+                const wmo = WMO_CODE_MAP[code] || { desc: 'Cerah', icon: '☀️', rainLevel: 0 };
+                const isRain = (rainMm >= 0.1 || wmo.rainLevel > 0);
+                hourlyPoints.push({
+                    hour: h,
+                    timeStr: String(h).padStart(2, '0') + ':00',
+                    rainMm: Number(rainMm.toFixed(1)),
+                    weatherCode: code,
+                    weatherDesc: wmo.desc,
+                    weatherIcon: wmo.icon,
+                    rainLevel: wmo.rainLevel,
+                    temperature: Math.round(temps[h] || 0),
+                    isRain
+                });
+            }
+
+            const analysis = analyzeRainAndShifts(hourlyPoints, options.shifts || []);
+
+            // Cuaca representatif hari itu (atau current jika hari ini)
+            let currTemp = null;
+            let currCode = null;
+            let currDesc = 'Cerah';
+            let currIcon = '☀️';
+
+            if (isToday && json.current) {
+                const curr = json.current;
+                currTemp = Math.round(curr.temperature_2m || 0);
+                currCode = curr.weather_code;
+                const w = WMO_CODE_MAP[currCode] || { desc: 'Biasa', icon: '🌤️' };
+                currDesc = w.desc;
+                currIcon = w.icon;
+            } else {
+                const mid = hourlyPoints[12] || hourlyPoints[0] || {};
+                const peak = analysis.peakPoint && analysis.peakPoint.rainMm > 0 ? analysis.peakPoint : mid;
+                currTemp = mid.temperature || 28;
+                currCode = peak.weatherCode || 0;
+                currDesc = peak.weatherDesc || 'Cerah';
+                currIcon = peak.weatherIcon || '☀️';
+            }
 
             const suggestedReasons = [];
-            if (isFloodingRisk) {
+            if (analysis.isFloodingRisk) {
                 suggestedReasons.push('🌊 Banjir / Genangan', '🌧️ Hujan Deras');
-            } else if (isRaining || isHeavyRain) {
+            } else if (analysis.isHeavyRain || analysis.isRaining) {
                 suggestedReasons.push('🌧️ Hujan Deras');
             }
 
             const weatherData = {
                 lat,
                 lng,
-                temperature: Math.round(curr.temperature_2m),
-                humidity: curr.relative_humidity_2m,
-                weatherCode: curr.weather_code,
-                weatherDesc: wmo.desc,
-                weatherIcon: wmo.icon,
-                rainAmount: Number(rainAmount.toFixed(1)),
-                isRaining,
-                isHeavyRain,
-                isFloodingRisk,
+                dateKey: dateStr,
+                isToday,
+                temperature: currTemp,
+                weatherCode: currCode,
+                weatherDesc: currDesc,
+                weatherIcon: currIcon,
+                rainAmount: analysis.dailyTotalRainMm,
+                hourlyPoints,
+                ...analysis,
                 suggestedReasons,
                 fetchedAt: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
             };
@@ -367,24 +553,55 @@
 
     /**
      * Menggabungkan cuaca cabang dan kalender untuk menghasilkan saran alasan otomatis
-     * @param {Object} options - { storeCoordinates, date, currentCondition, pctDiff }
+     * @param {Object} options - { storeCoordinates, date, currentCondition, pctDiff, shiftNum, shifts }
      * @returns {Promise<Object>} { suggestedReasons, weather, calendar, hintText }
      */
     KspReasons.getSmartRecommendations = async function (options = {}) {
-        const { storeCoordinates, date, currentCondition, pctDiff } = options;
+        const { storeCoordinates, date, currentCondition, pctDiff, shiftNum, shifts } = options;
 
         const calendarInfo = KspReasons.detectCalendarFactors(date);
         let weatherInfo = null;
 
         if (storeCoordinates && storeCoordinates.lat && storeCoordinates.lng) {
-            weatherInfo = await KspReasons.fetchStoreWeather(storeCoordinates.lat, storeCoordinates.lng);
+            weatherInfo = await KspReasons.fetchStoreWeather(storeCoordinates.lat, storeCoordinates.lng, date, { shifts, shiftNum });
         }
 
         const suggestedSet = new Set();
+        let hintParts = [];
 
         if (currentCondition === 'down') {
-            if (weatherInfo && weatherInfo.isRaining) {
-                weatherInfo.suggestedReasons.forEach(r => suggestedSet.add(r));
+            if (weatherInfo) {
+                let shiftData = null;
+                if (shiftNum && Array.isArray(weatherInfo.shiftsAnalysis)) {
+                    shiftData = weatherInfo.shiftsAnalysis.find(s => s.shiftNum === parseInt(shiftNum, 10));
+                }
+
+                if (shiftData) {
+                    if (shiftData.impact === 'flood_risk') {
+                        suggestedSet.add('🌊 Banjir / Genangan');
+                        suggestedSet.add('🌧️ Hujan Deras');
+                        hintParts.push(`🌊 Hujan lebat & potensi genangan ${shiftData.shiftRainHours} jam saat ${shiftData.shiftName} (${shiftData.rainRangesDuringShift.join(', ')}, ${shiftData.rainMmDuringShift} mm)`);
+                    } else if (shiftData.impact === 'high' || shiftData.impact === 'medium') {
+                        suggestedSet.add('🌧️ Hujan Deras');
+                        hintParts.push(`🌧️ Hujan ${shiftData.shiftRainHours} jam saat ${shiftData.shiftName} (${shiftData.rainRangesDuringShift.join(', ')}, ${shiftData.rainMmDuringShift} mm)`);
+                    } else if (shiftData.rainBeforeShiftHours >= 1 && shiftData.rainBeforeShiftMm >= 2.0) {
+                        suggestedSet.add('🌧️ Hujan Deras');
+                        hintParts.push(`🌧️ Sempat hujan sebelum buka ${shiftData.shiftName} (${shiftData.rainBeforeShiftRanges.join(', ')}, ${shiftData.rainBeforeShiftMm} mm)`);
+                    } else if (shiftData.rainHoursDuringShift === 0) {
+                        if (weatherInfo.dailyTotalRainHours > 0) {
+                            hintParts.push(`🌤️ Jam kerja ${shiftData.shiftName} (${shiftData.shiftHours}) cerah. Hujan terjadi di shift lain (${weatherInfo.dailyRainRanges.join(', ')})`);
+                        }
+                    }
+                } else {
+                    if (weatherInfo.isFloodingRisk) {
+                        suggestedSet.add('🌊 Banjir / Genangan');
+                        suggestedSet.add('🌧️ Hujan Deras');
+                        hintParts.push(`🌊 Hujan total ${weatherInfo.dailyTotalRainHours} jam berpotensi genangan (${weatherInfo.dailyTotalRainMm} mm)`);
+                    } else if (weatherInfo.isHeavyRain || weatherInfo.isRaining) {
+                        suggestedSet.add('🌧️ Hujan Deras');
+                        hintParts.push(`🌧️ Hujan total ${weatherInfo.dailyTotalRainHours} jam (${weatherInfo.dailyRainRanges.join(', ')}, ${weatherInfo.dailyTotalRainMm} mm)`);
+                    }
+                }
             }
             calendarInfo.downSuggestions.forEach(r => suggestedSet.add(r));
         } else if (currentCondition === 'up') {
@@ -393,17 +610,12 @@
 
         const suggestedReasons = Array.from(suggestedSet);
 
-        // Susun teks ringkasan untuk Smart Hint
-        let hintParts = [];
-        if (weatherInfo && weatherInfo.isRaining) {
-            hintParts.push(`${weatherInfo.weatherIcon} Sedang ${weatherInfo.weatherDesc.toLowerCase()} (${weatherInfo.temperature}°C) di sekitar toko`);
-        }
         if (calendarInfo.isPaydayWindow && currentCondition === 'up') {
             hintParts.push(`🎉 Periode gajian tgl ${calendarInfo.dayOfMonth}`);
         } else if (calendarInfo.isMonthEndWindow && currentCondition === 'down') {
             hintParts.push(`💸 Tanggal tua (${calendarInfo.dayOfMonth})`);
         } else if (calendarInfo.isSunday) {
-            hintParts.push(`🛑 Hari Minggu`);
+            hintParts.push(`🛑 Hari Libur / Minggu`);
         }
 
         return {
@@ -436,6 +648,52 @@
             @keyframes kspSparklePulse {
                 0%, 100% { transform: scale(1); opacity: 0.85; }
                 50% { transform: scale(1.25); opacity: 1; }
+            }
+            .weather-timeline-bar {
+                display: flex;
+                gap: 2px;
+                background: rgba(0, 0, 0, 0.05);
+                padding: 4px 6px;
+                border-radius: 6px;
+            }
+            .weather-hour-segment {
+                flex: 1;
+                height: 14px;
+                border-radius: 2px;
+                position: relative;
+                cursor: pointer;
+                transition: transform 0.15s ease;
+            }
+            .weather-hour-segment:hover {
+                transform: scaleY(1.35);
+            }
+            .weather-hour-segment.in-shift {
+                outline: 1.5px solid rgba(0, 0, 0, 0.35);
+                outline-offset: -1px;
+            }
+            .weather-hour-segment.rain-light {
+                background: #93c5fd;
+            }
+            .weather-hour-segment.rain-medium {
+                background: #3b82f6;
+            }
+            .weather-hour-segment.rain-heavy {
+                background: #1d4ed8;
+            }
+            .weather-hour-segment.rain-extreme {
+                background: #1e1b4b;
+            }
+            .weather-hour-segment.clear {
+                background: rgba(148, 163, 184, 0.25);
+            }
+            body.dark-theme .weather-hour-segment.in-shift {
+                outline-color: rgba(255, 255, 255, 0.6);
+            }
+            body.dark-theme .weather-timeline-bar {
+                background: rgba(255, 255, 255, 0.06);
+            }
+            body.dark-theme .weather-hour-segment.clear {
+                background: rgba(255, 255, 255, 0.1);
             }
         `;
         document.head.appendChild(style);
@@ -507,12 +765,14 @@
     };
 
     /**
-     * Me-render banner status cuaca mini di bagian atas modal catatan harian
+     * Me-render banner status cuaca terkalibrasi di bagian atas modal catatan harian
      * @param {HTMLElement|string} container - Elemen container atau ID
      * @param {Object} weatherData - Hasil dari fetchStoreWeather
-     * @param {Function} onApplySuggestion - Callback saat tombol klik terapkan
+     * @param {Function} onApplySuggestion - Callback saat tombol klik terapkan: function(reasons, autoNoteText)
+     * @param {Object} options - { shiftNum: number, shifts: Array }
      */
-    KspReasons.renderWeatherBanner = function (container, weatherData, onApplySuggestion) {
+    KspReasons.renderWeatherBanner = function (container, weatherData, onApplySuggestion, options = {}) {
+        ensureStyles();
         const el = typeof container === 'string' ? document.getElementById(container) : container;
         if (!el) return;
 
@@ -522,38 +782,161 @@
             return;
         }
 
-        const isRain = weatherData.isRaining;
-        const bg = isRain ? 'rgba(59, 130, 246, 0.08)' : 'rgba(245, 158, 11, 0.08)';
-        const border = isRain ? 'rgba(59, 130, 246, 0.25)' : 'rgba(245, 158, 11, 0.25)';
-        const color = isRain ? '#2563EB' : '#D97706';
+        const shiftNum = options.shiftNum ? parseInt(options.shiftNum, 10) : null;
+        let shiftData = null;
+        if (shiftNum && Array.isArray(weatherData.shiftsAnalysis)) {
+            shiftData = weatherData.shiftsAnalysis.find(s => s.shiftNum === shiftNum);
+        }
+
+        const isRainInShift = shiftData ? (shiftData.rainHoursDuringShift > 0 || shiftData.rainBeforeShiftHours > 0) : weatherData.isRaining;
+        const isHeavy = shiftData ? (shiftData.impact === 'high' || shiftData.impact === 'flood_risk') : weatherData.isHeavyRain;
+        const isFlood = shiftData ? (shiftData.impact === 'flood_risk') : weatherData.isFloodingRisk;
+
+        let bg = 'rgba(245, 158, 11, 0.08)';
+        let border = 'rgba(245, 158, 11, 0.25)';
+        let color = '#D97706';
+        let statusTitle = 'Cuaca Cerah / Berawan';
+        let statusIcon = '🌤️';
+
+        if (isFlood) {
+            bg = 'rgba(239, 68, 68, 0.1)';
+            border = 'rgba(239, 68, 68, 0.35)';
+            color = '#DC2626';
+            statusTitle = shiftData ? `Hujan Sangat Deras / Risiko Genangan saat ${shiftData.shiftName}` : `Hujan Sangat Deras / Risiko Genangan`;
+            statusIcon = '🌊';
+        } else if (isHeavy) {
+            bg = 'rgba(37, 99, 235, 0.1)';
+            border = 'rgba(37, 99, 235, 0.35)';
+            color = '#1D4ED8';
+            statusTitle = shiftData ? `Hujan Deras saat ${shiftData.shiftName}` : `Hujan Deras di Wilayah Cabang`;
+            statusIcon = '⛈️';
+        } else if (isRainInShift) {
+            bg = 'rgba(59, 130, 246, 0.08)';
+            border = 'rgba(59, 130, 246, 0.25)';
+            color = '#2563EB';
+            statusTitle = shiftData ? `Hujan saat ${shiftData.shiftName}` : `Ada Hujan di Wilayah Cabang`;
+            statusIcon = '🌧️';
+        } else if (weatherData.dailyTotalRainHours > 0 && shiftData) {
+            bg = 'rgba(16, 185, 129, 0.08)';
+            border = 'rgba(16, 185, 129, 0.25)';
+            color = '#059669';
+            statusTitle = `Jam Kerja ${shiftData.shiftName} (${shiftData.shiftHours}) Aman / Cerah`;
+            statusIcon = '🌤️';
+        } else {
+            statusTitle = `Cuaca Cerah (${weatherData.temperature}°C)`;
+            statusIcon = weatherData.weatherIcon || '☀️';
+        }
+
+        let detailHtml = '';
+        let autoNoteText = '';
+
+        if (shiftData) {
+            if (shiftData.rainHoursDuringShift > 0) {
+                detailHtml += `<div>🕒 <strong>Jam Hujan:</strong> ${shiftData.rainRangesDuringShift.join(', ')} (${shiftData.rainHoursDuringShift} jam di jam kerja ${shiftData.shiftHours})</div>`;
+                detailHtml += `<div>💧 <strong>Curah Hujan Shift:</strong> ${shiftData.rainMmDuringShift} mm (Total hari ini: ${weatherData.dailyTotalRainMm} mm)</div>`;
+                autoNoteText = `[Hujan ${shiftData.rainRangesDuringShift.join(', ')} (${shiftData.rainHoursDuringShift} jam, ${shiftData.rainMmDuringShift} mm) saat ${shiftData.shiftName}]`;
+            } else if (shiftData.rainBeforeShiftHours > 0) {
+                detailHtml += `<div>⚠️ <strong>Hujan Sebelum Buka:</strong> ${shiftData.rainBeforeShiftRanges.join(', ')} (${shiftData.rainBeforeShiftHours} jam, ${shiftData.rainBeforeShiftMm} mm)</div>`;
+                autoNoteText = `[Hujan sebelum buka ${shiftData.rainBeforeShiftRanges.join(', ')} (${shiftData.rainBeforeShiftHours} jam)]`;
+            } else if (weatherData.dailyTotalRainHours > 0) {
+                detailHtml += `<div>ℹ️ Hujan turun di luar shift ini (${weatherData.dailyRainRanges.join(', ')}, total ${weatherData.dailyTotalRainHours} jam, ${weatherData.dailyTotalRainMm} mm).</div>`;
+                autoNoteText = `[Hujan di shift lain (${weatherData.dailyRainRanges.join(', ')}, ${weatherData.dailyTotalRainHours} jam)]`;
+            } else {
+                detailHtml += `<div>☀️ Tidak ada catatan hujan pada tanggal ini.</div>`;
+            }
+        } else {
+            if (weatherData.dailyTotalRainHours > 0) {
+                detailHtml += `<div>🕒 <strong>Rentang Hujan:</strong> ${weatherData.dailyRainRanges.join(', ')} (Total ${weatherData.dailyTotalRainHours} jam, ${weatherData.dailyTotalRainMm} mm)</div>`;
+                if (Array.isArray(weatherData.shiftsAnalysis)) {
+                    const shiftsInfo = weatherData.shiftsAnalysis.map(s => {
+                        return `${s.shiftName}: ${s.rainHoursDuringShift > 0 ? `${s.rainHoursDuringShift} jam (${s.rainRangesDuringShift.join(', ')})` : 'Cerah'}`;
+                    }).join(' • ');
+                    detailHtml += `<div style="font-size: 10px; margin-top: 2px;">👥 <strong>Per Shift:</strong> ${shiftsInfo}</div>`;
+                }
+                autoNoteText = `[Hujan ${weatherData.dailyRainRanges.join(', ')} (Total ${weatherData.dailyTotalRainHours} jam, ${weatherData.dailyTotalRainMm} mm)]`;
+            } else {
+                detailHtml += `<div>☀️ Cuaca cerah di sekitar cabang sepanjang hari.</div>`;
+            }
+        }
+
+        let timelineBars = '';
+        if (Array.isArray(weatherData.hourlyPoints)) {
+            timelineBars = weatherData.hourlyPoints.map(p => {
+                let cls = 'clear';
+                if (p.rainMm >= 7.5) cls = 'rain-extreme';
+                else if (p.rainMm >= 2.5) cls = 'rain-heavy';
+                else if (p.rainMm >= 1.0) cls = 'rain-medium';
+                else if (p.rainMm > 0.1 || p.isRain) cls = 'rain-light';
+
+                let inTargetShift = false;
+                if (shiftData) {
+                    inTargetShift = isHourInShift(p.hour, shiftData);
+                }
+
+                const tip = `${p.timeStr} • ${p.weatherDesc} • ${p.rainMm} mm${inTargetShift ? ' (Jam Shift)' : ''}`;
+                return `<div class="weather-hour-segment ${cls} ${inTargetShift ? 'in-shift' : ''}" title="${tip}" data-hour="${p.hour}"></div>`;
+            }).join('');
+        }
 
         el.style.display = 'block';
         el.innerHTML = `
-            <div style="background: ${bg}; border: 1px solid ${border}; border-radius: 9px; padding: 6px 10px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px;">
-                <div style="display: flex; align-items: center; gap: 6px; color: ${color};">
-                    <span style="font-size: 15px;">${weatherData.weatherIcon}</span>
-                    <span>
-                        <strong>Cuaca Cabang:</strong> ${weatherData.weatherDesc} (${weatherData.temperature}°C${weatherData.rainAmount > 0 ? `, ${weatherData.rainAmount}mm` : ''})
-                    </span>
+            <div class="ksp-weather-card" style="background: ${bg}; border: 1px solid ${border}; border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; font-size: 11px;">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <div style="display: flex; align-items: center; gap: 6px; color: ${color}; font-weight: 750; font-size: 12px; margin-bottom: 3px;">
+                            <span style="font-size: 16px;">${statusIcon}</span>
+                            <span>${statusTitle}</span>
+                            <span style="font-size: 10px; opacity: 0.8; font-weight: 600;">(${weatherData.dateKey || ''})</span>
+                        </div>
+                        <div style="color: var(--text-color); font-size: 10.5px; line-height: 1.45; opacity: 0.9;">
+                            ${detailHtml}
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                        ${(isRainInShift || weatherData.dailyTotalRainHours > 0) ? `
+                            <button type="button" class="btn-apply-weather" style="background: #2563EB; color: #fff; border: none; border-radius: 6px; padding: 5px 10px; font-size: 10.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(37,99,235,0.3); transition: transform 0.1s ease;">
+                                <span>🌧️</span> Pasang Alasan & Catatan
+                            </button>
+                        ` : `
+                            <span style="font-size: 9.5px; color: var(--text-muted); background: rgba(0,0,0,0.04); padding: 2px 6px; border-radius: 4px;">
+                                ${weatherData.isToday ? 'Real-time ' + weatherData.fetchedAt : 'Data Historis'}
+                            </span>
+                        `}
+                    </div>
                 </div>
-                ${isRain ? `
-                    <button type="button" class="btn-apply-weather" style="background: #2563EB; color: #fff; border: none; border-radius: 6px; padding: 3px 8px; font-size: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 3px;">
-                        <span>🌧️</span> Pasang Alasan Hujan
-                    </button>
-                ` : `
-                    <span style="font-size: 9.5px; color: var(--text-muted);">${weatherData.fetchedAt} WIB</span>
-                `}
+
+                <!-- Mini Timeline 24 Jam -->
+                <div style="margin-top: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 9px; color: var(--text-muted); margin-bottom: 2px;">
+                        <span>00:00</span>
+                        <span>06:00 (Pagi)</span>
+                        <span>12:00 (Siang)</span>
+                        <span>18:00 (Sore)</span>
+                        <span>23:00</span>
+                    </div>
+                    <div class="weather-timeline-bar">
+                        ${timelineBars}
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 9px; color: var(--text-muted);">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="display: inline-block; width: 8px; height: 8px; background: #93c5fd; border-radius: 2px;"></span> Gerimis
+                            <span style="display: inline-block; width: 8px; height: 8px; background: #3b82f6; border-radius: 2px;"></span> Sedang
+                            <span style="display: inline-block; width: 8px; height: 8px; background: #1d4ed8; border-radius: 2px;"></span> Deras
+                            <span style="display: inline-block; width: 8px; height: 8px; background: #1e1b4b; border-radius: 2px;"></span> Sangat Lebat
+                        </div>
+                        ${shiftData ? `<span>Highlight border = Jam ${shiftData.shiftName} (${shiftData.shiftHours})</span>` : ''}
+                    </div>
+                </div>
             </div>
         `;
 
-        if (isRain && typeof onApplySuggestion === 'function') {
-            const btnApply = el.querySelector('.btn-apply-weather');
-            if (btnApply) {
-                btnApply.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    onApplySuggestion(weatherData.suggestedReasons || ['🌧️ Hujan Deras']);
-                });
-            }
+        const btnApply = el.querySelector('.btn-apply-weather');
+        if (btnApply && typeof onApplySuggestion === 'function') {
+            btnApply.addEventListener('click', (e) => {
+                e.preventDefault();
+                let reasonsToApply = isFlood ? ['🌊 Banjir / Genangan', '🌧️ Hujan Deras'] : ['🌧️ Hujan Deras'];
+                onApplySuggestion(reasonsToApply, autoNoteText);
+            });
         }
     };
 

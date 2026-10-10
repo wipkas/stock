@@ -3533,12 +3533,15 @@
             if (!window.KspReasons) return;
 
             const coords = store ? (store.coordinates || store.location || null) : null;
+            const empShiftNum = (currentEmployee && currentEmployee.shift_num) ? parseInt(currentEmployee.shift_num, 10) : 1;
             let recs = null;
             try {
                 recs = await KspReasons.getSmartRecommendations({
                     storeCoordinates: coords,
                     date: dateKey,
-                    currentCondition: currentCond
+                    currentCondition: currentCond,
+                    shiftNum: empShiftNum,
+                    shifts: store ? (store.shifts || []) : []
                 });
             } catch (err) {
                 console.warn('[KspReasons] smart recommendations fail:', err);
@@ -3548,7 +3551,7 @@
 
             // Render banner cuaca kasir
             if (weatherBannerEl && recs && recs.weather) {
-                KspReasons.renderWeatherBanner(weatherBannerEl, recs.weather, (appliedReasons) => {
+                KspReasons.renderWeatherBanner(weatherBannerEl, recs.weather, (appliedReasons, autoNote) => {
                     setEmpPropCondition('down', true);
                     appliedReasons.forEach(r => {
                         const chip = document.querySelector(`#empTxChipsDown .tx-reason-chip[data-reason="${r}"]`);
@@ -3556,6 +3559,20 @@
                             chip.click();
                         }
                     });
+                    const noteEl = document.getElementById('empPropNoteInput');
+                    if (noteEl && autoNote) {
+                        const curVal = noteEl.value.trim();
+                        if (!curVal.includes(autoNote)) {
+                            noteEl.value = (curVal ? curVal + '\n' : '') + autoNote;
+                            checkEmpPropReviewDirtyState();
+                        }
+                    }
+                    if (typeof showToast === 'function') {
+                        showToast('Alasan & rincian jam hujan berhasil dipasang!', '🌧️');
+                    }
+                }, {
+                    shiftNum: empShiftNum,
+                    shifts: store ? (store.shifts || []) : []
                 });
             } else if (weatherBannerEl) {
                 weatherBannerEl.innerHTML = '';
@@ -3750,7 +3767,8 @@
                 recs = await KspReasons.getSmartRecommendations({
                     storeCoordinates: coords,
                     date: dateKey,
-                    currentCondition: currentCond
+                    currentCondition: currentCond,
+                    shifts: store ? (store.shifts || []) : []
                 });
             } catch (err) {
                 console.warn('[KspReasons] smart recommendations fail:', err);
@@ -3759,7 +3777,7 @@
             const suggested = recs ? recs.suggestedReasons : [];
 
             if (weatherBannerEl && recs && recs.weather) {
-                KspReasons.renderWeatherBanner(weatherBannerEl, recs.weather, (appliedReasons) => {
+                KspReasons.renderWeatherBanner(weatherBannerEl, recs.weather, (appliedReasons, autoNote) => {
                     setDailyTxCondition('down', true);
                     appliedReasons.forEach(r => {
                         const chip = document.querySelector(`#dailyTxChipsDown .tx-reason-chip[data-reason="${r}"]`);
@@ -3767,6 +3785,19 @@
                             chip.click();
                         }
                     });
+                    const noteEl = document.getElementById('dailyTxReviewNote');
+                    if (noteEl && autoNote) {
+                        const curVal = noteEl.value.trim();
+                        if (!curVal.includes(autoNote)) {
+                            noteEl.value = (curVal ? curVal + '\n' : '') + autoNote;
+                            checkDailyTxReviewDirtyState();
+                        }
+                    }
+                    if (typeof showToast === 'function') {
+                        showToast('Alasan & rincian jam hujan berhasil dipasang!', '🌧️');
+                    }
+                }, {
+                    shifts: store ? (store.shifts || []) : []
                 });
             } else if (weatherBannerEl) {
                 weatherBannerEl.innerHTML = '';
