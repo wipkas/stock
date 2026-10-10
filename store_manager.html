@@ -2514,11 +2514,21 @@
                 <button class="btn-primary" id="btnTopMasterEmp" onclick="openMasterEmployeesView()" style="background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.4); color: #0ea5e9;">
                     <span>👥</span> Kelola Karyawan
                 </button>
+                <button class="btn-nav-action" id="btnTopCopyDailyTx" onclick="openCopyDailyTxModal()" title="Salin Riwayat Transaksi Harian Semua Cabang" aria-label="Salin Riwayat Transaksi Harian Semua Cabang" style="font-size: 16px;">
+                    📋
+                </button>
                 <div class="top-menu-wrapper" id="topMenuWrapper">
                     <button class="btn-nav-action" id="btnTopMenu" onclick="toggleTopMenu(event)" title="Menu &amp; Pengaturan" aria-label="Menu dan Pengaturan" aria-expanded="false" style="font-size: 16px;">
                         ⚙️
                     </button>
                     <div class="top-menu-dropdown" id="topMenuDropdown" role="menu">
+                        <div class="top-menu-item" role="menuitem" tabindex="0" onclick="closeTopMenu(); openCopyDailyTxModal();">
+                            <span class="top-menu-icon">📋</span>
+                            <div style="flex: 1;">
+                                <div class="top-menu-label">Salin Riwayat Transaksi</div>
+                                <div class="top-menu-sub">Total harian semua cabang &amp; kasir ke teks / clipboard</div>
+                            </div>
+                        </div>
                         <div class="top-menu-item" role="menuitem" tabindex="0" onclick="closeTopMenu(); openLeaderboardModal();">
                             <span class="top-menu-icon">🏆</span>
                             <div style="flex: 1;">
@@ -4326,6 +4336,126 @@
                     </button>
                     <button type="button" class="btn-primary" onclick="closeModal('modalLeaderboardView')" style="padding: 8px 16px; font-size: 12px; font-weight: 800;">
                         Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DIALOG: SALIN RIWAYAT TRANSAKSI HARIAN SEMUA CABANG -->
+    <div id="copyDailyTxModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'copyDailyTxModal')">
+        <div class="modal-card" style="max-width: 620px; max-height: 94vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                        <span>📋</span> Salin Riwayat Transaksi Harian
+                    </h3>
+                    <p class="modal-subtitle">Rekap total harian semua cabang &amp; kasir untuk WhatsApp, Markdown (.md), atau Excel</p>
+                </div>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('copyDailyTxModal')">&times;</button>
+            </div>
+
+            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px;">
+                <!-- Kotak Info Default Otomatis Cerdas -->
+                <div id="copyDailyTxSmartBadge" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 8px 12px; font-size: 11.5px; color: #10B981; font-weight: 750;">
+                    <!-- Diisi dinamis via JS -->
+                </div>
+
+                <!-- Kontrol Filter Rentang Tanggal & Preset -->
+                <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Tombol Pintas Preset -->
+                    <div>
+                        <div style="font-size: 11px; font-weight: 750; color: var(--text-muted); margin-bottom: 6px;">PILIH PERIODE CEPAT:</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                            <button type="button" id="btnPresetMostComplete" class="target-mode-pill-btn active" onclick="setCopyDailyTxPreset('most_complete')">
+                                ⭐ Paling Lengkap
+                            </button>
+                            <button type="button" id="btnPresetThisMonth" class="target-mode-pill-btn" onclick="setCopyDailyTxPreset('this_month')">
+                                📅 Bulan Ini
+                            </button>
+                            <button type="button" id="btnPresetLastMonth" class="target-mode-pill-btn" onclick="setCopyDailyTxPreset('last_month')">
+                                📆 Bulan Lalu
+                            </button>
+                            <button type="button" id="btnPreset7Days" class="target-mode-pill-btn" onclick="setCopyDailyTxPreset('last_7_days')">
+                                ⏱️ 7 Hari Terakhir
+                            </button>
+                            <button type="button" id="btnPreset30Days" class="target-mode-pill-btn" onclick="setCopyDailyTxPreset('last_30_days')">
+                                ⏱️ 30 Hari Terakhir
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Input Rentang Tanggal Manual -->
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                        <div style="flex: 1 1 130px;">
+                            <label class="form-hint" style="margin-bottom: 4px; font-weight: 700; color: var(--text-main);">📅 Tanggal Mulai:</label>
+                            <input type="date" id="copyDailyTxStartDate" class="form-input" style="padding: 6px 10px; font-size: 12px; min-height: 36px;" onchange="onCopyDailyTxDateInputChange()">
+                        </div>
+                        <div style="flex: 1 1 130px;">
+                            <label class="form-hint" style="margin-bottom: 4px; font-weight: 700; color: var(--text-main);">📅 Tanggal Selesai:</label>
+                            <input type="date" id="copyDailyTxEndDate" class="form-input" style="padding: 6px 10px; font-size: 12px; min-height: 36px;" onchange="onCopyDailyTxDateInputChange()">
+                        </div>
+                    </div>
+
+                    <!-- Pilihan Format Teks -->
+                    <div style="padding-top: 8px; border-top: 1px dashed var(--card-border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                        <span style="font-size: 11px; font-weight: 750; color: var(--text-main);">FORMAT SALINAN:</span>
+                        <div style="display: inline-flex; background: var(--card-bg); padding: 3px; border-radius: 8px; border: 1px solid var(--card-border); gap: 3px;">
+                            <button type="button" id="btnFormatWA" class="target-mode-pill-btn active" onclick="setCopyDailyTxFormat('whatsapp')">
+                                💬 WhatsApp
+                            </button>
+                            <button type="button" id="btnFormatMD" class="target-mode-pill-btn" onclick="setCopyDailyTxFormat('markdown')">
+                                📝 Markdown (.md)
+                            </button>
+                            <button type="button" id="btnFormatTSV" class="target-mode-pill-btn" onclick="setCopyDailyTxFormat('tsv')">
+                                📊 Excel (TSV)
+                            </button>
+                            <button type="button" id="btnFormatCompact" class="target-mode-pill-btn" onclick="setCopyDailyTxFormat('compact')">
+                                ⚡ Ringkas
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Opsi Tambahan -->
+                    <div style="display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--text-muted);">
+                        <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; user-select: none;">
+                            <input type="checkbox" id="copyDailyTxIncludeEmps" checked onchange="onCopyDailyTxFilterChange()">
+                            <span>Sertakan nama kasir &amp; shift</span>
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; user-select: none;">
+                            <input type="checkbox" id="copyDailyTxOnlyWithTx" checked onchange="onCopyDailyTxFilterChange()">
+                            <span>Hanya tampilkan tanggal yang ada transaksi</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Preview Area Header & Summary -->
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                    <span style="font-weight: 750; color: var(--text-muted);" id="copyDailyTxPreviewCountLabel">
+                        Pratinjau Hasil Salinan:
+                    </span>
+                    <span style="font-weight: 800; color: var(--primary);" id="copyDailyTxGrandTotalBadge">
+                        -
+                    </span>
+                </div>
+
+                <!-- Live Preview Textarea -->
+                <div style="position: relative; flex: 1; min-height: 180px;">
+                    <textarea id="copyDailyTxPreviewText" class="form-input" readonly style="width: 100%; height: 100%; min-height: 200px; font-family: monospace; font-size: 11px; line-height: 1.45; padding: 10px; resize: vertical; border-radius: 10px; background: var(--input-bg); color: var(--text-main);"></textarea>
+                </div>
+            </div>
+
+            <!-- Footer Tombol Aksi -->
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 16px;">
+                <button type="button" class="btn-secondary" onclick="closeModal('copyDailyTxModal')" style="padding: 8px 14px; font-size: 12px;">
+                    Batal
+                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn-whatsapp-share" onclick="shareCopyDailyTxWhatsApp()" style="padding: 8px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                        <span>📱</span> Kirim ke WA
+                    </button>
+                    <button type="button" class="btn-primary" onclick="executeCopyDailyTx()" style="padding: 8px 18px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;">
+                        <span>📋</span> Salin ke Clipboard
                     </button>
                 </div>
             </div>
@@ -9975,6 +10105,647 @@ ${portalUrl}
                 prompt('Salin teks Leaderboard secara manual:', text);
             }
             document.body.removeChild(ta);
+        }
+
+        /* =========================================================================
+           FITUR: SALIN RIWAYAT TOTAL TRANSAKSI HARIAN SEMUA CABANG (KASIR & MARKDOWN)
+           ========================================================================= */
+
+        const COPY_TX_MONTH_NAMES_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        const COPY_TX_DAY_NAMES_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+        window.copyDailyTxCurrentPreset = 'most_complete';
+        window.copyDailyTxCurrentFormat = 'whatsapp';
+
+        // Menentukan bulan dengan data transaksi paling lengkap (rasio jumlah hari transaksi terhadap total hari dalam bulan)
+        function findMostCompleteTransactionMonth() {
+            const now = new Date();
+            const curYear = now.getFullYear();
+            const curMonth = now.getMonth() + 1;
+            const curMonthKey = `${curYear}-${String(curMonth).padStart(2, '0')}`;
+            const daysInCurMonth = new Date(curYear, curMonth, 0).getDate();
+
+            const monthStats = {}; // { 'YYYY-MM': { dates: Set(), totalTx: 0 } }
+
+            if (Array.isArray(storesData)) {
+                storesData.forEach(store => {
+                    if (store && store.daily_transactions && typeof store.daily_transactions === 'object') {
+                        Object.keys(store.daily_transactions).forEach(dateKey => {
+                            const dayData = store.daily_transactions[dateKey];
+                            if (!dayData) return;
+                            let hasTx = false;
+                            let txCount = 0;
+                            if (typeof dayData.total === 'number' && dayData.total > 0) {
+                                hasTx = true;
+                                txCount = dayData.total;
+                            } else if (Array.isArray(dayData.records) && dayData.records.some(r => Number(r.tx) > 0)) {
+                                hasTx = true;
+                                txCount = dayData.records.reduce((sum, r) => sum + (Number(r.tx) || 0), 0);
+                            }
+
+                            if (hasTx && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+                                const mKey = dateKey.substring(0, 7);
+                                if (!monthStats[mKey]) {
+                                    monthStats[mKey] = { dates: new Set(), totalTx: 0 };
+                                }
+                                monthStats[mKey].dates.add(dateKey);
+                                monthStats[mKey].totalTx += txCount;
+                            }
+                        });
+                    }
+                });
+            }
+
+            const monthKeys = Object.keys(monthStats);
+            if (monthKeys.length === 0) {
+                return {
+                    monthKey: curMonthKey,
+                    startDate: `${curMonthKey}-01`,
+                    endDate: `${curMonthKey}-${String(daysInCurMonth).padStart(2, '0')}`,
+                    monthLabel: `${COPY_TX_MONTH_NAMES_ID[curMonth - 1]} ${curYear}`,
+                    recordedDays: 0,
+                    totalDays: daysInCurMonth,
+                    completenessRatio: 0,
+                    reason: `Bulan ini (${COPY_TX_MONTH_NAMES_ID[curMonth - 1]} ${curYear}) - belum ada riwayat transaksi tersimpan.`
+                };
+            }
+
+            const scoredMonths = monthKeys.map(mKey => {
+                const [y, m] = mKey.split('-').map(Number);
+                const daysInMonth = new Date(y, m, 0).getDate();
+                const recordedDays = monthStats[mKey].dates.size;
+                const completenessRatio = recordedDays / daysInMonth;
+                const isCurrentMonth = (mKey === curMonthKey);
+                return {
+                    monthKey: mKey,
+                    year: y,
+                    month: m,
+                    daysInMonth,
+                    recordedDays,
+                    completenessRatio,
+                    totalTx: monthStats[mKey].totalTx,
+                    isCurrentMonth,
+                    monthLabel: `${COPY_TX_MONTH_NAMES_ID[m - 1]} ${y}`
+                };
+            });
+
+            // Urutkan berdasarkan rasio kelengkapan transaksi tertinggi
+            // Jika selisih kecil (< 5%), prioritaskan bulan yang lebih baru
+            scoredMonths.sort((a, b) => {
+                const diff = b.completenessRatio - a.completenessRatio;
+                if (Math.abs(diff) >= 0.05) {
+                    return diff;
+                }
+                return b.monthKey.localeCompare(a.monthKey);
+            });
+
+            const best = scoredMonths[0];
+            const pct = Math.round(best.completenessRatio * 100);
+            let reason = '';
+
+            const curMonthStat = scoredMonths.find(m => m.monthKey === curMonthKey);
+            if (best.monthKey !== curMonthKey && curMonthStat) {
+                const curPct = Math.round(curMonthStat.completenessRatio * 100);
+                reason = `Bulan ${best.monthLabel} dipilih otomatis (${best.recordedDays}/${best.daysInMonth} hari, ${pct}%) karena lebih lengkap dibanding bulan berjalan (${curMonthStat.recordedDays}/${curMonthStat.daysInMonth} hari, ${curPct}%).`;
+            } else {
+                reason = `Bulan ${best.monthLabel} dipilih otomatis (${best.recordedDays}/${best.daysInMonth} hari - ${pct}% lengkap).`;
+            }
+
+            return {
+                monthKey: best.monthKey,
+                startDate: `${best.monthKey}-01`,
+                endDate: `${best.monthKey}-${String(best.daysInMonth).padStart(2, '0')}`,
+                monthLabel: best.monthLabel,
+                recordedDays: best.recordedDays,
+                totalDays: best.daysInMonth,
+                completenessRatio: best.completenessRatio,
+                reason: reason
+            };
+        }
+
+        function formatCopyTxDateRangeLabel(startDateStr, endDateStr) {
+            if (!startDateStr || !endDateStr) return '';
+            const pStart = startDateStr.split('-').map(Number);
+            const pEnd = endDateStr.split('-').map(Number);
+            const dtStart = new Date(pStart[0], pStart[1] - 1, pStart[2]);
+            const dtEnd = new Date(pEnd[0], pEnd[1] - 1, pEnd[2]);
+
+            const sDay = pStart[2];
+            const sMonth = COPY_TX_MONTH_NAMES_ID[pStart[1] - 1];
+            const sYear = pStart[0];
+
+            const eDay = pEnd[2];
+            const eMonth = COPY_TX_MONTH_NAMES_ID[pEnd[1] - 1];
+            const eYear = pEnd[0];
+
+            const dayDiff = Math.round(Math.abs(dtEnd - dtStart) / (1000 * 60 * 60 * 24)) + 1;
+
+            if (sYear === eYear && sMonth === eMonth) {
+                return `${sDay} - ${eDay} ${sMonth} ${sYear} (${dayDiff} Hari)`;
+            } else if (sYear === eYear) {
+                return `${sDay} ${sMonth} - ${eDay} ${eMonth} ${sYear} (${dayDiff} Hari)`;
+            } else {
+                return `${sDay} ${sMonth} ${sYear} - ${eDay} ${eMonth} ${eYear} (${dayDiff} Hari)`;
+            }
+        }
+
+        function getDatesListInRange(startStr, endStr) {
+            const dates = [];
+            if (!startStr || !endStr) return dates;
+            let curr = new Date(startStr + 'T00:00:00');
+            let end = new Date(endStr + 'T00:00:00');
+            if (curr > end) {
+                const temp = curr;
+                curr = end;
+                end = temp;
+            }
+            while (curr <= end) {
+                const y = curr.getFullYear();
+                const m = String(curr.getMonth() + 1).padStart(2, '0');
+                const d = String(curr.getDate()).padStart(2, '0');
+                dates.push(`${y}-${m}-${d}`);
+                curr.setDate(curr.getDate() + 1);
+            }
+            return dates;
+        }
+
+        function updateCopyDailyTxPresetUI(presetKey) {
+            window.copyDailyTxCurrentPreset = presetKey;
+            const map = {
+                'most_complete': 'btnPresetMostComplete',
+                'this_month': 'btnPresetThisMonth',
+                'last_month': 'btnPresetLastMonth',
+                'last_7_days': 'btnPreset7Days',
+                'last_30_days': 'btnPreset30Days'
+            };
+            Object.keys(map).forEach(k => {
+                const btn = document.getElementById(map[k]);
+                if (btn) {
+                    if (k === presetKey) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+            });
+        }
+
+        function updateCopyDailyTxFormatUI(formatKey) {
+            window.copyDailyTxCurrentFormat = formatKey;
+            const map = {
+                'whatsapp': 'btnFormatWA',
+                'markdown': 'btnFormatMD',
+                'tsv': 'btnFormatTSV',
+                'compact': 'btnFormatCompact'
+            };
+            Object.keys(map).forEach(k => {
+                const btn = document.getElementById(map[k]);
+                if (btn) {
+                    if (k === formatKey) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+            });
+        }
+
+        function openCopyDailyTxModal() {
+            window.copyDailyTxCurrentPreset = 'most_complete';
+            if (!window.copyDailyTxCurrentFormat) {
+                window.copyDailyTxCurrentFormat = 'whatsapp';
+            }
+
+            const best = findMostCompleteTransactionMonth();
+            const startInput = document.getElementById('copyDailyTxStartDate');
+            const endInput = document.getElementById('copyDailyTxEndDate');
+
+            if (startInput) startInput.value = best.startDate;
+            if (endInput) endInput.value = best.endDate;
+
+            const smartBadge = document.getElementById('copyDailyTxSmartBadge');
+            if (smartBadge) {
+                smartBadge.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span>⭐</span>
+                        <span><b>Default Otomatis:</b> ${escapeHtml(best.reason)}</span>
+                    </div>
+                    <span style="background: rgba(16, 185, 129, 0.25); color: #10B981; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 6px; white-space: nowrap;">Paling Lengkap</span>
+                `;
+            }
+
+            updateCopyDailyTxPresetUI('most_complete');
+            updateCopyDailyTxFormatUI(window.copyDailyTxCurrentFormat);
+
+            renderCopyDailyTxPreview();
+            openModal('copyDailyTxModal');
+        }
+
+        function setCopyDailyTxPreset(presetKey) {
+            const now = new Date();
+            const curYear = now.getFullYear();
+            const curMonth = now.getMonth() + 1;
+            const curMonthKey = `${curYear}-${String(curMonth).padStart(2, '0')}`;
+            const daysInCurMonth = new Date(curYear, curMonth, 0).getDate();
+
+            let startDate = '';
+            let endDate = '';
+
+            if (presetKey === 'most_complete') {
+                const best = findMostCompleteTransactionMonth();
+                startDate = best.startDate;
+                endDate = best.endDate;
+            } else if (presetKey === 'this_month') {
+                startDate = `${curMonthKey}-01`;
+                endDate = `${curMonthKey}-${String(daysInCurMonth).padStart(2, '0')}`;
+            } else if (presetKey === 'last_month') {
+                const prevDt = new Date(curYear, curMonth - 2, 1);
+                const pYear = prevDt.getFullYear();
+                const pMonth = prevDt.getMonth() + 1;
+                const pDays = new Date(pYear, pMonth, 0).getDate();
+                startDate = `${pYear}-${String(pMonth).padStart(2, '0')}-01`;
+                endDate = `${pYear}-${String(pMonth).padStart(2, '0')}-${String(pDays).padStart(2, '0')}`;
+            } else if (presetKey === 'last_7_days') {
+                endDate = getTodayKey();
+                startDate = shiftDateKey(endDate, -6);
+            } else if (presetKey === 'last_30_days') {
+                endDate = getTodayKey();
+                startDate = shiftDateKey(endDate, -29);
+            }
+
+            const startInput = document.getElementById('copyDailyTxStartDate');
+            const endInput = document.getElementById('copyDailyTxEndDate');
+            if (startInput) startInput.value = startDate;
+            if (endInput) endInput.value = endDate;
+
+            updateCopyDailyTxPresetUI(presetKey);
+
+            const smartBadge = document.getElementById('copyDailyTxSmartBadge');
+            if (smartBadge) {
+                if (presetKey === 'most_complete') {
+                    const best = findMostCompleteTransactionMonth();
+                    smartBadge.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span>⭐</span>
+                            <span><b>Default Otomatis:</b> ${escapeHtml(best.reason)}</span>
+                        </div>
+                        <span style="background: rgba(16, 185, 129, 0.25); color: #10B981; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 6px; white-space: nowrap;">Paling Lengkap</span>
+                    `;
+                } else {
+                    smartBadge.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 6px; color: var(--text-muted);">
+                            <span>⏱️</span>
+                            <span>Filter Periode: <b>${formatCopyTxDateRangeLabel(startDate, endDate)}</b></span>
+                        </div>
+                    `;
+                }
+            }
+
+            renderCopyDailyTxPreview();
+        }
+
+        function setCopyDailyTxFormat(formatKey) {
+            updateCopyDailyTxFormatUI(formatKey);
+            renderCopyDailyTxPreview();
+        }
+
+        function onCopyDailyTxDateInputChange() {
+            updateCopyDailyTxPresetUI('');
+            const startDate = document.getElementById('copyDailyTxStartDate')?.value;
+            const endDate = document.getElementById('copyDailyTxEndDate')?.value;
+            const smartBadge = document.getElementById('copyDailyTxSmartBadge');
+            if (smartBadge && startDate && endDate) {
+                smartBadge.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 6px; color: var(--text-muted);">
+                        <span>📅</span>
+                        <span>Rentang Kustom: <b>${formatCopyTxDateRangeLabel(startDate, endDate)}</b></span>
+                    </div>
+                `;
+            }
+            renderCopyDailyTxPreview();
+        }
+
+        function onCopyDailyTxFilterChange() {
+            renderCopyDailyTxPreview();
+        }
+
+        function generateCopyDailyTxText(startDateStr, endDateStr, format, includeEmps, onlyWithTx) {
+            const dateList = getDatesListInRange(startDateStr, endDateStr);
+            const stores = storesData || [];
+            const storeNames = stores.map(s => s.name).join(', ');
+            const rangeLabel = formatCopyTxDateRangeLabel(startDateStr, endDateStr);
+
+            const processedDates = [];
+            dateList.forEach(dateKey => {
+                let dateTotal = 0;
+                const dateStoreList = [];
+
+                stores.forEach(store => {
+                    let total = 0;
+                    let records = [];
+                    if (store.daily_transactions && store.daily_transactions[dateKey]) {
+                        const dayObj = store.daily_transactions[dateKey];
+                        if (typeof dayObj.total === 'number') {
+                            total = dayObj.total;
+                        }
+                        if (Array.isArray(dayObj.records) && dayObj.records.length > 0) {
+                            records = dayObj.records;
+                            if (total === 0) {
+                                total = records.reduce((sum, r) => sum + (Number(r.tx) || 0), 0);
+                            }
+                        }
+                    }
+                    dateTotal += total;
+                    dateStoreList.push({
+                        storeId: store.id,
+                        storeName: store.name,
+                        total: total,
+                        records: records
+                    });
+                });
+
+                if (onlyWithTx && dateTotal === 0) {
+                    return; // Skip tanggal yang tidak memiliki transaksi sama sekali
+                }
+
+                processedDates.push({
+                    dateKey: dateKey,
+                    dateTotal: dateTotal,
+                    stores: dateStoreList
+                });
+            });
+
+            // Agregat per-toko untuk ringkasan akhir
+            let grandTotal = 0;
+            const storeAgg = {};
+            stores.forEach(st => {
+                storeAgg[st.id] = { name: st.name, totalTx: 0, activeDays: 0 };
+            });
+
+            processedDates.forEach(pd => {
+                grandTotal += pd.dateTotal;
+                pd.stores.forEach(st => {
+                    storeAgg[st.storeId].totalTx += st.total;
+                    if (st.total > 0) storeAgg[st.storeId].activeDays += 1;
+                });
+            });
+
+            const sortedStores = Object.values(storeAgg).sort((a, b) => b.totalTx - a.totalTx);
+            const dayCount = processedDates.length;
+            const grandAvg = dayCount > 0 ? Math.round(grandTotal / dayCount) : 0;
+
+            let text = '';
+
+            if (format === 'markdown') {
+                text += `# 📊 Rekap Transaksi Harian Semua Cabang\n\n`;
+                text += `**Periode:** ${rangeLabel}  \n`;
+                text += `**Cabang:** ${storeNames}  \n\n`;
+                text += `---\n\n`;
+
+                if (processedDates.length === 0) {
+                    text += `*Tidak ada transaksi pada rentang tanggal ini.*\n\n`;
+                } else {
+                    processedDates.forEach(pd => {
+                        const parts = pd.dateKey.split('-').map(Number);
+                        const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+                        const dayName = COPY_TX_DAY_NAMES_ID[dt.getDay()];
+                        const dateFormatted = `${String(parts[2]).padStart(2, '0')}/${String(parts[1]).padStart(2, '0')}/${parts[0]}`;
+
+                        text += `### 📅 ${dateFormatted} (${dayName})\n\n`;
+
+                        if (includeEmps) {
+                            text += `| Cabang | Petugas / Shift | Transaksi | Total Cabang |\n`;
+                            text += `|---|---|---|---|\n`;
+                            pd.stores.forEach(st => {
+                                if (onlyWithTx && st.total === 0) return;
+                                let petugasCol = '-';
+                                let txCol = '-';
+                                if (st.records && st.records.length > 0) {
+                                    petugasCol = st.records.map(r => `${r.shift_name || ('Shift ' + (r.shift_num || ''))}: ${r.emp_name || 'Kasir'}`).join('<br>');
+                                    txCol = st.records.map(r => `${(Number(r.tx) || 0).toLocaleString('id-ID')} tx`).join('<br>');
+                                } else {
+                                    txCol = `${st.total.toLocaleString('id-ID')} tx`;
+                                }
+                                text += `| **${st.storeName}** | ${petugasCol} | ${txCol} | **${st.total.toLocaleString('id-ID')} tx** |\n`;
+                            });
+                            text += `| **Total Semua Cabang** | | | **${pd.dateTotal.toLocaleString('id-ID')} tx** |\n\n`;
+                        } else {
+                            text += `| No | Cabang | Total Transaksi |\n`;
+                            text += `|---|---|---|\n`;
+                            let no = 1;
+                            pd.stores.forEach(st => {
+                                if (onlyWithTx && st.total === 0) return;
+                                text += `| ${no++} | **${st.storeName}** | **${st.total.toLocaleString('id-ID')} tx** |\n`;
+                            });
+                            text += `| | **Total Semua Cabang** | **${pd.dateTotal.toLocaleString('id-ID')} tx** |\n\n`;
+                        }
+                    });
+                }
+
+                text += `---\n\n`;
+                text += `### 📈 Total Akumulasi Periode Ini\n\n`;
+                text += `| No | Cabang | Total Transaksi | Rata-rata / Hari |\n`;
+                text += `|---|---|---|---|\n`;
+                sortedStores.forEach((st, idx) => {
+                    const avg = dayCount > 0 ? Math.round(st.totalTx / dayCount) : 0;
+                    text += `| ${idx + 1} | **${st.name}** | ${st.totalTx.toLocaleString('id-ID')} tx | ${avg.toLocaleString('id-ID')} tx/hr |\n`;
+                });
+                text += `| | **GRAND TOTAL** | **${grandTotal.toLocaleString('id-ID')} tx** | **${grandAvg.toLocaleString('id-ID')} tx/hr** |\n\n`;
+                text += `_Diekspor otomatis via KSP Check Store Manager._\n`;
+
+            } else if (format === 'tsv') {
+                if (includeEmps) {
+                    text += `Tanggal\tHari\tCabang\tShift / Petugas\tTransaksi (tx)\tTotal Cabang (tx)\n`;
+                    processedDates.forEach(pd => {
+                        const parts = pd.dateKey.split('-').map(Number);
+                        const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+                        const dayName = COPY_TX_DAY_NAMES_ID[dt.getDay()];
+                        const dateFormatted = `${String(parts[2]).padStart(2, '0')}/${String(parts[1]).padStart(2, '0')}/${parts[0]}`;
+
+                        pd.stores.forEach(st => {
+                            if (onlyWithTx && st.total === 0) return;
+                            if (st.records && st.records.length > 0) {
+                                st.records.forEach(r => {
+                                    const sName = r.shift_name || `Shift ${r.shift_num || ''}`;
+                                    const eName = r.emp_name || 'Kasir';
+                                    const txVal = Number(r.tx) || 0;
+                                    text += `${dateFormatted}\t${dayName}\t${st.storeName}\t${sName}: ${eName}\t${txVal}\t${st.total}\n`;
+                                });
+                            } else {
+                                text += `${dateFormatted}\t${dayName}\t${st.storeName}\t-\t${st.total}\t${st.total}\n`;
+                            }
+                        });
+                    });
+                } else {
+                    text += `Tanggal\tHari\tCabang\tTotal Transaksi (tx)\n`;
+                    processedDates.forEach(pd => {
+                        const parts = pd.dateKey.split('-').map(Number);
+                        const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+                        const dayName = COPY_TX_DAY_NAMES_ID[dt.getDay()];
+                        const dateFormatted = `${String(parts[2]).padStart(2, '0')}/${String(parts[1]).padStart(2, '0')}/${parts[0]}`;
+
+                        pd.stores.forEach(st => {
+                            if (onlyWithTx && st.total === 0) return;
+                            text += `${dateFormatted}\t${dayName}\t${st.storeName}\t${st.total}\n`;
+                        });
+                    });
+                }
+
+                text += `\nREKAP AKUMULASI PERIODE (${rangeLabel})\n`;
+                text += `No\tCabang\tTotal Transaksi (tx)\tRata-rata/Hari (tx)\n`;
+                sortedStores.forEach((st, idx) => {
+                    const avg = dayCount > 0 ? Math.round(st.totalTx / dayCount) : 0;
+                    text += `${idx + 1}\t${st.name}\t${st.totalTx}\t${avg}\n`;
+                });
+                text += `\tGRAND TOTAL\t${grandTotal}\t${grandAvg}\n`;
+
+            } else if (format === 'compact') {
+                text += `📊 REKAP TOTAL TRANSAKSI SEMUA CABANG\n`;
+                text += `Periode: ${rangeLabel}\n\n`;
+
+                if (processedDates.length === 0) {
+                    text += `(Tidak ada transaksi pada rentang tanggal ini)\n\n`;
+                } else {
+                    processedDates.forEach(pd => {
+                        const parts = pd.dateKey.split('-').map(Number);
+                        const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+                        const dayName = COPY_TX_DAY_NAMES_ID[dt.getDay()].substring(0, 3);
+                        const dateFormatted = `${String(parts[2]).padStart(2, '0')}/${String(parts[1]).padStart(2, '0')}/${parts[0]}`;
+
+                        const branchBrief = pd.stores
+                            .filter(st => !onlyWithTx || st.total > 0)
+                            .map(st => `${st.storeName} ${st.total.toLocaleString('id-ID')}`)
+                            .join(' | ');
+
+                        text += `${dateFormatted} (${dayName}): ${branchBrief} -> TOTAL: ${pd.dateTotal.toLocaleString('id-ID')} tx\n`;
+                    });
+                }
+
+                text += `\nTOTAL PERIODE:\n`;
+                const storeLine = sortedStores.map((st, i) => `${i + 1}. ${st.name}: ${st.totalTx.toLocaleString('id-ID')} tx`).join(' | ');
+                text += `${storeLine}\n`;
+                text += `GRAND TOTAL: ${grandTotal.toLocaleString('id-ID')} tx (Rata-rata: ${grandAvg.toLocaleString('id-ID')} tx/hr)\n`;
+
+            } else {
+                // Default: whatsapp
+                text += `📊 *REKAP TOTAL TRANSAKSI HARIAN SEMUA CABANG*\n`;
+                text += `📅 *Periode:* ${rangeLabel}\n`;
+                text += `🏢 *Cabang:* ${storeNames}\n\n`;
+                text += `───────────────────────────────\n`;
+                text += `*RINCIAN TRANSAKSI PER HARI:*\n`;
+                text += `───────────────────────────────\n`;
+
+                if (processedDates.length === 0) {
+                    text += `(Tidak ada transaksi pada rentang tanggal ini)\n\n`;
+                } else {
+                    processedDates.forEach(pd => {
+                        const parts = pd.dateKey.split('-').map(Number);
+                        const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+                        const dayName = COPY_TX_DAY_NAMES_ID[dt.getDay()];
+                        const dateFormatted = `${String(parts[2]).padStart(2, '0')}/${String(parts[1]).padStart(2, '0')}/${parts[0]}`;
+
+                        text += `📅 *${dateFormatted} (${dayName})*\n`;
+
+                        pd.stores.forEach(st => {
+                            if (onlyWithTx && st.total === 0) return;
+
+                            if (includeEmps && st.records && st.records.length > 0) {
+                                text += `• *${st.storeName}* (${st.total.toLocaleString('id-ID')} tx):\n`;
+                                st.records.forEach(r => {
+                                    const sName = r.shift_name || `Shift ${r.shift_num || ''}`;
+                                    const eName = r.emp_name || 'Kasir';
+                                    const txVal = Number(r.tx) || 0;
+                                    text += `  - ${sName}: ${eName} (${txVal.toLocaleString('id-ID')} tx)\n`;
+                                });
+                            } else {
+                                text += `• *${st.storeName}*: ${st.total.toLocaleString('id-ID')} tx\n`;
+                            }
+                        });
+                        text += `👉 *Total Semua Cabang: ${pd.dateTotal.toLocaleString('id-ID')} tx*\n\n`;
+                    });
+                }
+
+                text += `───────────────────────────────\n`;
+                text += `📈 *TOTAL PERIODE INI:*\n`;
+                sortedStores.forEach((st, idx) => {
+                    const avg = dayCount > 0 ? Math.round(st.totalTx / dayCount) : 0;
+                    text += `${idx + 1}. ${st.name}: ${st.totalTx.toLocaleString('id-ID')} tx (Rata-rata: ${avg.toLocaleString('id-ID')} tx/hr)\n`;
+                });
+                text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                text += `🏆 *GRAND TOTAL: ${grandTotal.toLocaleString('id-ID')} TRANSAKSI*\n`;
+                text += `📊 *Rata-rata Harian: ${grandAvg.toLocaleString('id-ID')} tx/hari*\n`;
+                text += `_Diekspor otomatis via KSP Check Store Manager._ 🔥`;
+            }
+
+            return {
+                text: text,
+                grandTotal: grandTotal,
+                dayCount: dayCount,
+                storeCount: stores.length
+            };
+        }
+
+        function renderCopyDailyTxPreview() {
+            const startDate = document.getElementById('copyDailyTxStartDate')?.value;
+            const endDate = document.getElementById('copyDailyTxEndDate')?.value;
+            const includeEmps = document.getElementById('copyDailyTxIncludeEmps')?.checked !== false;
+            const onlyWithTx = document.getElementById('copyDailyTxOnlyWithTx')?.checked !== false;
+            const format = window.copyDailyTxCurrentFormat || 'whatsapp';
+
+            const result = generateCopyDailyTxText(startDate, endDate, format, includeEmps, onlyWithTx);
+
+            const previewArea = document.getElementById('copyDailyTxPreviewText');
+            if (previewArea) {
+                previewArea.value = result.text;
+            }
+
+            const countLabel = document.getElementById('copyDailyTxPreviewCountLabel');
+            if (countLabel) {
+                countLabel.textContent = `Pratinjau Hasil (${result.dayCount} Hari, ${result.storeCount} Cabang):`;
+            }
+
+            const totalBadge = document.getElementById('copyDailyTxGrandTotalBadge');
+            if (totalBadge) {
+                totalBadge.textContent = `Grand Total: ${result.grandTotal.toLocaleString('id-ID')} tx`;
+            }
+        }
+
+        function executeCopyDailyTx() {
+            const text = document.getElementById('copyDailyTxPreviewText')?.value;
+            if (!text || !text.trim()) {
+                showToast('⚠️ Tidak ada teks transaksi untuk disalin!', '⚠️');
+                return;
+            }
+            if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('📋 Riwayat transaksi berhasil disalin ke clipboard!', '✅');
+                }).catch(() => {
+                    execCommandCopyDailyTx(text);
+                });
+            } else {
+                execCommandCopyDailyTx(text);
+            }
+        }
+
+        function execCommandCopyDailyTx(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try {
+                document.execCommand('copy');
+                showToast('📋 Riwayat transaksi berhasil disalin ke clipboard!', '✅');
+            } catch(e) {
+                prompt('Salin teks riwayat transaksi secara manual:', text);
+            }
+            document.body.removeChild(ta);
+        }
+
+        function shareCopyDailyTxWhatsApp() {
+            const text = document.getElementById('copyDailyTxPreviewText')?.value;
+            if (!text || !text.trim()) {
+                showToast('⚠️ Tidak ada teks transaksi untuk dikirim!', '⚠️');
+                return;
+            }
+            const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
+            window.open(waUrl, '_blank');
         }
     </script>
 </body>
