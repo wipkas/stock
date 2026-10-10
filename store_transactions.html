@@ -3561,11 +3561,17 @@
                     });
                     const noteEl = document.getElementById('empPropNoteInput');
                     if (noteEl && autoNote) {
-                        const curVal = noteEl.value.trim();
-                        if (!curVal.includes(autoNote)) {
-                            noteEl.value = (curVal ? curVal + '\n' : '') + autoNote;
-                            checkEmpPropReviewDirtyState();
+                        if (typeof KspReasons.insertNoteWithFeedback === 'function') {
+                            KspReasons.insertNoteWithFeedback(noteEl, autoNote);
+                        } else {
+                            const curVal = noteEl.value.trim();
+                            if (!curVal.includes(autoNote)) {
+                                noteEl.value = (curVal ? curVal + '\n' : '') + autoNote;
+                            }
+                            noteEl.dispatchEvent(new Event('input', { bubbles: true }));
+                            noteEl.dispatchEvent(new Event('change', { bubbles: true }));
                         }
+                        checkEmpPropReviewDirtyState();
                     }
                     if (typeof showToast === 'function') {
                         showToast('Alasan & rincian jam hujan berhasil dipasang!', '🌧️');
@@ -3787,11 +3793,17 @@
                     });
                     const noteEl = document.getElementById('dailyTxReviewNote');
                     if (noteEl && autoNote) {
-                        const curVal = noteEl.value.trim();
-                        if (!curVal.includes(autoNote)) {
-                            noteEl.value = (curVal ? curVal + '\n' : '') + autoNote;
-                            checkDailyTxReviewDirtyState();
+                        if (typeof KspReasons.insertNoteWithFeedback === 'function') {
+                            KspReasons.insertNoteWithFeedback(noteEl, autoNote);
+                        } else {
+                            const curVal = noteEl.value.trim();
+                            if (!curVal.includes(autoNote)) {
+                                noteEl.value = (curVal ? curVal + '\n' : '') + autoNote;
+                            }
+                            noteEl.dispatchEvent(new Event('input', { bubbles: true }));
+                            noteEl.dispatchEvent(new Event('change', { bubbles: true }));
                         }
+                        checkDailyTxReviewDirtyState();
                     }
                     if (typeof showToast === 'function') {
                         showToast('Alasan & rincian jam hujan berhasil dipasang!', '🌧️');

@@ -5574,7 +5574,7 @@
         window.currentDailyTxCondition = 'normal';
         window._dailyTxConditionManualChoice = false;
 
-        async function renderDailyTxModalChips(store, dateKey, selectedReasons = [], currentCond = 'normal') {
+        async function renderDailyTxModalChips(store, dateKey, selectedReasons = [], currentCond = 'normal', shiftNum = null) {
             const downCont = document.getElementById('dailyTxChipsDown');
             const upCont = document.getElementById('dailyTxChipsUp');
             const weatherBannerEl = document.getElementById('dailyTxWeatherBanner');
@@ -5588,7 +5588,9 @@
                 recs = await KspReasons.getSmartRecommendations({
                     storeCoordinates: coords,
                     date: dateKey,
-                    currentCondition: currentCond
+                    currentCondition: currentCond,
+                    shiftNum: shiftNum,
+                    shifts: store ? (store.shifts || []) : []
                 });
             } catch (err) {
                 console.warn('[KspReasons] smart recommendations fail:', err);
@@ -5598,7 +5600,7 @@
 
             // Render banner status cuaca di atas ulasan jika cabang memiliki koordinat
             if (weatherBannerEl && recs && recs.weather) {
-                KspReasons.renderWeatherBanner(weatherBannerEl, recs.weather, (appliedReasons) => {
+                KspReasons.renderWeatherBanner(weatherBannerEl, recs.weather, (appliedReasons, autoNote) => {
                     setDailyTxCondition('down', true);
                     appliedReasons.forEach(r => {
                         const chip = document.querySelector(`#dailyTxChipsDown .tx-reason-chip[data-reason="${r}"]`);
@@ -5606,6 +5608,28 @@
                             chip.click();
                         }
                     });
+                    const noteEl = document.getElementById('dailyTxReviewNote');
+                    if (noteEl && autoNote) {
+                        if (typeof KspReasons.insertNoteWithFeedback === 'function') {
+                            KspReasons.insertNoteWithFeedback(noteEl, autoNote);
+                        } else {
+                            const curVal = noteEl.value.trim();
+                            if (!curVal.includes(autoNote)) {
+                                noteEl.value = (curVal ? curVal + '\n' : '') + autoNote;
+                            }
+                            noteEl.dispatchEvent(new Event('input', { bubbles: true }));
+                            noteEl.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                        checkDailyTxReviewDirtyState();
+                    }
+                    if (typeof uiToast === 'function') {
+                        uiToast('Alasan & rincian jam hujan berhasil dipasang!', '🌧️', 2600);
+                    } else if (typeof showToast === 'function') {
+                        showToast('Alasan & rincian jam hujan berhasil dipasang!', '🌧️');
+                    }
+                }, {
+                    shiftNum: shiftNum,
+                    shifts: store ? (store.shifts || []) : []
                 });
             } else if (weatherBannerEl) {
                 weatherBannerEl.innerHTML = '';
@@ -5704,7 +5728,7 @@
             if (resetBtn) resetBtn.style.display = 'none';
         }
 
-        function populateDailyTxReviewState(rec, store, dateKey) {
+        function populateDailyTxReviewState(rec, store, dateKey, shiftNum = null) {
             const noteEl = document.getElementById('dailyTxReviewNote');
             const hintEl = document.getElementById('dailyTxSmartHint');
             if (hintEl) hintEl.style.display = 'none';
@@ -5722,7 +5746,7 @@
                 if (noteEl) noteEl.value = '';
             }
 
-            renderDailyTxModalChips(store, dateKey, selectedTags, cond);
+            renderDailyTxModalChips(store, dateKey, selectedTags, cond, shiftNum);
             checkDailyTxReviewDirtyState();
         }
 
@@ -5871,7 +5895,7 @@
             const existingRec = (dayData && Array.isArray(dayData.records))
                 ? dayData.records.find(r => r.shift_num === shiftNum)
                 : null;
-            populateDailyTxReviewState(existingRec, store, dateKey);
+            populateDailyTxReviewState(existingRec, store, dateKey, shiftNum);
         }
 
         function navigateDailyTxDate(offset) {

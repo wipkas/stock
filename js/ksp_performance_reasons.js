@@ -695,6 +695,42 @@
             body.dark-theme .weather-hour-segment.clear {
                 background: rgba(255, 255, 255, 0.1);
             }
+            .weather-radar-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                background: rgba(59, 130, 246, 0.08);
+                color: #2563eb;
+                border: 1px solid rgba(59, 130, 246, 0.28);
+                padding: 3px 8px;
+                border-radius: 6px;
+                font-size: 10px;
+                font-weight: 700;
+                text-decoration: none;
+                transition: all 0.15s ease;
+            }
+            .weather-radar-btn:hover {
+                background: #2563eb;
+                color: #ffffff;
+                box-shadow: 0 2px 5px rgba(37, 99, 235, 0.25);
+            }
+            body.dark-theme .weather-radar-btn {
+                background: rgba(59, 130, 246, 0.15);
+                color: #60a5fa;
+                border-color: rgba(96, 165, 250, 0.35);
+            }
+            body.dark-theme .weather-radar-btn:hover {
+                background: #3b82f6;
+                color: #ffffff;
+            }
+            .ksp-input-glow {
+                animation: kspInputPulseGlow 1.4s ease-out;
+            }
+            @keyframes kspInputPulseGlow {
+                0% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.45); border-color: #3b82f6 !important; }
+                50% { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25); border-color: #3b82f6 !important; }
+                100% { box-shadow: none; }
+            }
         `;
         document.head.appendChild(style);
     }
@@ -841,8 +877,11 @@
             } else if (weatherData.dailyTotalRainHours > 0) {
                 detailHtml += `<div>ℹ️ Hujan turun di luar shift ini (${weatherData.dailyRainRanges.join(', ')}, total ${weatherData.dailyTotalRainHours} jam, ${weatherData.dailyTotalRainMm} mm).</div>`;
                 autoNoteText = `[Hujan di shift lain (${weatherData.dailyRainRanges.join(', ')}, ${weatherData.dailyTotalRainHours} jam)]`;
+            } else if (weatherData.isRaining || (weatherData.dailyTotalRainMm && weatherData.dailyTotalRainMm > 0)) {
+                detailHtml += `<div>🌦️ Curah hujan harian terdeteksi ${weatherData.dailyTotalRainMm || 0} mm (${weatherData.weatherDesc || 'Hujan'}).</div>`;
+                autoNoteText = `[Cuaca ${weatherData.weatherDesc || 'Hujan'} (${weatherData.temperature ? weatherData.temperature + '°C' : ''}), curah hujan ${weatherData.dailyTotalRainMm || 0} mm]`;
             } else {
-                detailHtml += `<div>☀️ Tidak ada catatan hujan pada tanggal ini.</div>`;
+                detailHtml += `<div>☀️ Tidak ada catatan hujan pada jam kerja ini.</div>`;
             }
         } else {
             if (weatherData.dailyTotalRainHours > 0) {
@@ -854,10 +893,28 @@
                     detailHtml += `<div style="font-size: 10px; margin-top: 2px;">👥 <strong>Per Shift:</strong> ${shiftsInfo}</div>`;
                 }
                 autoNoteText = `[Hujan ${weatherData.dailyRainRanges.join(', ')} (Total ${weatherData.dailyTotalRainHours} jam, ${weatherData.dailyTotalRainMm} mm)]`;
+            } else if (weatherData.isRaining || (weatherData.dailyTotalRainMm && weatherData.dailyTotalRainMm > 0)) {
+                detailHtml += `<div>🌦️ Terdeteksi hujan/gerimis (${weatherData.dailyTotalRainMm || 0} mm, ${weatherData.weatherDesc}).</div>`;
+                autoNoteText = `[Cuaca ${weatherData.weatherDesc || 'Hujan'} (${weatherData.temperature ? weatherData.temperature + '°C' : ''}), curah hujan ${weatherData.dailyTotalRainMm || 0} mm]`;
             } else {
                 detailHtml += `<div>☀️ Cuaca cerah di sekitar cabang sepanjang hari.</div>`;
             }
         }
+
+        // Pastikan fallback aman agar autoNoteText tidak pernah kosong jika tombol pasang catatan muncul
+        if (!autoNoteText && (isRainInShift || weatherData.dailyTotalRainHours > 0 || weatherData.isRaining)) {
+            autoNoteText = `[Kondisi cuaca: ${weatherData.weatherDesc || 'Hujan'} (${weatherData.dailyTotalRainMm || 0} mm)]`;
+        }
+
+        const lat = weatherData.lat;
+        const lng = weatherData.lng;
+        const hasCoords = (lat && lng && !isNaN(lat) && !isNaN(lng));
+        const windyUrl = hasCoords 
+            ? `https://www.windy.com/-Rain-thunder-rain?${encodeURIComponent(Number(lat).toFixed(4))},${encodeURIComponent(Number(lng).toFixed(4))},11`
+            : 'https://www.windy.com';
+        const zoomEarthUrl = hasCoords
+            ? `https://zoom.earth/maps/radar/#view=${encodeURIComponent(Number(lat).toFixed(4))},${encodeURIComponent(Number(lng).toFixed(4))},10z`
+            : 'https://zoom.earth';
 
         let timelineBars = '';
         if (Array.isArray(weatherData.hourlyPoints)) {
@@ -883,7 +940,7 @@
             <div class="ksp-weather-card" style="background: ${bg}; border: 1px solid ${border}; border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; font-size: 11px;">
                 <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 200px;">
-                        <div style="display: flex; align-items: center; gap: 6px; color: ${color}; font-weight: 750; font-size: 12px; margin-bottom: 3px;">
+                        <div style="display: flex; align-items: center; gap: 6px; color: ${color}; font-weight: 750; font-size: 12px; margin-bottom: 3px; flex-wrap: wrap;">
                             <span style="font-size: 16px;">${statusIcon}</span>
                             <span>${statusTitle}</span>
                             <span style="font-size: 10px; opacity: 0.8; font-weight: 600;">(${weatherData.dateKey || ''})</span>
@@ -892,8 +949,8 @@
                             ${detailHtml}
                         </div>
                     </div>
-                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-                        ${(isRainInShift || weatherData.dailyTotalRainHours > 0) ? `
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+                        ${(isRainInShift || weatherData.dailyTotalRainHours > 0 || weatherData.isRaining) ? `
                             <button type="button" class="btn-apply-weather" style="background: #2563EB; color: #fff; border: none; border-radius: 6px; padding: 5px 10px; font-size: 10.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(37,99,235,0.3); transition: transform 0.1s ease;">
                                 <span>🌧️</span> Pasang Alasan & Catatan
                             </button>
@@ -902,6 +959,14 @@
                                 ${weatherData.isToday ? 'Real-time ' + weatherData.fetchedAt : 'Data Historis'}
                             </span>
                         `}
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <a href="${windyUrl}" target="_blank" rel="noopener noreferrer" class="weather-radar-btn" title="Cek riwayat awan hujan & radar interaktif di Windy">
+                                <span>🌐</span> Radar Windy
+                            </a>
+                            <a href="${zoomEarthUrl}" target="_blank" rel="noopener noreferrer" class="weather-radar-btn" title="Cek citra radar satelit langsung di Zoom Earth">
+                                <span>🛰️</span> Satelit
+                            </a>
+                        </div>
                     </div>
                 </div>
 
@@ -917,7 +982,7 @@
                     <div class="weather-timeline-bar">
                         ${timelineBars}
                     </div>
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 9px; color: var(--text-muted);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 9px; color: var(--text-muted); flex-wrap: wrap; gap: 4px;">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <span style="display: inline-block; width: 8px; height: 8px; background: #93c5fd; border-radius: 2px;"></span> Gerimis
                             <span style="display: inline-block; width: 8px; height: 8px; background: #3b82f6; border-radius: 2px;"></span> Sedang
@@ -925,6 +990,9 @@
                             <span style="display: inline-block; width: 8px; height: 8px; background: #1e1b4b; border-radius: 2px;"></span> Sangat Lebat
                         </div>
                         ${shiftData ? `<span>Highlight border = Jam ${shiftData.shiftName} (${shiftData.shiftHours})</span>` : ''}
+                    </div>
+                    <div style="font-size: 9px; color: var(--text-muted); opacity: 0.85; margin-top: 5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 4px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+                        <span>💡 Model atmosfer Open-Meteo. Gunakan tombol radar satelit di atas jika jam konveksi hujan lokal bergeser.</span>
                     </div>
                 </div>
             </div>
@@ -938,6 +1006,62 @@
                 onApplySuggestion(reasonsToApply, autoNoteText);
             });
         }
+    };
+
+    /**
+     * Menyisipkan teks catatan secara aman ke elemen textarea, menghindari duplikasi,
+     * memicu event input/change, dan memberikan efek visual glow highlight pada textarea.
+     * @param {HTMLTextAreaElement|string} textarea - Elemen textarea atau ID elemen
+     * @param {string} noteText - Teks yang akan disisipkan
+     * @returns {boolean} true jika berhasil disisipkan
+     */
+    KspReasons.insertNoteWithFeedback = function (textarea, noteText) {
+        if (!noteText) return false;
+        const el = typeof textarea === 'string' ? document.getElementById(textarea) : textarea;
+        if (!el) return false;
+
+        const cleanNote = String(noteText).trim();
+        if (!cleanNote) return false;
+
+        const curVal = el.value.trim();
+        if (!curVal.includes(cleanNote)) {
+            el.value = (curVal ? curVal + '\n' : '') + cleanNote;
+        }
+
+        // Posisikan kursor di akhir teks
+        try {
+            el.focus();
+            el.setSelectionRange(el.value.length, el.value.length);
+        } catch (e) {}
+
+        // Memicu event input & change secara fail-safe
+        try {
+            if (typeof Event === 'function') {
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            } else if (typeof document !== 'undefined' && document.createEvent) {
+                const evt1 = document.createEvent('Event');
+                evt1.initEvent('input', true, true);
+                el.dispatchEvent(evt1);
+                const evt2 = document.createEvent('Event');
+                evt2.initEvent('change', true, true);
+                el.dispatchEvent(evt2);
+            }
+        } catch (e) {}
+
+        // Efek visual glow highlight
+        el.classList.remove('ksp-input-glow');
+        void el.offsetWidth; // trigger reflow
+        el.classList.add('ksp-input-glow');
+        setTimeout(() => {
+            el.classList.remove('ksp-input-glow');
+        }, 1500);
+
+        if (typeof el.scrollIntoView === 'function') {
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        return true;
     };
 
     /**
