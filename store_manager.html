@@ -7178,6 +7178,7 @@
             const name = document.getElementById('formStoreName').value.trim();
             const shiftCount = parseInt(document.getElementById('formShiftCount').value) || 2;
             const buffer = parseInt(document.getElementById('formShiftBuffer').value) || 30;
+            const monthlyTarget = parseInt(document.getElementById('formStoreMonthlyTarget')?.value) || 0;
 
             const shifts = [];
             if (shiftCount >= 1) {
@@ -7270,11 +7271,20 @@
             });
 
             const currentMonthlyTx = existingStore ? calculateStoreMonthlyTx(existingStore) : 0;
-            const latVal = parseFloat(document.getElementById('formStoreLat')?.value);
-            const lngVal = parseFloat(document.getElementById('formStoreLng')?.value);
-            const coordinates = (!isNaN(latVal) && !isNaN(lngVal)) 
-                ? { lat: latVal, lng: lngVal } 
-                : (existingStore?.coordinates || null);
+            const latRaw = (document.getElementById('formStoreLat')?.value || '').trim();
+            const lngRaw = (document.getElementById('formStoreLng')?.value || '').trim();
+            let coordinates = null;
+            if (latRaw !== '' && lngRaw !== '') {
+                const latVal = parseFloat(latRaw);
+                const lngVal = parseFloat(lngRaw);
+                if (!isNaN(latVal) && !isNaN(lngVal)) {
+                    coordinates = { lat: latVal, lng: lngVal };
+                }
+            } else if (latRaw === '' && lngRaw === '') {
+                coordinates = null;
+            } else {
+                coordinates = existingStore?.coordinates || null;
+            }
 
             const newStore = {
                 id: storeId,
@@ -7297,6 +7307,7 @@
 
             saveStoresData();
             closeModal('storeFormModal');
+            showToast(`Cabang "${name}" berhasil disimpan!`, '✅');
 
             if (activeStoreId === storeId) {
                 selectStore(storeId);
