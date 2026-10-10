@@ -2068,6 +2068,17 @@
                         <!-- Diisi via JS: Shift yang sedang berjalan -->
                     </div>
 
+                    <!-- Tombol Cepat: Tukar Shift Tanggal Ini -->
+                    <div id="modalDateShiftSwapContainer" style="display: none; justify-content: space-between; align-items: center; background: rgba(79, 142, 247, 0.06); border: 1px dashed rgba(79, 142, 247, 0.35); border-radius: 10px; padding: 8px 12px;">
+                        <div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                            <span>🔄</span>
+                            <span id="modalDateShiftSwapLabel">Tukar shift petugas pada tanggal ini?</span>
+                        </div>
+                        <button type="button" id="btnModalSwapDateShift" class="btn-preset" onclick="handleSwapModalDateShift()" style="background: rgba(79, 142, 247, 0.18); color: var(--primary); border: 1px solid rgba(79, 142, 247, 0.4); font-weight: 800; font-size: 11px; padding: 5px 12px; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;" title="Tukar Shift 1 ⇄ Shift 2 hanya untuk tanggal yang sedang diedit ini (tidak mengubah roster berjalan)">
+                            <span>⇄</span> <span id="modalSwapBtnText">Tukar Shift</span>
+                        </button>
+                    </div>
+
                     <!-- Input Form Transaksi Karyawan Yang Belum Di-set -->
                     <div id="dailyTxFormFields" style="display: flex; flex-direction: column; gap: 12px;">
                         <!-- Dinamis per karyawan bertugas -->
@@ -6063,7 +6074,7 @@
                                 ${isRunning ? '<span style="font-size: 9.5px; color: var(--primary); font-weight: 800; background: rgba(79, 142, 247, 0.15); padding: 2px 6px; border-radius: 6px;">SEDANG BERTUGAS</span>' : ''}
                                 ${isInval ? '<span style="font-size: 9.5px; color: #f59e0b; font-weight: 800; background: rgba(245, 158, 11, 0.15); padding: 2px 6px; border-radius: 6px;">INVAL PENGGANTI</span>' : ''}
                             </span>
-                            <span class="shift-pill ${shiftClass}">${escapeHtml(shiftName)}</span>
+                            <span class="shift-pill ${shiftClass}" id="shift_badge_emp_${emp.id}">${escapeHtml(shiftName)}</span>
                         </label>
                         <input type="number" 
                                inputmode="numeric" 
@@ -6094,6 +6105,24 @@
             }
 
             fieldsCont.innerHTML = html;
+
+            // Kontrol Visibilitas Tombol Tukar Shift Khusus Tanggal Yang Diedit
+            const shiftCountVal = parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1);
+            const hasMultiShift = shiftCountVal > 1;
+            const swapContainer = document.getElementById('modalDateShiftSwapContainer');
+            if (swapContainer) {
+                // Hanya muncul jika shift lebih dari 1 dan ada minimal 2 karyawan yang bertugas/tercatat
+                const canSwap = hasMultiShift && (employeesToRender.length >= 2 || (store.employees && store.employees.length >= 2));
+                swapContainer.style.display = canSwap ? 'flex' : 'none';
+
+                const swapLabel = document.getElementById('modalDateShiftSwapLabel');
+                if (swapLabel) {
+                    swapLabel.innerText = isToday 
+                        ? 'Tukar shift petugas transaksi hari ini?' 
+                        : `Tukar shift petugas tgl ${formatDateShort(targetDate)}?`;
+                }
+            }
+
             const btnDelete = document.getElementById('btnDeleteDailyTxModal');
             if (btnDelete) {
                 btnDelete.style.display = (setRecords.length > 0 && currentAuthRole === 'admin') ? 'inline-flex' : 'none';
@@ -6115,6 +6144,56 @@
                     if (targetInput.select) targetInput.select();
                 }
             }, 120);
+        }
+
+        // Tukar Shift Karyawan KHUSUS Pada Tanggal Yang Sedang Diedit (Tanpa Merubah Master store.employees)
+        function handleSwapModalDateShift() {
+            const store = storesData.find(s => s.id === activeStoreId);
+            if (!store) return;
+
+            const inputEls = Array.from(document.querySelectorAll('#dailyTxFormFields .emp-tx-input'));
+            if (inputEls.length < 2) {
+                showToast('⚠️ Minimal harus ada 2 karyawan untuk menukar shift.', '⚠️');
+                return;
+            }
+
+            const shiftCountVal = parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1);
+            if (shiftCountVal <= 1) {
+                showToast('⚠️ Cabang 1 Shift (Full Shift) tidak memiliki opsi tukar shift.', '⚠️');
+                return;
+            }
+
+            const targetDate = currentModalDateKey || getTodayKey();
+            let swappedPairs = [];
+
+            // Tukar data-shiftnum (1 ⇄ 2) untuk input yang ada di dalam form modal
+            inputEls.forEach(inp => {
+                const curShiftNum = parseInt(inp.dataset.shiftnum) || 1;
+                const newShiftNum = (curShiftNum === 1) ? 2 : 1;
+                const newShiftName = newShiftNum === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam';
+                const newShiftClass = newShiftNum === 1 ? 's1' : 's2';
+                const empId = inp.dataset.empid;
+                const empName = inp.dataset.empname;
+
+                // Update dataset pada input
+                inp.dataset.shiftnum = newShiftNum;
+                inp.dataset.shiftname = newShiftName;
+
+                // Update badge visual shift-pill
+                const badgeEl = document.getElementById(`shift_badge_emp_${empId}`);
+                if (badgeEl) {
+                    badgeEl.className = `shift-pill ${newShiftClass}`;
+                    badgeEl.innerText = newShiftName;
+                    badgeEl.style.transition = 'all 0.25s ease';
+                    badgeEl.style.transform = 'scale(1.12)';
+                    setTimeout(() => { badgeEl.style.transform = 'scale(1)'; }, 250);
+                }
+
+                swappedPairs.push(`${empName} ➔ ${newShiftName}`);
+            });
+
+            // PENTING: store.employees TIDAK PERNAH DIUBAH agar status shift saat ini tetap aman!
+            showToast(`🔄 Shift tgl ${formatDateShort(targetDate)} ditukar: ${swappedPairs.join(', ')}. Klik Simpan untuk menerapkan.`, '🔄');
         }
 
         function handleSaveDailyTx(e) {
