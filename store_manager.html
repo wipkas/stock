@@ -497,6 +497,30 @@
             font-weight: 750;
         }
 
+        .btn-stat-copy {
+            background: rgba(79, 142, 247, 0.12);
+            border: 1px solid rgba(79, 142, 247, 0.3);
+            color: var(--primary);
+            font-size: 12px;
+            line-height: 1;
+            padding: 3px 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+        .btn-stat-copy:hover {
+            background: var(--primary);
+            color: #FFFFFF;
+            border-color: var(--primary);
+            transform: scale(1.08);
+        }
+        .btn-stat-copy:active {
+            transform: scale(0.95);
+        }
+
         /* Chip Filter Row with Flex-Wrap (Membuat baris baru) */
         .chip-filter-row.wrap-chips {
             flex-wrap: wrap !important;
@@ -4347,10 +4371,10 @@
         <div class="modal-card" style="max-width: 620px; max-height: 94vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <div>
-                    <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                    <h3 class="modal-title" id="copyDailyTxModalTitle" style="display: flex; align-items: center; gap: 8px;">
                         <span>📋</span> Salin Riwayat Transaksi Harian
                     </h3>
-                    <p class="modal-subtitle">Rekap total harian semua cabang &amp; kasir untuk WhatsApp, Markdown (.md), atau Excel</p>
+                    <p class="modal-subtitle" id="copyDailyTxModalSubtitle">Rekap total harian semua cabang &amp; kasir untuk WhatsApp, Markdown (.md), atau Excel</p>
                 </div>
                 <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('copyDailyTxModal')">&times;</button>
             </div>
@@ -4363,6 +4387,16 @@
 
                 <!-- Kontrol Filter Rentang Tanggal & Preset -->
                 <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+                    <!-- FILTER PILIH CABANG TARGET -->
+                    <div>
+                        <div style="font-size: 11px; font-weight: 750; color: var(--text-muted); margin-bottom: 6px;">PILIH CABANG TARGET:</div>
+                        <div id="copyDailyTxStoreChips" style="display: flex; flex-wrap: wrap; gap: 6px;">
+                            <!-- Diisi dinamis via JS -->
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px dashed var(--card-border); margin: 2px 0;"></div>
+
                     <!-- Tombol Pintas Preset -->
                     <div>
                         <div style="font-size: 11px; font-weight: 750; color: var(--text-muted); margin-bottom: 6px;">PILIH PERIODE CEPAT:</div>
@@ -4942,11 +4976,18 @@
                             ${badgeHtml}
                         </div>
                         
-                        <!-- store-stat-row (Transaksi Hari Ini & Cek) -->
+                        <!-- store-stat-row (Transaksi Hari Ini, Salin Cabang & Cek) -->
                         <div class="store-stat-row" role="button" tabindex="0" onclick="openStoreTransactions(event, '${store.id}')" title="Klik untuk buka Transaksi &amp; Analisa Cabang">
                             <span class="stat-label"><span>📊</span> Transaksi Hari Ini:</span>
                             <div class="stat-val-wrap">
                                 <span class="stat-val" id="todayTxVal_${store.id}">${todayTx} tx</span>
+                                <button type="button" 
+                                        class="btn-stat-copy" 
+                                        onclick="event.stopPropagation(); openCopyDailyTxModal('${store.id}', event);" 
+                                        title="Salin Riwayat Transaksi Cabang ${escapeHtml(store.name)}" 
+                                        aria-label="Salin Riwayat Transaksi Cabang">
+                                    📋
+                                </button>
                                 <span class="stat-arrow">Cek &rarr;</span>
                             </div>
                         </div>
@@ -10108,7 +10149,7 @@ ${portalUrl}
         }
 
         /* =========================================================================
-           FITUR: SALIN RIWAYAT TOTAL TRANSAKSI HARIAN SEMUA CABANG (KASIR & MARKDOWN)
+           FITUR: SALIN RIWAYAT TOTAL TRANSAKSI HARIAN SEMUA / PER-CABANG (KASIR & MARKDOWN)
            ========================================================================= */
 
         const COPY_TX_MONTH_NAMES_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -10116,9 +10157,11 @@ ${portalUrl}
 
         window.copyDailyTxCurrentPreset = 'most_complete';
         window.copyDailyTxCurrentFormat = 'whatsapp';
+        window.copyDailyTxTargetStoreId = 'all';
 
         // Menentukan bulan dengan data transaksi paling lengkap (rasio jumlah hari transaksi terhadap total hari dalam bulan)
-        function findMostCompleteTransactionMonth() {
+        // Dapat mengevaluasi seluruh cabang ('all') atau satu cabang tertentu (targetStoreId)
+        function findMostCompleteTransactionMonth(targetStoreId) {
             const now = new Date();
             const curYear = now.getFullYear();
             const curMonth = now.getMonth() + 1;
@@ -10127,34 +10170,40 @@ ${portalUrl}
 
             const monthStats = {}; // { 'YYYY-MM': { dates: Set(), totalTx: 0 } }
 
-            if (Array.isArray(storesData)) {
-                storesData.forEach(store => {
-                    if (store && store.daily_transactions && typeof store.daily_transactions === 'object') {
-                        Object.keys(store.daily_transactions).forEach(dateKey => {
-                            const dayData = store.daily_transactions[dateKey];
-                            if (!dayData) return;
-                            let hasTx = false;
-                            let txCount = 0;
-                            if (typeof dayData.total === 'number' && dayData.total > 0) {
-                                hasTx = true;
-                                txCount = dayData.total;
-                            } else if (Array.isArray(dayData.records) && dayData.records.some(r => Number(r.tx) > 0)) {
-                                hasTx = true;
-                                txCount = dayData.records.reduce((sum, r) => sum + (Number(r.tx) || 0), 0);
-                            }
+            const isSingle = Boolean(targetStoreId && targetStoreId !== 'all');
+            const targetStore = isSingle ? (storesData || []).find(s => s.id === targetStoreId) : null;
+            const storeLabel = targetStore ? targetStore.name : 'Semua Cabang';
 
-                            if (hasTx && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
-                                const mKey = dateKey.substring(0, 7);
-                                if (!monthStats[mKey]) {
-                                    monthStats[mKey] = { dates: new Set(), totalTx: 0 };
-                                }
-                                monthStats[mKey].dates.add(dateKey);
-                                monthStats[mKey].totalTx += txCount;
+            const storesToEval = isSingle 
+                ? (targetStore ? [targetStore] : []) 
+                : (storesData || []);
+
+            storesToEval.forEach(store => {
+                if (store && store.daily_transactions && typeof store.daily_transactions === 'object') {
+                    Object.keys(store.daily_transactions).forEach(dateKey => {
+                        const dayData = store.daily_transactions[dateKey];
+                        if (!dayData) return;
+                        let hasTx = false;
+                        let txCount = 0;
+                        if (typeof dayData.total === 'number' && dayData.total > 0) {
+                            hasTx = true;
+                            txCount = dayData.total;
+                        } else if (Array.isArray(dayData.records) && dayData.records.some(r => Number(r.tx) > 0)) {
+                            hasTx = true;
+                            txCount = dayData.records.reduce((sum, r) => sum + (Number(r.tx) || 0), 0);
+                        }
+
+                        if (hasTx && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+                            const mKey = dateKey.substring(0, 7);
+                            if (!monthStats[mKey]) {
+                                monthStats[mKey] = { dates: new Set(), totalTx: 0 };
                             }
-                        });
-                    }
-                });
-            }
+                            monthStats[mKey].dates.add(dateKey);
+                            monthStats[mKey].totalTx += txCount;
+                        }
+                    });
+                }
+            });
 
             const monthKeys = Object.keys(monthStats);
             if (monthKeys.length === 0) {
@@ -10166,7 +10215,9 @@ ${portalUrl}
                     recordedDays: 0,
                     totalDays: daysInCurMonth,
                     completenessRatio: 0,
-                    reason: `Bulan ini (${COPY_TX_MONTH_NAMES_ID[curMonth - 1]} ${curYear}) - belum ada riwayat transaksi tersimpan.`
+                    reason: isSingle 
+                        ? `Bulan ini (${COPY_TX_MONTH_NAMES_ID[curMonth - 1]} ${curYear}) di ${storeLabel} - belum ada riwayat transaksi tersimpan.`
+                        : `Bulan ini (${COPY_TX_MONTH_NAMES_ID[curMonth - 1]} ${curYear}) - belum ada riwayat transaksi tersimpan.`
                 };
             }
 
@@ -10203,12 +10254,13 @@ ${portalUrl}
             const pct = Math.round(best.completenessRatio * 100);
             let reason = '';
 
+            const prefix = isSingle ? `Cabang ${storeLabel}: Bulan ${best.monthLabel}` : `Bulan ${best.monthLabel}`;
             const curMonthStat = scoredMonths.find(m => m.monthKey === curMonthKey);
             if (best.monthKey !== curMonthKey && curMonthStat) {
                 const curPct = Math.round(curMonthStat.completenessRatio * 100);
-                reason = `Bulan ${best.monthLabel} dipilih otomatis (${best.recordedDays}/${best.daysInMonth} hari, ${pct}%) karena lebih lengkap dibanding bulan berjalan (${curMonthStat.recordedDays}/${curMonthStat.daysInMonth} hari, ${curPct}%).`;
+                reason = `${prefix} dipilih otomatis (${best.recordedDays}/${best.daysInMonth} hari, ${pct}%) karena lebih lengkap dibanding bulan berjalan (${curMonthStat.recordedDays}/${curMonthStat.daysInMonth} hari, ${curPct}%).`;
             } else {
-                reason = `Bulan ${best.monthLabel} dipilih otomatis (${best.recordedDays}/${best.daysInMonth} hari - ${pct}% lengkap).`;
+                reason = `${prefix} dipilih otomatis (${best.recordedDays}/${best.daysInMonth} hari - ${pct}% lengkap).`;
             }
 
             return {
@@ -10304,13 +10356,110 @@ ${portalUrl}
             });
         }
 
-        function openCopyDailyTxModal() {
+        function renderCopyDailyTxStoreChips() {
+            const container = document.getElementById('copyDailyTxStoreChips');
+            if (!container) return;
+
+            const stores = storesData || [];
+            const activeId = window.copyDailyTxTargetStoreId || 'all';
+
+            let html = `
+                <button type="button" 
+                        class="target-mode-pill-btn ${activeId === 'all' ? 'active' : ''}" 
+                        onclick="setCopyDailyTxStoreTarget('all')">
+                    🏢 Semua Cabang (${stores.length})
+                </button>
+            `;
+
+            stores.forEach(st => {
+                const isAct = (activeId === st.id);
+                html += `
+                    <button type="button" 
+                            class="target-mode-pill-btn ${isAct ? 'active' : ''}" 
+                            onclick="setCopyDailyTxStoreTarget('${st.id}')">
+                        🏬 ${escapeHtml(st.name)}
+                    </button>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function setCopyDailyTxStoreTarget(storeId) {
+            window.copyDailyTxTargetStoreId = storeId || 'all';
+            renderCopyDailyTxStoreChips();
+
+            const isSingle = (window.copyDailyTxTargetStoreId !== 'all');
+            const targetStore = isSingle ? (storesData || []).find(s => s.id === window.copyDailyTxTargetStoreId) : null;
+
+            const titleEl = document.getElementById('copyDailyTxModalTitle');
+            const subEl = document.getElementById('copyDailyTxModalSubtitle');
+
+            if (titleEl) {
+                titleEl.innerHTML = isSingle 
+                    ? `<span>📋</span> Salin Riwayat Transaksi - ${escapeHtml(targetStore?.name || 'Cabang')}`
+                    : `<span>📋</span> Salin Riwayat Transaksi Harian`;
+            }
+            if (subEl) {
+                subEl.textContent = isSingle
+                    ? `Rekap transaksi harian & kasir cabang ${targetStore?.name || ''} untuk WhatsApp, Markdown (.md), atau Excel`
+                    : `Rekap total harian semua cabang & kasir untuk WhatsApp, Markdown (.md), atau Excel`;
+            }
+
+            // Jika preset saat ini 'most_complete', hitung ulang kelengkapan untuk cabang ini
+            if (window.copyDailyTxCurrentPreset === 'most_complete') {
+                const best = findMostCompleteTransactionMonth(window.copyDailyTxTargetStoreId);
+                const startInput = document.getElementById('copyDailyTxStartDate');
+                const endInput = document.getElementById('copyDailyTxEndDate');
+                if (startInput) startInput.value = best.startDate;
+                if (endInput) endInput.value = best.endDate;
+
+                const smartBadge = document.getElementById('copyDailyTxSmartBadge');
+                if (smartBadge) {
+                    smartBadge.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span>⭐</span>
+                            <span><b>Default Otomatis:</b> ${escapeHtml(best.reason)}</span>
+                        </div>
+                        <span style="background: rgba(16, 185, 129, 0.25); color: #10B981; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 6px; white-space: nowrap;">Paling Lengkap</span>
+                    `;
+                }
+            }
+
+            renderCopyDailyTxPreview();
+        }
+
+        function openCopyDailyTxModal(storeId, event) {
+            if (event && typeof event.stopPropagation === 'function') {
+                event.stopPropagation();
+            }
+
+            window.copyDailyTxTargetStoreId = storeId || 'all';
             window.copyDailyTxCurrentPreset = 'most_complete';
             if (!window.copyDailyTxCurrentFormat) {
                 window.copyDailyTxCurrentFormat = 'whatsapp';
             }
 
-            const best = findMostCompleteTransactionMonth();
+            renderCopyDailyTxStoreChips();
+
+            const isSingle = (window.copyDailyTxTargetStoreId !== 'all');
+            const targetStore = isSingle ? (storesData || []).find(s => s.id === window.copyDailyTxTargetStoreId) : null;
+
+            const titleEl = document.getElementById('copyDailyTxModalTitle');
+            const subEl = document.getElementById('copyDailyTxModalSubtitle');
+
+            if (titleEl) {
+                titleEl.innerHTML = isSingle 
+                    ? `<span>📋</span> Salin Riwayat Transaksi - ${escapeHtml(targetStore?.name || 'Cabang')}`
+                    : `<span>📋</span> Salin Riwayat Transaksi Harian`;
+            }
+            if (subEl) {
+                subEl.textContent = isSingle
+                    ? `Rekap transaksi harian & kasir cabang ${targetStore?.name || ''} untuk WhatsApp, Markdown (.md), atau Excel`
+                    : `Rekap total harian semua cabang & kasir untuk WhatsApp, Markdown (.md), atau Excel`;
+            }
+
+            const best = findMostCompleteTransactionMonth(window.copyDailyTxTargetStoreId);
             const startInput = document.getElementById('copyDailyTxStartDate');
             const endInput = document.getElementById('copyDailyTxEndDate');
 
@@ -10346,7 +10495,7 @@ ${portalUrl}
             let endDate = '';
 
             if (presetKey === 'most_complete') {
-                const best = findMostCompleteTransactionMonth();
+                const best = findMostCompleteTransactionMonth(window.copyDailyTxTargetStoreId);
                 startDate = best.startDate;
                 endDate = best.endDate;
             } else if (presetKey === 'this_month') {
@@ -10377,7 +10526,7 @@ ${portalUrl}
             const smartBadge = document.getElementById('copyDailyTxSmartBadge');
             if (smartBadge) {
                 if (presetKey === 'most_complete') {
-                    const best = findMostCompleteTransactionMonth();
+                    const best = findMostCompleteTransactionMonth(window.copyDailyTxTargetStoreId);
                     smartBadge.innerHTML = `
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <span>⭐</span>
@@ -10423,11 +10572,255 @@ ${portalUrl}
             renderCopyDailyTxPreview();
         }
 
-        function generateCopyDailyTxText(startDateStr, endDateStr, format, includeEmps, onlyWithTx) {
+        function generateCopyDailyTxText(startDateStr, endDateStr, format, includeEmps, onlyWithTx, targetStoreId) {
             const dateList = getDatesListInRange(startDateStr, endDateStr);
+            const rangeLabel = formatCopyTxDateRangeLabel(startDateStr, endDateStr);
+            const isSingleStore = Boolean(targetStoreId && targetStoreId !== 'all');
+
+            if (isSingleStore) {
+                const targetStore = (storesData || []).find(s => s.id === targetStoreId);
+                const storeName = targetStore ? targetStore.name : 'Cabang';
+
+                const processedDays = [];
+                const empStats = {}; // { empName: totalTx }
+                let grandTotal = 0;
+                let activeDays = 0;
+
+                dateList.forEach(dateKey => {
+                    let dayTotal = 0;
+                    let records = [];
+
+                    if (targetStore && targetStore.daily_transactions && targetStore.daily_transactions[dateKey]) {
+                        const dayObj = targetStore.daily_transactions[dateKey];
+                        if (typeof dayObj.total === 'number') {
+                            dayTotal = dayObj.total;
+                        }
+                        if (Array.isArray(dayObj.records) && dayObj.records.length > 0) {
+                            records = dayObj.records;
+                            if (dayTotal === 0) {
+                                dayTotal = records.reduce((sum, r) => sum + (Number(r.tx) || 0), 0);
+                            }
+                        }
+                    }
+
+                    if (onlyWithTx && dayTotal === 0) {
+                        return;
+                    }
+
+                    grandTotal += dayTotal;
+                    if (dayTotal > 0) activeDays += 1;
+
+                    if (records && records.length > 0) {
+                        records.forEach(r => {
+                            const eName = r.emp_name || 'Kasir';
+                            const txVal = Number(r.tx) || 0;
+                            empStats[eName] = (empStats[eName] || 0) + txVal;
+                        });
+                    }
+
+                    processedDays.push({
+                        dateKey: dateKey,
+                        dayTotal: dayTotal,
+                        records: records
+                    });
+                });
+
+                const dayCount = processedDays.length;
+                const avgPerDay = dayCount > 0 ? Math.round(grandTotal / dayCount) : 0;
+                const sortedEmps = Object.keys(empStats)
+                    .map(name => ({ name, tx: empStats[name] }))
+                    .sort((a, b) => b.tx - a.tx);
+
+                let text = '';
+
+                if (format === 'markdown') {
+                    text += `# 📊 Rekap Transaksi Harian - Cabang ${storeName}\n\n`;
+                    text += `**Periode:** ${rangeLabel}  \n`;
+                    text += `**Cabang:** ${storeName}  \n\n`;
+                    text += `---\n\n`;
+
+                    if (processedDays.length === 0) {
+                        text += `*Tidak ada transaksi pada rentang tanggal ini.*\n\n`;
+                    } else {
+                        text += `### 📅 Rincian Transaksi Harian\n\n`;
+                        if (includeEmps) {
+                            text += `| Tanggal | Hari | Shift / Petugas | Transaksi | Total Harian |\n`;
+                            text += `|---|---|---|---|---|\n`;
+                            processedDays.forEach(pd => {
+                                const parts = pd.dateKey.split('-').map(Number);
+                                const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+                                const dayName = COPY_TX_DAY_NAMES_ID[dt.getDay()];
+                                const dateFormatted = `${String(parts[2]).padStart(2, '0')}/${String(parts[1]).padStart(2, '0')}/${parts[0]}`;
+
+                                let petugasCol = '-';
+                                let txCol = '-';
+                                if (pd.records && pd.records.length > 0) {
+                                    petugasCol = pd.records.map(r => `${r.shift_name || ('Shift ' + (r.shift_num || ''))}: ${r.emp_name || 'Kasir'}`).join('<br>');
+                                    txCol = pd.records.map(r => `${(Number(r.tx) || 0).toLocaleString('id-ID')} tx`).join('<br>');
+                                } else {
+                                    txCol = `${pd.dayTotal.toLocaleString('id-ID')} tx`;
+                                }
+                                text += `| ${dateFormatted} | ${dayName} | ${petugasCol} | ${txCol} | **${pd.dayTotal.toLocaleString('id-ID')} tx** |\n`;
+                            });
+                        } else {
+                            text += `| Tanggal | Hari | Total Transaksi |\n`;
+                            text += `|---|---|---|\n`;
+                            processedDays.forEach(pd => {
+                                const parts = pd.dateKey.split('-').map(Number);
+                                const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+                                const dayName = COPY_TX_DAY_NAMES_ID[dt.getDay()];
+                                const dateFormatted = `${String(parts[2]).padStart(2, '0')}/${String(parts[1]).padStart(2, '0')}/${parts[0]}`;
+                                text += `| ${dateFormatted} | ${dayName} | **${pd.dayTotal.toLocaleString('id-ID')} tx** |\n`;
+                            });
+                        }
+                        text += `\n`;
+                    }
+
+                    text += `---\n\n`;
+                    text += `### 📈 Ringkasan Akumulasi Periode Ini\n\n`;
+                    text += `- **Total Transaksi:** **${grandTotal.toLocaleString('id-ID')} tx**\n`;
+                    text += `- **Hari Aktif Transaksi:** **${activeDays} hari**\n`;
+                    text += `- **Rata-rata Harian:** **${avgPerDay.toLocaleString('id-ID')} tx/hari**\n`;
+
+                    if (sortedEmps.length > 0 && includeEmps) {
+                        text += `\n**Kontribusi Kasir:**\n`;
+                        sortedEmps.forEach(e => {
+                            const pct = grandTotal > 0 ? ((e.tx / grandTotal) * 100).toFixed(1) : 0;
+                            text += `- ${e.name}: **${e.tx.toLocaleString('id-ID')} tx** (${pct}%)\n`;
+                        });
+                    }
+                    text += `\n_Diekspor otomatis via KSP Check Store Manager._\n`;
+
+                } else if (format === 'tsv') {
+                    if (includeEmps) {
+                        text += `Tanggal\tHari\tCabang\tShift / Petugas\tTransaksi (tx)\tTotal Harian (tx)\n`;
+                        processedDays.forEach(pd => {
+                            const parts = pd.dateKey.split('-').map(Number);
+                            const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+                            const dayName = COPY_TX_DAY_NAMES_ID[dt.getDay()];
+                            const dateFormatted = `${String(parts[2]).padStart(2, '0')}/${String(parts[1]).padStart(2, '0')}/${parts[0]}`;
+
+                            if (pd.records && pd.records.length > 0) {
+                                pd.records.forEach(r => {
+                                    const sName = r.shift_name || `Shift ${r.shift_num || ''}`;
+                                    const eName = r.emp_name || 'Kasir';
+                                    const txVal = Number(r.tx) || 0;
+                                    text += `${dateFormatted}\t${dayName}\t${storeName}\t${sName}: ${eName}\t${txVal}\t${pd.dayTotal}\n`;
+                                });
+                            } else {
+                                text += `${dateFormatted}\t${dayName}\t${storeName}\t-\t${pd.dayTotal}\t${pd.dayTotal}\n`;
+                            }
+                        });
+                    } else {
+                        text += `Tanggal\tHari\tCabang\tTotal Transaksi (tx)\n`;
+                        processedDays.forEach(pd => {
+                            const parts = pd.dateKey.split('-').map(Number);
+                            const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+                            const dayName = COPY_TX_DAY_NAMES_ID[dt.getDay()];
+                            const dateFormatted = `${String(parts[2]).padStart(2, '0')}/${String(parts[1]).padStart(2, '0')}/${parts[0]}`;
+                            text += `${dateFormatted}\t${dayName}\t${storeName}\t${pd.dayTotal}\n`;
+                        });
+                    }
+
+                    text += `\nRINGKASAN AKUMULASI PERIODE (${rangeLabel})\n`;
+                    text += `Cabang\t${storeName}\n`;
+                    text += `Total Transaksi (tx)\t${grandTotal}\n`;
+                    text += `Hari Aktif\t${activeDays}\n`;
+                    text += `Rata-rata/Hari (tx)\t${avgPerDay}\n`;
+
+                    if (sortedEmps.length > 0 && includeEmps) {
+                        text += `\nNama Kasir\tTotal Transaksi (tx)\tPersentase\n`;
+                        sortedEmps.forEach(e => {
+                            const pct = grandTotal > 0 ? ((e.tx / grandTotal) * 100).toFixed(1) + '%' : '0%';
+                            text += `${e.name}\t${e.tx}\t${pct}\n`;
+                        });
+                    }
+
+                } else if (format === 'compact') {
+                    text += `📊 REKAP TRANSAKSI - CABANG ${storeName.toUpperCase()}\n`;
+                    text += `Periode: ${rangeLabel}\n\n`;
+
+                    if (processedDays.length === 0) {
+                        text += `(Tidak ada transaksi pada rentang tanggal ini)\n\n`;
+                    } else {
+                        processedDays.forEach(pd => {
+                            const parts = pd.dateKey.split('-').map(Number);
+                            const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+                            const dayName = COPY_TX_DAY_NAMES_ID[dt.getDay()].substring(0, 3);
+                            const dateFormatted = `${String(parts[2]).padStart(2, '0')}/${String(parts[1]).padStart(2, '0')}/${parts[0]}`;
+
+                            let detail = '';
+                            if (includeEmps && pd.records && pd.records.length > 0) {
+                                detail = ' (' + pd.records.map(r => `${r.emp_name || 'Kasir'} ${Number(r.tx) || 0}`).join(', ') + ')';
+                            }
+                            text += `${dateFormatted} (${dayName}): ${pd.dayTotal.toLocaleString('id-ID')} tx${detail}\n`;
+                        });
+                    }
+
+                    text += `\nTOTAL PERIODE: ${grandTotal.toLocaleString('id-ID')} tx (Hari Aktif: ${activeDays}, Rata-rata: ${avgPerDay.toLocaleString('id-ID')} tx/hr)\n`;
+
+                } else {
+                    // Default: whatsapp
+                    text += `📊 *REKAP TRANSAKSI HARIAN - CABANG ${storeName.toUpperCase()}*\n`;
+                    text += `📅 *Periode:* ${rangeLabel}\n\n`;
+                    text += `───────────────────────────────\n`;
+                    text += `*RINCIAN TRANSAKSI PER HARI:*\n`;
+                    text += `───────────────────────────────\n`;
+
+                    if (processedDays.length === 0) {
+                        text += `(Tidak ada transaksi pada rentang tanggal ini)\n\n`;
+                    } else {
+                        processedDays.forEach(pd => {
+                            const parts = pd.dateKey.split('-').map(Number);
+                            const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+                            const dayName = COPY_TX_DAY_NAMES_ID[dt.getDay()];
+                            const dateFormatted = `${String(parts[2]).padStart(2, '0')}/${String(parts[1]).padStart(2, '0')}/${parts[0]}`;
+
+                            if (includeEmps && pd.records && pd.records.length > 0) {
+                                text += `📅 *${dateFormatted} (${dayName})*: *${pd.dayTotal.toLocaleString('id-ID')} tx*\n`;
+                                pd.records.forEach(r => {
+                                    const sName = r.shift_name || `Shift ${r.shift_num || ''}`;
+                                    const eName = r.emp_name || 'Kasir';
+                                    const txVal = Number(r.tx) || 0;
+                                    text += `  - ${sName}: ${eName} (${txVal.toLocaleString('id-ID')} tx)\n`;
+                                });
+                            } else {
+                                text += `📅 *${dateFormatted} (${dayName})*: *${pd.dayTotal.toLocaleString('id-ID')} tx*\n`;
+                            }
+                        });
+                    }
+
+                    text += `───────────────────────────────\n`;
+                    text += `📈 *RINGKASAN PERIODE:*\n`;
+                    text += `• Total Transaksi: *${grandTotal.toLocaleString('id-ID')} tx*\n`;
+                    text += `• Hari Aktif: *${activeDays} hari*\n`;
+                    text += `• Rata-rata Harian: *${avgPerDay.toLocaleString('id-ID')} tx/hari*\n`;
+
+                    if (sortedEmps.length > 0 && includeEmps) {
+                        text += `• Kontribusi Kasir:\n`;
+                        sortedEmps.forEach(e => {
+                            const pct = grandTotal > 0 ? Math.round((e.tx / grandTotal) * 100) : 0;
+                            text += `  - ${e.name}: ${e.tx.toLocaleString('id-ID')} tx (${pct}%)\n`;
+                        });
+                    }
+
+                    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                    text += `🏆 *TOTAL AKUMULASI: ${grandTotal.toLocaleString('id-ID')} TRANSAKSI*\n`;
+                    text += `_Diekspor otomatis via KSP Check Store Manager._ 🔥`;
+                }
+
+                return {
+                    text: text,
+                    grandTotal: grandTotal,
+                    dayCount: dayCount,
+                    storeCount: 1,
+                    targetStoreName: storeName
+                };
+            }
+
+            // MULTI-STORE (Semua Cabang)
             const stores = storesData || [];
             const storeNames = stores.map(s => s.name).join(', ');
-            const rangeLabel = formatCopyTxDateRangeLabel(startDateStr, endDateStr);
 
             const processedDates = [];
             dateList.forEach(dateKey => {
@@ -10685,8 +11078,9 @@ ${portalUrl}
             const includeEmps = document.getElementById('copyDailyTxIncludeEmps')?.checked !== false;
             const onlyWithTx = document.getElementById('copyDailyTxOnlyWithTx')?.checked !== false;
             const format = window.copyDailyTxCurrentFormat || 'whatsapp';
+            const targetStoreId = window.copyDailyTxTargetStoreId || 'all';
 
-            const result = generateCopyDailyTxText(startDate, endDate, format, includeEmps, onlyWithTx);
+            const result = generateCopyDailyTxText(startDate, endDate, format, includeEmps, onlyWithTx, targetStoreId);
 
             const previewArea = document.getElementById('copyDailyTxPreviewText');
             if (previewArea) {
@@ -10695,7 +11089,11 @@ ${portalUrl}
 
             const countLabel = document.getElementById('copyDailyTxPreviewCountLabel');
             if (countLabel) {
-                countLabel.textContent = `Pratinjau Hasil (${result.dayCount} Hari, ${result.storeCount} Cabang):`;
+                if (targetStoreId !== 'all') {
+                    countLabel.textContent = `Pratinjau Hasil (${result.dayCount} Hari Transaksi - ${result.targetStoreName || 'Cabang'}):`;
+                } else {
+                    countLabel.textContent = `Pratinjau Hasil (${result.dayCount} Hari, ${result.storeCount} Cabang):`;
+                }
             }
 
             const totalBadge = document.getElementById('copyDailyTxGrandTotalBadge');
