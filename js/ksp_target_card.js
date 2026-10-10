@@ -118,6 +118,31 @@
     };
 
     /**
+     * Storage key & helper untuk Mode Target Harian ('flat' | 'dynamic')
+     * Default: 'flat' (Target bulanan / total hari bulan)
+     */
+    KspTarget.DAILY_MODE_STORAGE_KEY = 'ksp_target_daily_mode';
+
+    KspTarget.getDailyMode = function () {
+        try {
+            const saved = localStorage.getItem(KspTarget.DAILY_MODE_STORAGE_KEY);
+            return (saved === 'dynamic') ? 'dynamic' : 'flat';
+        } catch (e) {
+            return 'flat';
+        }
+    };
+
+    KspTarget.setDailyMode = function (mode) {
+        try {
+            const val = (mode === 'dynamic') ? 'dynamic' : 'flat';
+            localStorage.setItem(KspTarget.DAILY_MODE_STORAGE_KEY, val);
+            return val;
+        } catch (e) {
+            return 'flat';
+        }
+    };
+
+    /**
      * Kalkulasi metrik lengkap target toko
      * @param {Object} store Data objek cabang
      * @param {string} [yearMonth] Format 'YYYY-MM' (default bulan ini)
@@ -150,8 +175,17 @@
         // Sisa target
         const remainingTarget = Math.max(0, target - realization);
 
-        // Wajib harian & Rata-rata sekarang
-        const requiredPerDay = remainingTarget > 0 ? Math.round(remainingTarget / remainingDays) : 0;
+        // Mode target harian aktif ('flat' | 'dynamic')
+        const dailyMode = KspTarget.getDailyMode();
+
+        // 1. Target Flat Konstan: Target Bulanan / Total Hari dalam Bulan (misal 5.100 / 30 = 170)
+        const flatPerDay = target > 0 ? Math.max(1, Math.round(target / totalDaysInMonth)) : 0;
+
+        // 2. Target Dinamis Kejar Sisa: Sisa Target / Sisa Hari Bulan Berjalan
+        const dynamicPerDay = remainingTarget > 0 ? Math.round(remainingTarget / remainingDays) : 0;
+
+        // Wajib harian efektif mengikuti mode yang aktif (default: flat)
+        const requiredPerDay = (dailyMode === 'dynamic') ? dynamicPerDay : flatPerDay;
         const currentAveragePerDay = Math.round(realization / elapsedDays);
 
         // Gap kebutuhan naik
@@ -193,6 +227,9 @@
             realization,
             percentage,
             remainingTarget,
+            dailyMode,
+            flatPerDay,
+            dynamicPerDay,
             requiredPerDay,
             currentAveragePerDay,
             gap,
@@ -374,7 +411,8 @@
         const wajibLabelY = dividerY + 50;
         ctx.fillStyle = branchColor;
         ctx.font = '800 14.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-        ctx.fillText('TARGET HARIAN WAJIB', baseWidth / 2, wajibLabelY);
+        const wajibTitle = (metrics.dailyMode === 'dynamic') ? 'TARGET HARIAN (KEJAR SISA)' : 'TARGET HARIAN (KONSTAN)';
+        ctx.fillText(wajibTitle, baseWidth / 2, wajibLabelY);
 
         // Angka Target Wajib Sangat Besar (e.g. 166)
         const wajibNumY = wajibLabelY + 68;

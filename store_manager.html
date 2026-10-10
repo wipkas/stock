@@ -2385,6 +2385,29 @@
             color: var(--primary);
             border-bottom: 2px solid var(--primary) !important;
         }
+        .target-mode-pill-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            padding: 5px 11px;
+            font-size: 11px;
+            font-weight: 750;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .target-mode-pill-btn:hover {
+            color: var(--text-main);
+            background: rgba(125, 125, 125, 0.08);
+        }
+        .target-mode-pill-btn.active {
+            background: var(--primary);
+            color: #FFFFFF !important;
+            box-shadow: 0 1px 4px rgba(79, 142, 247, 0.35);
+        }
         .target-canvas-preview-wrap {
             display: flex;
             justify-content: center;
@@ -3830,6 +3853,26 @@
                         </button>
                     </div>
 
+                    <!-- Pengaturan Mode Target Harian (Flat Konstan vs Dinamis Kejar Sisa) -->
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                        <div style="flex: 1 1 200px;">
+                            <div style="font-size: 11.5px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 5px;">
+                                <span>📐</span> <span>Mode Target Harian:</span>
+                            </div>
+                            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;" id="targetDailyModeDesc">
+                                📌 <b>Flat (Konstan):</b> Target bulanan dibagi total hari bulan (tidak berubah tiap hari).
+                            </div>
+                        </div>
+                        <div style="display: inline-flex; background: var(--card-bg); padding: 3px; border-radius: 8px; border: 1px solid var(--card-border); gap: 3px;">
+                            <button type="button" id="btnTargetModeFlat" class="target-mode-pill-btn active" onclick="setTargetDailyMode('flat')" title="Target harian tetap konstan setiap hari (misal 170 tx/hari)">
+                                📌 Flat (Konstan)
+                            </button>
+                            <button type="button" id="btnTargetModeDynamic" class="target-mode-pill-btn" onclick="setTargetDailyMode('dynamic')" title="Target harian adaptif menyesuaikan sisa target dibagi sisa hari (kejar target)">
+                                ⚡ Dinamis (Kejar Sisa)
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Panel Cepat Edit Target Cabang (Expandable) -->
                     <div id="targetQuickEditPanel" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--card-border);">
                         <div style="font-size: 12px; font-weight: 800; color: var(--text-main); margin-bottom: 8px;">
@@ -4709,8 +4752,6 @@
                 if (window.KspTarget) {
                     const tm = KspTarget.calculateStoreMetrics(store);
                     const todayTxNum = (typeof calculateStoreTodayTx === 'function') ? calculateStoreTodayTx(store) : 0;
-                    const targetDisplay = tm.target > 0 ? `${tm.target.toLocaleString('id-ID')} tx` : 'Belum diset';
-                    
                     let statusText = 'Set Target 🎯';
                     let badgeColor = '#64748B';
                     let badgeBg = 'rgba(100, 116, 139, 0.12)';
@@ -4739,12 +4780,16 @@
                             barColor = progressPct >= 70 ? '#F59E0B' : '#EF4444';
                         }
                     }
+
+                    const targetDisplay = targetDaily > 0 
+                        ? `${targetDaily.toLocaleString('id-ID')}/hr` 
+                        : (tm.target > 0 ? '0/hr' : 'Belum diset');
                     
                     targetMiniHtml = `
                     <div class="store-target-mini-row" role="button" tabindex="0" onclick="event.stopPropagation(); openBranchTargetModal('${store.id}')" title="Target Hari Ini: ${targetDaily.toLocaleString('id-ID')} tx • Realisasi: ${todayTxNum.toLocaleString('id-ID')} tx (Klik untuk detail)">
                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-bottom: 4px;">
                             <span style="font-weight: 750; color: var(--text-main); display: flex; align-items: center; gap: 4px;">
-                                <span>🎯</span> Target: <b>${targetDisplay}</b>${targetDaily > 0 ? `<span style="font-size: 9.5px; color: var(--text-muted); font-weight: 600;">(${targetDaily.toLocaleString('id-ID')}/hr)</span>` : ''}
+                                <span>🎯</span> Target: <b>${targetDisplay}</b>
                             </span>
                             <span style="font-weight: 800; color: ${badgeColor}; font-size: 10px; background: ${badgeBg}; padding: 1.5px 6px; border-radius: 6px; border: 1px solid ${badgeColor}33; white-space: nowrap;">
                                 ${statusText}
@@ -9011,6 +9056,46 @@ ${portalUrl}
             mInput.value = dVal > 0 ? Math.round(dVal * daysInMonth) : '';
         }
 
+        function initTargetDailyModeUI() {
+            const mode = (window.KspTarget && typeof KspTarget.getDailyMode === 'function')
+                ? KspTarget.getDailyMode()
+                : (localStorage.getItem('ksp_target_daily_mode') || 'flat');
+
+            const btnFlat = document.getElementById('btnTargetModeFlat');
+            const btnDynamic = document.getElementById('btnTargetModeDynamic');
+            const desc = document.getElementById('targetDailyModeDesc');
+
+            if (btnFlat && btnDynamic) {
+                if (mode === 'dynamic') {
+                    btnDynamic.classList.add('active');
+                    btnFlat.classList.remove('active');
+                    if (desc) desc.innerHTML = '⚡ <b>Dinamis (Kejar Sisa):</b> Target harian adaptif menyesuaikan sisa target dibagi sisa hari berjalan.';
+                } else {
+                    btnFlat.classList.add('active');
+                    btnDynamic.classList.remove('active');
+                    if (desc) desc.innerHTML = '📌 <b>Flat (Konstan):</b> Target bulanan dibagi total hari bulan (tidak berubah tiap hari).';
+                }
+            }
+        }
+
+        function setTargetDailyMode(mode) {
+            if (window.KspTarget && typeof KspTarget.setDailyMode === 'function') {
+                KspTarget.setDailyMode(mode);
+            } else {
+                localStorage.setItem('ksp_target_daily_mode', mode);
+            }
+            initTargetDailyModeUI();
+            currentGeneratedCanvas = null;
+            updateTargetModalView();
+            if (isTargetPreviewOpen) {
+                renderTargetModalCanvas();
+            }
+            // Perbarui tampilan kartu cabang di dashboard utama
+            renderStoresGrid();
+            const modeLabel = mode === 'dynamic' ? '⚡ Dinamis (Kejar Sisa Target)' : '📌 Flat (Konstan)';
+            showToast(`Mode target harian: ${modeLabel}`, '🎯');
+        }
+
         function openBranchTargetModal(targetStoreId = null) {
             const now = new Date();
             const yearMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -9024,6 +9109,9 @@ ${portalUrl}
             if (cutOffInput && !cutOffInput.value) {
                 cutOffInput.value = now.getDate();
             }
+
+            // Inisialisasi status tombol mode target harian
+            initTargetDailyModeUI();
 
             // Populate store selector dropdown
             const storeSelect = document.getElementById('targetSelectStore');
@@ -9149,7 +9237,7 @@ ${portalUrl}
                         <div style="font-size: 13.5px; font-weight: 850; color: var(--text-main); margin-top: 2px;">${m.remainingTarget.toLocaleString('id-ID')} <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">(${m.remainingDays} hr)</span></div>
                     </div>
                     <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 6px 8px; text-align: center;">
-                        <div style="font-size: 10px; color: ${m.statusColor}; font-weight: 750;">WAJIB / HARI</div>
+                        <div style="font-size: 10px; color: ${m.statusColor}; font-weight: 750;">TARGET / HARI ${m.dailyMode === 'dynamic' ? '(DINAMIS)' : '(FLAT)'}</div>
                         <div style="font-size: 13.5px; font-weight: 850; color: ${m.statusColor}; margin-top: 2px;">${m.requiredPerDay.toLocaleString('id-ID')} <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">(skrg: ${m.currentAveragePerDay})</span></div>
                     </div>
                 </div>
