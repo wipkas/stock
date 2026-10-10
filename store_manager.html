@@ -4253,13 +4253,13 @@
 
                 <!-- Filter Periode (Pill Tabs) -->
                 <div style="display: inline-flex; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 2px; gap: 2px;">
-                    <button type="button" id="btnLbPeriodToday" class="filter-chip active" onclick="setLeaderboardPeriod('today')" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; border: none; margin: 0; cursor: pointer;">
+                    <button type="button" id="btnLbPeriodToday" class="filter-chip" onclick="setLeaderboardPeriod('today')" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; border: none; margin: 0; cursor: pointer;">
                         Hari Ini
                     </button>
                     <button type="button" id="btnLbPeriodMonthToDate" class="filter-chip" onclick="setLeaderboardPeriod('month_to_date')" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; border: none; margin: 0; cursor: pointer;">
                         s/d Hari Ini
                     </button>
-                    <button type="button" id="btnLbPeriodMonthly" class="filter-chip" onclick="setLeaderboardPeriod('monthly')" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; border: none; margin: 0; cursor: pointer;">
+                    <button type="button" id="btnLbPeriodMonthly" class="filter-chip active" onclick="setLeaderboardPeriod('monthly')" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; border: none; margin: 0; cursor: pointer;">
                         Bulan Ini
                     </button>
                 </div>
@@ -9718,7 +9718,7 @@ ${portalUrl}
         // ============================================================
         // LEADERBOARD VIEW & INTEGRATION
         // ============================================================
-        let currentManagerLbPeriod = 'today';
+        let currentManagerLbPeriod = 'monthly';
 
         function openLeaderboardModal(initialStoreId = null) {
             const selStore = document.getElementById('lbFilterStore');
@@ -9737,7 +9737,7 @@ ${portalUrl}
                 }
             }
 
-            currentManagerLbPeriod = 'today';
+            currentManagerLbPeriod = 'monthly';
             updateLeaderboardPeriodButtons();
             refreshManagerLeaderboard();
             openModal('modalLeaderboardView');
@@ -9763,7 +9763,7 @@ ${portalUrl}
 
             const selStore = document.getElementById('lbFilterStore');
             const storeId = selStore?.value || 'all';
-            const period = currentManagerLbPeriod || 'today';
+            const period = currentManagerLbPeriod || 'monthly';
             const cfg = (typeof KspLeaderboard.getConfig === 'function') ? KspLeaderboard.getConfig() : {};
 
             const storeObj = storesData.find(s => s.id === storeId);
@@ -9803,7 +9803,7 @@ ${portalUrl}
         }
 
         function copyLeaderboardText() {
-            const period = currentManagerLbPeriod || 'today';
+            const period = currentManagerLbPeriod || 'monthly';
             const storeId = document.getElementById('lbFilterStore')?.value || 'all';
             const cfg = (window.KspLeaderboard && typeof KspLeaderboard.getConfig === 'function')
                 ? KspLeaderboard.getConfig()
