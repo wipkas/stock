@@ -26,6 +26,7 @@
     <script src="js/ksp_auth.js?v=20261005"></script>
     <script src="js/ksp_target_card.js?v=20261005"></script>
     <script src="js/ksp_leaderboard.js?v=20261006"></script>
+    <script src="js/ksp_performance_reasons.js?v=20261010_v1"></script>
 
     <style>
         :root {
@@ -3025,6 +3026,32 @@
                         </div>
                     </div>
 
+                    <!-- Koordinat Lokasi Cabang (GPS & Cuaca Otomatis) -->
+                    <div class="form-group" style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px; padding: 12px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                            <label class="form-label" style="color: #3b82f6; margin: 0; display: flex; align-items: center; gap: 4px;">
+                                <span>📍 Lokasi Cabang (GPS & Cuaca)</span>
+                            </label>
+                            <button type="button" class="btn-secondary" style="padding: 3px 9px; font-size: 10.5px; border-radius: 7px; display: inline-flex; align-items: center; gap: 4px;" onclick="detectCurrentStoreGps()">
+                                <span>🎯</span> <span>Ambil Lokasi HP/PC</span>
+                            </button>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label class="form-hint" style="margin-bottom: 4px; font-weight: 700;">Latitude:</label>
+                                <input type="number" step="any" id="formStoreLat" class="form-input" placeholder="Contoh: 0.5071" oninput="updateStoreGpsMapLink()">
+                            </div>
+                            <div>
+                                <label class="form-hint" style="margin-bottom: 4px; font-weight: 700;">Longitude:</label>
+                                <input type="number" step="any" id="formStoreLng" class="form-input" placeholder="Contoh: 101.4478" oninput="updateStoreGpsMapLink()">
+                            </div>
+                        </div>
+                        <div style="margin-top: 6px; font-size: 10.5px; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+                            <span>💡 Digunakan modul untuk mengambil info cuaca (hujan/banjir) otomatis saat kasir input transaksi.</span>
+                            <a id="linkStoreGpsMap" href="#" target="_blank" rel="noopener noreferrer" style="display: none; color: #3b82f6; font-weight: 700; text-decoration: none;">🗺️ Cek Google Maps</a>
+                        </div>
+                    </div>
+
                     <!-- Pengaturan Shift -->
                     <div class="form-group">
                         <label class="form-label">Konfigurasi Shift Kerja</label>
@@ -3927,42 +3954,32 @@
                             </button>
                         </div>
 
+                        <!-- Weather Status Banner (Dynamic via KspReasons) -->
+                        <div id="dailyTxWeatherBanner" style="display: none;"></div>
+
                         <!-- Smart Suggestion Hint -->
                         <div id="dailyTxSmartHint" style="display: none; font-size: 10.5px; color: var(--text-muted); margin-bottom: 6px; line-height: 1.35;"></div>
 
                         <!-- Quick Chips Alasan Penurunan -->
                         <div id="txReasonContainerDown" class="tx-reason-container" style="display: none; margin-bottom: 8px;">
-                            <div style="font-size: 10.5px; font-weight: 750; color: #EF4444; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">
-                                <span>💡</span> Kendala / alasan sepi di lapangan:
+                            <div style="font-size: 10.5px; font-weight: 750; color: #EF4444; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <span>💡</span> Kendala / alasan sepi di lapangan:
+                                </div>
+                                <span style="font-size: 9.5px; font-weight: normal; color: var(--text-muted);">Bisa pilih lebih dari 1</span>
                             </div>
-                            <div class="tx-chips-cloud">
-                                <button type="button" class="tx-reason-chip" data-reason="🌧️ Hujan Deras" onclick="toggleDailyTxReasonChip(this)">🌧️ Hujan Deras</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🌊 Banjir / Genangan" onclick="toggleDailyTxReasonChip(this)">🌊 Banjir / Genangan</button>
-                                <button type="button" class="tx-reason-chip" data-reason="⚡ Listrik Padam" onclick="toggleDailyTxReasonChip(this)">⚡ Listrik Padam</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🔌 Sinyal / Provider Down" onclick="toggleDailyTxReasonChip(this)">🔌 Sinyal Down</button>
-                                <button type="button" class="tx-reason-chip" data-reason="💻 Server / Bank Eror" onclick="toggleDailyTxReasonChip(this)">💻 Server/Bank Eror</button>
-                                <button type="button" class="tx-reason-chip" data-reason="📦 Saldo Modal Habis" onclick="toggleDailyTxReasonChip(this)">📦 Saldo Habis</button>
-                                <button type="button" class="tx-reason-chip" data-reason="💵 Uang Tunai Habis" onclick="toggleDailyTxReasonChip(this)">💵 Cash Habis</button>
-                                <button type="button" class="tx-reason-chip" data-reason="💸 Tanggal Tua" onclick="toggleDailyTxReasonChip(this)">💸 Tanggal Tua</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🛑 Hari Libur / Tgl Merah" onclick="toggleDailyTxReasonChip(this)">🛑 Tanggal Merah</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🚧 Akses Jalan Ditutup" onclick="toggleDailyTxReasonChip(this)">🚧 Akses Ditutup</button>
-                                <button type="button" class="tx-reason-chip" data-reason="⏳ Buka Terlambat" onclick="toggleDailyTxReasonChip(this)">⏳ Buka Telat</button>
-                                <button type="button" class="tx-reason-chip" data-reason="👥 Personil Terbatas" onclick="toggleDailyTxReasonChip(this)">👥 Personil Terbatas</button>
-                            </div>
+                            <div id="dailyTxChipsDown" class="tx-chips-cloud"></div>
                         </div>
 
                         <!-- Quick Chips Alasan Kenaikan -->
                         <div id="txReasonContainerUp" class="tx-reason-container" style="display: none; margin-bottom: 8px;">
-                            <div style="font-size: 10.5px; font-weight: 750; color: #10B981; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">
-                                <span>🔥</span> Faktor pendukung kenaikan transaksi:
+                            <div style="font-size: 10.5px; font-weight: 750; color: #10B981; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <span>🔥</span> Faktor pendukung kenaikan transaksi:
+                                </div>
+                                <span style="font-size: 9.5px; font-weight: normal; color: var(--text-muted);">Bisa pilih lebih dari 1</span>
                             </div>
-                            <div class="tx-chips-cloud">
-                                <button type="button" class="tx-reason-chip" data-reason="🎉 Hari Gajian" onclick="toggleDailyTxReasonChip(this)">🎉 Hari Gajian</button>
-                                <button type="button" class="tx-reason-chip" data-reason="📅 Awal Bulan (Tagihan)" onclick="toggleDailyTxReasonChip(this)">📅 Awal Bulan</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🏬 Toko Lain Tutup/Habis Saldo" onclick="toggleDailyTxReasonChip(this)">🏬 Toko Lain Tutup</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🏖️ Libur Panjang / Event" onclick="toggleDailyTxReasonChip(this)">🏖️ Libur / Event</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🎁 Promo Cabang" onclick="toggleDailyTxReasonChip(this)">🎁 Promo Cabang</button>
-                            </div>
+                            <div id="dailyTxChipsUp" class="tx-chips-cloud"></div>
                         </div>
 
                         <!-- Catatan Bebas Kasir -->
@@ -5552,10 +5569,81 @@
         }
 
         // ==========================================
-        // FITUR: ULASAN & ALASAN FLUKTUASI TRANSAKSI
+        // FITUR: ULASAN & ALASAN FLUKTUASI TRANSAKSI (MODUL KspReasons)
         // ==========================================
         window.currentDailyTxCondition = 'normal';
         window._dailyTxConditionManualChoice = false;
+
+        async function renderDailyTxModalChips(store, dateKey, selectedReasons = [], currentCond = 'normal') {
+            const downCont = document.getElementById('dailyTxChipsDown');
+            const upCont = document.getElementById('dailyTxChipsUp');
+            const weatherBannerEl = document.getElementById('dailyTxWeatherBanner');
+            const hintEl = document.getElementById('dailyTxSmartHint');
+
+            if (!window.KspReasons) return;
+
+            const coords = store ? (store.coordinates || store.location || null) : null;
+            let recs = null;
+            try {
+                recs = await KspReasons.getSmartRecommendations({
+                    storeCoordinates: coords,
+                    date: dateKey,
+                    currentCondition: currentCond
+                });
+            } catch (err) {
+                console.warn('[KspReasons] smart recommendations fail:', err);
+            }
+
+            const suggested = recs ? recs.suggestedReasons : [];
+
+            // Render banner status cuaca di atas ulasan jika cabang memiliki koordinat
+            if (weatherBannerEl && recs && recs.weather) {
+                KspReasons.renderWeatherBanner(weatherBannerEl, recs.weather, (appliedReasons) => {
+                    setDailyTxCondition('down', true);
+                    appliedReasons.forEach(r => {
+                        const chip = document.querySelector(`#dailyTxChipsDown .tx-reason-chip[data-reason="${r}"]`);
+                        if (chip && !chip.classList.contains('selected')) {
+                            chip.click();
+                        }
+                    });
+                });
+            } else if (weatherBannerEl) {
+                weatherBannerEl.innerHTML = '';
+                weatherBannerEl.style.display = 'none';
+            }
+
+            // Tampilkan petunjuk pintar jika ada
+            if (hintEl && recs && recs.hintText && currentCond !== 'normal' && !window._dailyTxConditionManualChoice) {
+                hintEl.innerHTML = `💡 <i>${recs.hintText}</i>`;
+                hintEl.style.display = 'block';
+            }
+
+            // Render chips penurunan
+            if (downCont) {
+                KspReasons.renderChips(downCont, {
+                    condition: 'down',
+                    selectedReasons,
+                    suggestedReasons: suggested,
+                    onToggle: () => {
+                        window._dailyTxConditionManualChoice = true;
+                        checkDailyTxReviewDirtyState();
+                    }
+                });
+            }
+
+            // Render chips kenaikan
+            if (upCont) {
+                KspReasons.renderChips(upCont, {
+                    condition: 'up',
+                    selectedReasons,
+                    suggestedReasons: suggested,
+                    onToggle: () => {
+                        window._dailyTxConditionManualChoice = true;
+                        checkDailyTxReviewDirtyState();
+                    }
+                });
+            }
+        }
 
         function setDailyTxCondition(cond, isManual = false) {
             window.currentDailyTxCondition = cond || 'normal';
@@ -5587,6 +5675,7 @@
         function toggleDailyTxReasonChip(el) {
             if (!el) return;
             el.classList.toggle('selected');
+            el.classList.toggle('active');
             window._dailyTxConditionManualChoice = true;
             checkDailyTxReviewDirtyState();
         }
@@ -5594,7 +5683,7 @@
         function checkDailyTxReviewDirtyState() {
             const resetBtn = document.getElementById('btnResetDailyTxReview');
             const noteVal = (document.getElementById('dailyTxReviewNote')?.value || '').trim();
-            const anyChip = document.querySelector('.tx-reason-chip.selected');
+            const anyChip = document.querySelector('#dailyTxModal .tx-reason-chip.selected');
             const isDirty = (window.currentDailyTxCondition !== 'normal' || !!anyChip || noteVal.length > 0);
             if (resetBtn) {
                 resetBtn.style.display = isDirty ? 'inline-block' : 'none';
@@ -5603,7 +5692,9 @@
 
         function resetDailyTxReviewForm() {
             window._dailyTxConditionManualChoice = false;
-            document.querySelectorAll('.tx-reason-chip.selected').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('#dailyTxModal .tx-reason-chip').forEach(c => {
+                c.classList.remove('selected', 'active');
+            });
             const noteEl = document.getElementById('dailyTxReviewNote');
             if (noteEl) noteEl.value = '';
             const hintEl = document.getElementById('dailyTxSmartHint');
@@ -5613,29 +5704,25 @@
             if (resetBtn) resetBtn.style.display = 'none';
         }
 
-        function populateDailyTxReviewState(rec) {
-            document.querySelectorAll('.tx-reason-chip').forEach(c => c.classList.remove('selected'));
+        function populateDailyTxReviewState(rec, store, dateKey) {
             const noteEl = document.getElementById('dailyTxReviewNote');
             const hintEl = document.getElementById('dailyTxSmartHint');
             if (hintEl) hintEl.style.display = 'none';
 
-            if (rec && (rec.condition || (Array.isArray(rec.reason_tags) && rec.reason_tags.length > 0) || rec.review_note)) {
-                const cond = rec.condition || (Array.isArray(rec.reason_tags) && rec.reason_tags.length > 0 ? 'down' : 'normal');
-                setDailyTxCondition(cond, false);
-                window._dailyTxConditionManualChoice = true;
+            const selectedTags = (rec && Array.isArray(rec.reason_tags)) ? rec.reason_tags : [];
+            const cond = rec ? (rec.condition || (selectedTags.length > 0 ? 'down' : 'normal')) : 'normal';
 
-                if (Array.isArray(rec.reason_tags)) {
-                    document.querySelectorAll('.tx-reason-chip').forEach(c => {
-                        const tag = c.getAttribute('data-reason') || c.innerText.trim();
-                        if (rec.reason_tags.includes(tag)) {
-                            c.classList.add('selected');
-                        }
-                    });
-                }
+            setDailyTxCondition(cond, false);
+
+            if (rec && (rec.condition || selectedTags.length > 0 || rec.review_note)) {
+                window._dailyTxConditionManualChoice = true;
                 if (noteEl) noteEl.value = rec.review_note || '';
             } else {
-                resetDailyTxReviewForm();
+                window._dailyTxConditionManualChoice = false;
+                if (noteEl) noteEl.value = '';
             }
+
+            renderDailyTxModalChips(store, dateKey, selectedTags, cond);
             checkDailyTxReviewDirtyState();
         }
 
@@ -5784,7 +5871,7 @@
             const existingRec = (dayData && Array.isArray(dayData.records))
                 ? dayData.records.find(r => r.shift_num === shiftNum)
                 : null;
-            populateDailyTxReviewState(existingRec);
+            populateDailyTxReviewState(existingRec, store, dateKey);
         }
 
         function navigateDailyTxDate(offset) {
@@ -6236,6 +6323,43 @@
             openEditCurrentStoreModal(storeId);
         }
 
+        function updateStoreGpsMapLink() {
+            const lat = document.getElementById('formStoreLat')?.value;
+            const lng = document.getElementById('formStoreLng')?.value;
+            const link = document.getElementById('linkStoreGpsMap');
+            if (!link) return;
+            if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+                link.href = `https://www.google.com/maps?q=${lat},${lng}`;
+                link.style.display = 'inline-block';
+            } else {
+                link.style.display = 'none';
+            }
+        }
+
+        function detectCurrentStoreGps() {
+            if (!navigator.geolocation) {
+                uiAlert('⚠️ Perangkat atau browser ini tidak mendukung fitur lokasi GPS.');
+                return;
+            }
+            uiToast('📍 Mengambil koordinat GPS cabang saat ini...');
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lng = pos.coords.longitude.toFixed(6);
+                    const latInp = document.getElementById('formStoreLat');
+                    const lngInp = document.getElementById('formStoreLng');
+                    if (latInp) latInp.value = lat;
+                    if (lngInp) lngInp.value = lng;
+                    updateStoreGpsMapLink();
+                    uiToast('✅ Koordinat GPS cabang berhasil terdeteksi!');
+                },
+                (err) => {
+                    uiAlert('⚠️ Gagal mendeteksi lokasi GPS. Pastikan izin lokasi aktif atau masukkan koordinat secara manual.');
+                },
+                { enableHighAccuracy: true, timeout: 8000 }
+            );
+        }
+
         function openAddStoreModal() {
             document.getElementById('storeModalHeading').innerText = 'Tambah Cabang Toko';
             document.getElementById('formStoreId').value = '';
@@ -6244,6 +6368,9 @@
             document.getElementById('formShiftBuffer').value = '30';
             document.getElementById('formStoreMonthlyTarget').value = '';
             document.getElementById('formStoreDailyTarget').value = '';
+            document.getElementById('formStoreLat').value = '';
+            document.getElementById('formStoreLng').value = '';
+            updateStoreGpsMapLink();
             document.getElementById('s1Start').value = '07:00';
             document.getElementById('s1End').value = '15:00';
             document.getElementById('s2Start').value = '15:00';
@@ -6278,6 +6405,11 @@
             const mTarget = store.monthly_target || 0;
             document.getElementById('formStoreMonthlyTarget').value = mTarget > 0 ? mTarget : '';
             syncTargetFromMonthly();
+
+            const coords = store.coordinates || store.location || {};
+            document.getElementById('formStoreLat').value = (coords.lat !== undefined && coords.lat !== null) ? coords.lat : '';
+            document.getElementById('formStoreLng').value = (coords.lng !== undefined && coords.lng !== null) ? coords.lng : '';
+            updateStoreGpsMapLink();
 
             const delBtn = document.getElementById('btnDeleteStore');
             if (delBtn) delBtn.style.display = 'inline-flex';
@@ -7138,7 +7270,11 @@
             });
 
             const currentMonthlyTx = existingStore ? calculateStoreMonthlyTx(existingStore) : 0;
-            const monthlyTarget = parseInt(document.getElementById('formStoreMonthlyTarget').value) || 0;
+            const latVal = parseFloat(document.getElementById('formStoreLat')?.value);
+            const lngVal = parseFloat(document.getElementById('formStoreLng')?.value);
+            const coordinates = (!isNaN(latVal) && !isNaN(lngVal)) 
+                ? { lat: latVal, lng: lngVal } 
+                : (existingStore?.coordinates || null);
 
             const newStore = {
                 id: storeId,
@@ -7148,6 +7284,7 @@
                 shift_count: shiftCount,
                 shifts: shifts,
                 buffer_minutes: buffer,
+                coordinates: coordinates,
                 employees: employees
             };
 

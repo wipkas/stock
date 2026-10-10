@@ -15,6 +15,7 @@
     <script src="js/ksp_theme.js?v=20261005"></script>
     <script src="js/ksp_auth.js?v=20261005"></script>
     <script src="js/ksp_target_card.js?v=20261005"></script>
+    <script src="js/ksp_performance_reasons.js?v=20261010_v1"></script>
 
     <style>
         :root {
@@ -2206,42 +2207,32 @@
                             </button>
                         </div>
 
+                        <!-- Weather Status Banner (Dynamic via KspReasons) -->
+                        <div id="dailyTxWeatherBanner" style="display: none;"></div>
+
                         <!-- Smart Suggestion Hint -->
                         <div id="dailyTxSmartHint" style="display: none; font-size: 10.5px; color: var(--text-muted); margin-bottom: 6px; line-height: 1.35;"></div>
 
                         <!-- Quick Chips Alasan Penurunan -->
                         <div id="txReasonContainerDown" class="tx-reason-container" style="display: none; margin-bottom: 8px;">
-                            <div style="font-size: 10.5px; font-weight: 750; color: #EF4444; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">
-                                <span>💡</span> Kendala / alasan sepi di lapangan:
+                            <div style="font-size: 10.5px; font-weight: 750; color: #EF4444; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <span>💡</span> Kendala / alasan sepi di lapangan:
+                                </div>
+                                <span style="font-size: 9.5px; font-weight: normal; color: var(--text-muted);">Bisa pilih lebih dari 1</span>
                             </div>
-                            <div class="tx-chips-cloud">
-                                <button type="button" class="tx-reason-chip" data-reason="🌧️ Hujan Deras" onclick="toggleDailyTxReasonChip(this)">🌧️ Hujan Deras</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🌊 Banjir / Genangan" onclick="toggleDailyTxReasonChip(this)">🌊 Banjir / Genangan</button>
-                                <button type="button" class="tx-reason-chip" data-reason="⚡ Listrik Padam" onclick="toggleDailyTxReasonChip(this)">⚡ Listrik Padam</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🔌 Sinyal / Provider Down" onclick="toggleDailyTxReasonChip(this)">🔌 Sinyal Down</button>
-                                <button type="button" class="tx-reason-chip" data-reason="💻 Server / Bank Eror" onclick="toggleDailyTxReasonChip(this)">💻 Server/Bank Eror</button>
-                                <button type="button" class="tx-reason-chip" data-reason="📦 Saldo Modal Habis" onclick="toggleDailyTxReasonChip(this)">📦 Saldo Habis</button>
-                                <button type="button" class="tx-reason-chip" data-reason="💵 Uang Tunai Habis" onclick="toggleDailyTxReasonChip(this)">💵 Cash Habis</button>
-                                <button type="button" class="tx-reason-chip" data-reason="💸 Tanggal Tua" onclick="toggleDailyTxReasonChip(this)">💸 Tanggal Tua</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🛑 Hari Libur / Tgl Merah" onclick="toggleDailyTxReasonChip(this)">🛑 Tanggal Merah</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🚧 Akses Jalan Ditutup" onclick="toggleDailyTxReasonChip(this)">🚧 Akses Ditutup</button>
-                                <button type="button" class="tx-reason-chip" data-reason="⏳ Buka Terlambat" onclick="toggleDailyTxReasonChip(this)">⏳ Buka Telat</button>
-                                <button type="button" class="tx-reason-chip" data-reason="👥 Personil Terbatas" onclick="toggleDailyTxReasonChip(this)">👥 Personil Terbatas</button>
-                            </div>
+                            <div id="dailyTxChipsDown" class="tx-chips-cloud"></div>
                         </div>
 
                         <!-- Quick Chips Alasan Kenaikan -->
                         <div id="txReasonContainerUp" class="tx-reason-container" style="display: none; margin-bottom: 8px;">
-                            <div style="font-size: 10.5px; font-weight: 750; color: #10B981; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">
-                                <span>🔥</span> Faktor pendukung kenaikan transaksi:
+                            <div style="font-size: 10.5px; font-weight: 750; color: #10B981; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <span>🔥</span> Faktor pendukung kenaikan transaksi:
+                                </div>
+                                <span style="font-size: 9.5px; font-weight: normal; color: var(--text-muted);">Bisa pilih lebih dari 1</span>
                             </div>
-                            <div class="tx-chips-cloud">
-                                <button type="button" class="tx-reason-chip" data-reason="🎉 Hari Gajian" onclick="toggleDailyTxReasonChip(this)">🎉 Hari Gajian</button>
-                                <button type="button" class="tx-reason-chip" data-reason="📅 Awal Bulan (Tagihan)" onclick="toggleDailyTxReasonChip(this)">📅 Awal Bulan</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🏬 Toko Lain Tutup/Habis Saldo" onclick="toggleDailyTxReasonChip(this)">🏬 Toko Lain Tutup</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🏖️ Libur Panjang / Event" onclick="toggleDailyTxReasonChip(this)">🏖️ Libur / Event</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🎁 Promo Cabang" onclick="toggleDailyTxReasonChip(this)">🎁 Promo Cabang</button>
-                            </div>
+                            <div id="dailyTxChipsUp" class="tx-chips-cloud"></div>
                         </div>
 
                         <!-- Catatan Bebas Kasir / Admin -->
@@ -2341,42 +2332,32 @@
                             </button>
                         </div>
 
+                        <!-- Weather Status Banner Kasir (Dynamic via KspReasons) -->
+                        <div id="empTxWeatherBanner" style="display: none;"></div>
+
                         <!-- Smart Suggestion Hint -->
                         <div id="empPropSmartHint" style="display: none; font-size: 10.5px; color: var(--text-muted); margin-bottom: 6px; line-height: 1.35;"></div>
 
                         <!-- Quick Chips Alasan Penurunan -->
                         <div id="empTxReasonContainerDown" class="tx-reason-container" style="display: none; margin-bottom: 8px;">
-                            <div style="font-size: 10.5px; font-weight: 750; color: #EF4444; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">
-                                <span>💡</span> Kendala / alasan sepi di lapangan:
+                            <div style="font-size: 10.5px; font-weight: 750; color: #EF4444; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <span>💡</span> Kendala / alasan sepi di lapangan:
+                                </div>
+                                <span style="font-size: 9.5px; font-weight: normal; color: var(--text-muted);">Bisa pilih lebih dari 1</span>
                             </div>
-                            <div class="tx-chips-cloud">
-                                <button type="button" class="tx-reason-chip" data-reason="🌧️ Hujan Deras" onclick="toggleEmpPropReasonChip(this)">🌧️ Hujan Deras</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🌊 Banjir / Genangan" onclick="toggleEmpPropReasonChip(this)">🌊 Banjir / Genangan</button>
-                                <button type="button" class="tx-reason-chip" data-reason="⚡ Listrik Padam" onclick="toggleEmpPropReasonChip(this)">⚡ Listrik Padam</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🔌 Sinyal / Provider Down" onclick="toggleEmpPropReasonChip(this)">🔌 Sinyal Down</button>
-                                <button type="button" class="tx-reason-chip" data-reason="💻 Server / Bank Eror" onclick="toggleEmpPropReasonChip(this)">💻 Server/Bank Eror</button>
-                                <button type="button" class="tx-reason-chip" data-reason="📦 Saldo Modal Habis" onclick="toggleEmpPropReasonChip(this)">📦 Saldo Habis</button>
-                                <button type="button" class="tx-reason-chip" data-reason="💵 Uang Tunai Habis" onclick="toggleEmpPropReasonChip(this)">💵 Cash Habis</button>
-                                <button type="button" class="tx-reason-chip" data-reason="💸 Tanggal Tua" onclick="toggleEmpPropReasonChip(this)">💸 Tanggal Tua</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🛑 Hari Libur / Tgl Merah" onclick="toggleEmpPropReasonChip(this)">🛑 Tanggal Merah</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🚧 Akses Jalan Ditutup" onclick="toggleEmpPropReasonChip(this)">🚧 Akses Ditutup</button>
-                                <button type="button" class="tx-reason-chip" data-reason="⏳ Buka Terlambat" onclick="toggleEmpPropReasonChip(this)">⏳ Buka Telat</button>
-                                <button type="button" class="tx-reason-chip" data-reason="👥 Personil Terbatas" onclick="toggleEmpPropReasonChip(this)">👥 Personil Terbatas</button>
-                            </div>
+                            <div id="empTxChipsDown" class="tx-chips-cloud"></div>
                         </div>
 
                         <!-- Quick Chips Alasan Kenaikan -->
                         <div id="empTxReasonContainerUp" class="tx-reason-container" style="display: none; margin-bottom: 8px;">
-                            <div style="font-size: 10.5px; font-weight: 750; color: #10B981; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">
-                                <span>🔥</span> Faktor pendukung kenaikan transaksi:
+                            <div style="font-size: 10.5px; font-weight: 750; color: #10B981; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <span>🔥</span> Faktor pendukung kenaikan transaksi:
+                                </div>
+                                <span style="font-size: 9.5px; font-weight: normal; color: var(--text-muted);">Bisa pilih lebih dari 1</span>
                             </div>
-                            <div class="tx-chips-cloud">
-                                <button type="button" class="tx-reason-chip" data-reason="🎉 Hari Gajian" onclick="toggleEmpPropReasonChip(this)">🎉 Hari Gajian</button>
-                                <button type="button" class="tx-reason-chip" data-reason="📅 Awal Bulan (Tagihan)" onclick="toggleEmpPropReasonChip(this)">📅 Awal Bulan</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🏬 Toko Lain Tutup/Habis Saldo" onclick="toggleEmpPropReasonChip(this)">🏬 Toko Lain Tutup</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🏖️ Libur Panjang / Event" onclick="toggleEmpPropReasonChip(this)">🏖️ Libur / Event</button>
-                                <button type="button" class="tx-reason-chip" data-reason="🎁 Promo Cabang" onclick="toggleEmpPropReasonChip(this)">🎁 Promo Cabang</button>
-                            </div>
+                            <div id="empTxChipsUp" class="tx-chips-cloud"></div>
                         </div>
 
                         <!-- Catatan Bebas Kasir -->
@@ -3539,9 +3520,80 @@
             return `<div style="margin-top: 3px;"><span class="${badgeClass}" title="${escapeHtml(fullTooltip)}">📝 ${escapeHtml(firstTag + extraCount)}</span></div>`;
         }
 
-        // --- HANDLER USULAN KASIR (employeeProposalModal) ---
+        // --- HANDLER USULAN KASIR (employeeProposalModal - KspReasons) ---
         window.currentEmpPropCondition = 'normal';
         window._empPropConditionManualChoice = false;
+
+        async function renderEmpPropModalChips(store, dateKey, selectedReasons = [], currentCond = 'normal') {
+            const downCont = document.getElementById('empTxChipsDown');
+            const upCont = document.getElementById('empTxChipsUp');
+            const weatherBannerEl = document.getElementById('empTxWeatherBanner');
+            const hintEl = document.getElementById('empPropSmartHint');
+
+            if (!window.KspReasons) return;
+
+            const coords = store ? (store.coordinates || store.location || null) : null;
+            let recs = null;
+            try {
+                recs = await KspReasons.getSmartRecommendations({
+                    storeCoordinates: coords,
+                    date: dateKey,
+                    currentCondition: currentCond
+                });
+            } catch (err) {
+                console.warn('[KspReasons] smart recommendations fail:', err);
+            }
+
+            const suggested = recs ? recs.suggestedReasons : [];
+
+            // Render banner cuaca kasir
+            if (weatherBannerEl && recs && recs.weather) {
+                KspReasons.renderWeatherBanner(weatherBannerEl, recs.weather, (appliedReasons) => {
+                    setEmpPropCondition('down', true);
+                    appliedReasons.forEach(r => {
+                        const chip = document.querySelector(`#empTxChipsDown .tx-reason-chip[data-reason="${r}"]`);
+                        if (chip && !chip.classList.contains('selected')) {
+                            chip.click();
+                        }
+                    });
+                });
+            } else if (weatherBannerEl) {
+                weatherBannerEl.innerHTML = '';
+                weatherBannerEl.style.display = 'none';
+            }
+
+            // Tampilkan petunjuk pintar kasir
+            if (hintEl && recs && recs.hintText && currentCond !== 'normal' && !window._empPropConditionManualChoice) {
+                hintEl.innerHTML = `💡 <i>${recs.hintText}</i>`;
+                hintEl.style.display = 'block';
+            }
+
+            // Render chips penurunan
+            if (downCont) {
+                KspReasons.renderChips(downCont, {
+                    condition: 'down',
+                    selectedReasons,
+                    suggestedReasons: suggested,
+                    onToggle: () => {
+                        window._empPropConditionManualChoice = true;
+                        checkEmpPropReviewDirtyState();
+                    }
+                });
+            }
+
+            // Render chips kenaikan
+            if (upCont) {
+                KspReasons.renderChips(upCont, {
+                    condition: 'up',
+                    selectedReasons,
+                    suggestedReasons: suggested,
+                    onToggle: () => {
+                        window._empPropConditionManualChoice = true;
+                        checkEmpPropReviewDirtyState();
+                    }
+                });
+            }
+        }
 
         function setEmpPropCondition(cond, isManual = false) {
             window.currentEmpPropCondition = cond || 'normal';
@@ -3573,6 +3625,7 @@
         function toggleEmpPropReasonChip(el) {
             if (!el) return;
             el.classList.toggle('selected');
+            el.classList.toggle('active');
             window._empPropConditionManualChoice = true;
             checkEmpPropReviewDirtyState();
         }
@@ -3589,7 +3642,9 @@
 
         function resetEmpPropReviewForm() {
             window._empPropConditionManualChoice = false;
-            document.querySelectorAll('#empPropNoteGroup .tx-reason-chip.selected').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('#empPropNoteGroup .tx-reason-chip').forEach(c => {
+                c.classList.remove('selected', 'active');
+            });
             const noteEl = document.getElementById('empPropNoteInput');
             if (noteEl) noteEl.value = '';
             const hintEl = document.getElementById('empPropSmartHint');
@@ -3611,30 +3666,26 @@
             return reasons;
         }
 
-        function populateEmpPropReviewState(rec, prop) {
-            document.querySelectorAll('#empPropNoteGroup .tx-reason-chip').forEach(c => c.classList.remove('selected'));
+        function populateEmpPropReviewState(rec, prop, store, dateKey) {
             const noteEl = document.getElementById('empPropNoteInput');
             const hintEl = document.getElementById('empPropSmartHint');
             if (hintEl) hintEl.style.display = 'none';
 
             const source = prop || rec;
-            if (source && (source.condition || (Array.isArray(source.reason_tags) && source.reason_tags.length > 0) || source.review_note || source.note)) {
-                const cond = source.condition || (Array.isArray(source.reason_tags) && source.reason_tags.length > 0 ? 'down' : 'normal');
-                setEmpPropCondition(cond, false);
-                window._empPropConditionManualChoice = true;
+            const selectedTags = (source && Array.isArray(source.reason_tags)) ? source.reason_tags : [];
+            const cond = source ? (source.condition || (selectedTags.length > 0 ? 'down' : 'normal')) : 'normal';
 
-                if (Array.isArray(source.reason_tags)) {
-                    document.querySelectorAll('#empPropNoteGroup .tx-reason-chip').forEach(c => {
-                        const tag = c.getAttribute('data-reason') || c.innerText.trim();
-                        if (source.reason_tags.includes(tag)) {
-                            c.classList.add('selected');
-                        }
-                    });
-                }
+            setEmpPropCondition(cond, false);
+
+            if (source && (source.condition || selectedTags.length > 0 || source.review_note || source.note)) {
+                window._empPropConditionManualChoice = true;
                 if (noteEl) noteEl.value = source.review_note || source.note || '';
             } else {
-                resetEmpPropReviewForm();
+                window._empPropConditionManualChoice = false;
+                if (noteEl) noteEl.value = '';
             }
+
+            renderEmpPropModalChips(store, dateKey, selectedTags, cond);
             checkEmpPropReviewDirtyState();
         }
 
@@ -3681,9 +3732,76 @@
             }
         }
 
-        // --- HANDLER MODAL INPUT TRANSAKSI ADMIN (dailyTxModal) ---
+        // --- HANDLER MODAL INPUT TRANSAKSI ADMIN (dailyTxModal - KspReasons) ---
         window.currentDailyTxCondition = 'normal';
         window._dailyTxConditionManualChoice = false;
+
+        async function renderDailyTxAdminModalChips(store, dateKey, selectedReasons = [], currentCond = 'normal') {
+            const downCont = document.getElementById('dailyTxChipsDown');
+            const upCont = document.getElementById('dailyTxChipsUp');
+            const weatherBannerEl = document.getElementById('dailyTxWeatherBanner');
+            const hintEl = document.getElementById('dailyTxSmartHint');
+
+            if (!window.KspReasons) return;
+
+            const coords = store ? (store.coordinates || store.location || null) : null;
+            let recs = null;
+            try {
+                recs = await KspReasons.getSmartRecommendations({
+                    storeCoordinates: coords,
+                    date: dateKey,
+                    currentCondition: currentCond
+                });
+            } catch (err) {
+                console.warn('[KspReasons] smart recommendations fail:', err);
+            }
+
+            const suggested = recs ? recs.suggestedReasons : [];
+
+            if (weatherBannerEl && recs && recs.weather) {
+                KspReasons.renderWeatherBanner(weatherBannerEl, recs.weather, (appliedReasons) => {
+                    setDailyTxCondition('down', true);
+                    appliedReasons.forEach(r => {
+                        const chip = document.querySelector(`#dailyTxChipsDown .tx-reason-chip[data-reason="${r}"]`);
+                        if (chip && !chip.classList.contains('selected')) {
+                            chip.click();
+                        }
+                    });
+                });
+            } else if (weatherBannerEl) {
+                weatherBannerEl.innerHTML = '';
+                weatherBannerEl.style.display = 'none';
+            }
+
+            if (hintEl && recs && recs.hintText && currentCond !== 'normal' && !window._dailyTxConditionManualChoice) {
+                hintEl.innerHTML = `💡 <i>${recs.hintText}</i>`;
+                hintEl.style.display = 'block';
+            }
+
+            if (downCont) {
+                KspReasons.renderChips(downCont, {
+                    condition: 'down',
+                    selectedReasons,
+                    suggestedReasons: suggested,
+                    onToggle: () => {
+                        window._dailyTxConditionManualChoice = true;
+                        checkDailyTxReviewDirtyState();
+                    }
+                });
+            }
+
+            if (upCont) {
+                KspReasons.renderChips(upCont, {
+                    condition: 'up',
+                    selectedReasons,
+                    suggestedReasons: suggested,
+                    onToggle: () => {
+                        window._dailyTxConditionManualChoice = true;
+                        checkDailyTxReviewDirtyState();
+                    }
+                });
+            }
+        }
 
         function setDailyTxCondition(cond, isManual = false) {
             window.currentDailyTxCondition = cond || 'normal';
@@ -3715,6 +3833,7 @@
         function toggleDailyTxReasonChip(el) {
             if (!el) return;
             el.classList.toggle('selected');
+            el.classList.toggle('active');
             window._dailyTxConditionManualChoice = true;
             checkDailyTxReviewDirtyState();
         }
@@ -3731,7 +3850,9 @@
 
         function resetDailyTxReviewForm() {
             window._dailyTxConditionManualChoice = false;
-            document.querySelectorAll('#dailyTxAdminReviewSection .tx-reason-chip.selected').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('#dailyTxAdminReviewSection .tx-reason-chip').forEach(c => {
+                c.classList.remove('selected', 'active');
+            });
             const noteEl = document.getElementById('dailyTxReviewNote');
             if (noteEl) noteEl.value = '';
             const hintEl = document.getElementById('dailyTxSmartHint');
@@ -3753,29 +3874,25 @@
             return reasons;
         }
 
-        function populateDailyTxReviewState(dayData) {
-            document.querySelectorAll('#dailyTxAdminReviewSection .tx-reason-chip').forEach(c => c.classList.remove('selected'));
+        function populateDailyTxReviewState(dayData, store, dateKey) {
             const noteEl = document.getElementById('dailyTxReviewNote');
             const hintEl = document.getElementById('dailyTxSmartHint');
             if (hintEl) hintEl.style.display = 'none';
 
-            if (dayData && (dayData.condition || (Array.isArray(dayData.daily_reasons) && dayData.daily_reasons.length > 0) || dayData.review_note)) {
-                const cond = dayData.condition || (Array.isArray(dayData.daily_reasons) && dayData.daily_reasons.length > 0 ? 'down' : 'normal');
-                setDailyTxCondition(cond, false);
-                window._dailyTxConditionManualChoice = true;
+            const selectedTags = (dayData && Array.isArray(dayData.daily_reasons)) ? dayData.daily_reasons : [];
+            const cond = dayData ? (dayData.condition || (selectedTags.length > 0 ? 'down' : 'normal')) : 'normal';
 
-                if (Array.isArray(dayData.daily_reasons)) {
-                    document.querySelectorAll('#dailyTxAdminReviewSection .tx-reason-chip').forEach(c => {
-                        const tag = c.getAttribute('data-reason') || c.innerText.trim();
-                        if (dayData.daily_reasons.includes(tag)) {
-                            c.classList.add('selected');
-                        }
-                    });
-                }
+            setDailyTxCondition(cond, false);
+
+            if (dayData && (dayData.condition || selectedTags.length > 0 || dayData.review_note)) {
+                window._dailyTxConditionManualChoice = true;
                 if (noteEl) noteEl.value = dayData.review_note || '';
             } else {
-                resetDailyTxReviewForm();
+                window._dailyTxConditionManualChoice = false;
+                if (noteEl) noteEl.value = '';
             }
+
+            renderDailyTxAdminModalChips(store, dateKey, selectedTags, cond);
             checkDailyTxReviewDirtyState();
         }
 
@@ -3950,12 +4067,12 @@
                     pendingNotice.style.display = 'block';
                     pendingNotice.innerHTML = `⚠️ Anda sudah memiliki usulan tertunda sebesar <b>${pendingProp.proposed_tx} tx</b> (diajukan: ${pendingProp.submitted_at || '-'}). Menyimpan formulir ini akan memperbarui usulan Anda.`;
                 }
-                populateEmpPropReviewState(myRec, pendingProp);
+                populateEmpPropReviewState(myRec, pendingProp, store, targetDate);
             } else {
                 if (txInput) txInput.value = (curVal > 0) ? curVal : '';
                 if (noteInput) noteInput.value = (myRec && (myRec.review_note || myRec.note)) || '';
                 if (pendingNotice) pendingNotice.style.display = 'none';
-                populateEmpPropReviewState(myRec, null);
+                populateEmpPropReviewState(myRec, null, store, targetDate);
             }
             if (noteInput) noteInput.oninput = checkEmpPropReviewDirtyState;
 
@@ -6687,7 +6804,7 @@
             }
 
             const dayData = (store.daily_transactions && store.daily_transactions[targetDate]) ? store.daily_transactions[targetDate] : null;
-            populateDailyTxReviewState(dayData);
+            populateDailyTxReviewState(dayData, store, targetDate);
             const reviewNoteEl = document.getElementById('dailyTxReviewNote');
             if (reviewNoteEl) reviewNoteEl.oninput = checkDailyTxReviewDirtyState;
 
