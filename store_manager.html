@@ -579,6 +579,86 @@
             margin-bottom: 16px;
         }
 
+        /* Evaluasi & Alasan Transaksi Harian (Review & Reasons) */
+        .daily-tx-review-section {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--card-border);
+        }
+        .tx-condition-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .btn-tx-cond {
+            flex: 1;
+            padding: 6px 4px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 750;
+            cursor: pointer;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .btn-tx-cond:hover {
+            border-color: var(--primary);
+            color: var(--text-main);
+        }
+        .btn-tx-cond.active[data-cond="down"] {
+            background: rgba(239, 68, 68, 0.12);
+            border-color: #EF4444;
+            color: #EF4444;
+        }
+        .btn-tx-cond.active[data-cond="normal"] {
+            background: rgba(100, 116, 139, 0.15);
+            border-color: #64748B;
+            color: var(--text-main);
+        }
+        .btn-tx-cond.active[data-cond="up"] {
+            background: rgba(16, 185, 129, 0.12);
+            border-color: #10B981;
+            color: #10B981;
+        }
+        .tx-chips-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .tx-reason-chip {
+            padding: 3.5px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 650;
+            cursor: pointer;
+            background: var(--chip-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+        .tx-reason-chip:hover {
+            border-color: var(--primary);
+            color: var(--text-main);
+        }
+        .tx-reason-container[id*="Down"] .tx-reason-chip.selected {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: #EF4444;
+            color: #EF4444;
+            font-weight: 800;
+        }
+        .tx-reason-container[id*="Up"] .tx-reason-chip.selected {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: #10B981;
+            color: #10B981;
+            font-weight: 800;
+        }
+
         /* -------------------------------------------------------------------------
            SCOREBOARD CONTAINER INTEGRATED DIRECTLY INTO STORE CARD
            ------------------------------------------------------------------------- */
@@ -3774,7 +3854,7 @@
 
     <!-- MODAL: SET TRANSAKSI HARIAN KASIR -->
     <div id="dailyTxModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'dailyTxModal')">
-        <div class="modal-card" style="max-width: 420px; width: 100%;">
+        <div class="modal-card" style="max-width: 460px; width: 100%;">
             
             <form onsubmit="handleSaveDailyTx(event)">
                 <input type="hidden" id="dailyTxStoreId">
@@ -3806,7 +3886,7 @@
                         </button>
                     </div>
 
-                    <div class="form-group" style="margin-bottom: 12px;">
+                    <div class="form-group" style="margin-bottom: 8px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                             <label class="form-label" style="font-size: 12px; font-weight: 750; margin: 0;">Jumlah Transaksi (tx):</label>
                             <span id="dailyTxExistingNotice" style="font-size: 11px; font-weight: 700; color: var(--text-muted);">Belum ada data</span>
@@ -3819,10 +3899,81 @@
                                pattern="[0-9]*"
                                autocomplete="off"
                                required 
+                               oninput="onDailyTxInputChanged()"
                                style="font-size: 26px; font-weight: 850; text-align: center; height: 52px; letter-spacing: -0.5px; border-radius: 12px;">
                     </div>
 
-                    
+                    <!-- BAGIAN: ULASAN & ALASAN FLUKTUASI TRANSAKSI (OPSIONAL) -->
+                    <div class="daily-tx-review-section">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px;">
+                            <span style="font-size: 11.5px; font-weight: 750; color: var(--text-main); display: flex; align-items: center; gap: 4px;">
+                                <span>📝</span> Ulasan / Alasan <span style="font-size: 10px; font-weight: 600; color: var(--text-muted);">(Opsional)</span>
+                            </span>
+                            <button type="button" id="btnResetDailyTxReview" onclick="resetDailyTxReviewForm()" style="background: none; border: none; font-size: 11px; color: var(--text-muted); cursor: pointer; padding: 0; display: none;" title="Reset pilihan alasan & catatan">
+                                ↺ Reset
+                            </button>
+                        </div>
+
+                        <!-- Tab Pilihan Kondisi -->
+                        <div class="tx-condition-tabs">
+                            <button type="button" class="btn-tx-cond" id="btnCondDown" data-cond="down" onclick="setDailyTxCondition('down', true)">
+                                <span>📉</span> Menurun / Sepi
+                            </button>
+                            <button type="button" class="btn-tx-cond active" id="btnCondNormal" data-cond="normal" onclick="setDailyTxCondition('normal', true)">
+                                <span>⚖️</span> Normal / Biasa
+                            </button>
+                            <button type="button" class="btn-tx-cond" id="btnCondUp" data-cond="up" onclick="setDailyTxCondition('up', true)">
+                                <span>📈</span> Naik / Ramai
+                            </button>
+                        </div>
+
+                        <!-- Smart Suggestion Hint -->
+                        <div id="dailyTxSmartHint" style="display: none; font-size: 10.5px; color: var(--text-muted); margin-bottom: 6px; line-height: 1.35;"></div>
+
+                        <!-- Quick Chips Alasan Penurunan -->
+                        <div id="txReasonContainerDown" class="tx-reason-container" style="display: none; margin-bottom: 8px;">
+                            <div style="font-size: 10.5px; font-weight: 750; color: #EF4444; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">
+                                <span>💡</span> Kendala / alasan sepi di lapangan:
+                            </div>
+                            <div class="tx-chips-cloud">
+                                <button type="button" class="tx-reason-chip" data-reason="🌧️ Hujan Deras" onclick="toggleDailyTxReasonChip(this)">🌧️ Hujan Deras</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🌊 Banjir / Genangan" onclick="toggleDailyTxReasonChip(this)">🌊 Banjir / Genangan</button>
+                                <button type="button" class="tx-reason-chip" data-reason="⚡ Listrik Padam" onclick="toggleDailyTxReasonChip(this)">⚡ Listrik Padam</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🔌 Sinyal / Provider Down" onclick="toggleDailyTxReasonChip(this)">🔌 Sinyal Down</button>
+                                <button type="button" class="tx-reason-chip" data-reason="💻 Server / Bank Eror" onclick="toggleDailyTxReasonChip(this)">💻 Server/Bank Eror</button>
+                                <button type="button" class="tx-reason-chip" data-reason="📦 Saldo Modal Habis" onclick="toggleDailyTxReasonChip(this)">📦 Saldo Habis</button>
+                                <button type="button" class="tx-reason-chip" data-reason="💵 Uang Tunai Habis" onclick="toggleDailyTxReasonChip(this)">💵 Cash Habis</button>
+                                <button type="button" class="tx-reason-chip" data-reason="💸 Tanggal Tua" onclick="toggleDailyTxReasonChip(this)">💸 Tanggal Tua</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🛑 Hari Libur / Tgl Merah" onclick="toggleDailyTxReasonChip(this)">🛑 Tanggal Merah</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🚧 Akses Jalan Ditutup" onclick="toggleDailyTxReasonChip(this)">🚧 Akses Ditutup</button>
+                                <button type="button" class="tx-reason-chip" data-reason="⏳ Buka Terlambat" onclick="toggleDailyTxReasonChip(this)">⏳ Buka Telat</button>
+                                <button type="button" class="tx-reason-chip" data-reason="👥 Personil Terbatas" onclick="toggleDailyTxReasonChip(this)">👥 Personil Terbatas</button>
+                            </div>
+                        </div>
+
+                        <!-- Quick Chips Alasan Kenaikan -->
+                        <div id="txReasonContainerUp" class="tx-reason-container" style="display: none; margin-bottom: 8px;">
+                            <div style="font-size: 10.5px; font-weight: 750; color: #10B981; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">
+                                <span>🔥</span> Faktor pendukung kenaikan transaksi:
+                            </div>
+                            <div class="tx-chips-cloud">
+                                <button type="button" class="tx-reason-chip" data-reason="🎉 Hari Gajian" onclick="toggleDailyTxReasonChip(this)">🎉 Hari Gajian</button>
+                                <button type="button" class="tx-reason-chip" data-reason="📅 Awal Bulan (Tagihan)" onclick="toggleDailyTxReasonChip(this)">📅 Awal Bulan</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🏬 Toko Lain Tutup/Habis Saldo" onclick="toggleDailyTxReasonChip(this)">🏬 Toko Lain Tutup</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🏖️ Libur Panjang / Event" onclick="toggleDailyTxReasonChip(this)">🏖️ Libur / Event</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🎁 Promo Cabang" onclick="toggleDailyTxReasonChip(this)">🎁 Promo Cabang</button>
+                            </div>
+                        </div>
+
+                        <!-- Catatan Bebas Kasir -->
+                        <div style="margin-top: 6px;">
+                            <textarea id="dailyTxReviewNote" 
+                                      rows="2" 
+                                      class="form-control" 
+                                      placeholder="Catatan tambahan kasir (contoh: Mati lampu jam 12-14, hujan lebat sore)..." 
+                                      style="font-size: 11.5px; border-radius: 8px; resize: vertical; min-height: 44px; padding: 7px 10px; line-height: 1.4;"></textarea>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
                     <button type="button" class="btn-secondary" onclick="closeModal('dailyTxModal')">Batal</button>
@@ -5053,6 +5204,13 @@
                         ? `${targetDaily.toLocaleString('id-ID')}/hr` 
                         : (tm.target > 0 ? '0/hr' : 'Belum diset');
                     
+                    const todayKeyCur = getTodayKey();
+                    const todayDataCur = (store.daily_transactions && typeof store.daily_transactions === 'object') ? store.daily_transactions[todayKeyCur] : null;
+                    const todayReasonsCur = (todayDataCur && Array.isArray(todayDataCur.daily_reasons)) ? todayDataCur.daily_reasons : [];
+                    const todayReasonBadge = todayReasonsCur.length > 0
+                        ? `<span style="font-size: 11px; margin-left: 3px; cursor: help;" title="Alasan/Kendala Hari Ini: ${escapeHtml(todayReasonsCur.join(', '))}">📝</span>`
+                        : '';
+
                     targetMiniHtml = `
                     <div class="store-target-mini-row" role="button" tabindex="0" onclick="event.stopPropagation(); openBranchTargetModal('${store.id}')" title="Target Hari Ini: ${targetDaily.toLocaleString('id-ID')} tx • Realisasi: ${todayTxNum.toLocaleString('id-ID')} tx (Klik untuk detail)">
                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-bottom: 4px; gap: 6px; flex-wrap: wrap;">
@@ -5060,7 +5218,7 @@
                                 <span>🎯</span> Target: <b>${targetDisplay}</b>
                                 <span style="color: var(--text-muted); font-size: 10px;">•</span>
                                 <span style="color: var(--text-muted); font-weight: 650;">Hari ini:</span>
-                                <b class="stat-val" id="todayTxVal_${store.id}" style="font-size: 11.5px; color: var(--primary); display: inline-block;">${todayTx} tx</b>
+                                <b class="stat-val" id="todayTxVal_${store.id}" style="font-size: 11.5px; color: var(--primary); display: inline-block;">${todayTx} tx</b>${todayReasonBadge}
                             </span>
                             <span style="font-weight: 800; color: ${badgeColor}; font-size: 10px; background: ${badgeBg}; padding: 1.5px 6px; border-radius: 6px; border: 1px solid ${badgeColor}33; white-space: nowrap;">
                                 ${statusText}
@@ -5394,6 +5552,136 @@
         }
 
         // ==========================================
+        // FITUR: ULASAN & ALASAN FLUKTUASI TRANSAKSI
+        // ==========================================
+        window.currentDailyTxCondition = 'normal';
+        window._dailyTxConditionManualChoice = false;
+
+        function setDailyTxCondition(cond, isManual = false) {
+            window.currentDailyTxCondition = cond || 'normal';
+            if (isManual) {
+                window._dailyTxConditionManualChoice = true;
+            }
+
+            const btnDown = document.getElementById('btnCondDown');
+            const btnNormal = document.getElementById('btnCondNormal');
+            const btnUp = document.getElementById('btnCondUp');
+            const downCont = document.getElementById('txReasonContainerDown');
+            const upCont = document.getElementById('txReasonContainerUp');
+            const hintEl = document.getElementById('dailyTxSmartHint');
+
+            if (btnDown) btnDown.classList.toggle('active', cond === 'down');
+            if (btnNormal) btnNormal.classList.toggle('active', cond === 'normal');
+            if (btnUp) btnUp.classList.toggle('active', cond === 'up');
+
+            if (downCont) downCont.style.display = (cond === 'down') ? 'block' : 'none';
+            if (upCont) upCont.style.display = (cond === 'up') ? 'block' : 'none';
+
+            if (isManual && hintEl) {
+                hintEl.style.display = 'none';
+            }
+
+            checkDailyTxReviewDirtyState();
+        }
+
+        function toggleDailyTxReasonChip(el) {
+            if (!el) return;
+            el.classList.toggle('selected');
+            window._dailyTxConditionManualChoice = true;
+            checkDailyTxReviewDirtyState();
+        }
+
+        function checkDailyTxReviewDirtyState() {
+            const resetBtn = document.getElementById('btnResetDailyTxReview');
+            const noteVal = (document.getElementById('dailyTxReviewNote')?.value || '').trim();
+            const anyChip = document.querySelector('.tx-reason-chip.selected');
+            const isDirty = (window.currentDailyTxCondition !== 'normal' || !!anyChip || noteVal.length > 0);
+            if (resetBtn) {
+                resetBtn.style.display = isDirty ? 'inline-block' : 'none';
+            }
+        }
+
+        function resetDailyTxReviewForm() {
+            window._dailyTxConditionManualChoice = false;
+            document.querySelectorAll('.tx-reason-chip.selected').forEach(c => c.classList.remove('selected'));
+            const noteEl = document.getElementById('dailyTxReviewNote');
+            if (noteEl) noteEl.value = '';
+            const hintEl = document.getElementById('dailyTxSmartHint');
+            if (hintEl) hintEl.style.display = 'none';
+            setDailyTxCondition('normal', false);
+            const resetBtn = document.getElementById('btnResetDailyTxReview');
+            if (resetBtn) resetBtn.style.display = 'none';
+        }
+
+        function populateDailyTxReviewState(rec) {
+            document.querySelectorAll('.tx-reason-chip').forEach(c => c.classList.remove('selected'));
+            const noteEl = document.getElementById('dailyTxReviewNote');
+            const hintEl = document.getElementById('dailyTxSmartHint');
+            if (hintEl) hintEl.style.display = 'none';
+
+            if (rec && (rec.condition || (Array.isArray(rec.reason_tags) && rec.reason_tags.length > 0) || rec.review_note)) {
+                const cond = rec.condition || (Array.isArray(rec.reason_tags) && rec.reason_tags.length > 0 ? 'down' : 'normal');
+                setDailyTxCondition(cond, false);
+                window._dailyTxConditionManualChoice = true;
+
+                if (Array.isArray(rec.reason_tags)) {
+                    document.querySelectorAll('.tx-reason-chip').forEach(c => {
+                        const tag = c.getAttribute('data-reason') || c.innerText.trim();
+                        if (rec.reason_tags.includes(tag)) {
+                            c.classList.add('selected');
+                        }
+                    });
+                }
+                if (noteEl) noteEl.value = rec.review_note || '';
+            } else {
+                resetDailyTxReviewForm();
+            }
+            checkDailyTxReviewDirtyState();
+        }
+
+        function onDailyTxInputChanged() {
+            const inputEl = document.getElementById('dailyTxInput');
+            const storeId = document.getElementById('dailyTxStoreId')?.value;
+            const shiftNum = parseInt(document.getElementById('dailyTxShiftNum')?.value, 10);
+            const store = storesData.find(s => s.id === storeId);
+            if (!store || !inputEl) return;
+
+            const val = parseInt(inputEl.value, 10);
+            if (isNaN(val) || val <= 0) return;
+
+            if (window._dailyTxConditionManualChoice) return;
+            const anyChipSelected = document.querySelector('.tx-reason-chip.selected');
+            if (anyChipSelected) return;
+
+            let targetDaily = 0;
+            if (window.KspTarget) {
+                const tm = KspTarget.calculateStoreMetrics(store);
+                if (tm && tm.target > 0) {
+                    targetDaily = tm.requiredPerDay > 0 ? tm.requiredPerDay : Math.max(1, Math.round(tm.target / (tm.totalDaysInMonth || 30)));
+                }
+            }
+            if (targetDaily <= 0) return;
+
+            const shiftCount = parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1);
+            const shiftTarget = Math.max(1, Math.round(targetDaily / shiftCount));
+
+            const hintEl = document.getElementById('dailyTxSmartHint');
+            if (val < Math.round(shiftTarget * 0.75)) {
+                setDailyTxCondition('down', false);
+                if (hintEl) {
+                    hintEl.innerHTML = `💡 <i>Transaksi (${val.toLocaleString('id-ID')} tx) di bawah target shift (~${shiftTarget.toLocaleString('id-ID')} tx). Pilih kendala lapangan jika ada:</i>`;
+                    hintEl.style.display = 'block';
+                }
+            } else if (val >= Math.round(shiftTarget * 1.15)) {
+                setDailyTxCondition('up', false);
+                if (hintEl) {
+                    hintEl.innerHTML = `🔥 <i>Transaksi (${val.toLocaleString('id-ID')} tx) melampaui target shift (~${shiftTarget.toLocaleString('id-ID')} tx)! Ada faktor pendukung?</i>`;
+                    hintEl.style.display = 'block';
+                }
+            }
+        }
+
+        // ==========================================
         // MODAL SET TRANSAKSI HARIAN KASIR
         // ==========================================
         function openDailyTxDatePicker() {
@@ -5489,6 +5777,14 @@
                     noticeEl.innerHTML = `<span style="color: var(--text-muted);">Belum ada data (0 tx)</span>`;
                 }
             }
+
+            // Ambil ulasan & alasan transaksi pada tanggal & shift yang dipilih
+            window._dailyTxConditionManualChoice = false;
+            const dayData = (store.daily_transactions && typeof store.daily_transactions === 'object') ? store.daily_transactions[dateKey] : null;
+            const existingRec = (dayData && Array.isArray(dayData.records))
+                ? dayData.records.find(r => r.shift_num === shiftNum)
+                : null;
+            populateDailyTxReviewState(existingRec);
         }
 
         function navigateDailyTxDate(offset) {
@@ -5664,10 +5960,44 @@
                 recorded_at: (targetDateKey === todayKey) ? nowTime : `${nowTime} (Susulan)`
             };
 
+            // Ambil ulasan & alasan transaksi
+            const condVal = window.currentDailyTxCondition || 'normal';
+            const selectedChips = [];
+            document.querySelectorAll('#dailyTxModal .tx-reason-chip.selected').forEach(c => {
+                const tag = c.getAttribute('data-reason') || c.innerText.trim();
+                if (tag && !selectedChips.includes(tag)) selectedChips.push(tag);
+            });
+            const reviewNote = (document.getElementById('dailyTxReviewNote')?.value || '').trim();
+
+            if (condVal !== 'normal' || selectedChips.length > 0 || reviewNote) {
+                recordObj.condition = condVal;
+                recordObj.reason_tags = selectedChips;
+                recordObj.review_note = reviewNote;
+            } else {
+                delete recordObj.condition;
+                delete recordObj.reason_tags;
+                delete recordObj.review_note;
+            }
+
             if (existingIdx >= 0) {
                 dayData.records[existingIdx] = recordObj;
             } else {
                 dayData.records.push(recordObj);
+            }
+
+            // Agregasi seluruh reason_tags untuk tanggal ini
+            const allDayReasons = [];
+            dayData.records.forEach(r => {
+                if (Array.isArray(r.reason_tags)) {
+                    r.reason_tags.forEach(t => {
+                        if (!allDayReasons.includes(t)) allDayReasons.push(t);
+                    });
+                }
+            });
+            if (allDayReasons.length > 0) {
+                dayData.daily_reasons = allDayReasons;
+            } else {
+                delete dayData.daily_reasons;
             }
 
             dayData.total = dayData.records.reduce((sum, r) => sum + (Number(r.tx) || 0), 0);
@@ -10738,7 +11068,8 @@ ${portalUrl}
                     processedDays.push({
                         dateKey: dateKey,
                         dayTotal: dayTotal,
-                        records: records
+                        records: records,
+                        dayObj: (targetStore && targetStore.daily_transactions) ? targetStore.daily_transactions[dateKey] : null
                     });
                 });
 
@@ -10899,10 +11230,22 @@ ${portalUrl}
                                     const sName = r.shift_name || `Shift ${r.shift_num || ''}`;
                                     const eName = r.emp_name || 'Kasir';
                                     const txVal = Number(r.tx) || 0;
-                                    text += `  - ${sName}: ${eName} (${txVal.toLocaleString('id-ID')} tx)\n`;
+                                    let noteInfo = '';
+                                    if (r.reason_tags && r.reason_tags.length > 0) {
+                                        noteInfo += ` ${r.reason_tags.join(', ')}`;
+                                    }
+                                    if (r.review_note) {
+                                        noteInfo += ` "${r.review_note}"`;
+                                    }
+                                    text += `  - ${sName}: ${eName} (${txVal.toLocaleString('id-ID')} tx)${noteInfo ? `\n    ↳ 📝${noteInfo}` : ''}\n`;
                                 });
                             } else {
-                                text += `📅 *${dateFormatted} (${dayName})*: *${pd.dayTotal.toLocaleString('id-ID')} tx*\n`;
+                                text += `📅 *${dateFormatted} (${dayName})*: *${pd.dayTotal.toLocaleString('id-ID')} tx*`;
+                                const dayObj = pd.dayObj;
+                                if (dayObj && Array.isArray(dayObj.daily_reasons) && dayObj.daily_reasons.length > 0) {
+                                    text += ` (📝 ${dayObj.daily_reasons.join(', ')})`;
+                                }
+                                text += `\n`;
                             }
                         });
                     }
@@ -10964,7 +11307,8 @@ ${portalUrl}
                         storeId: store.id,
                         storeName: store.name,
                         total: total,
-                        records: records
+                        records: records,
+                        dayObj: store.daily_transactions ? store.daily_transactions[dateKey] : null
                     });
                 });
 
@@ -11159,10 +11503,22 @@ ${portalUrl}
                                     const sName = r.shift_name || `Shift ${r.shift_num || ''}`;
                                     const eName = r.emp_name || 'Kasir';
                                     const txVal = Number(r.tx) || 0;
-                                    text += `  - ${sName}: ${eName} (${txVal.toLocaleString('id-ID')} tx)\n`;
+                                    let noteInfo = '';
+                                    if (r.reason_tags && r.reason_tags.length > 0) {
+                                        noteInfo += ` ${r.reason_tags.join(', ')}`;
+                                    }
+                                    if (r.review_note) {
+                                        noteInfo += ` "${r.review_note}"`;
+                                    }
+                                    text += `  - ${sName}: ${eName} (${txVal.toLocaleString('id-ID')} tx)${noteInfo ? `\n    ↳ 📝${noteInfo}` : ''}\n`;
                                 });
                             } else {
-                                text += `• *${st.storeName}*: ${st.total.toLocaleString('id-ID')} tx\n`;
+                                text += `• *${st.storeName}*: ${st.total.toLocaleString('id-ID')} tx`;
+                                const dayObj = st.dayObj;
+                                if (dayObj && Array.isArray(dayObj.daily_reasons) && dayObj.daily_reasons.length > 0) {
+                                    text += ` (📝 ${dayObj.daily_reasons.join(', ')})`;
+                                }
+                                text += `\n`;
                             }
                         });
                         text += `👉 *Total Semua Cabang: ${pd.dateTotal.toLocaleString('id-ID')} tx*\n\n`;

@@ -1673,6 +1673,104 @@
         html:not(.role-employee) body:not(.role-employee) #btnHeaderBackStoresText::after {
             content: " ke Kelola Cabang";
         }
+
+        /* Review & Reason Chips Styles */
+        .tx-condition-tabs {
+            display: flex;
+            gap: 6px;
+        }
+        .btn-tx-cond {
+            flex: 1;
+            padding: 6px 4px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 750;
+            cursor: pointer;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .btn-tx-cond:hover {
+            border-color: var(--primary);
+            color: var(--text-main);
+        }
+        .btn-tx-cond.active[data-cond="down"] {
+            background: rgba(239, 68, 68, 0.12);
+            border-color: #EF4444;
+            color: #EF4444;
+        }
+        .btn-tx-cond.active[data-cond="normal"] {
+            background: rgba(100, 116, 139, 0.15);
+            border-color: #64748B;
+            color: var(--text-main);
+        }
+        .btn-tx-cond.active[data-cond="up"] {
+            background: rgba(16, 185, 129, 0.12);
+            border-color: #10B981;
+            color: #10B981;
+        }
+        .tx-chips-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .tx-reason-chip {
+            padding: 3.5px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 650;
+            cursor: pointer;
+            background: var(--chip-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+        .tx-reason-chip:hover {
+            border-color: var(--primary);
+            color: var(--text-main);
+        }
+        .tx-reason-container[id*="Down"] .tx-reason-chip.selected {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: #EF4444;
+            color: #EF4444;
+            font-weight: 800;
+        }
+        .tx-reason-container[id*="Up"] .tx-reason-chip.selected {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: #10B981;
+            color: #10B981;
+            font-weight: 800;
+        }
+        .ht-note-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 10px;
+            font-weight: 750;
+            padding: 1.5px 6px;
+            border-radius: 5px;
+            background: rgba(245, 158, 11, 0.12);
+            color: #F59E0B;
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            cursor: help;
+            white-space: nowrap;
+        }
+        .ht-note-badge.note-up {
+            background: rgba(16, 185, 129, 0.12);
+            color: #10B981;
+            border-color: rgba(16, 185, 129, 0.25);
+        }
+        .ht-note-badge.note-down {
+            background: rgba(239, 68, 68, 0.12);
+            color: #EF4444;
+            border-color: rgba(239, 68, 68, 0.25);
+        }
     </style>
     <script>
         (function() {
@@ -2083,6 +2181,78 @@
                     <div id="dailyTxFormFields" style="display: flex; flex-direction: column; gap: 12px;">
                         <!-- Dinamis per karyawan bertugas -->
                     </div>
+
+                    <!-- BAGIAN: ULASAN & ALASAN FLUKTUASI TRANSAKSI (OPSIONAL) -->
+                    <div class="daily-tx-review-section" id="dailyTxAdminReviewSection" style="margin-top: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px;">
+                            <span style="font-size: 11.5px; font-weight: 750; color: var(--text-main); display: flex; align-items: center; gap: 4px;">
+                                <span>📝</span> Ulasan / Alasan <span style="font-size: 10px; font-weight: 600; color: var(--text-muted);">(Opsional)</span>
+                            </span>
+                            <button type="button" id="btnResetDailyTxReview" onclick="resetDailyTxReviewForm()" style="background: none; border: none; font-size: 11px; color: var(--text-muted); cursor: pointer; padding: 0; display: none;" title="Reset pilihan alasan & catatan">
+                                ↺ Reset
+                            </button>
+                        </div>
+
+                        <!-- Tab Pilihan Kondisi -->
+                        <div class="tx-condition-tabs">
+                            <button type="button" class="btn-tx-cond" id="btnCondDown" data-cond="down" onclick="setDailyTxCondition('down', true)">
+                                <span>📉</span> Menurun / Sepi
+                            </button>
+                            <button type="button" class="btn-tx-cond active" id="btnCondNormal" data-cond="normal" onclick="setDailyTxCondition('normal', true)">
+                                <span>⚖️</span> Normal / Biasa
+                            </button>
+                            <button type="button" class="btn-tx-cond" id="btnCondUp" data-cond="up" onclick="setDailyTxCondition('up', true)">
+                                <span>📈</span> Naik / Ramai
+                            </button>
+                        </div>
+
+                        <!-- Smart Suggestion Hint -->
+                        <div id="dailyTxSmartHint" style="display: none; font-size: 10.5px; color: var(--text-muted); margin-bottom: 6px; line-height: 1.35;"></div>
+
+                        <!-- Quick Chips Alasan Penurunan -->
+                        <div id="txReasonContainerDown" class="tx-reason-container" style="display: none; margin-bottom: 8px;">
+                            <div style="font-size: 10.5px; font-weight: 750; color: #EF4444; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">
+                                <span>💡</span> Kendala / alasan sepi di lapangan:
+                            </div>
+                            <div class="tx-chips-cloud">
+                                <button type="button" class="tx-reason-chip" data-reason="🌧️ Hujan Deras" onclick="toggleDailyTxReasonChip(this)">🌧️ Hujan Deras</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🌊 Banjir / Genangan" onclick="toggleDailyTxReasonChip(this)">🌊 Banjir / Genangan</button>
+                                <button type="button" class="tx-reason-chip" data-reason="⚡ Listrik Padam" onclick="toggleDailyTxReasonChip(this)">⚡ Listrik Padam</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🔌 Sinyal / Provider Down" onclick="toggleDailyTxReasonChip(this)">🔌 Sinyal Down</button>
+                                <button type="button" class="tx-reason-chip" data-reason="💻 Server / Bank Eror" onclick="toggleDailyTxReasonChip(this)">💻 Server/Bank Eror</button>
+                                <button type="button" class="tx-reason-chip" data-reason="📦 Saldo Modal Habis" onclick="toggleDailyTxReasonChip(this)">📦 Saldo Habis</button>
+                                <button type="button" class="tx-reason-chip" data-reason="💵 Uang Tunai Habis" onclick="toggleDailyTxReasonChip(this)">💵 Cash Habis</button>
+                                <button type="button" class="tx-reason-chip" data-reason="💸 Tanggal Tua" onclick="toggleDailyTxReasonChip(this)">💸 Tanggal Tua</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🛑 Hari Libur / Tgl Merah" onclick="toggleDailyTxReasonChip(this)">🛑 Tanggal Merah</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🚧 Akses Jalan Ditutup" onclick="toggleDailyTxReasonChip(this)">🚧 Akses Ditutup</button>
+                                <button type="button" class="tx-reason-chip" data-reason="⏳ Buka Terlambat" onclick="toggleDailyTxReasonChip(this)">⏳ Buka Telat</button>
+                                <button type="button" class="tx-reason-chip" data-reason="👥 Personil Terbatas" onclick="toggleDailyTxReasonChip(this)">👥 Personil Terbatas</button>
+                            </div>
+                        </div>
+
+                        <!-- Quick Chips Alasan Kenaikan -->
+                        <div id="txReasonContainerUp" class="tx-reason-container" style="display: none; margin-bottom: 8px;">
+                            <div style="font-size: 10.5px; font-weight: 750; color: #10B981; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">
+                                <span>🔥</span> Faktor pendukung kenaikan transaksi:
+                            </div>
+                            <div class="tx-chips-cloud">
+                                <button type="button" class="tx-reason-chip" data-reason="🎉 Hari Gajian" onclick="toggleDailyTxReasonChip(this)">🎉 Hari Gajian</button>
+                                <button type="button" class="tx-reason-chip" data-reason="📅 Awal Bulan (Tagihan)" onclick="toggleDailyTxReasonChip(this)">📅 Awal Bulan</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🏬 Toko Lain Tutup/Habis Saldo" onclick="toggleDailyTxReasonChip(this)">🏬 Toko Lain Tutup</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🏖️ Libur Panjang / Event" onclick="toggleDailyTxReasonChip(this)">🏖️ Libur / Event</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🎁 Promo Cabang" onclick="toggleDailyTxReasonChip(this)">🎁 Promo Cabang</button>
+                            </div>
+                        </div>
+
+                        <!-- Catatan Bebas Kasir / Admin -->
+                        <div style="margin-top: 6px;">
+                            <textarea id="dailyTxReviewNote" 
+                                      rows="2" 
+                                      class="form-input" 
+                                      placeholder="Catatan tambahan kasir (contoh: Mati lampu jam 12-14, hujan lebat sore)..." 
+                                      style="font-size: 11.5px; border-radius: 8px; resize: vertical; min-height: 44px; padding: 7px 10px; line-height: 1.4;"></textarea>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer" style="padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                     <button type="button" class="btn-cancel" id="btnDeleteDailyTxModal" onclick="handleDeleteDailyTxModal()" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.4); padding: 10px 14px;" title="Reset dan hapus seluruh transaksi tanggal ini">🗑️ Reset</button>
@@ -2143,19 +2313,80 @@
                                min="0" 
                                required 
                                placeholder="0" 
+                               oninput="onEmpPropTxInputChanged()"
                                style="font-size: 22px; font-weight: 850; text-align: center; padding: 12px; border-radius: 10px;">
                     </div>
 
-                    <!-- Catatan / Alasan Usulan (khusus hari lain) -->
-                    <div class="form-group" id="empPropNoteGroup">
-                        <label class="form-label" for="empPropNoteInput" style="font-size: 12px; font-weight: 750;">
-                            Catatan / Keterangan Usulan (Opsional)
-                        </label>
-                        <textarea id="empPropNoteInput" 
-                                  class="form-input" 
-                                  rows="2" 
-                                  placeholder="Contoh: Koreksi selisih nota closing shift" 
-                                  style="font-size: 12px; border-radius: 10px; resize: vertical;"></textarea>
+                    <!-- BAGIAN: ULASAN & ALASAN FLUKTUASI TRANSAKSI (OPSIONAL) -->
+                    <div class="daily-tx-review-section" id="empPropNoteGroup">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px;">
+                            <span style="font-size: 11.5px; font-weight: 750; color: var(--text-main); display: flex; align-items: center; gap: 4px;">
+                                <span>📝</span> Ulasan / Alasan <span style="font-size: 10px; font-weight: 600; color: var(--text-muted);">(Opsional)</span>
+                            </span>
+                            <button type="button" id="btnResetEmpPropReview" onclick="resetEmpPropReviewForm()" style="background: none; border: none; font-size: 11px; color: var(--text-muted); cursor: pointer; padding: 0; display: none;" title="Reset pilihan alasan & catatan">
+                                ↺ Reset
+                            </button>
+                        </div>
+
+                        <!-- Tab Pilihan Kondisi -->
+                        <div class="tx-condition-tabs">
+                            <button type="button" class="btn-tx-cond" id="btnEmpCondDown" data-cond="down" onclick="setEmpPropCondition('down', true)">
+                                <span>📉</span> Menurun / Sepi
+                            </button>
+                            <button type="button" class="btn-tx-cond active" id="btnEmpCondNormal" data-cond="normal" onclick="setEmpPropCondition('normal', true)">
+                                <span>⚖️</span> Normal / Biasa
+                            </button>
+                            <button type="button" class="btn-tx-cond" id="btnEmpCondUp" data-cond="up" onclick="setEmpPropCondition('up', true)">
+                                <span>📈</span> Naik / Ramai
+                            </button>
+                        </div>
+
+                        <!-- Smart Suggestion Hint -->
+                        <div id="empPropSmartHint" style="display: none; font-size: 10.5px; color: var(--text-muted); margin-bottom: 6px; line-height: 1.35;"></div>
+
+                        <!-- Quick Chips Alasan Penurunan -->
+                        <div id="empTxReasonContainerDown" class="tx-reason-container" style="display: none; margin-bottom: 8px;">
+                            <div style="font-size: 10.5px; font-weight: 750; color: #EF4444; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">
+                                <span>💡</span> Kendala / alasan sepi di lapangan:
+                            </div>
+                            <div class="tx-chips-cloud">
+                                <button type="button" class="tx-reason-chip" data-reason="🌧️ Hujan Deras" onclick="toggleEmpPropReasonChip(this)">🌧️ Hujan Deras</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🌊 Banjir / Genangan" onclick="toggleEmpPropReasonChip(this)">🌊 Banjir / Genangan</button>
+                                <button type="button" class="tx-reason-chip" data-reason="⚡ Listrik Padam" onclick="toggleEmpPropReasonChip(this)">⚡ Listrik Padam</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🔌 Sinyal / Provider Down" onclick="toggleEmpPropReasonChip(this)">🔌 Sinyal Down</button>
+                                <button type="button" class="tx-reason-chip" data-reason="💻 Server / Bank Eror" onclick="toggleEmpPropReasonChip(this)">💻 Server/Bank Eror</button>
+                                <button type="button" class="tx-reason-chip" data-reason="📦 Saldo Modal Habis" onclick="toggleEmpPropReasonChip(this)">📦 Saldo Habis</button>
+                                <button type="button" class="tx-reason-chip" data-reason="💵 Uang Tunai Habis" onclick="toggleEmpPropReasonChip(this)">💵 Cash Habis</button>
+                                <button type="button" class="tx-reason-chip" data-reason="💸 Tanggal Tua" onclick="toggleEmpPropReasonChip(this)">💸 Tanggal Tua</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🛑 Hari Libur / Tgl Merah" onclick="toggleEmpPropReasonChip(this)">🛑 Tanggal Merah</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🚧 Akses Jalan Ditutup" onclick="toggleEmpPropReasonChip(this)">🚧 Akses Ditutup</button>
+                                <button type="button" class="tx-reason-chip" data-reason="⏳ Buka Terlambat" onclick="toggleEmpPropReasonChip(this)">⏳ Buka Telat</button>
+                                <button type="button" class="tx-reason-chip" data-reason="👥 Personil Terbatas" onclick="toggleEmpPropReasonChip(this)">👥 Personil Terbatas</button>
+                            </div>
+                        </div>
+
+                        <!-- Quick Chips Alasan Kenaikan -->
+                        <div id="empTxReasonContainerUp" class="tx-reason-container" style="display: none; margin-bottom: 8px;">
+                            <div style="font-size: 10.5px; font-weight: 750; color: #10B981; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">
+                                <span>🔥</span> Faktor pendukung kenaikan transaksi:
+                            </div>
+                            <div class="tx-chips-cloud">
+                                <button type="button" class="tx-reason-chip" data-reason="🎉 Hari Gajian" onclick="toggleEmpPropReasonChip(this)">🎉 Hari Gajian</button>
+                                <button type="button" class="tx-reason-chip" data-reason="📅 Awal Bulan (Tagihan)" onclick="toggleEmpPropReasonChip(this)">📅 Awal Bulan</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🏬 Toko Lain Tutup/Habis Saldo" onclick="toggleEmpPropReasonChip(this)">🏬 Toko Lain Tutup</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🏖️ Libur Panjang / Event" onclick="toggleEmpPropReasonChip(this)">🏖️ Libur / Event</button>
+                                <button type="button" class="tx-reason-chip" data-reason="🎁 Promo Cabang" onclick="toggleEmpPropReasonChip(this)">🎁 Promo Cabang</button>
+                            </div>
+                        </div>
+
+                        <!-- Catatan Bebas Kasir -->
+                        <div style="margin-top: 6px;">
+                            <textarea id="empPropNoteInput" 
+                                      rows="2" 
+                                      class="form-input" 
+                                      placeholder="Catatan tambahan kasir (contoh: Mati lampu jam 12-14, hujan lebat sore)..." 
+                                      style="font-size: 11.5px; border-radius: 8px; resize: vertical; min-height: 44px; padding: 7px 10px; line-height: 1.4;"></textarea>
+                        </div>
                     </div>
 
                     <div id="empPropPendingNotice" style="display: none; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 8px 10px; font-size: 11px; color: var(--warning); line-height: 1.4;">
@@ -3290,6 +3521,265 @@
         }
 
         // ==========================================
+        // FITUR: ULASAN & ALASAN FLUKTUASI TRANSAKSI
+        // ==========================================
+        function renderNoteBadgeHtml(condition, reasonTags, noteText) {
+            const tags = Array.isArray(reasonTags) ? reasonTags : [];
+            const note = (noteText || '').trim();
+            if (tags.length === 0 && !note) return '';
+
+            const badgeClass = condition === 'up' ? 'ht-note-badge note-up' : (condition === 'down' ? 'ht-note-badge note-down' : 'ht-note-badge');
+            const firstTag = tags.length > 0 ? tags[0] : (note.length > 18 ? note.substring(0, 18) + '...' : note);
+            const extraCount = tags.length > 1 ? ` +${tags.length - 1}` : '';
+            
+            let fullTooltip = '';
+            if (tags.length > 0) fullTooltip += `Alasan: ${tags.join(', ')}`;
+            if (note) fullTooltip += (fullTooltip ? ' • ' : '') + `Catatan: ${note}`;
+
+            return `<div style="margin-top: 3px;"><span class="${badgeClass}" title="${escapeHtml(fullTooltip)}">📝 ${escapeHtml(firstTag + extraCount)}</span></div>`;
+        }
+
+        // --- HANDLER USULAN KASIR (employeeProposalModal) ---
+        window.currentEmpPropCondition = 'normal';
+        window._empPropConditionManualChoice = false;
+
+        function setEmpPropCondition(cond, isManual = false) {
+            window.currentEmpPropCondition = cond || 'normal';
+            if (isManual) {
+                window._empPropConditionManualChoice = true;
+            }
+
+            const btnDown = document.getElementById('btnEmpCondDown');
+            const btnNormal = document.getElementById('btnEmpCondNormal');
+            const btnUp = document.getElementById('btnEmpCondUp');
+            const downCont = document.getElementById('empTxReasonContainerDown');
+            const upCont = document.getElementById('empTxReasonContainerUp');
+            const hintEl = document.getElementById('empPropSmartHint');
+
+            if (btnDown) btnDown.classList.toggle('active', cond === 'down');
+            if (btnNormal) btnNormal.classList.toggle('active', cond === 'normal');
+            if (btnUp) btnUp.classList.toggle('active', cond === 'up');
+
+            if (downCont) downCont.style.display = (cond === 'down') ? 'block' : 'none';
+            if (upCont) upCont.style.display = (cond === 'up') ? 'block' : 'none';
+
+            if (isManual && hintEl) {
+                hintEl.style.display = 'none';
+            }
+
+            checkEmpPropReviewDirtyState();
+        }
+
+        function toggleEmpPropReasonChip(el) {
+            if (!el) return;
+            el.classList.toggle('selected');
+            window._empPropConditionManualChoice = true;
+            checkEmpPropReviewDirtyState();
+        }
+
+        function checkEmpPropReviewDirtyState() {
+            const resetBtn = document.getElementById('btnResetEmpPropReview');
+            const noteVal = (document.getElementById('empPropNoteInput')?.value || '').trim();
+            const anyChip = document.querySelector('#empPropNoteGroup .tx-reason-chip.selected');
+            const isDirty = (window.currentEmpPropCondition !== 'normal' || !!anyChip || noteVal.length > 0);
+            if (resetBtn) {
+                resetBtn.style.display = isDirty ? 'inline-block' : 'none';
+            }
+        }
+
+        function resetEmpPropReviewForm() {
+            window._empPropConditionManualChoice = false;
+            document.querySelectorAll('#empPropNoteGroup .tx-reason-chip.selected').forEach(c => c.classList.remove('selected'));
+            const noteEl = document.getElementById('empPropNoteInput');
+            if (noteEl) noteEl.value = '';
+            const hintEl = document.getElementById('empPropSmartHint');
+            if (hintEl) hintEl.style.display = 'none';
+            setEmpPropCondition('normal', false);
+            const resetBtn = document.getElementById('btnResetEmpPropReview');
+            if (resetBtn) resetBtn.style.display = 'none';
+        }
+
+        function getSelectedEmpPropReasons() {
+            const chips = document.querySelectorAll('#empPropNoteGroup .tx-reason-chip.selected');
+            const reasons = [];
+            chips.forEach(c => {
+                const tag = c.getAttribute('data-reason') || c.innerText.trim();
+                if (tag && !reasons.includes(tag)) {
+                    reasons.push(tag);
+                }
+            });
+            return reasons;
+        }
+
+        function populateEmpPropReviewState(rec, prop) {
+            document.querySelectorAll('#empPropNoteGroup .tx-reason-chip').forEach(c => c.classList.remove('selected'));
+            const noteEl = document.getElementById('empPropNoteInput');
+            const hintEl = document.getElementById('empPropSmartHint');
+            if (hintEl) hintEl.style.display = 'none';
+
+            const source = prop || rec;
+            if (source && (source.condition || (Array.isArray(source.reason_tags) && source.reason_tags.length > 0) || source.review_note || source.note)) {
+                const cond = source.condition || (Array.isArray(source.reason_tags) && source.reason_tags.length > 0 ? 'down' : 'normal');
+                setEmpPropCondition(cond, false);
+                window._empPropConditionManualChoice = true;
+
+                if (Array.isArray(source.reason_tags)) {
+                    document.querySelectorAll('#empPropNoteGroup .tx-reason-chip').forEach(c => {
+                        const tag = c.getAttribute('data-reason') || c.innerText.trim();
+                        if (source.reason_tags.includes(tag)) {
+                            c.classList.add('selected');
+                        }
+                    });
+                }
+                if (noteEl) noteEl.value = source.review_note || source.note || '';
+            } else {
+                resetEmpPropReviewForm();
+            }
+            checkEmpPropReviewDirtyState();
+        }
+
+        function onEmpPropTxInputChanged() {
+            const inputEl = document.getElementById('empPropTxInput');
+            const store = storesData.find(s => s.id === activeStoreId);
+            if (!store || !inputEl || !currentEmployee) return;
+
+            const val = parseInt(inputEl.value, 10);
+            if (isNaN(val) || val <= 0) return;
+
+            if (window._empPropConditionManualChoice) return;
+            const anyChipSelected = document.querySelector('#empPropNoteGroup .tx-reason-chip.selected');
+            if (anyChipSelected) return;
+
+            let targetDaily = 0;
+            if (window.KspTarget) {
+                const tm = KspTarget.calculateStoreMetrics(store);
+                if (tm && tm.target > 0) {
+                    targetDaily = tm.requiredPerDay > 0 ? tm.requiredPerDay : Math.max(1, Math.round(tm.target / (tm.totalDaysInMonth || 30)));
+                }
+            }
+            if (targetDaily <= 0) return;
+
+            const shiftCount = parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1);
+            const shiftTarget = Math.max(1, Math.round(targetDaily / shiftCount));
+
+            const hintEl = document.getElementById('empPropSmartHint');
+            if (val < Math.round(shiftTarget * 0.75)) {
+                setEmpPropCondition('down', false);
+                if (hintEl) {
+                    hintEl.innerHTML = `💡 <i>Transaksi (${val.toLocaleString('id-ID')} tx) di bawah target shift (~${shiftTarget.toLocaleString('id-ID')} tx). Pilih kendala lapangan jika ada:</i>`;
+                    hintEl.style.display = 'block';
+                }
+            } else if (val >= Math.round(shiftTarget * 1.15)) {
+                setEmpPropCondition('up', false);
+                if (hintEl) {
+                    hintEl.innerHTML = `🔥 <i>Transaksi (${val.toLocaleString('id-ID')} tx) melampaui target shift (~${shiftTarget.toLocaleString('id-ID')} tx)! Ada faktor pendukung?</i>`;
+                    hintEl.style.display = 'block';
+                }
+            } else {
+                setEmpPropCondition('normal', false);
+                if (hintEl) hintEl.style.display = 'none';
+            }
+        }
+
+        // --- HANDLER MODAL INPUT TRANSAKSI ADMIN (dailyTxModal) ---
+        window.currentDailyTxCondition = 'normal';
+        window._dailyTxConditionManualChoice = false;
+
+        function setDailyTxCondition(cond, isManual = false) {
+            window.currentDailyTxCondition = cond || 'normal';
+            if (isManual) {
+                window._dailyTxConditionManualChoice = true;
+            }
+
+            const btnDown = document.getElementById('btnCondDown');
+            const btnNormal = document.getElementById('btnCondNormal');
+            const btnUp = document.getElementById('btnCondUp');
+            const downCont = document.getElementById('txReasonContainerDown');
+            const upCont = document.getElementById('txReasonContainerUp');
+            const hintEl = document.getElementById('dailyTxSmartHint');
+
+            if (btnDown) btnDown.classList.toggle('active', cond === 'down');
+            if (btnNormal) btnNormal.classList.toggle('active', cond === 'normal');
+            if (btnUp) btnUp.classList.toggle('active', cond === 'up');
+
+            if (downCont) downCont.style.display = (cond === 'down') ? 'block' : 'none';
+            if (upCont) upCont.style.display = (cond === 'up') ? 'block' : 'none';
+
+            if (isManual && hintEl) {
+                hintEl.style.display = 'none';
+            }
+
+            checkDailyTxReviewDirtyState();
+        }
+
+        function toggleDailyTxReasonChip(el) {
+            if (!el) return;
+            el.classList.toggle('selected');
+            window._dailyTxConditionManualChoice = true;
+            checkDailyTxReviewDirtyState();
+        }
+
+        function checkDailyTxReviewDirtyState() {
+            const resetBtn = document.getElementById('btnResetDailyTxReview');
+            const noteVal = (document.getElementById('dailyTxReviewNote')?.value || '').trim();
+            const anyChip = document.querySelector('#dailyTxAdminReviewSection .tx-reason-chip.selected');
+            const isDirty = (window.currentDailyTxCondition !== 'normal' || !!anyChip || noteVal.length > 0);
+            if (resetBtn) {
+                resetBtn.style.display = isDirty ? 'inline-block' : 'none';
+            }
+        }
+
+        function resetDailyTxReviewForm() {
+            window._dailyTxConditionManualChoice = false;
+            document.querySelectorAll('#dailyTxAdminReviewSection .tx-reason-chip.selected').forEach(c => c.classList.remove('selected'));
+            const noteEl = document.getElementById('dailyTxReviewNote');
+            if (noteEl) noteEl.value = '';
+            const hintEl = document.getElementById('dailyTxSmartHint');
+            if (hintEl) hintEl.style.display = 'none';
+            setDailyTxCondition('normal', false);
+            const resetBtn = document.getElementById('btnResetDailyTxReview');
+            if (resetBtn) resetBtn.style.display = 'none';
+        }
+
+        function getSelectedDailyTxReasons() {
+            const chips = document.querySelectorAll('#dailyTxAdminReviewSection .tx-reason-chip.selected');
+            const reasons = [];
+            chips.forEach(c => {
+                const tag = c.getAttribute('data-reason') || c.innerText.trim();
+                if (tag && !reasons.includes(tag)) {
+                    reasons.push(tag);
+                }
+            });
+            return reasons;
+        }
+
+        function populateDailyTxReviewState(dayData) {
+            document.querySelectorAll('#dailyTxAdminReviewSection .tx-reason-chip').forEach(c => c.classList.remove('selected'));
+            const noteEl = document.getElementById('dailyTxReviewNote');
+            const hintEl = document.getElementById('dailyTxSmartHint');
+            if (hintEl) hintEl.style.display = 'none';
+
+            if (dayData && (dayData.condition || (Array.isArray(dayData.daily_reasons) && dayData.daily_reasons.length > 0) || dayData.review_note)) {
+                const cond = dayData.condition || (Array.isArray(dayData.daily_reasons) && dayData.daily_reasons.length > 0 ? 'down' : 'normal');
+                setDailyTxCondition(cond, false);
+                window._dailyTxConditionManualChoice = true;
+
+                if (Array.isArray(dayData.daily_reasons)) {
+                    document.querySelectorAll('#dailyTxAdminReviewSection .tx-reason-chip').forEach(c => {
+                        const tag = c.getAttribute('data-reason') || c.innerText.trim();
+                        if (dayData.daily_reasons.includes(tag)) {
+                            c.classList.add('selected');
+                        }
+                    });
+                }
+                if (noteEl) noteEl.value = dayData.review_note || '';
+            } else {
+                resetDailyTxReviewForm();
+            }
+            checkDailyTxReviewDirtyState();
+        }
+
+        // ==========================================
         // 3. SISTEM USULAN TRANSAKSI (PROPOSALS)
         // ==========================================
 
@@ -3337,6 +3827,11 @@
                                 <span>➔</span>
                                 <span>Usulan Baru: <b style="color: var(--warning); font-size: 14px;">${prop.proposed_tx} tx</b> (<span style="color: ${diffColor}; font-weight: 800;">${diffText}</span>)</span>
                             </div>
+                            ${Array.isArray(prop.reason_tags) && prop.reason_tags.length > 0 ? `
+                                <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px;">
+                                    ${prop.reason_tags.map(t => `<span class="tx-reason-chip selected" style="font-size: 10px; padding: 2px 7px; pointer-events: none;">${escapeHtml(t)}</span>`).join('')}
+                                </div>
+                            ` : ''}
                             ${prop.note ? `<div style="font-size: 11px; color: var(--text-main); margin-top: 4px; font-style: italic;">Catatan: "${escapeHtml(prop.note)}"</div>` : ''}
                             <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">Diajukan: ${escapeHtml(prop.submitted_at || '-')}</div>
                         </div>
@@ -3384,7 +3879,7 @@
                 }
                 if (curTxLabel) curTxLabel.innerText = 'Data Tersimpan Saat Ini:';
                 if (txLabel) txLabel.innerText = 'Jumlah Transaksi Shift Anda Hari Ini *';
-                if (noteGroup) noteGroup.style.display = 'none';
+                if (noteGroup) noteGroup.style.display = 'block';
                 if (submitBtn) submitBtn.innerHTML = '💾 Simpan Transaksi Hari Ini';
             } else {
                 if (modalTitle) modalTitle.innerText = `✏️ Usulan Transaksi (${formatDateShort(targetDate)})`;
@@ -3455,11 +3950,14 @@
                     pendingNotice.style.display = 'block';
                     pendingNotice.innerHTML = `⚠️ Anda sudah memiliki usulan tertunda sebesar <b>${pendingProp.proposed_tx} tx</b> (diajukan: ${pendingProp.submitted_at || '-'}). Menyimpan formulir ini akan memperbarui usulan Anda.`;
                 }
+                populateEmpPropReviewState(myRec, pendingProp);
             } else {
                 if (txInput) txInput.value = (curVal > 0) ? curVal : '';
-                if (noteInput) noteInput.value = '';
+                if (noteInput) noteInput.value = (myRec && (myRec.review_note || myRec.note)) || '';
                 if (pendingNotice) pendingNotice.style.display = 'none';
+                populateEmpPropReviewState(myRec, null);
             }
+            if (noteInput) noteInput.oninput = checkEmpPropReviewDirtyState;
 
             openModal('employeeProposalModal');
             setTimeout(() => {
@@ -3501,6 +3999,8 @@
 
             const nowTimeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
             const noteVal = noteInput ? noteInput.value.trim() : '';
+            const selectedReasons = getSelectedEmpPropReasons();
+            const chosenCond = window.currentEmpPropCondition || (selectedReasons.length > 0 ? 'down' : 'normal');
 
             if (isToday) {
                 // ==========================================
@@ -3525,6 +4025,9 @@
                     rec.recorded_at = nowTimeStr + ' (Input Kasir)';
                     rec.shift_num = currentEmployee.shift_num;
                     rec.shift_name = empShiftName;
+                    rec.condition = chosenCond;
+                    rec.reason_tags = [...selectedReasons];
+                    rec.review_note = noteVal;
                 } else {
                     if (!dayData.records) dayData.records = [];
                     dayData.records.push({
@@ -3533,9 +4036,22 @@
                         shift_num: currentEmployee.shift_num,
                         shift_name: empShiftName,
                         tx: txVal,
-                        recorded_at: nowTimeStr + ' (Input Kasir)'
+                        recorded_at: nowTimeStr + ' (Input Kasir)',
+                        condition: chosenCond,
+                        reason_tags: [...selectedReasons],
+                        review_note: noteVal
                     });
                 }
+
+                // Aggregate daily_reasons
+                const allReasons = new Set();
+                (dayData.records || []).forEach(r => {
+                    if (Array.isArray(r.reason_tags)) {
+                        r.reason_tags.forEach(t => allReasons.add(t));
+                    }
+                });
+                dayData.daily_reasons = Array.from(allReasons);
+                if (noteVal && !dayData.review_note) dayData.review_note = noteVal;
 
                 // Hitung ulang total harian & bulanan
                 dayData.total = dayData.records.reduce((sum, r) => sum + (r.tx || 0), 0);
@@ -3571,6 +4087,10 @@
                         store_id: store.id,
                         date: todayKey,
                         proposed_tx: txVal,
+                        condition: chosenCond,
+                        reason_tags: [...selectedReasons],
+                        note: noteVal,
+                        review_note: noteVal,
                         direct_today: true
                     };
 
@@ -3609,7 +4129,15 @@
             const existingProp = store.tx_proposals.find(p => p.date === targetDateKey && p.emp_id === currentEmployee.id && p.status === 'pending');
 
             const payload = existingProp
-                ? { ...existingProp, proposed_tx: txVal, note: noteVal, submitted_at: submittedAt }
+                ? { 
+                    ...existingProp, 
+                    proposed_tx: txVal, 
+                    condition: chosenCond,
+                    reason_tags: [...selectedReasons],
+                    note: noteVal, 
+                    review_note: noteVal,
+                    submitted_at: submittedAt 
+                }
                 : {
                     id: 'prop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
                     store_id: store.id,
@@ -3620,7 +4148,10 @@
                     shift_name: ((parseInt(store.shift_count) || (store.shifts ? store.shifts.length : 1)) === 1) ? 'Full Shift' : (currentEmployee.shift_num === 1 ? 'Shift 1 Pagi' : 'Shift 2 Malam'),
                     current_tx: curVal,
                     proposed_tx: txVal,
+                    condition: chosenCond,
+                    reason_tags: [...selectedReasons],
                     note: noteVal,
+                    review_note: noteVal,
                     submitted_at: submittedAt,
                     status: 'pending'
                 };
@@ -3690,6 +4221,9 @@
             if (rec) {
                 rec.tx = prop.proposed_tx;
                 rec.recorded_at = nowTimeStr + ' (Disetujui Admin)';
+                if (prop.condition) rec.condition = prop.condition;
+                if (Array.isArray(prop.reason_tags)) rec.reason_tags = [...prop.reason_tags];
+                if (prop.note || prop.review_note) rec.review_note = prop.note || prop.review_note;
             } else {
                 dayData.records.push({
                     emp_id: prop.emp_id,
@@ -3697,9 +4231,22 @@
                     shift_num: prop.shift_num,
                     shift_name: prop.shift_name,
                     tx: prop.proposed_tx,
-                    recorded_at: nowTimeStr + ' (Disetujui Admin)'
+                    recorded_at: nowTimeStr + ' (Disetujui Admin)',
+                    condition: prop.condition || 'normal',
+                    reason_tags: Array.isArray(prop.reason_tags) ? [...prop.reason_tags] : [],
+                    review_note: prop.note || prop.review_note || ''
                 });
             }
+
+            // Aggregate all reason tags into dayData.daily_reasons
+            const allReasons = new Set();
+            (dayData.records || []).forEach(r => {
+                if (Array.isArray(r.reason_tags)) {
+                    r.reason_tags.forEach(t => allReasons.add(t));
+                }
+            });
+            dayData.daily_reasons = Array.from(allReasons);
+            if (prop.note && !dayData.review_note) dayData.review_note = prop.note;
 
             // Hitung ulang total harian
             dayData.total = dayData.records.reduce((sum, r) => sum + (r.tx || 0), 0);
@@ -5468,6 +6015,7 @@
                         if (myRec.recorded_at) {
                             approvedHtml += `<div style="font-size: 9.5px; color: var(--text-muted);">${escapeHtml(myRec.recorded_at)}</div>`;
                         }
+                        approvedHtml += renderNoteBadgeHtml(myRec.condition, myRec.reason_tags, myRec.review_note || myRec.note);
                     } else {
                         approvedHtml = `<span style="color: var(--text-muted); font-size: 11px;">0 tx</span>`;
                     }
@@ -5484,7 +6032,7 @@
                             propStatusHtml = `<span style="color: var(--warning); font-size: 11px;">⏳ Belum Input</span>`;
                         }
                     } else if (pendingProp) {
-                        propStatusHtml = `<span class="badge-status badge-proposal-pending">🟡 Usulan: ${pendingProp.proposed_tx} tx</span>`;
+                        propStatusHtml = `<span class="badge-status badge-proposal-pending">🟡 Usulan: ${pendingProp.proposed_tx} tx</span>` + renderNoteBadgeHtml(pendingProp.condition, pendingProp.reason_tags, pendingProp.note);
                     } else if (appProp) {
                         propStatusHtml = `<span class="badge-status badge-proposal-approved">🟢 Disetujui (${appProp.proposed_tx} tx)</span>`;
                     } else if (rejProp) {
@@ -5564,14 +6112,16 @@
 
                     const s1EmpObj = s1Rec ? (store.employees || []).find(e => e.id === s1Rec.emp_id) : null;
                     const s1Name = s1EmpObj ? s1EmpObj.name : (s1Rec ? s1Rec.emp_name : '');
+                    const s1NoteBadge = s1Rec ? renderNoteBadgeHtml(s1Rec.condition, s1Rec.reason_tags, s1Rec.review_note || s1Rec.note) : '';
                     const s1Text = s1Rec 
-                        ? `<b>${escapeHtml(s1Name)}</b> (${s1Rec.tx} tx)` 
+                        ? `<b>${escapeHtml(s1Name)}</b> (${s1Rec.tx} tx)${s1NoteBadge}` 
                         : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>';
 
                     const s2EmpObj = s2Rec ? (store.employees || []).find(e => e.id === s2Rec.emp_id) : null;
                     const s2Name = s2EmpObj ? s2EmpObj.name : (s2Rec ? s2Rec.emp_name : '');
+                    const s2NoteBadge = s2Rec ? renderNoteBadgeHtml(s2Rec.condition, s2Rec.reason_tags, s2Rec.review_note || s2Rec.note) : '';
                     const s2Text = s2Rec 
-                        ? `<b>${escapeHtml(s2Name)}</b> (${s2Rec.tx} tx)` 
+                        ? `<b>${escapeHtml(s2Name)}</b> (${s2Rec.tx} tx)${s2NoteBadge}` 
                         : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>';
 
                     const totalVal = (dayData && dayData.total) || 0;
@@ -5748,6 +6298,7 @@
                         if (myRec.recorded_at) {
                             approvedHtml += `<div style="font-size: 10px; color: var(--text-muted);">${escapeHtml(myRec.recorded_at)}</div>`;
                         }
+                        approvedHtml += renderNoteBadgeHtml(myRec.condition, myRec.reason_tags, myRec.review_note || myRec.note);
                     } else {
                         approvedHtml = `<span style="color: var(--text-muted); font-size: 11.5px;">- (0 tx)</span>`;
                     }
@@ -5764,7 +6315,7 @@
                             propStatusHtml = `<span style="color: var(--warning); font-size: 11px;">⏳ Belum Input</span>`;
                         }
                     } else if (pendingProp) {
-                        propStatusHtml = `<span class="badge-status badge-proposal-pending">🟡 Usulan: ${pendingProp.proposed_tx} tx</span>`;
+                        propStatusHtml = `<span class="badge-status badge-proposal-pending">🟡 Usulan: ${pendingProp.proposed_tx} tx</span>` + renderNoteBadgeHtml(pendingProp.condition, pendingProp.reason_tags, pendingProp.note);
                     } else if (appProp) {
                         propStatusHtml = `<span class="badge-status badge-proposal-approved">🟢 Disetujui</span>`;
                     } else if (rejProp) {
@@ -5840,13 +6391,20 @@
 
                 let html = '';
                 list.forEach(item => {
-                    const s1Text = item.shift1Tx > 0 
-                        ? `<b>${escapeHtml(item.shift1Emp || (isSingleShift ? 'Full Shift' : 'Shift 1'))}</b> (${item.shift1Tx} tx)` 
-                        : (item.hasData ? '<span style="color:var(--text-muted); font-size:11px;">0 tx / libur</span>' : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>');
+                    const dayData = (store.daily_transactions && store.daily_transactions[item.date]) ? store.daily_transactions[item.date] : null;
+                    const records = (dayData && dayData.records) ? dayData.records : [];
+                    const s1Rec = records.find(r => r.shift_num === 1) || (isSingleShift ? records[0] : null);
+                    const s2Rec = records.find(r => r.shift_num === 2);
+                    const s1NoteBadge = s1Rec ? renderNoteBadgeHtml(s1Rec.condition, s1Rec.reason_tags, s1Rec.review_note || s1Rec.note) : '';
+                    const s2NoteBadge = s2Rec ? renderNoteBadgeHtml(s2Rec.condition, s2Rec.reason_tags, s2Rec.review_note || s2Rec.note) : '';
 
-                    const s2Text = item.shift2Tx > 0 
+                    const s1Text = (item.shift1Tx > 0 
+                        ? `<b>${escapeHtml(item.shift1Emp || (isSingleShift ? 'Full Shift' : 'Shift 1'))}</b> (${item.shift1Tx} tx)` 
+                        : (item.hasData ? '<span style="color:var(--text-muted); font-size:11px;">0 tx / libur</span>' : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>')) + s1NoteBadge;
+
+                    const s2Text = (item.shift2Tx > 0 
                         ? `<b>${escapeHtml(item.shift2Emp || 'Shift 2')}</b> (${item.shift2Tx} tx)` 
-                        : (item.hasData ? '<span style="color:var(--text-muted); font-size:11px;">0 tx / libur</span>' : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>');
+                        : (item.hasData ? '<span style="color:var(--text-muted); font-size:11px;">0 tx / libur</span>' : '<span style="color:var(--warning); font-size:11px;">⏳ Belum diset</span>')) + s2NoteBadge;
 
                     const totalHighlight = item.total > 0 
                         ? `<b style="color: var(--primary); font-size: 13px;">${item.total} tx</b>` 
@@ -6127,6 +6685,12 @@
             if (btnDelete) {
                 btnDelete.style.display = (setRecords.length > 0 && currentAuthRole === 'admin') ? 'inline-flex' : 'none';
             }
+
+            const dayData = (store.daily_transactions && store.daily_transactions[targetDate]) ? store.daily_transactions[targetDate] : null;
+            populateDailyTxReviewState(dayData);
+            const reviewNoteEl = document.getElementById('dailyTxReviewNote');
+            if (reviewNoteEl) reviewNoteEl.oninput = checkDailyTxReviewDirtyState;
+
             openModal('dailyTxModal');
 
             // 4. Autofocus input pertama
@@ -6255,6 +6819,23 @@
             // Hitung ulang total
             dayData.total = dayData.records.reduce((sum, r) => sum + (r.tx || 0), 0);
             dayData.recorded_time = nowTime;
+
+            // Simpan Ulasan & Alasan Transaksi dari modal admin
+            const selectedReasons = getSelectedDailyTxReasons();
+            const noteEl = document.getElementById('dailyTxReviewNote');
+            const noteVal = noteEl ? noteEl.value.trim() : '';
+            const chosenCond = window.currentDailyTxCondition || (selectedReasons.length > 0 ? 'down' : 'normal');
+
+            dayData.condition = chosenCond;
+            dayData.daily_reasons = [...selectedReasons];
+            dayData.review_note = noteVal;
+
+            // Hubungkan juga ke masing-masing records shift jika belum ada ulasan shift
+            dayData.records.forEach(r => {
+                if (!r.condition) r.condition = chosenCond;
+                if (!r.reason_tags || r.reason_tags.length === 0) r.reason_tags = [...selectedReasons];
+                if (!r.review_note && noteVal) r.review_note = noteVal;
+            });
 
             // Update akumulasi monthly_tx
             const totalAllDays = Object.values(store.daily_transactions).reduce((sum, d) => sum + (d.total || 0), 0);
