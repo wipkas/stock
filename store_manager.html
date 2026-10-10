@@ -6341,7 +6341,7 @@
                 uiAlert('⚠️ Perangkat atau browser ini tidak mendukung fitur lokasi GPS.');
                 return;
             }
-            uiToast('📍 Mengambil koordinat GPS cabang saat ini...');
+            showToast('Mengambil koordinat GPS cabang saat ini...', '📍');
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     const lat = pos.coords.latitude.toFixed(6);
@@ -6351,7 +6351,7 @@
                     if (latInp) latInp.value = lat;
                     if (lngInp) lngInp.value = lng;
                     updateStoreGpsMapLink();
-                    uiToast('✅ Koordinat GPS cabang berhasil terdeteksi!');
+                    showToast('Koordinat GPS cabang berhasil terdeteksi!', '✅');
                 },
                 (err) => {
                     uiAlert('⚠️ Gagal mendeteksi lokasi GPS. Pastikan izin lokasi aktif atau masukkan koordinat secara manual.');
@@ -9609,6 +9609,10 @@ ${portalUrl}
                 text = text.slice(m[0].length);
             }
             showToast(text.replace(/\s*\n\s*/g, ' ').trim(), icon);
+        }
+
+        function uiToast(text, icon = '💡') {
+            showToast(text, icon);
         }
 
         // uiConfirm -> js/ksp_ui.js
