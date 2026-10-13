@@ -665,6 +665,17 @@
                         <!-- Diisi dinamis via JS -->
                     </div>
                 </div>
+
+                <!-- Opsi Sinkronisasi ke Riwayat Transaksi (store_history.html) -->
+                <div style="margin-top: 10px; padding: 10px; background: var(--card-inner); border: 1px solid var(--card-border); border-radius: 8px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="chkSyncToHistory" checked style="width: 16px; height: 16px; accent-color: var(--primary);">
+                        <span style="font-weight: 750; color: var(--text-main);">Catat ke Riwayat Transaksi (HistoriKu)</span>
+                    </label>
+                    <div style="font-size: 10.5px; color: var(--text-muted); margin-left: 24px; margin-top: 2px;">
+                        *Penjualan voucher otomatis masuk ke store_history.html. Jika shift ini sudah dicatat di aplikasi Android KSP Check, sistem otomatis mencegah duplikasi.
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-modal-cancel" onclick="closeSummaryModal()">Lanjut Cek</button>
@@ -1132,13 +1143,15 @@
                         initial_stock: init,
                         new_stock: final,
                         delta: diff,
-                        sell_price: p.sell_price || 0
+                        sell_price: p.sell_price || 0,
+                        cost_price: p.cost_price || 0
                     });
 
                     if (diff !== 0) changedCount++;
                 });
 
                 const summaryText = `Opname Shift ${currentShiftNum}: ${allProducts.length} produk dicek, ${totalSold} pcs terjual, ${totalRestock} pcs restok.`;
+                const syncToHistoryChecked = document.getElementById('chkSyncToHistory') ? document.getElementById('chkSyncToHistory').checked : true;
 
                 const payload = {
                     store_name: 'Cabang ' + currentStoreId,
@@ -1149,6 +1162,7 @@
                     total_sold: totalSold,
                     total_restock: totalRestock,
                     total_diff: totalFinal - totalInitial,
+                    sync_to_history: syncToHistoryChecked,
                     details: detailsArr,
                     summary_text: summaryText
                 };
@@ -1160,7 +1174,15 @@
 
                 // Berhasil disimpan!
                 clearLocalDraft();
-                alert(`✅ Hasil Opname Berhasil Disimpan!\n\n• Sesi: ${res.session_id}\n• Shift ${currentShiftNum} resmi ditutup.\n• Sisa fisik telah dialihkan ke Shift berikutnya.`);
+
+                let historyInfo = '';
+                if (res.history_tx_created > 0) {
+                    historyInfo = `\n• ${res.history_tx_created} transaksi penjualan otomatis dicatat ke Riwayat (HistoriKu).`;
+                } else if (res.android_tx_existed) {
+                    historyInfo = `\n• Riwayat transaksi voucher diutamakan dari aplikasi Android KSP Check (anti-dobel aktif).`;
+                }
+
+                alert(`✅ Hasil Opname Berhasil Disimpan!\n\n• Sesi: ${res.session_id}\n• Shift ${currentShiftNum} resmi ditutup.\n• Sisa fisik telah dialihkan ke Shift berikutnya.${historyInfo}`);
                 window.location.href = 'karyawan.html';
 
             } catch (err) {
