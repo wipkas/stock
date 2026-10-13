@@ -472,6 +472,31 @@
         return rpc('ksp_emp_get_leaderboard', { p_password: password || '' });
     }
 
+    function empGetStoreStock(password) {
+        if (!enabled()) return Promise.reject(new Error('Sinkronisasi cloud tidak dikonfigurasi'));
+        return rpc('ksp_emp_get_store_stock', { p_password: password });
+    }
+
+    function empSubmitStockOpname(password, payload) {
+        if (!enabled()) return Promise.reject(new Error('Sinkronisasi cloud tidak dikonfigurasi'));
+        return rpc('ksp_emp_submit_stock_opname', { p_password: password, p_payload: payload });
+    }
+
+    function adminSyncStoreStock(storeId, products) {
+        if (!enabled() || !adminPin()) return Promise.reject(new Error('PIN admin tidak ditemukan'));
+        return rpc('ksp_admin_sync_store_stock', { p_pin: adminPin(), p_store_id: storeId, p_products: products });
+    }
+
+    function adminGetOpnameSessions(storeId) {
+        if (!enabled() || !adminPin()) return Promise.reject(new Error('PIN admin tidak ditemukan'));
+        return rpc('ksp_admin_get_opname_sessions', { p_pin: adminPin(), p_store_id: storeId || 'all' });
+    }
+
+    function adminMarkOpnameSynced(sessionId, adminName) {
+        if (!enabled() || !adminPin()) return Promise.reject(new Error('PIN admin tidak ditemukan'));
+        return rpc('ksp_admin_mark_opname_synced', { p_pin: adminPin(), p_session_id: sessionId, p_admin_name: adminName || 'Admin' });
+    }
+
     // ---------- REALTIME WEBSOCKET LISTENER ----------
     var realtimeClient = null;
     var realtimeChannel = null;
@@ -522,6 +547,19 @@
                 }, function (payload) {
                     console.log('[KspSync Realtime] ksp_stores:', payload);
                     debouncePull(600);
+                })
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'ksp_stock_opname_sessions'
+                }, function (payload) {
+                    console.log('[KspSync Realtime] ksp_stock_opname_sessions:', payload);
+                    if (typeof window.checkPendingOpnameCount === 'function') {
+                        window.checkPendingOpnameCount();
+                    }
+                    if (typeof window.loadOpnameSessionsFromCloud === 'function' && document.getElementById('opnameReviewModal')?.style.display === 'flex') {
+                        window.loadOpnameSessionsFromCloud();
+                    }
                 })
                 .subscribe(function (status) {
                     if (status === 'SUBSCRIBED') {
@@ -708,6 +746,11 @@
         empSubmitProposal: empSubmitProposal,
         empUpdateProfile: empUpdateProfile,
         empGetLeaderboard: empGetLeaderboard,
+        empGetStoreStock: empGetStoreStock,
+        empSubmitStockOpname: empSubmitStockOpname,
+        adminSyncStoreStock: adminSyncStoreStock,
+        adminGetOpnameSessions: adminGetOpnameSessions,
+        adminMarkOpnameSynced: adminMarkOpnameSynced,
         setStatus: setStatus
     };
 })();

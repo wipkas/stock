@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>KSP Check - Cek Stok Cepat Kasir</title>
+
+    <!-- Web App Manifest & Favicons -->
+    <link rel="manifest" href="assets/manifests/manifest-karyawan.json">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-karyawan.svg">
+    <link rel="apple-touch-icon" href="assets/icons/icon-karyawan-192.png">
+    <meta name="theme-color" content="#0F1117">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <style>
+        :root {
+            --bg-color: #0F1117;
+            --card-bg: #181C27;
+            --card-inner: #131722;
+            --card-border: #262B3D;
+            --primary: #4F8EF7;
+            --primary-hover: #3B7ADF;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text-main: #FFFFFF;
+            --text-muted: #8A92A6;
+            --chip-bg: #222736;
+            --input-bg: #11141F;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --modal-backdrop: rgba(0, 0, 0, 0.78);
+        }
+
+        body.light-theme {
+            --bg-color: #F8F5EE;
+            --card-bg: #FFFFFF;
+            --card-inner: #F3EFE7;
+            --card-border: #E8E1D5;
+            --primary: #2B6CB0;
+            --primary-hover: #2C5282;
+            --success: #059669;
+            --warning: #D97706;
+            --danger: #DC2626;
+            --text-main: #2D3748;
+            --text-muted: #718096;
+            --chip-bg: #EFE8DC;
+            --input-bg: #FAF8F5;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --modal-backdrop: rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 90px;
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 12px 14px;
+        }
+
+        /* Top Header */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0 12px 0;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 12px;
+            gap: 10px;
+        }
+
+        .btn-nav-action {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-nav-action:hover {
+            border-color: var(--primary);
+            background: var(--chip-bg);
+        }
+
+        .badge-shift {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(79, 142, 247, 0.15);
+            color: var(--primary);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Locked Banner */
+        .banner-locked {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 14px;
+            display: none;
+        }
+
+        .banner-locked-title {
+            color: var(--danger);
+            font-size: 13.5px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .banner-locked-desc {
+            font-size: 12px;
+            color: var(--text-main);
+            line-height: 1.45;
+        }
+
+        /* Progress Strip */
+        .progress-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: var(--input-bg);
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary) 0%, #10B981 100%);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        /* Filter Chips Provider */
+        .chips-scroll-wrap {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .chips-scroll-wrap::-webkit-scrollbar {
+            display: none;
+        }
+
+        .chip-provider {
+            padding: 7px 12px;
+            border-radius: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 750;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        .chip-provider.active {
+            background: var(--primary);
+            color: #FFFFFF;
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(79, 142, 247, 0.35);
+        }
+
+        .chip-badge {
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .chip-provider.active .chip-badge {
+            background: rgba(255, 255, 255, 0.25);
+            color: #FFFFFF;
+        }
+
+        /* Search & Options */
+        .search-box {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 14px 10px 36px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 600;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        /* Product Cards */
+        .products-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .product-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            transition: border-color 0.15s ease, background-color 0.15s ease;
+        }
+
+        .product-card.focused {
+            border-color: var(--primary);
+            background: var(--card-inner);
+            box-shadow: 0 0 0 1px var(--primary);
+        }
+
+        .product-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .product-cat {
+            font-size: 10.5px;
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 2px;
+        }
+
+        .product-name {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .product-baseline {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Input Group */
+        .product-action-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .input-stock-box {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .input-stock {
+            width: 72px;
+            height: 42px;
+            padding: 6px;
+            text-align: center;
+            background: var(--input-bg);
+            border: 1.5px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-main);
+            font-size: 18px;
+            font-weight: 850;
+            outline: none;
+            transition: all 0.15s ease;
+        }
+
+        .input-stock:focus {
+            border-color: var(--primary);
+            background: var(--bg-color);
+            box-shadow: 0 0 0 2px rgba(79, 142, 247, 0.25);
+        }
+
+        .btn-step {
+            width: 32px;
+            height: 42px;
+            background: var(--card-inner);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-step:active {
+            background: var(--chip-bg);
+        }
+
+        /* Delta Badges */
+        .badge-delta {
+            font-size: 10.5px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 6px;
+            text-align: right;
+            display: inline-block;
+        }
+
+        .delta-unchanged {
+            background: rgba(138, 146, 166, 0.15);
+            color: var(--text-muted);
+        }
+
+        .delta-sold {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+        }
+
+        .delta-restock {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        /* Floating Bottom Action Bar */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border-top: 1px solid var(--card-border);
+            padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)) 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            z-index: 100;
+            box-shadow: 0 -4px 16px var(--shadow-color);
+        }
+
+        .bottom-bar-inner {
+            width: 100%;
+            max-width: 680px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .bottom-summary-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .btn-submit-summary {
+            background: linear-gradient(135deg, var(--primary) 0%, #2563EB 100%);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-size: 13.5px;
+            font-weight: 850;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(79, 142, 247, 0.35);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .btn-submit-summary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(1);
+        }
+
+        /* Modal Dialog */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: var(--modal-backdrop);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 9999;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 16px 40px var(--shadow-color);
+            overflow: hidden;
+            animation: modalFadeIn 0.2s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.96) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-body {
+            padding: 16px 18px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .modal-footer {
+            padding: 14px 18px;
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            background: var(--card-inner);
+        }
+
+        .btn-modal-cancel {
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: transparent;
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 750;
+            cursor: pointer;
+        }
+
+        .btn-modal-confirm {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            background: var(--success);
+            color: #FFFFFF;
+            font-size: 13px;
+            font-weight: 850;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <a href="karyawan.html" class="btn-nav-action" title="Kembali ke Portal Karyawan">←</a>
+                <div>
+                    <div style="font-size: 15px; font-weight: 850; display: flex; align-items: center; gap: 6px;">
+                        <span>📦</span> Cek Stok Cepat
+                    </div>
+                    <div id="topStoreName" style="font-size: 11px; color: var(--text-muted);">Memuat toko...</div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="badgeShiftLabel" class="badge-shift">Shift 1</span>
+                <button class="btn-nav-action" onclick="toggleTheme()" title="Ubah Tema">🌙</button>
+            </div>
+        </header>
+
+        <!-- BANNER TERKUNCI (JIKA SHIFT SUDAH DITUTUP HARI INI) -->
+        <div id="bannerShiftLocked" class="banner-locked">
+            <div class="banner-locked-title">
+                <span>🔒</span> Shift Hari Ini Sudah Ditutup
+            </div>
+            <div class="banner-locked-desc">
+                Anda sudah menyelesaikan cek stok &amp; serah terima shift hari ini. Mode <b>hanya-lihat</b> aktif untuk mencegah perubahan data dari luar jam kerja.
+            </div>
+        </div>
+
+        <!-- STRIP PROGRES & FILTER -->
+        <div class="progress-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 12px; font-weight: 800;">
+                    <span>Progres Cek: </span>
+                    <span id="progressCountText" style="color: var(--primary);">0 / 0</span>
+                </div>
+                <label style="font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="checkbox" id="chkSkipZeroStock" onchange="toggleSkipZeroStock()" style="accent-color: var(--primary);">
+                    <span>Lewati Stok 0</span>
+                </label>
+            </div>
+            <div class="progress-bar-bg">
+                <div id="progressBarFill" class="progress-bar-fill"></div>
+            </div>
+        </div>
+
+        <!-- HORIZONTAL PROVIDER CHIPS -->
+        <div class="chips-scroll-wrap" id="providerChipsMount">
+            <button class="chip-provider active" onclick="selectProviderFilter('all')">
+                <span>Semua</span>
+                <span class="chip-badge" id="badgeAllCount">0</span>
+            </button>
+        </div>
+
+        <!-- SEARCH INPUT -->
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" class="search-input" placeholder="Cari voucher..." oninput="handleSearch(event)">
+        </div>
+
+        <!-- LIST PRODUK -->
+        <div class="products-list" id="productsListMount">
+            <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 30px;">
+                ⏳ Memuat daftar stok toko...
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING BOTTOM BAR -->
+    <div class="bottom-bar">
+        <div class="bottom-bar-inner">
+            <div class="bottom-summary-info">
+                <div style="font-size: 10.5px; color: var(--text-muted); font-weight: 750;">SELISIH FISIK:</div>
+                <div style="font-size: 12.5px; font-weight: 850;">
+                    <span id="txtSoldSummary" style="color: var(--danger);">0 Terjual</span>
+                    <span style="color: var(--text-muted);"> • </span>
+                    <span id="txtRestockSummary" style="color: var(--success);">0 Restok</span>
+                </div>
+            </div>
+
+            <button type="button" id="btnOpenSummary" class="btn-submit-summary" onclick="openSummaryModal()">
+                <span>Selesai &amp; Rekap</span> ➜
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL RINGKASAN OPNAME & TUTUP SHIFT -->
+    <div id="summaryModal" class="modal-backdrop">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h3 style="font-size: 15px; font-weight: 850;">📊 Ringkasan Cek Stok</h3>
+                    <p id="modalSubShift" style="font-size: 11px; color: var(--text-muted);">Shift 1 • Kasir</p>
+                </div>
+                <button type="button" class="btn-modal-cancel" onclick="closeSummaryModal()" style="padding: 4px 10px; font-size: 16px;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Overview Grid -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center;">
+                    <div style="background: var(--card-inner); border: 1px solid var(--card-border); padding: 8px 6px; border-radius: 10px;">
+                        <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">TOTAL DICEK</div>
+                        <div id="sumTotalChecked" style="font-size: 15px; font-weight: 850; color: var(--text-main);">0</div>
+                    </div>
+                    <div style="background: var(--card-inner); border: 1px solid var(--card-border); padding: 8px 6px; border-radius: 10px;">
+                        <div style="font-size: 10px; color: var(--danger); font-weight: 700;">TERJUAL 📉</div>
+                        <div id="sumTotalSold" style="font-size: 15px; font-weight: 850; color: var(--danger);">0 pcs</div>
+                    </div>
+                    <div style="background: var(--card-inner); border: 1px solid var(--card-border); padding: 8px 6px; border-radius: 10px;">
+                        <div style="font-size: 10px; color: var(--success); font-weight: 700;">RESTOK 📈</div>
+                        <div id="sumTotalRestock" style="font-size: 15px; font-weight: 850; color: var(--success);">0 pcs</div>
+                    </div>
+                </div>
+
+                <!-- Warning Notice -->
+                <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 12px; padding: 10px 12px; font-size: 11.5px; line-height: 1.45; color: var(--text-main);">
+                    ⚠️ <b>Konfirmasi Serah Terima:</b> Setelah klik <b>"Simpan &amp; Tutup Shift"</b>, sisa fisik ini otomatis menjadi stok awal untuk Shift berikutnya, dan sesi Shift Anda hari ini akan <b>ditutup &amp; terkunci</b>.
+                </div>
+
+                <!-- Changed Items Details List -->
+                <div>
+                    <div style="font-size: 12px; font-weight: 800; margin-bottom: 6px; color: var(--text-muted);">
+                        RINCIAN PERUBAHAN FISIK:
+                    </div>
+                    <div id="summaryItemsListMount" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+                        <!-- Diisi dinamis via JS -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal-cancel" onclick="closeSummaryModal()">Lanjut Cek</button>
+                <button type="button" id="btnConfirmSubmitOpname" class="btn-modal-confirm" onclick="submitOpnameFinal()">
+                    💾 Simpan &amp; Tutup Shift
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/ksp_sync_config.js?v=20261013"></script>
+    <script src="js/ksp_sync.js?v=20261013"></script>
+    <script src="js/ksp_theme.js?v=20261005"></script>
+    <script src="js/ksp_ui.js?v=20261005"></script>
+    <script>
+        let currentCred = '';
+        let currentActiveEmp = null;
+        let currentStoreId = '';
+        let currentShiftNum = 1;
+        let allProducts = [];
+        let newStockMap = new Map(); // product_id -> newStock (int)
+        let initialStockMap = new Map(); // product_id -> initialStock (int)
+        let selectedProvider = 'all';
+        let searchQuery = '';
+        let skipZeroStock = false;
+        let isShiftClosedToday = false;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            applySavedTheme();
+
+            // 1. Cek kredensial kasir aktif
+            currentCred = sessionStorage.getItem('kspcheck_emp_cred') || localStorage.getItem('kspcheck_emp_cred') || '';
+            const rawActive = sessionStorage.getItem('kspcheck_active_emp') || localStorage.getItem('kspcheck_active_emp');
+            if (rawActive) {
+                try { currentActiveEmp = JSON.parse(rawActive); } catch (e) {}
+            }
+
+            if (!currentCred || !currentActiveEmp) {
+                alert('Silakan login terlebih dahulu di Portal Karyawan!');
+                window.location.href = 'karyawan.html';
+                return;
+            }
+
+            currentStoreId = currentActiveEmp.storeId || '';
+
+            // Pulihkan draft opsi 'skipZeroStock'
+            skipZeroStock = localStorage.getItem('ksp_opt_skip_zero_' + currentStoreId) === 'true';
+            const chkZero = document.getElementById('chkSkipZeroStock');
+            if (chkZero) chkZero.checked = skipZeroStock;
+
+            // 2. Tarik data stok toko dari Supabase via RPC Project B
+            await fetchStoreStock();
+        });
+
+        async function fetchStoreStock() {
+            if (!window.KspSync || !KspSync.enabled()) {
+                alert('Konfigurasi sinkronisasi cloud belum aktif.');
+                return;
+            }
+
+            try {
+                const res = await KspSync.empGetStoreStock(currentCred);
+                if (!res || !res.ok) {
+                    alert('Gagal mengambil data stok toko: ' + ((res && res.error) || 'Koneksi ditolak'));
+                    window.location.href = 'karyawan.html';
+                    return;
+                }
+
+                currentShiftNum = res.shift_num || 1;
+                isShiftClosedToday = !!res.already_closed;
+
+                // Update UI Header
+                document.getElementById('topStoreName').innerText = (res.emp_name ? res.emp_name + ' • ' : '') + 'Cabang ' + res.store_id;
+                document.getElementById('badgeShiftLabel').innerText = (currentShiftNum === 1 ? '☀️ Shift 1 (Pagi)' : '🌙 Shift 2 (Malam)');
+                document.getElementById('modalSubShift').innerText = `Shift ${currentShiftNum} • ${res.emp_name || 'Kasir'}`;
+
+                // Cek apakah shift hari ini sudah ditutup
+                if (isShiftClosedToday) {
+                    document.getElementById('bannerShiftLocked').style.display = 'block';
+                    document.getElementById('btnOpenSummary').disabled = true;
+                    document.getElementById('btnOpenSummary').innerText = '🔒 Shift Sudah Ditutup';
+                }
+
+                allProducts = Array.isArray(res.products) ? res.products : [];
+
+                // Simpan initial stock & pulihkan draft
+                initialStockMap.clear();
+                allProducts.forEach(p => {
+                    initialStockMap.set(p.product_id, parseInt(p.current_stock || 0, 10));
+                });
+
+                restoreLocalDraft();
+                renderProviderChips();
+                renderProducts();
+                updateProgressUI();
+
+            } catch (err) {
+                console.error('Error fetchStoreStock:', err);
+                document.getElementById('productsListMount').innerHTML = `
+                    <div style="text-align: center; color: var(--danger); padding: 30px;">
+                        ❌ Gagal memuat stok dari cloud: ${err.message || 'Koneksi terputus'}
+                        <div style="margin-top: 10px;">
+                            <button onclick="fetchStoreStock()" class="btn-modal-cancel">Coba Lagi</button>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        // ==================== DRAFT RESTORATION & PERSISTENCE ====================
+        function restoreLocalDraft() {
+            newStockMap.clear();
+            const draftKey = 'ksp_draft_stock_' + currentStoreId;
+            let savedDraft = null;
+            try {
+                const raw = localStorage.getItem(draftKey);
+                if (raw) savedDraft = JSON.parse(raw);
+            } catch (e) {}
+
+            allProducts.forEach(p => {
+                const pId = p.product_id;
+                if (savedDraft && savedDraft[pId] !== undefined) {
+                    newStockMap.set(pId, parseInt(savedDraft[pId], 10));
+                } else {
+                    // Default baseline: sama dengan stok awal (pas)
+                    newStockMap.set(pId, initialStockMap.get(pId));
+                }
+            });
+        }
+
+        function saveLocalDraft() {
+            if (isShiftClosedToday) return;
+            const draftKey = 'ksp_draft_stock_' + currentStoreId;
+            const draftObj = {};
+            newStockMap.forEach((val, key) => {
+                draftObj[key] = val;
+            });
+            try {
+                localStorage.setItem(draftKey, JSON.stringify(draftObj));
+            } catch (e) {}
+        }
+
+        function clearLocalDraft() {
+            try {
+                localStorage.removeItem('ksp_draft_stock_' + currentStoreId);
+            } catch (e) {}
+        }
+
+        // ==================== RENDERING UI ====================
+        function renderProviderChips() {
+            const mount = document.getElementById('providerChipsMount');
+            if (!mount) return;
+
+            const providerCounts = new Map();
+            allProducts.forEach(p => {
+                const prov = p.provider_name || 'Lainnya';
+                providerCounts.set(prov, (providerCounts.get(prov) || 0) + 1);
+            });
+
+            let html = `
+                <button class="chip-provider ${selectedProvider === 'all' ? 'active' : ''}" onclick="selectProviderFilter('all')">
+                    <span>Semua</span>
+                    <span class="chip-badge">${allProducts.length}</span>
+                </button>`;
+
+            providerCounts.forEach((count, prov) => {
+                const isActive = (selectedProvider === prov);
+                html += `
+                    <button class="chip-provider ${isActive ? 'active' : ''}" onclick="selectProviderFilter('${escapeHtml(prov)}')">
+                        <span>${escapeHtml(prov)}</span>
+                        <span class="chip-badge">${count}</span>
+                    </button>`;
+            });
+
+            mount.innerHTML = html;
+        }
+
+        function selectProviderFilter(prov) {
+            selectedProvider = prov;
+            renderProviderChips();
+            renderProducts();
+        }
+
+        function handleSearch(e) {
+            searchQuery = (e.target.value || '').toLowerCase().trim();
+            renderProducts();
+        }
+
+        function toggleSkipZeroStock() {
+            skipZeroStock = document.getElementById('chkSkipZeroStock').checked;
+            try {
+                localStorage.setItem('ksp_opt_skip_zero_' + currentStoreId, String(skipZeroStock));
+            } catch (e) {}
+            renderProducts();
+            updateProgressUI();
+        }
+
+        function renderProducts() {
+            const mount = document.getElementById('productsListMount');
+            if (!mount) return;
+
+            let filtered = allProducts.filter(p => {
+                if (selectedProvider !== 'all' && (p.provider_name || 'Lainnya') !== selectedProvider) {
+                    return false;
+                }
+                if (skipZeroStock && (initialStockMap.get(p.product_id) || 0) === 0) {
+                    return false;
+                }
+                if (searchQuery) {
+                    const matchName = (p.product_name || '').toLowerCase().includes(searchQuery);
+                    const matchProv = (p.provider_name || '').toLowerCase().includes(searchQuery);
+                    const matchCat = (p.category_name || '').toLowerCase().includes(searchQuery);
+                    if (!matchName && !matchProv && !matchCat) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                mount.innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 30px;">
+                        Tidak ada produk yang cocok dengan filter.
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            filtered.forEach((p, idx) => {
+                const pId = p.product_id;
+                const initStock = initialStockMap.get(pId) || 0;
+                const newStock = newStockMap.get(pId) !== undefined ? newStockMap.get(pId) : initStock;
+                const diff = newStock - initStock;
+
+                let deltaClass = 'delta-unchanged';
+                let deltaText = '✓ Pas';
+                if (diff < 0) {
+                    deltaClass = 'delta-sold';
+                    deltaText = `📉 ${diff} (Terjual)`;
+                } else if (diff > 0) {
+                    deltaClass = 'delta-restock';
+                    deltaText = `📈 +${diff} (Restok)`;
+                }
+
+                html += `
+                    <div class="product-card" id="card_prod_${pId}">
+                        <div class="product-info">
+                            <div class="product-cat">${escapeHtml(p.provider_name || '')} • ${escapeHtml(p.category_name || 'Voucher')}</div>
+                            <div class="product-name">${escapeHtml(p.product_name || '')}</div>
+                            <div class="product-baseline">
+                                <span>Awal: <b>${initStock} pcs</b></span>
+                            </div>
+                        </div>
+                        <div class="product-action-wrap">
+                            <div class="input-stock-box">
+                                <button type="button" class="btn-step" onclick="stepStock(${pId}, -1)" ${isShiftClosedToday ? 'disabled' : ''}>-</button>
+                                <input type="number" 
+                                       id="input_stock_${pId}" 
+                                       class="input-stock" 
+                                       inputmode="numeric" 
+                                       pattern="[0-9]*"
+                                       value="${newStock}" 
+                                       onfocus="handleInputFocus(${pId})"
+                                       oninput="handleStockChange(${pId}, this.value)"
+                                       onkeydown="handleInputKeydown(event, ${pId})"
+                                       ${isShiftClosedToday ? 'disabled' : ''}>
+                                <button type="button" class="btn-step" onclick="stepStock(${pId}, 1)" ${isShiftClosedToday ? 'disabled' : ''}>+</button>
+                            </div>
+                            <span id="badge_delta_${pId}" class="badge-delta ${deltaClass}">${deltaText}</span>
+                        </div>
+                    </div>`;
+            });
+
+            mount.innerHTML = html;
+        }
+
+        // ==================== INTERACTION & NAVIGATION ====================
+        function handleInputFocus(pId) {
+            document.querySelectorAll('.product-card').forEach(c => c.classList.remove('focused'));
+            const card = document.getElementById('card_prod_' + pId);
+            if (card) card.classList.add('focused');
+            const inp = document.getElementById('input_stock_' + pId);
+            if (inp && inp.select) inp.select();
+        }
+
+        function handleStockChange(pId, val) {
+            if (isShiftClosedToday) return;
+            const parsed = parseInt(val, 10);
+            const finalVal = isNaN(parsed) || parsed < 0 ? 0 : parsed;
+            newStockMap.set(pId, finalVal);
+
+            updateDeltaBadge(pId);
+            updateProgressUI();
+            saveLocalDraft();
+        }
+
+        function stepStock(pId, delta) {
+            if (isShiftClosedToday) return;
+            const cur = newStockMap.get(pId) || 0;
+            const nextVal = Math.max(0, cur + delta);
+            newStockMap.set(pId, nextVal);
+
+            const inp = document.getElementById('input_stock_' + pId);
+            if (inp) inp.value = nextVal;
+
+            updateDeltaBadge(pId);
+            updateProgressUI();
+            saveLocalDraft();
+        }
+
+        function handleInputKeydown(e, pId) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Pindah otomatis ke input produk berikutnya
+                const inputs = Array.from(document.querySelectorAll('.input-stock:not([disabled])'));
+                const curIdx = inputs.findIndex(el => el.id === 'input_stock_' + pId);
+                if (curIdx >= 0 && curIdx < inputs.length - 1) {
+                    inputs[curIdx + 1].focus();
+                    if (inputs[curIdx + 1].select) inputs[curIdx + 1].select();
+                } else {
+                    document.activeElement.blur();
+                }
+            }
+        }
+
+        function updateDeltaBadge(pId) {
+            const badge = document.getElementById('badge_delta_' + pId);
+            if (!badge) return;
+
+            const initStock = initialStockMap.get(pId) || 0;
+            const newStock = newStockMap.get(pId) || 0;
+            const diff = newStock - initStock;
+
+            let deltaClass = 'delta-unchanged';
+            let deltaText = '✓ Pas';
+            if (diff < 0) {
+                deltaClass = 'delta-sold';
+                deltaText = `📉 ${diff} (Terjual)`;
+            } else if (diff > 0) {
+                deltaClass = 'delta-restock';
+                deltaText = `📈 +${diff} (Restok)`;
+            }
+
+            badge.className = 'badge-delta ' + deltaClass;
+            badge.innerText = deltaText;
+        }
+
+        function updateProgressUI() {
+            let totalSold = 0;
+            let totalRestock = 0;
+            let checkedCount = 0;
+
+            allProducts.forEach(p => {
+                const pId = p.product_id;
+                const initStock = initialStockMap.get(pId) || 0;
+                const newStock = newStockMap.get(pId) !== undefined ? newStockMap.get(pId) : initStock;
+                const diff = newStock - initStock;
+
+                if (diff < 0) totalSold += Math.abs(diff);
+                if (diff > 0) totalRestock += diff;
+                checkedCount++;
+            });
+
+            document.getElementById('txtSoldSummary').innerText = `${totalSold} Terjual`;
+            document.getElementById('txtRestockSummary').innerText = `${totalRestock} Restok`;
+            document.getElementById('progressCountText').innerText = `${checkedCount} / ${allProducts.length}`;
+
+            const pct = allProducts.length > 0 ? (checkedCount / allProducts.length) * 100 : 0;
+            const barFill = document.getElementById('progressBarFill');
+            if (barFill) barFill.style.width = pct + '%';
+        }
+
+        // ==================== MODAL SUMMARY & SUBMISSION ====================
+        function openSummaryModal() {
+            if (isShiftClosedToday) {
+                alert('Shift hari ini sudah ditutup.');
+                return;
+            }
+
+            let totalInitial = 0;
+            let totalFinal = 0;
+            let totalSold = 0;
+            let totalRestock = 0;
+            let changedCount = 0;
+            let changedListHtml = '';
+
+            allProducts.forEach(p => {
+                const pId = p.product_id;
+                const init = initialStockMap.get(pId) || 0;
+                const final = newStockMap.get(pId) !== undefined ? newStockMap.get(pId) : init;
+                const diff = final - init;
+
+                totalInitial += init;
+                totalFinal += final;
+
+                if (diff !== 0) {
+                    changedCount++;
+                    if (diff < 0) totalSold += Math.abs(diff);
+                    if (diff > 0) totalRestock += diff;
+
+                    const color = diff < 0 ? 'var(--danger)' : 'var(--success)';
+                    const sign = diff > 0 ? '+' : '';
+                    changedListHtml += `
+                        <div style="background: var(--card-inner); border: 1px solid var(--card-border); padding: 8px 10px; border-radius: 8px; font-size: 11.5px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-weight: 800; color: var(--text-main);">${escapeHtml(p.product_name)}</span>
+                                <div style="color: var(--text-muted); font-size: 10px;">${escapeHtml(p.provider_name || '')}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-weight: 800; color: ${color};">${init} → ${final} (${sign}${diff})</span>
+                            </div>
+                        </div>`;
+                }
+            });
+
+            if (changedCount === 0) {
+                changedListHtml = `
+                    <div style="text-align: center; color: var(--text-muted); font-size: 11.5px; padding: 12px; background: var(--card-inner); border-radius: 8px;">
+                        Semua fisik pas (tidak ada selisih penjualan maupun restok).
+                    </div>`;
+            }
+
+            document.getElementById('sumTotalChecked').innerText = allProducts.length;
+            document.getElementById('sumTotalSold').innerText = totalSold + ' pcs';
+            document.getElementById('sumTotalRestock').innerText = totalRestock + ' pcs';
+            document.getElementById('summaryItemsListMount').innerHTML = changedListHtml;
+
+            document.getElementById('summaryModal').classList.add('open');
+        }
+
+        function closeSummaryModal() {
+            document.getElementById('summaryModal').classList.remove('open');
+        }
+
+        async function submitOpnameFinal() {
+            const btn = document.getElementById('btnConfirmSubmitOpname');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Menyimpan...';
+            }
+
+            try {
+                let totalInitial = 0;
+                let totalFinal = 0;
+                let totalSold = 0;
+                let totalRestock = 0;
+                let changedCount = 0;
+                const detailsArr = [];
+
+                allProducts.forEach(p => {
+                    const pId = p.product_id;
+                    const init = initialStockMap.get(pId) || 0;
+                    const final = newStockMap.get(pId) !== undefined ? newStockMap.get(pId) : init;
+                    const diff = final - init;
+
+                    totalInitial += init;
+                    totalFinal += final;
+
+                    if (diff < 0) totalSold += Math.abs(diff);
+                    if (diff > 0) totalRestock += diff;
+
+                    detailsArr.push({
+                        product_id: pId,
+                        product_name: p.product_name,
+                        provider_name: p.provider_name || 'Voucher',
+                        category_name: p.category_name || '',
+                        initial_stock: init,
+                        new_stock: final,
+                        delta: diff,
+                        sell_price: p.sell_price || 0
+                    });
+
+                    if (diff !== 0) changedCount++;
+                });
+
+                const summaryText = `Opname Shift ${currentShiftNum}: ${allProducts.length} produk dicek, ${totalSold} pcs terjual, ${totalRestock} pcs restok.`;
+
+                const payload = {
+                    store_name: 'Cabang ' + currentStoreId,
+                    shift_num: currentShiftNum,
+                    total_products: allProducts.length,
+                    total_initial: totalInitial,
+                    total_final: totalFinal,
+                    total_sold: totalSold,
+                    total_restock: totalRestock,
+                    total_diff: totalFinal - totalInitial,
+                    details: detailsArr,
+                    summary_text: summaryText
+                };
+
+                const res = await KspSync.empSubmitStockOpname(currentCred, payload);
+                if (!res || !res.ok) {
+                    throw new Error((res && (res.message || res.error)) || 'Gagal menyimpan hasil opname ke server');
+                }
+
+                // Berhasil disimpan!
+                clearLocalDraft();
+                alert(`✅ Hasil Opname Berhasil Disimpan!\n\n• Sesi: ${res.session_id}\n• Shift ${currentShiftNum} resmi ditutup.\n• Sisa fisik telah dialihkan ke Shift berikutnya.`);
+                window.location.href = 'karyawan.html';
+
+            } catch (err) {
+                console.error('Submit opname error:', err);
+                alert('❌ Gagal: ' + (err.message || 'Terjadi kesalahan saat menyimpan'));
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = '💾 Simpan & Tutup Shift';
+                }
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>

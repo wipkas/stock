@@ -80,9 +80,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="KSP Check">
 
-    <!-- Supabase JS Client & CryptoJS CDN -->
+    <!-- Supabase JS Client & CryptoJS CDN & Project B Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script src="js/ksp_sync_config.js?v=20261013"></script>
+    <script src="js/ksp_sync.js?v=20261013"></script>
 
     <style>
         :root {
@@ -2499,6 +2501,12 @@
                 <!-- Refresh Button -->
                 <button class="btn-nav-action" onclick="fetchVouchersFromSupabase()" title="Refresh Data">🔄</button>
 
+                <!-- Opname Kasir Review Button with Pending Badge -->
+                <button class="btn-nav-action" id="btnTopOpnameReview" onclick="showOpnameReviewModal()" title="Review Opname Kasir (Staging)" style="position: relative;">
+                    <span>📋</span>
+                    <span id="badgePendingOpnameCount" style="display: none; position: absolute; top: -4px; right: -4px; background: #EF4444; color: #FFFFFF; border-radius: 10px; font-size: 10px; font-weight: 850; padding: 1px 5px; line-height: 1.2; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);">0</span>
+                </button>
+
                 <!-- Unified Settings / Toggle Menu -->
                 <div class="header-settings" id="headerSettings">
                     <button class="btn-nav-action btn-settings" id="btnSettingsToggle" onclick="toggleSettingsMenu(event)" title="Pengaturan tampilan" aria-label="Pengaturan tampilan" aria-expanded="false">⚙️</button>
@@ -2528,6 +2536,15 @@
                             <div class="settings-title">Format Pesan</div>
                             <button class="settings-item" id="settingTemplateModal" onclick="showTemplateModal(); closeSettingsMenu()">
                                 <span class="settings-icon">📝</span><span class="settings-label">Format Template Pesan</span><span class="settings-state" id="settingTemplateModalState">Default</span>
+                            </button>
+                        </div>
+                        <div class="settings-group">
+                            <div class="settings-title">Portal Karyawan &amp; Opname</div>
+                            <button class="settings-item" onclick="showSyncCatalogModal(); closeSettingsMenu()">
+                                <span class="settings-icon">📤</span><span class="settings-label">Inisialisasi Stok ke Portal Kasir</span><span class="settings-state">Sync ➜</span>
+                            </button>
+                            <button class="settings-item" onclick="showOpnameReviewModal(); closeSettingsMenu()">
+                                <span class="settings-icon">📋</span><span class="settings-label">Review Opname Kasir</span><span class="settings-state" id="settingOpnameState">0 Sesi</span>
                             </button>
                         </div>
                         <div class="settings-group">
@@ -3418,6 +3435,89 @@
                     <!-- e.g. 3 perangkat aktif -->
                 </div>
                 <button type="button" onclick="closeManageDevicesModal()" style="padding: 7px 16px; background: transparent; border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer;">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: INISIALISASI KATALOG & STOK KE PORTAL KARYAWAN (PROJECT B) -->
+    <div id="syncCatalogModal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closeSyncCatalogModal()">
+        <div class="device-manage-card" style="max-width: 540px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <div>
+                    <h2 style="font-size: 16px; font-weight: 850; color: var(--text-main); margin-bottom: 3px; display: flex; align-items: center; gap: 8px;">
+                        <span>📤</span> Inisialisasi Stok ke Portal Kasir
+                    </h2>
+                    <p style="font-size: 11.5px; color: var(--text-muted); margin: 0;">Salin katalog &amp; stok riil Project A ke Project B (Portal Karyawan)</p>
+                </div>
+                <button type="button" onclick="closeSyncCatalogModal()" title="Tutup" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1;">&times;</button>
+            </div>
+
+            <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; margin-bottom: 12px; font-size: 12px; line-height: 1.45;">
+                ℹ️ <b>Mekanisme:</b> Stok riil saat ini dari Project A akan disalin ke cabang toko di Project B sebagai baseline awal. Kasir di cabang akan langsung melihat stok ini saat opname.
+            </div>
+
+            <!-- Target Selection -->
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 11.5px; font-weight: 750; color: var(--text-main); margin-bottom: 5px;">Pilih Target Cabang Toko:</label>
+                <select id="selSyncCatalogTarget" style="width: 100%; padding: 9px 12px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; color: var(--text-main); font-size: 12.5px; font-weight: 700;">
+                    <option value="all">🚀 Semua Cabang Terdaftar Sekaligus</option>
+                </select>
+            </div>
+
+            <!-- Template Source (Jika ada cabang baru web yang belum ada di Project A) -->
+            <div id="boxSyncTemplateSource" style="display: none; margin-bottom: 12px; background: rgba(79, 142, 247, 0.08); border: 1px dashed rgba(79, 142, 247, 0.35); border-radius: 10px; padding: 10px 12px;">
+                <label style="display: block; font-size: 11px; font-weight: 750; color: var(--primary); margin-bottom: 4px;">Cabang belum terdaftar di Project A. Salin katalog dari:</label>
+                <select id="selSyncCatalogTemplate" style="width: 100%; padding: 7px 10px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 11.5px;">
+                </select>
+            </div>
+
+            <div id="syncCatalogStatus" style="display: none; padding: 8px 12px; border-radius: 8px; font-size: 11.5px; margin-bottom: 10px;"></div>
+
+            <!-- Modal Footer -->
+            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 10px;">
+                <button type="button" onclick="closeSyncCatalogModal()" style="padding: 8px 16px; background: transparent; border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer;">Batal</button>
+                <button type="button" id="btnExecuteSyncCatalog" onclick="executeSyncCatalogToEmployees()" style="padding: 8px 18px; background: var(--primary); border: none; border-radius: 8px; font-size: 12px; font-weight: 800; color: #FFFFFF; cursor: pointer; box-shadow: 0 2px 10px rgba(79, 142, 247, 0.35);">
+                    🚀 Inisialisasi Sekarang
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: REVIEW HASIL OPNAME KASIR (APPROVAL & SYNC KE STOK MASTER) -->
+    <div id="opnameReviewModal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closeOpnameReviewModal()">
+        <div class="device-manage-card" style="max-width: 640px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <div>
+                    <h2 style="font-size: 16px; font-weight: 850; color: var(--text-main); margin-bottom: 3px; display: flex; align-items: center; gap: 8px;">
+                        <span>📋</span> Review Hasil Opname Kasir
+                    </h2>
+                    <p style="font-size: 11.5px; color: var(--text-muted); margin: 0;">Tinjau selisih fisik kasir &amp; sinkronkan ke Stok Master Project A</p>
+                </div>
+                <button type="button" onclick="closeOpnameReviewModal()" title="Tutup" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1;">&times;</button>
+            </div>
+
+            <!-- Filter Status Tab -->
+            <div style="display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                <button type="button" id="tabOpnamePending" onclick="switchOpnameReviewTab('pending')" style="width: auto; padding: 6px 14px; font-size: 11.5px; font-weight: 800; border-radius: 8px; border: none; background: var(--primary); color: #fff; cursor: pointer;">
+                    Menunggu Sync (<span id="countPendingOpname">0</span>)
+                </button>
+                <button type="button" id="tabOpnameAll" onclick="switchOpnameReviewTab('all')" style="width: auto; padding: 6px 14px; font-size: 11.5px; font-weight: 700; border-radius: 8px; border: 1px solid var(--card-border); background: transparent; color: var(--text-muted); cursor: pointer;">
+                    Semua Riwayat
+                </button>
+            </div>
+
+            <!-- List Sesi Opname -->
+            <div id="opnameSessionsMount" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; min-height: 140px; max-height: 50vh; padding-right: 4px;">
+                <div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 24px;">Memuat sesi opname kasir...</div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; border-top: 1px solid var(--card-border); padding-top: 10px;">
+                <button type="button" onclick="loadOpnameSessionsFromCloud()" style="padding: 6px 12px; background: transparent; border: 1px solid var(--card-border); border-radius: 8px; font-size: 11px; font-weight: 700; color: var(--primary); cursor: pointer;">
+                    🔄 Segarkan
+                </button>
+                <button type="button" onclick="closeOpnameReviewModal()" style="padding: 7px 16px; background: transparent; border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer;">
                     Tutup
                 </button>
             </div>
@@ -5076,6 +5176,9 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                 // Lazy loading: Hanya muat barang jika pengguna sedang membuka Tab Produk
                 if (currentTab === 'produk' && typeof fetchBarangFromSupabase === 'function') fetchBarangFromSupabase();
                 showToast('✅ Data berhasil diperbarui!');
+                if (typeof checkPendingOpnameCount === 'function') {
+                    checkPendingOpnameCount().catch(e => console.warn('checkPendingOpnameCount err:', e));
+                }
 
             } catch (err) {
                 console.error('Fetch error:', err);
@@ -14029,6 +14132,524 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 showToast('💾 Berkas fee_rules_export.json berhasil diunduh!');
             });
         }
+
+        // ============================================================================
+        // EMPLOYEE STOCK OPNAME & CATALOG INITIALIZATION (BRIDGE TO PROJECT B)
+        // ============================================================================
+        let currentOpnameTab = 'pending';
+        let cachedOpnameSessions = [];
+        let cachedProjectBStores = [];
+
+        async function checkPendingOpnameCount() {
+            if (!window.KspSync || typeof window.KspSync.adminGetOpnameSessions !== 'function') return;
+            const pin = localStorage.getItem('kspcheck_viewer_pin') || '';
+            if (!pin) return;
+
+            try {
+                const res = await window.KspSync.adminGetOpnameSessions('all');
+                if (res && res.ok && Array.isArray(res.sessions)) {
+                    cachedOpnameSessions = res.sessions;
+                    const pendingList = res.sessions.filter(s => s.status === 'pending');
+                    const count = pendingList.length;
+
+                    const countEl = document.getElementById('countPendingOpname');
+                    if (countEl) countEl.textContent = count;
+
+                    const badgeTop = document.getElementById('badgePendingOpnameCount');
+                    if (badgeTop) {
+                        badgeTop.textContent = count;
+                        badgeTop.style.display = count > 0 ? 'inline-block' : 'none';
+                    }
+
+                    const stateEl = document.getElementById('settingOpnameState');
+                    if (stateEl) {
+                        if (count > 0) {
+                            stateEl.textContent = `${count} menunggu`;
+                            stateEl.className = 'status-badge-inline status-warning';
+                        } else {
+                            stateEl.textContent = 'Aman';
+                            stateEl.className = 'status-badge-inline status-info';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Gagal memeriksa antrean opname kasir:', e);
+            }
+        }
+        window.checkPendingOpnameCount = checkPendingOpnameCount;
+
+        async function showSyncCatalogModal() {
+            const modal = document.getElementById('syncCatalogModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+
+            const statusEl = document.getElementById('syncCatalogStatus');
+            if (statusEl) {
+                statusEl.style.display = 'none';
+                statusEl.textContent = '';
+            }
+
+            const selTarget = document.getElementById('selSyncCatalogTarget');
+            const selTemplate = document.getElementById('selSyncCatalogTemplate');
+            const boxTemplate = document.getElementById('boxSyncTemplateSource');
+
+            if (selTarget) selTarget.innerHTML = '<option value="all">🚀 Semua Cabang Terdaftar Sekaligus</option>';
+            if (selTemplate) selTemplate.innerHTML = '';
+            if (boxTemplate) boxTemplate.style.display = 'none';
+
+            // Ambil perangkat yang terdeteksi di Project A
+            const devicesMap = getDiscoveredDevicesMap();
+
+            // Isi template device select (dari Project A)
+            if (selTemplate) {
+                devicesMap.forEach((name, id) => {
+                    const opt = document.createElement('option');
+                    opt.value = id;
+                    opt.textContent = `📱 ${name} (${id})`;
+                    selTemplate.appendChild(opt);
+                });
+            }
+
+            // Ambil toko dari Project B (ksp_stores)
+            try {
+                const cfg = window.KSP_SYNC_CONFIG || {};
+                if (cfg.url && cfg.key) {
+                    const baseUrl = cfg.url.replace(/\/+$/, '');
+                    const headers = { 'apikey': cfg.key };
+                    if (String(cfg.key).indexOf('sb_') !== 0) headers['Authorization'] = 'Bearer ' + cfg.key;
+
+                    const resp = await fetch(baseUrl + '/rest/v1/ksp_stores?select=id,name', { headers });
+                    if (resp.ok) {
+                        cachedProjectBStores = await resp.json();
+                    }
+                }
+            } catch (err) {
+                console.warn('Gagal mengambil ksp_stores dari Project B:', err);
+            }
+
+            // Gabungkan target ke selTarget
+            if (selTarget) {
+                // Tambahkan toko dari Project B
+                if (Array.isArray(cachedProjectBStores) && cachedProjectBStores.length > 0) {
+                    const optGroupB = document.createElement('optgroup');
+                    optGroupB.label = '🏬 Cabang Portal Karyawan (Project B)';
+                    cachedProjectBStores.forEach(st => {
+                        const opt = document.createElement('option');
+                        opt.value = `store_${st.id}`;
+                        opt.dataset.type = 'b_store';
+                        opt.dataset.id = st.id;
+                        opt.dataset.name = st.name || st.id;
+                        opt.textContent = `🏪 ${st.name} [${st.id}]`;
+                        optGroupB.appendChild(opt);
+                    });
+                    selTarget.appendChild(optGroupB);
+                }
+
+                // Tambahkan perangkat dari Project A
+                if (devicesMap.size > 0) {
+                    const optGroupA = document.createElement('optgroup');
+                    optGroupA.label = '📱 Perangkat Terdaftar Project A';
+                    devicesMap.forEach((name, id) => {
+                        const opt = document.createElement('option');
+                        opt.value = `dev_${id}`;
+                        opt.dataset.type = 'a_dev';
+                        opt.dataset.id = id;
+                        opt.dataset.name = name;
+                        opt.textContent = `📱 ${name} [${id}]`;
+                        optGroupA.appendChild(opt);
+                    });
+                    selTarget.appendChild(optGroupA);
+                }
+
+                // Event listener onchange untuk menampilkan pilihan template jika cabang belum ada di Project A
+                selTarget.onchange = function() {
+                    const selected = selTarget.options[selTarget.selectedIndex];
+                    if (!selected || selected.value === 'all') {
+                        if (boxTemplate) boxTemplate.style.display = 'none';
+                        return;
+                    }
+
+                    const targetId = selected.dataset.id;
+                    const existsInProjectA = devicesMap.has(targetId);
+                    if (!existsInProjectA && boxTemplate) {
+                        boxTemplate.style.display = 'block';
+                    } else if (boxTemplate) {
+                        boxTemplate.style.display = 'none';
+                    }
+                };
+            }
+        }
+        window.showSyncCatalogModal = showSyncCatalogModal;
+
+        function closeSyncCatalogModal() {
+            const modal = document.getElementById('syncCatalogModal');
+            if (modal) modal.style.display = 'none';
+        }
+        window.closeSyncCatalogModal = closeSyncCatalogModal;
+
+        async function executeSyncCatalogToEmployees() {
+            const selTarget = document.getElementById('selSyncCatalogTarget');
+            const selTemplate = document.getElementById('selSyncCatalogTemplate');
+            const statusEl = document.getElementById('syncCatalogStatus');
+            const btnExec = document.getElementById('btnExecuteSyncCatalog');
+
+            if (!selTarget) return;
+            const targetVal = selTarget.value;
+
+            if (!confirm('Inisialisasi katalog dan stok riil saat ini ke Portal Kasir (Project B)?\n\nStok riil di Project A akan menjadi stok baseline awal kasir saat opname.')) {
+                return;
+            }
+
+            if (btnExec) btnExec.disabled = true;
+            if (statusEl) {
+                statusEl.style.display = 'block';
+                statusEl.style.background = 'rgba(79, 142, 247, 0.12)';
+                statusEl.style.color = 'var(--primary)';
+                statusEl.textContent = '⏳ Sedang menyiapkan dan menyinkronkan data katalog...';
+            }
+
+            try {
+                const templateDeviceId = selTemplate ? selTemplate.value : '';
+                const templateVouchers = allVouchers.filter(v => v.device_id === templateDeviceId);
+
+                let storesToSync = [];
+                if (targetVal === 'all') {
+                    if (Array.isArray(cachedProjectBStores) && cachedProjectBStores.length > 0) {
+                        storesToSync = cachedProjectBStores.map(s => ({ id: s.id, name: s.name }));
+                    } else {
+                        const devMap = getDiscoveredDevicesMap();
+                        devMap.forEach((name, id) => {
+                            storesToSync.push({ id, name });
+                        });
+                    }
+                } else {
+                    const selectedOpt = selTarget.options[selTarget.selectedIndex];
+                    storesToSync = [{ id: selectedOpt.dataset.id, name: selectedOpt.dataset.name }];
+                }
+
+                let syncedStoresCount = 0;
+                let totalProductsSynced = 0;
+
+                for (const store of storesToSync) {
+                    const storeId = store.id;
+                    const storeName = store.name || storeId;
+
+                    // Cari apakah ada voucher di Project A untuk storeId ini
+                    let storeVouchers = allVouchers.filter(v => v.device_id === storeId);
+
+                    // Jika belum ada di Project A, daftarkan cabang baru ke Project A menggunakan template
+                    if (storeVouchers.length === 0 && templateVouchers.length > 0 && supabaseClient) {
+                        const newVouchersPayload = templateVouchers.map(tv => ({
+                            id: `${storeId}_${tv.product_id}`,
+                            device_id: storeId,
+                            device_name: storeName,
+                            product_id: tv.product_id,
+                            product_name: tv.product_name,
+                            provider_name: tv.provider_name,
+                            category_name: tv.category_name || tv.category || '',
+                            stock: Number(tv.stock || 0),
+                            cost_price: Number(tv.cost_price || 0),
+                            sell_price: Number(tv.sell_price || tv.unit_price || tv.price || 0),
+                            min_limit: Number(tv.min_limit || 0),
+                            is_active: tv.is_active !== undefined ? !!tv.is_active : true,
+                            sort_order: Number(tv.sort_order || 9999),
+                            provider_order: Number(tv.provider_order || 0),
+                            category_order: Number(tv.category_order || 0),
+                            product_order: Number(tv.product_order || 0),
+                            updated_at: new Date().toISOString()
+                        }));
+
+                        const { error: insErr } = await supabaseClient.from('vouchers').upsert(newVouchersPayload);
+                        if (insErr) {
+                            console.warn(`Gagal mendaftarkan cabang ${storeName} ke Project A:`, insErr);
+                        } else {
+                            storeVouchers = newVouchersPayload;
+                        }
+                    } else if (storeVouchers.length === 0 && allVouchers.length > 0) {
+                        // Fallback jika tidak ada template: kumpulkan voucher unik dari allVouchers
+                        const uniqueMap = new Map();
+                        allVouchers.forEach(v => {
+                            if (!uniqueMap.has(v.product_id)) uniqueMap.set(v.product_id, v);
+                        });
+                        storeVouchers = Array.from(uniqueMap.values());
+                    }
+
+                    if (storeVouchers.length === 0) continue;
+
+                    // Siapkan payload untuk Project B (ksp_admin_sync_store_stock)
+                    const payloadProducts = storeVouchers.map(v => ({
+                        product_id: Number(v.product_id),
+                        product_name: v.product_name,
+                        provider_name: v.provider_name || 'VOUCHER',
+                        category_name: v.category_name || v.category || '',
+                        stock: Number(v.stock !== undefined ? v.stock : 0),
+                        sell_price: Number(v.sell_price || v.unit_price || v.price || 0),
+                        cost_price: Number(v.cost_price || 0),
+                        sort_order: Number(v.sort_order || 9999),
+                        is_active: v.is_active !== undefined ? !!v.is_active : true
+                    }));
+
+                    const res = await window.KspSync.adminSyncStoreStock(storeId, payloadProducts);
+                    if (res && res.ok) {
+                        syncedStoresCount++;
+                        totalProductsSynced += payloadProducts.length;
+                    } else {
+                        console.warn(`Gagal sync store ${storeId} ke Project B:`, res);
+                    }
+                }
+
+                if (statusEl) {
+                    statusEl.style.background = 'rgba(34, 197, 94, 0.12)';
+                    statusEl.style.color = 'var(--success)';
+                    statusEl.textContent = `✅ Berhasil menginisialisasi ${totalProductsSynced} produk untuk ${syncedStoresCount} cabang ke Portal Kasir!`;
+                }
+                showToast(`✅ Inisialisasi katalog berhasil (${syncedStoresCount} cabang)!`);
+
+                // Refresh data vouchers jika ada cabang baru yang dibuat di Project A
+                fetchVouchersFromSupabase();
+
+                setTimeout(() => {
+                    closeSyncCatalogModal();
+                }, 1600);
+
+            } catch (err) {
+                console.error('Error executeSyncCatalogToEmployees:', err);
+                if (statusEl) {
+                    statusEl.style.background = 'rgba(239, 68, 68, 0.12)';
+                    statusEl.style.color = 'var(--danger)';
+                    statusEl.textContent = `❌ Gagal: ${err.message || 'Terjadi kesalahan sistem'}`;
+                }
+            } finally {
+                if (btnExec) btnExec.disabled = false;
+            }
+        }
+        window.executeSyncCatalogToEmployees = executeSyncCatalogToEmployees;
+
+        async function showOpnameReviewModal() {
+            const modal = document.getElementById('opnameReviewModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            await loadOpnameSessionsFromCloud();
+        }
+        window.showOpnameReviewModal = showOpnameReviewModal;
+
+        function closeOpnameReviewModal() {
+            const modal = document.getElementById('opnameReviewModal');
+            if (modal) modal.style.display = 'none';
+        }
+        window.closeOpnameReviewModal = closeOpnameReviewModal;
+
+        function switchOpnameReviewTab(tab) {
+            currentOpnameTab = tab;
+            const tabPending = document.getElementById('tabOpnamePending');
+            const tabAll = document.getElementById('tabOpnameAll');
+
+            if (tab === 'pending') {
+                if (tabPending) {
+                    tabPending.style.background = 'var(--primary)';
+                    tabPending.style.color = '#fff';
+                    tabPending.style.border = 'none';
+                }
+                if (tabAll) {
+                    tabAll.style.background = 'transparent';
+                    tabAll.style.color = 'var(--text-muted)';
+                    tabAll.style.border = '1px solid var(--card-border)';
+                }
+            } else {
+                if (tabAll) {
+                    tabAll.style.background = 'var(--primary)';
+                    tabAll.style.color = '#fff';
+                    tabAll.style.border = 'none';
+                }
+                if (tabPending) {
+                    tabPending.style.background = 'transparent';
+                    tabPending.style.color = 'var(--text-muted)';
+                    tabPending.style.border = '1px solid var(--card-border)';
+                }
+            }
+
+            renderOpnameSessionsList();
+        }
+        window.switchOpnameReviewTab = switchOpnameReviewTab;
+
+        async function loadOpnameSessionsFromCloud() {
+            const mount = document.getElementById('opnameSessionsMount');
+            if (mount) mount.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 24px;">⏳ Mengambil sesi opname kasir dari cloud...</div>';
+
+            await checkPendingOpnameCount();
+            renderOpnameSessionsList();
+        }
+        window.loadOpnameSessionsFromCloud = loadOpnameSessionsFromCloud;
+
+        function renderOpnameSessionsList() {
+            const mount = document.getElementById('opnameSessionsMount');
+            if (!mount) return;
+
+            let list = cachedOpnameSessions || [];
+            if (currentOpnameTab === 'pending') {
+                list = list.filter(s => s.status === 'pending');
+            }
+
+            if (list.length === 0) {
+                mount.innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); font-size: 12.5px; padding: 36px 16px; background: var(--card-inner); border-radius: 12px; border: 1px dashed var(--card-border);">
+                        ${currentOpnameTab === 'pending' ? '✨ Tidak ada sesi opname yang menunggu sinkronisasi.' : '📭 Belum ada riwayat sesi opname kasir.'}
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            list.forEach(s => {
+                const dateStr = s.created_at ? new Date(s.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-';
+                const statusBadge = s.status === 'pending'
+                    ? '<span style="background: rgba(234, 179, 8, 0.15); color: #EAB308; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 10.5px;">⏳ Menunggu Sync</span>'
+                    : s.status === 'synced'
+                        ? '<span style="background: rgba(34, 197, 94, 0.15); color: #22C55E; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 10.5px;">✅ Tersinkron</span>'
+                        : '<span style="background: rgba(239, 68, 68, 0.15); color: #EF4444; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 10.5px;">❌ Dibatalkan</span>';
+
+                // Hitung rincian selisih
+                const details = Array.isArray(s.details) ? s.details : [];
+                const diffItems = details.filter(it => it.delta !== 0);
+
+                let diffItemsHtml = '';
+                if (diffItems.length > 0) {
+                    diffItemsHtml = `
+                        <div style="margin-top: 8px; background: var(--input-bg); border-radius: 8px; padding: 8px 10px; font-size: 11px;">
+                            <div style="font-weight: 750; color: var(--text-muted); margin-bottom: 5px;">Rincian Selisih Fisik (${diffItems.length} produk):</div>
+                            <div style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto;">
+                                ${diffItems.map(it => {
+                                    const isPlus = it.delta > 0;
+                                    const color = isPlus ? 'var(--success)' : 'var(--danger)';
+                                    const sign = isPlus ? '+' : '';
+                                    return `
+                                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--card-border); padding-bottom: 2px;">
+                                            <span style="font-weight: 700; color: var(--text-main);">${escapeHtml(it.product_name)}</span>
+                                            <span style="font-weight: 800; color: ${color};">${it.initial_stock} ➜ ${it.new_stock} (${sign}${it.delta})</span>
+                                        </div>`;
+                                }).join('')}
+                            </div>
+                        </div>`;
+                } else {
+                    diffItemsHtml = `
+                        <div style="margin-top: 6px; font-size: 11px; color: var(--text-muted); font-style: italic;">
+                            Semua stok fisik pas (tidak ada selisih penjualan/restok).
+                        </div>`;
+                }
+
+                html += `
+                    <div style="background: var(--card-inner); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                                    <span style="font-size: 13px; font-weight: 850; color: var(--text-main);">${escapeHtml(s.store_name || s.store_id)}</span>
+                                    <span style="font-size: 10.5px; font-weight: 750; background: var(--card-border); padding: 1px 6px; border-radius: 4px;">Shift ${s.shift_num || 1}</span>
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-muted);">
+                                    👤 Kasir: <b>${escapeHtml(s.emp_name || '-')}</b> • 🕒 ${dateStr}
+                                </div>
+                            </div>
+                            <div>${statusBadge}</div>
+                        </div>
+
+                        <!-- Ringkasan Angka -->
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: var(--input-bg); padding: 6px 8px; border-radius: 8px; text-align: center; font-size: 11px; margin-top: 4px;">
+                            <div>
+                                <div style="color: var(--text-muted); font-size: 10px;">Produk</div>
+                                <div style="font-weight: 800; color: var(--text-main);">${s.total_products || 0}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--danger); font-size: 10px;">Terjual</div>
+                                <div style="font-weight: 800; color: var(--danger);">${s.total_sold || 0}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--success); font-size: 10px;">Restok</div>
+                                <div style="font-weight: 800; color: var(--success);">${s.total_restock || 0}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--primary); font-size: 10px;">Net Selisih</div>
+                                <div style="font-weight: 800; color: var(--primary);">${(s.total_diff || 0) >= 0 ? '+' : ''}${s.total_diff || 0}</div>
+                            </div>
+                        </div>
+
+                        ${diffItemsHtml}
+
+                        ${s.status === 'synced' ? `
+                            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                                <span>✅</span> Disinkronkan ke Stok Master oleh <b>${escapeHtml(s.synced_by || 'Admin')}</b> pada ${s.synced_at ? new Date(s.synced_at).toLocaleString('id-ID') : '-'}
+                            </div>
+                        ` : ''}
+
+                        ${s.status === 'pending' ? `
+                            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 6px;">
+                                <button type="button" onclick="syncOpnameSessionToProjectA('${s.id}')" style="padding: 7px 14px; background: var(--success); border: none; border-radius: 8px; font-size: 11.5px; font-weight: 800; color: #FFFFFF; cursor: pointer; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.35);">
+                                    ✅ Sinkronkan ke Stok Master
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>`;
+            });
+
+            mount.innerHTML = html;
+        }
+
+        async function syncOpnameSessionToProjectA(sessionId) {
+            const session = (cachedOpnameSessions || []).find(s => s.id === sessionId);
+            if (!session) {
+                alert('Sesi opname tidak ditemukan.');
+                return;
+            }
+
+            if (!supabaseClient) {
+                alert('Supabase Project A belum terhubung! Masukkan PIN Admin terlebih dahulu.');
+                return;
+            }
+
+            const details = Array.isArray(session.details) ? session.details : [];
+            const confirmMsg = `Sinkronkan hasil opname ini ke Stok Master Project A?\n\n• Cabang: ${session.store_name} (Shift ${session.shift_num})\n• Kasir: ${session.emp_name}\n• Total Produk: ${details.length}\n\nStok master di Project A akan disesuaikan dengan stok fisik hasil opname kasir.`;
+            if (!confirm(confirmMsg)) return;
+
+            showToast('⏳ Menyelaraskan stok ke Project A...');
+
+            try {
+                let updatedCount = 0;
+                // Hanya update produk yang mengalami selisih mutasi (terjual / restok)
+                const changedItems = details.filter(it => it.delta !== 0);
+
+                if (changedItems.length > 0) {
+                    for (const it of changedItems) {
+                        const finalStock = Number(it.new_stock !== undefined ? it.new_stock : it.initial_stock);
+                        const { error } = await supabaseClient
+                            .from('vouchers')
+                            .update({
+                                stock: finalStock,
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('device_id', session.store_id)
+                            .eq('product_id', it.product_id);
+
+                        if (!error) updatedCount++;
+                    }
+                }
+
+                // Tandai sesi sebagai synced di Project B
+                const markRes = await window.KspSync.adminMarkOpnameSynced(sessionId, 'Admin');
+                if (!markRes || !markRes.ok) {
+                    console.warn('Mark opname synced warning:', markRes);
+                }
+
+                showToast(`✅ Berhasil! ${updatedCount} stok voucher yang berubah di Project A disinkronkan.`);
+
+                // Refresh data vouchers Project A agar UI admin langsung terupdate
+                await fetchVouchersFromSupabase();
+                // Reload daftar sesi opname
+                await loadOpnameSessionsFromCloud();
+
+            } catch (err) {
+                console.error('Gagal sinkron opname ke Project A:', err);
+                alert(`❌ Gagal sinkronisasi: ${err.message || 'Terjadi kesalahan sistem'}`);
+            }
+        }
+        window.syncOpnameSessionToProjectA = syncOpnameSessionToProjectA;
     </script>
 </body>
 </html>
