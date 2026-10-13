@@ -3730,8 +3730,21 @@ function openAppMarginDialog(el, event) {
   const metrics = calcGroupMetrics(group);
   if (!metrics) return;
 
+  let dateLabel = '';
+  if (group.dataset && group.dataset.date) {
+    dateLabel = (typeof formatDisplayDate === 'function') ? formatDisplayDate(group.dataset.date) : group.dataset.date;
+  } else if (window.REPORT_DATA && window.REPORT_DATA.isMultiDay && window.REPORT_DATA.startDate && window.REPORT_DATA.endDate) {
+    const s = (typeof formatDayShort === 'function') ? formatDayShort(window.REPORT_DATA.startDate) : window.REPORT_DATA.startDate;
+    const e = (typeof formatDayShort === 'function') ? formatDayShort(window.REPORT_DATA.endDate) : window.REPORT_DATA.endDate;
+    dateLabel = `${s} – ${e}`;
+  } else if (window.REPORT_DATA && (window.REPORT_DATA.dateDisplay || window.REPORT_DATA.dateDb)) {
+    dateLabel = window.REPORT_DATA.dateDisplay || window.REPORT_DATA.dateDb;
+  }
+
   const titleEl = document.getElementById('app-margin-title');
-  if (titleEl) titleEl.textContent = `${icon} ${name}`;
+  if (titleEl) {
+    titleEl.innerHTML = `${escapeHtml(icon)} ${escapeHtml(name)}${dateLabel ? `<span class="app-margin-date-tag" style="display:inline-block;margin-left:6px;font-size:0.7rem;font-weight:600;padding:2px 6px;border-radius:4px;background:var(--border);color:var(--text);opacity:0.85;vertical-align:middle;">${escapeHtml(dateLabel)}</span>` : ''}`;
+  }
 
   const badgeEl = document.getElementById('app-margin-badge');
   if (badgeEl) badgeEl.textContent = `${metrics.count} Trx`;
@@ -3771,44 +3784,31 @@ function calcGroupMetrics(group) {
     const real = parseFloat(r.dataset.real);
     const fee = parseFloat(r.dataset.fee);
     const adm = parseFloat(r.dataset.adm);
+    const f = (!isNaN(fee) && fee > 0) ? fee : ((!isNaN(adm) && adm > 0) ? adm : 0);
 
     if (!isNaN(cost) && cost > 0) {
       hasItemCostOrReal = true;
       totalJual += val;
       totalModal += cost;
       totalMargin += (val - cost);
+    } else if (f > 0) {
+      hasItemCostOrReal = true;
+      const itemModal = (!isNaN(real) && real > 0) ? real : (cat === 'income' ? Math.max(0, val - f) : val);
+      const itemMargin = f;
+      const itemJual = (!isNaN(real) && real > 0 && val > real) ? val : (itemModal + itemMargin);
+      totalModal += itemModal;
+      totalJual += itemJual;
+      totalMargin += itemMargin;
     } else if (!isNaN(real) && real > 0) {
       hasItemCostOrReal = true;
       if (cat === 'income') {
-        totalJual += real;
-        totalModal += val;
-        totalMargin += (real - val);
+        totalJual += val;
+        totalModal += real;
+        totalMargin += (val - real);
       } else {
         totalJual += val;
         totalModal += real;
         totalMargin += (val - real);
-      }
-    } else if (!isNaN(fee) && fee > 0) {
-      hasItemCostOrReal = true;
-      if (cat === 'income') {
-        totalJual += (val + fee);
-        totalModal += val;
-        totalMargin += fee;
-      } else {
-        totalJual += val;
-        totalModal += Math.max(0, val - fee);
-        totalMargin += fee;
-      }
-    } else if (!isNaN(adm) && adm > 0) {
-      hasItemCostOrReal = true;
-      if (cat === 'income') {
-        totalJual += (val + adm);
-        totalModal += val;
-        totalMargin += adm;
-      } else {
-        totalJual += val;
-        totalModal += Math.max(0, val - adm);
-        totalMargin += adm;
       }
     } else {
       totalJual += val;

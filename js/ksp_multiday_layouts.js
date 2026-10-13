@@ -442,7 +442,7 @@
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id);
+          dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai');
         });
 
         const dayMetaStr = isOutcomeOnly
@@ -520,7 +520,7 @@
               if (isIncome) { dayIn += calcAmt; aIn += calcAmt; totalMasuk += calcAmt; } else { dayOut += calcAmt; aOut += calcAmt; totalKeluar += calcAmt; }
             }
             const desc = item.desc || item.name || displayName;
-            dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
+            dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, dKey, item.rowId || item.id, item.app || appKey, item.appName || displayName);
           });
 
           const dayMetaStr = isOutcomeOnly
@@ -583,7 +583,7 @@
           tMasuk += calcCharged; tKeluar += calcNominal;
           totalMasuk += calcCharged; totalKeluar += calcNominal;
           const desc = (item.customerName ? item.customerName + ' - ' : '') + (item.category || 'TopUp') + (item.destination ? ' (' + item.destination + ')' : '');
-          dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee || 0, dKey, item.rowId || item.id);
+          dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee || 0, dKey, item.rowId || item.id, item.app || 'com.kspcheck.topup', item.appName || 'TopUp');
         });
         rowsHtml += `
           <tr class="lv-date-subhd-row" data-date="${dKey}">
@@ -782,7 +782,7 @@
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id);
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai');
         });
 
         const theadHtml = isOutcomeOnly
@@ -834,7 +834,7 @@
               if (isIncome) { aIn += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
             }
             const desc = item.desc || item.name || displayName;
-            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
+            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, dKey, item.rowId || item.id, item.app || appKey, item.appName || displayName);
           });
 
           const theadHtml = isOutcomeOnly
@@ -953,7 +953,7 @@
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id);
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai');
         });
 
         const theadHtml = isOutcomeOnly
@@ -1005,7 +1005,7 @@
               if (isIncome) { aIn += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
             }
             const desc = item.desc || item.name || displayName;
-            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
+            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, dKey, item.rowId || item.id, item.app || appKey, item.appName || displayName);
           });
 
           const theadHtml = isOutcomeOnly
@@ -1101,7 +1101,7 @@
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id);
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai');
         });
 
         const theadHtml = isOutcomeOnly
@@ -1158,7 +1158,7 @@
             if (isIncome) { aIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; totalKeluar += calcAmt; }
           }
           const desc = item.desc || item.name || displayName;
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, dKey, item.rowId || item.id, item.app || appKey, item.appName || displayName);
         });
 
         const theadHtml = isOutcomeOnly
@@ -1262,7 +1262,7 @@
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id);
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai');
         });
 
         const theadHtml = isOutcomeOnly
@@ -1314,7 +1314,7 @@
               if (isIncome) { aIn += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
             }
             const desc = item.desc || item.name || displayName;
-            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, dKey, item.rowId || item.id);
+            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, dKey, item.rowId || item.id, item.app || appKey, item.appName || displayName);
           });
 
           const theadHtml = isOutcomeOnly
