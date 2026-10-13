@@ -3458,7 +3458,12 @@ function addNewItemBelowCurrent() {
   newRow.dataset.app = targetAppPkg;
   newRow.dataset.appPackage = targetAppPkg;
   newRow.dataset.appName = targetAppName;
-  if (isVoucher) newRow.dataset.provider = provider || 'VOUCHER';
+  if (isVoucher) {
+    newRow.dataset.provider = provider || 'VOUCHER';
+    if (currentNavRow && currentNavRow.dataset.providerOrder) {
+      newRow.dataset.providerOrder = currentNavRow.dataset.providerOrder;
+    }
+  }
   updateRowMarkTags(newRow);
 
   // 7. Sync item baru ke window.REPORT_DATA di array yang tepat (notif, tarik, voucher, topup)
@@ -3479,6 +3484,7 @@ function addNewItemBelowCurrent() {
       desc: defaultDesc,
       productName: isVoucher ? defaultDesc : undefined,
       provider: isVoucher ? (provider || 'VOUCHER') : undefined,
+      providerOrder: isVoucher ? (currentNavRow && currentNavRow.dataset.providerOrder ? (parseFloat(currentNavRow.dataset.providerOrder) || 999) : 999) : undefined,
       type: isIncome ? 'income' : 'outcome',
       category: isIncome ? 'income' : 'outcome',
       app: targetAppPkg,
@@ -4490,7 +4496,7 @@ function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmo
     </tr>`;
 }
 
-function renderVoucherRowHtml(idx, time, prodName, amount, provider, origAmount, isDeleted, isRead, isNew, costVal, dateVal, rowId, appVal, appNameVal) {
+function renderVoucherRowHtml(idx, time, prodName, amount, provider, origAmount, isDeleted, isRead, isNew, costVal, dateVal, rowId, appVal, appNameVal, providerOrderVal) {
   const timeTitle = `${escapeHtml(time)} · ${escapeHtml(provider)} - ${escapeHtml(prodName)}`;
   const orig = (origAmount !== undefined && origAmount !== null) ? origAmount : amount;
   const isItemNew = (isNew === true || isNew === 'true');
@@ -4507,6 +4513,7 @@ function renderVoucherRowHtml(idx, time, prodName, amount, provider, origAmount,
   const rowIdAttr = rowId ? ` data-row-id="${escapeHtml(rowId)}"` : '';
   const appAttr = ` data-app="${escapeHtml(appVal || 'com.kspcheck.voucher')}" data-app-package="${escapeHtml(appVal || 'com.kspcheck.voucher')}"`;
   const appNameAttr = ` data-app-name="${escapeHtml(appNameVal || provider || 'VOUCHER')}"`;
+  const provOrderAttr = (providerOrderVal !== undefined && providerOrderVal !== null && providerOrderVal !== 999) ? ` data-provider-order="${providerOrderVal}"` : '';
 
   let statusTagHtml = '';
   if (isItemNew) {
@@ -4525,7 +4532,7 @@ function renderVoucherRowHtml(idx, time, prodName, amount, provider, origAmount,
     </td>`;
 
   return `
-    <tr class="lv-row${rowExtraClass}" data-cat="outcome" data-orig="${orig}" data-val="${amount}" data-desc="${escapeHtml(prodName)}" data-provider="${escapeHtml(provider)}"${appAttr}${appNameAttr}${newAttr}${costAttr}${dateAttr}${rowIdAttr}>
+    <tr class="lv-row${rowExtraClass}" data-cat="outcome" data-orig="${orig}" data-val="${amount}" data-desc="${escapeHtml(prodName)}" data-provider="${escapeHtml(provider)}"${appAttr}${appNameAttr}${newAttr}${costAttr}${dateAttr}${rowIdAttr}${provOrderAttr}>
       <td class="lv-td lv-td-idx">${idx}</td>
       <td class="lv-td lv-td-time" title="${timeTitle}"><span class="lv-time-text">${escapeHtml(time)}</span>${statusTagHtml}</td>
       <td class="lv-td lv-td-itemname" onclick="onNameClick(this, event)" title="Klik untuk dengar / ubah: ${escapeHtml(prodName)}">${escapeHtml(prodName)}</td>
@@ -4805,7 +4812,39 @@ function renderReport(data) {
         let voucherRowsHtml = '';
         let voucherSeqIdx = 1;
 
-        for (const provKey in voucherByProv) {
+        const defaultOrder = window.DEFAULT_PROVIDER_ORDER || [
+          "TELKOMSEL", "TSEL", "BY.U", "BY U",
+          "INDOSAT", "ISAT",
+          "XL", "AXIS",
+          "THREE", "TRI", "3",
+          "SMARTFREN", "SMART",
+          "VOUCHER", "UMUM"
+        ];
+        const provSortFn = (typeof window.sortProviderKeys === 'function')
+          ? window.sortProviderKeys
+          : function(keys, map) {
+              return keys.slice().sort((a, b) => {
+                const itemsA = map ? map[a] : null;
+                const itemsB = map ? map[b] : null;
+                const orderA = (itemsA && itemsA.length > 0 && typeof itemsA[0].providerOrder === 'number')
+                  ? itemsA[0].providerOrder : 999;
+                const orderB = (itemsB && itemsB.length > 0 && typeof itemsB[0].providerOrder === 'number')
+                  ? itemsB[0].providerOrder : 999;
+                if (orderA !== 999 || orderB !== 999) {
+                  if (orderA !== orderB) return orderA - orderB;
+                }
+                const idxA = defaultOrder.indexOf(a);
+                const idxB = defaultOrder.indexOf(b);
+                if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                if (idxA !== -1) return -1;
+                if (idxB !== -1) return 1;
+                return a.localeCompare(b);
+              });
+            };
+
+        const sortedProvKeys = provSortFn(Object.keys(voucherByProv), voucherByProv);
+
+        for (const provKey of sortedProvKeys) {
           const items = voucherByProv[provKey];
           const provLabel = (provKey === 'VOUCHER') ? 'Umum' : provKey;
           let provKeluar = 0;
@@ -4837,7 +4876,7 @@ function renderReport(data) {
             }
 
             const time = item.time || '00:00';
-            provRowsHtml += renderVoucherRowHtml(voucherSeqIdx++, time, prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost, item.date, item.rowId || item.id, 'com.kspcheck.voucher', provKey);
+            provRowsHtml += renderVoucherRowHtml(voucherSeqIdx++, time, prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost, item.date, item.rowId || item.id, 'com.kspcheck.voucher', provKey, item.providerOrder);
           });
 
           const subHeaderHtml = `
@@ -5588,12 +5627,16 @@ function transformSupabaseRowsToReportData(rows, dateDb, shift, isMultiDay, star
         else totalKeluar += amt;
       }
     } else if (r.module_type === 'voucher') {
+      const pOrder = (r.extra_data && r.extra_data.providerOrder !== undefined)
+        ? Number(r.extra_data.providerOrder)
+        : ((r.provider_order !== undefined) ? Number(r.provider_order) : 999);
       voucher.push({
         id: r.local_id || r.id,
         rowId: r.id,
         date: dateStr,
         time: timeStr,
         provider: r.provider || r.app_name || 'VOUCHER',
+        providerOrder: pOrder,
         productName: r.item_name || '',
         amount: amt,
         cost: costAmt,

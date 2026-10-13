@@ -611,7 +611,16 @@
         body.light-theme .demand-pill { background: rgba(217, 119, 6, 0.12); color: #b45309; border-color: rgba(217, 119, 6, 0.28); }
         body:not(.show-order-demand) .demand-pill { display: none !important; }
         .table-footer-grand { background: var(--table-footer-bg); border-top: 2px solid var(--primary); font-weight: 700; font-size: 12px; }
-        .table-footer-grand td { padding: 12px 8px; color: var(--text-main); }
+        /* Product Renamed & Archive Badges */
+        .renamed-pill { font-size: 9.5px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: rgba(168, 85, 247, 0.16); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.35); display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; vertical-align: middle; cursor: help; }
+        body.light-theme .renamed-pill { background: rgba(147, 51, 234, 0.12); color: #7e22ce; border-color: rgba(147, 51, 234, 0.3); }
+        .renamed-subtext { font-size: 10.5px; color: #a855f7; margin-top: 2px; font-style: italic; }
+        body.light-theme .renamed-subtext { color: #7e22ce; }
+        
+        .archived-pill { font-size: 9.5px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: rgba(156, 163, 175, 0.18); color: #9ca3af; border: 1px solid rgba(156, 163, 175, 0.35); display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; vertical-align: middle; }
+        body.light-theme .archived-pill { background: rgba(107, 114, 128, 0.14); color: #4b5563; border-color: rgba(107, 114, 128, 0.3); }
+        .product-card.archived { opacity: 0.58; border-style: dashed; }
+        .product-card.archived:hover { opacity: 0.88; }
 
         /* Audit Trail Table */
         .audit-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
@@ -2619,6 +2628,7 @@
                 <button type="button" class="btn-select-action active" id="btnToggleOrderSort" onclick="toggleOrderSortStock()" title="Urutkan stok terkecil ke terbesar per provider (Aktif)"><span id="orderSortStockIcon">📶</span> <span id="orderSortStockText">Stok Terkecil</span></button>
                 <button type="button" class="btn-select-action active" id="btnToggleOrderBadge" onclick="cycleOrderBadgeMode()" title="Ganti mode badge restok (Dinamis / Sederhana / Tanpa Badge)"><span id="orderBadgeIcon">🏷️</span> <span id="orderBadgeText">Badge Dinamis</span></button>
                 <button type="button" class="btn-select-action active" id="btnToggleOrderDemand" onclick="toggleOrderDemandPill()" title="Tampilkan/sembunyikan badge demand laju penjualan harian"><span id="orderDemandIcon">⚡</span> <span id="orderDemandText">Demand</span></button>
+                <button type="button" class="btn-select-action" id="btnToggleOrderArchived" onclick="toggleOrderShowArchived()" title="Tampilkan atau sembunyikan voucher yang diarsipkan"><span id="orderArchivedIcon">📦</span> <span id="orderArchivedText">Arsip (0)</span></button>
 
                 <button type="button" class="btn-select-action" id="btnCycle3" onclick="setOrderRestockCycle(3)" title="Hitung kebutuhan belanja siklus 3 hari">⚡ 3 Hari</button>
                 <button type="button" class="btn-select-action active" id="btnCycle7" onclick="setOrderRestockCycle(7)" title="Hitung kebutuhan belanja siklus 7 hari (Mingguan)">📅 7 Hari</button>
@@ -4170,6 +4180,8 @@
 
         // State Tab 1: Tampilkan/Sembunyikan Badge Demand Laju Penjualan Harian (Default: true / aktif)
         let orderShowDemand = (localStorage.getItem('kspcheck_order_show_demand') !== 'false');
+        // State Tab 1: Tampilkan/Sembunyikan Produk Diarsipkan (Default: false / disembunyikan)
+        let orderShowArchived = (localStorage.getItem('kspcheck_order_show_archived') === 'true');
 
         // State Tab 2: Laporan Stok Harian
         let dailyShift = 0; // 0: Semua, 1: Pagi, 2: Malam, 4: Rincian P|M
@@ -4558,6 +4570,39 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                     : 'Badge demand tersembunyi. Klik untuk tampilkan.';
             }
             updateSettingsState('settingOrderDemandState', orderShowDemand ? 'Aktif' : 'Mati', orderShowDemand ? 'on' : '');
+        }
+
+        // Tab 1: Toggle Tampilkan Produk Diarsipkan (Soft Disable)
+        function toggleOrderShowArchived() {
+            orderShowArchived = !orderShowArchived;
+            try {
+                localStorage.setItem('kspcheck_order_show_archived', String(orderShowArchived));
+            } catch (e) {}
+            updateOrderArchivedBtnUI();
+            renderProductList();
+            showToast(orderShowArchived
+                ? '📦 Menampilkan produk yang diarsipkan'
+                : '📦 Menyembunyikan produk yang diarsipkan');
+        }
+
+        function updateOrderArchivedBtnUI() {
+            const btn = document.getElementById('btnToggleOrderArchived');
+            const textEl = document.getElementById('orderArchivedText');
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const devVouchers = (selectedDevice === 'all')
+                ? allVouchers
+                : allVouchers.filter(v => v.device_id === selectedDevice);
+            const archivedCount = devVouchers.filter(v => v.is_active === false).length;
+
+            if (btn) {
+                btn.classList.toggle('active', orderShowArchived);
+                if (textEl) {
+                    textEl.innerText = orderShowArchived ? `Diarsipkan (${archivedCount})` : `Arsip (${archivedCount})`;
+                }
+                btn.title = orderShowArchived
+                    ? `Menampilkan ${archivedCount} produk diarsipkan. Klik untuk sembunyikan.`
+                    : `Ada ${archivedCount} produk diarsipkan. Klik untuk menampilkan.`;
+            }
         }
 
         // Tab 1: Siklus Restok Belanja Logic (3, 7, 14 Hari)
@@ -5443,14 +5488,23 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
         // 4. Render Dynamic Product List (Tab 1: Order Restock)
         function renderProductList() {
             updateOrderHeaderTitle();
+            updateOrderArchivedBtnUI();
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
-            const filtered = (selectedDevice === 'all')
+            let filtered = (selectedDevice === 'all')
                 ? allVouchers
                 : allVouchers.filter(v => v.device_id === selectedDevice);
 
+            // Sembunyikan produk nonaktif (soft disable / diarsipkan) kecuali jika toggle aktif
+            if (!orderShowArchived) {
+                filtered = filtered.filter(v => v.is_active !== false);
+            }
+
             const container = document.getElementById('productList');
             if (filtered.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--text-muted);">Tidak ada data voucher untuk perangkat ini</div>';
+                const emptyMsg = (!orderShowArchived && allVouchers.some(v => v.is_active === false))
+                    ? 'Semua voucher yang ada sedang diarsipkan. Klik tombol "📦 Arsip" di atas untuk melihat.'
+                    : 'Tidak ada data voucher untuk perangkat ini';
+                container.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">${emptyMsg}</div>`;
                 return;
             }
 
@@ -5560,8 +5614,44 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                         ? `<span class="demand-pill" title="Demand 30h berbobot: ${demandVal}/hr">⚡ ${demandVal}/hr</span>`
                         : '';
 
+                    // Status Arsip (soft disable)
+                    const isArchived = prod.is_active === false;
+                    const cardArchivedClass = isArchived ? ' archived' : '';
+                    const archivedPillHtml = isArchived
+                        ? `<span class="archived-pill" title="Produk ini diarsipkan (soft disable) di KSP Check">📦 Diarsipkan</span>`
+                        : '';
+
+                    // Deteksi perubahan nama produk
+                    let hasRenamed = false;
+                    let prevName = (prod.previous_name || '').trim();
+                    let renameTimestamp = prod.name_changed_at || '';
+                    if (prevName) {
+                        hasRenamed = true;
+                    } else if (Array.isArray(prod.change_history)) {
+                        for (let h = prod.change_history.length - 1; h >= 0; h--) {
+                            const entry = prod.change_history[h];
+                            if (entry && entry.old_name && entry.new_name && entry.old_name !== entry.new_name) {
+                                hasRenamed = true;
+                                prevName = entry.old_name;
+                                renameTimestamp = entry.timestamp || '';
+                                break;
+                            }
+                        }
+                    }
+
+                    let renamedPillHtml = '';
+                    let renamedSubtextHtml = '';
+                    if (hasRenamed) {
+                        const timeStr = renameTimestamp ? ` (${renameTimestamp})` : '';
+                        const renameTooltip = prevName ? `Nama sebelumnya: '${escapeHtml(prevName)}'${timeStr}` : `Nama voucher telah diubah${timeStr}`;
+                        renamedPillHtml = `<span class="renamed-pill" title="${renameTooltip}">✏️ Nama Diubah</span>`;
+                        if (prevName) {
+                            renamedSubtextHtml = `<div class="renamed-subtext" title="${renameTooltip}">Dahulu: "${escapeHtml(prevName)}"</div>`;
+                        }
+                    }
+
                     html += `
-                    <div class="product-card${cardSelectedClass}" 
+                    <div class="product-card${cardSelectedClass}${cardArchivedClass}" 
                          data-id="${idCounter}"
                          data-product-id="${prod.product_id || prod.id || 0}"
                          data-device-id="${escapeHtml(prod.device_id || '')}"
@@ -5569,6 +5659,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                          data-name="${escapeHtml(displayName)}"
                          data-raw-name="${escapeHtml(rawProdName)}"
                          data-category="${escapeHtml(catName)}"
+                         data-is-active="${prod.is_active !== false}"
                          data-supabase-index="${prod._supabaseIndex !== undefined ? prod._supabaseIndex : 0}"
                          data-orig-index="${prod._providerOrigIndex !== undefined ? prod._providerOrigIndex : 0}"
                          data-stock="${stock}"
@@ -5593,7 +5684,10 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                                 <span>${escapeHtml(prodInfo.cleanTitle)}</span>
                                 ${prodInfo.badgeHtml}
                                 ${demandPillHtml}
+                                ${renamedPillHtml}
+                                ${archivedPillHtml}
                             </div>
+                            ${renamedSubtextHtml}
                             <div class="product-meta">
                                 ${sisaHtml}
                                 <span class="order-profit-info">•</span>
@@ -9485,6 +9579,8 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                             timestamp: entry.timestamp || v.updated_at,
                             deviceName: v.device_name || 'Kasir',
                             productName: v.product_name,
+                            oldName: entry.old_name,
+                            newName: entry.new_name,
                             summary: entry.summary || '-',
                             stockDiff: entry.stock_diff,
                             oldStock: entry.old_stock,
@@ -9500,7 +9596,10 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
             const filteredLogs = allLogs.filter(log => {
                 return (log.productName || '').toLowerCase().includes(search) ||
-                       (log.deviceName || '').toLowerCase().includes(search);
+                       (log.oldName || '').toLowerCase().includes(search) ||
+                       (log.newName || '').toLowerCase().includes(search) ||
+                       (log.deviceName || '').toLowerCase().includes(search) ||
+                       (log.summary || '').toLowerCase().includes(search);
             });
 
             if (filteredLogs.length === 0) {
@@ -9516,14 +9615,26 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     else if (log.stockDiff < 0) diffBadge = `<span style="color:var(--danger); font-weight:bold;">(${log.stockDiff})</span>`;
                 }
 
+                let summaryIcon = '';
+                if (log.summary && log.summary.includes('Nama:')) {
+                    summaryIcon = '✏️ ';
+                } else if (log.summary && log.summary.includes('Status:')) {
+                    summaryIcon = '📦 ';
+                }
+
+                let prodNameHtml = `<span style="font-weight:700; color:#fff;">${escapeHtml(log.productName)}</span>`;
+                if (log.oldName && log.newName && log.oldName !== log.newName) {
+                    prodNameHtml = `<span style="text-decoration:line-through; color:var(--text-muted); font-size:11px;">${escapeHtml(log.oldName)}</span><br><span style="color:#c084fc; font-weight:700;">✏️ ${escapeHtml(log.newName)}</span>`;
+                }
+
                 html += `
                 <tr>
                     <td style="color:var(--text-muted); font-size:11px; white-space:nowrap;">${escapeHtml(log.timestamp || '-')}</td>
                     <td style="font-weight:600;">📱 ${escapeHtml(log.deviceName)}</td>
-                    <td style="font-weight:700; color:#fff;">${escapeHtml(log.productName)}</td>
+                    <td>${prodNameHtml}</td>
                     <td>${log.oldStock !== undefined ? `${log.oldStock} → ${log.newStock} ${diffBadge}` : '-'}</td>
                     <td>${log.newPrice ? `Rp ${Number(log.newPrice).toLocaleString('id-ID')}` : '-'}</td>
-                    <td style="color:var(--text-muted); font-size:11px;">${escapeHtml(log.summary)}</td>
+                    <td style="color:var(--text-muted); font-size:11px;">${summaryIcon}${escapeHtml(log.summary)}</td>
                 </tr>`;
             });
 

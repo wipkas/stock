@@ -50,6 +50,42 @@
     return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  // Master Urutan Provider Default (Fallback jika metadata urutan provider belum ada)
+  const DEFAULT_PROVIDER_ORDER = [
+    "TELKOMSEL", "TSEL", "BY.U", "BY U",
+    "INDOSAT", "ISAT",
+    "XL", "AXIS",
+    "THREE", "TRI", "3",
+    "SMARTFREN", "SMART",
+    "VOUCHER", "UMUM"
+  ];
+
+  function sortProviderKeys(provKeys, voucherByProv) {
+    if (!Array.isArray(provKeys)) return [];
+    return provKeys.slice().sort((a, b) => {
+      const itemsA = voucherByProv ? voucherByProv[a] : null;
+      const itemsB = voucherByProv ? voucherByProv[b] : null;
+      const orderA = (itemsA && itemsA.length > 0 && typeof itemsA[0].providerOrder === 'number')
+        ? itemsA[0].providerOrder : 999;
+      const orderB = (itemsB && itemsB.length > 0 && typeof itemsB[0].providerOrder === 'number')
+        ? itemsB[0].providerOrder : 999;
+
+      if (orderA !== 999 || orderB !== 999) {
+        if (orderA !== orderB) return orderA - orderB;
+      }
+
+      const idxA = DEFAULT_PROVIDER_ORDER.indexOf(a);
+      const idxB = DEFAULT_PROVIDER_ORDER.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
+    });
+  }
+
+  window.DEFAULT_PROVIDER_ORDER = DEFAULT_PROVIDER_ORDER;
+  window.sortProviderKeys = sortProviderKeys;
+
   // Registry Konfigurasi 6 Mode Layout
   const MODES = [
     {
@@ -161,7 +197,7 @@
 
     const esc = (opt && typeof opt.escapeHtml === 'function') ? opt.escapeHtml : escapeHtml;
     let vTotalKeluar = 0, rowsHtml = '';
-    const provKeys = Object.keys(voucherByProv).sort();
+    const provKeys = sortProviderKeys(Object.keys(voucherByProv), voucherByProv);
     for (const provKey of provKeys) {
       const provItems = voucherByProv[provKey];
       const provLabel = (provKey === 'VOUCHER') ? 'Umum' : provKey;
@@ -198,7 +234,7 @@
 
         const timeVal = timeColFmt ? formatDisplayTime(item.date, item.time) : (item.time || '00:00');
         if (typeof opt.renderVoucherRowHtml === 'function') {
-          provRowsHtml += opt.renderVoucherRowHtml(globalSeqRef.val++, timeVal, prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost, item.date || dateAttr, item.rowId || item.id, 'com.kspcheck.voucher', provKey);
+          provRowsHtml += opt.renderVoucherRowHtml(globalSeqRef.val++, timeVal, prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost, item.date || dateAttr, item.rowId || item.id, 'com.kspcheck.voucher', provKey, item.providerOrder);
         } else {
           provRowsHtml += opt.renderRowHtml(globalSeqRef.val++, timeVal, amt, false, prodName, true, item.orig, item.deleted, item.read, item.isNew, item.cost || 0, 0, item.date || dateAttr, item.rowId || item.id);
         }
@@ -595,7 +631,8 @@
         });
 
         let provRowsForDay = '';
-        for (const provKey of Object.keys(voucherByProv).sort()) {
+        const provKeys = sortProviderKeys(Object.keys(voucherByProv), voucherByProv);
+        for (const provKey of provKeys) {
           const provItems = voucherByProv[provKey];
           const provLabel = (provKey === 'VOUCHER') ? 'Umum' : provKey;
           let provKeluar = 0;
@@ -631,7 +668,7 @@
             }
 
             if (typeof opt.renderVoucherRowHtml === 'function') {
-              provRowsHtml += opt.renderVoucherRowHtml(globalSeqObj.val++, item.time || '00:00', prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost, dKey, item.rowId || item.id, 'com.kspcheck.voucher', provKey);
+              provRowsHtml += opt.renderVoucherRowHtml(globalSeqObj.val++, item.time || '00:00', prodName, amt, provKey, item.orig, item.deleted, item.read, item.isNew, item.cost, dKey, item.rowId || item.id, 'com.kspcheck.voucher', provKey, item.providerOrder);
             } else {
               provRowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, false, prodName, true, item.orig, item.deleted, item.read, item.isNew, item.cost || 0, 0, dKey, item.rowId || item.id);
             }
