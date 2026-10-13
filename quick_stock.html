@@ -567,6 +567,16 @@
             </div>
         </div>
 
+        <!-- BANNER MODE INISIALISASI FISIK AWAL (BASELINE CABANG) -->
+        <div id="bannerBaselineMode" style="display: none; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; font-size: 11.5px; line-height: 1.45;">
+            <div style="font-weight: 800; color: #38bdf8; font-size: 13px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                <span>📦</span> Mode Penyesuaian Stok Fisik Awal (Baseline Cabang)
+            </div>
+            <div style="color: var(--text-main);">
+                Cabang ini baru pertama kali disiapkan. Silakan hitung dan masukkan <b>jumlah fisik voucher riil di etalase/laci saat ini</b>. Angka ini akan disimpan sebagai <b>Stok Awal Resmi</b> dan <b>TIDAK AKAN dicatat sebagai penjualan</b> di HistoriKu (uang kasir aman).
+            </div>
+        </div>
+
         <!-- STRIP PROGRES & FILTER -->
         <div class="progress-card">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -666,6 +676,34 @@
                     </div>
                 </div>
 
+                <!-- Opsi Tipe Opname (Untuk Cabang yang Sudah Baseline) -->
+                <div id="containerOpnameType" style="margin-top: 10px; padding: 10px; background: var(--card-inner); border: 1px solid var(--card-border); border-radius: 8px;">
+                    <div style="font-size: 11px; font-weight: 800; margin-bottom: 6px; color: var(--text-main);">
+                        TIPE OPNAME:
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11.5px;">
+                        <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="radOpnameType" id="radTypeSales" value="shift_sales" checked style="margin-top: 2px;" onchange="handleOpnameTypeChange()">
+                            <div>
+                                <span style="font-weight: 750; color: var(--text-main);">Tutup Shift Kasir (Penjualan)</span>
+                                <div style="font-size: 10.5px; color: var(--text-muted);">Selisih fisik berkurang otomatis dicatat sebagai penjualan voucher.</div>
+                            </div>
+                        </label>
+                        <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="radOpnameType" id="radTypeAdj" value="stock_adjustment" style="margin-top: 2px;" onchange="handleOpnameTypeChange()">
+                            <div>
+                                <span style="font-weight: 750; color: #f59e0b;">Koreksi / Audit Stok Fisik (Non-Penjualan)</span>
+                                <div style="font-size: 10.5px; color: var(--text-muted);">Hanya sesuaikan angka stok. TIDAK dicatat ke Riwayat Transaksi (tanpa omset).</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Notifikasi Khusus Mode Baseline Awal -->
+                <div id="modalBaselineNotice" style="display: none; margin-top: 10px; padding: 10px 12px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; font-size: 11px; line-height: 1.45; color: var(--text-main);">
+                    ℹ️ <b>Penetapan Stok Awal Resmi:</b> Sisa fisik yang Anda masukkan akan langsung menjadi baseline stok cabang. Selisih awal ini <b>TIDAK AKAN dicatat sebagai penjualan</b> di HistoriKu (uang kasir aman).
+                </div>
+
                 <!-- Opsi Sinkronisasi ke Riwayat Transaksi (store_history.html) -->
                 <div id="boxSyncHistory" style="margin-top: 10px; padding: 10px; background: var(--card-inner); border: 1px solid var(--card-border); border-radius: 8px;">
                     <label style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; cursor: pointer; user-select: none;">
@@ -703,6 +741,7 @@
         let searchQuery = '';
         let skipZeroStock = false;
         let isShiftClosedToday = false;
+        let isStoreBaselineConfirmed = true;
 
         document.addEventListener('DOMContentLoaded', async () => {
             applySavedTheme();
@@ -747,14 +786,15 @@
 
                 currentShiftNum = res.shift_num || 1;
                 isShiftClosedToday = !!res.already_closed;
+                isStoreBaselineConfirmed = res.has_baseline !== false;
 
                 // Update UI Header
                 document.getElementById('topStoreName').innerText = (res.emp_name ? res.emp_name + ' • ' : '') + 'Cabang ' + res.store_id;
                 document.getElementById('badgeShiftLabel').innerText = (currentShiftNum === 1 ? '☀️ Shift 1 (Pagi)' : '🌙 Shift 2 (Malam)');
                 document.getElementById('modalSubShift').innerText = `Shift ${currentShiftNum} • ${res.emp_name || 'Kasir'}`;
 
-                // Cek apakah shift hari ini sudah ditutup
-                if (isShiftClosedToday) {
+                // Cek apakah shift hari ini sudah ditutup (hanya berlaku jika cabang sudah baseline)
+                if (isShiftClosedToday && isStoreBaselineConfirmed) {
                     document.getElementById('bannerShiftLocked').style.display = 'block';
                     document.getElementById('btnOpenSummary').disabled = true;
                     document.getElementById('btnOpenSummary').innerText = '🔒 Shift Sudah Ditutup';
@@ -772,6 +812,7 @@
                 renderProviderChips();
                 renderProducts();
                 updateProgressUI();
+                updateBaselineModeUI();
 
                 // Cek apakah cabang ini aktif menggunakan HP Android KSP Check untuk mengatur default opsi riwayat
                 checkAndApplyStorePlatformMode(res.store_id);
@@ -786,6 +827,42 @@
                         </div>
                     </div>`;
             }
+        }
+
+        // ==================== MODE BASELINE & TIPE OPNAME ====================
+        function updateBaselineModeUI() {
+            const banner = document.getElementById('bannerBaselineMode');
+            const containerType = document.getElementById('containerOpnameType');
+            const modalNotice = document.getElementById('modalBaselineNotice');
+            const boxSync = document.getElementById('boxSyncHistory');
+            const btnOpen = document.getElementById('btnOpenSummary');
+            const btnConfirm = document.getElementById('btnConfirmSubmitOpname');
+
+            if (!isStoreBaselineConfirmed) {
+                // Mode Baseline Aktif (Cabang Baru Belum Pernah Baseline)
+                if (banner) banner.style.display = 'block';
+                if (containerType) containerType.style.display = 'none';
+                if (modalNotice) modalNotice.style.display = 'block';
+                if (boxSync) boxSync.style.display = 'none';
+                if (btnOpen && !isShiftClosedToday) btnOpen.innerText = '📦 Review & Set Stok Awal';
+                if (btnConfirm) btnConfirm.innerText = '💾 Simpan Stok Fisik Awal';
+            } else {
+                // Cabang Sudah Memiliki Baseline
+                if (banner) banner.style.display = 'none';
+                if (containerType) containerType.style.display = 'block';
+                if (modalNotice) modalNotice.style.display = 'none';
+                handleOpnameTypeChange();
+                if (btnOpen && !isShiftClosedToday) btnOpen.innerText = '📋 Simpan & Tutup Shift';
+            }
+        }
+
+        function handleOpnameTypeChange() {
+            if (!isStoreBaselineConfirmed) return;
+            const isAdj = document.getElementById('radTypeAdj')?.checked;
+            const boxSync = document.getElementById('boxSyncHistory');
+            const btn = document.getElementById('btnConfirmSubmitOpname');
+            if (boxSync) boxSync.style.display = isAdj ? 'none' : 'block';
+            if (btn) btn.innerText = isAdj ? '💾 Simpan Koreksi Fisik' : '💾 Simpan & Tutup Shift';
         }
  
         // ==================== DETEKSI SUMBER & ANTI-DUPLIKASI ====================
@@ -1188,12 +1265,27 @@
                     if (diff !== 0) changedCount++;
                 });
 
-                const summaryText = `Opname Shift ${currentShiftNum}: ${allProducts.length} produk dicek, ${totalSold} pcs terjual, ${totalRestock} pcs restok.`;
-                const syncToHistoryChecked = document.getElementById('chkSyncToHistory') ? document.getElementById('chkSyncToHistory').checked : true;
+                let sessionType = 'shift_sales';
+                if (!isStoreBaselineConfirmed) {
+                    sessionType = 'initial_baseline';
+                } else {
+                    sessionType = document.querySelector('input[name="radOpnameType"]:checked')?.value || 'shift_sales';
+                }
+
+                const isBaselineOrAdj = (sessionType === 'initial_baseline' || sessionType === 'stock_adjustment');
+                const syncToHistoryChecked = !isBaselineOrAdj && (document.getElementById('chkSyncToHistory') ? document.getElementById('chkSyncToHistory').checked : true);
+
+                const summaryText = sessionType === 'initial_baseline' 
+                    ? `Stok Awal Fisik Cabang: ${allProducts.length} produk dihitung, total fisik ${totalFinal} pcs.`
+                    : (sessionType === 'stock_adjustment'
+                        ? `Audit/Koreksi Fisik: ${allProducts.length} produk, net selisih ${totalFinal - totalInitial} pcs.`
+                        : `Opname Shift ${currentShiftNum}: ${allProducts.length} produk dicek, ${totalSold} pcs terjual, ${totalRestock} pcs restok.`);
 
                 const payload = {
                     store_name: 'Cabang ' + currentStoreId,
                     shift_num: currentShiftNum,
+                    session_type: sessionType,
+                    is_baseline: sessionType === 'initial_baseline',
                     total_products: allProducts.length,
                     total_initial: totalInitial,
                     total_final: totalFinal,
@@ -1213,14 +1305,20 @@
                 // Berhasil disimpan!
                 clearLocalDraft();
 
-                let historyInfo = '';
-                if (res.history_tx_created > 0) {
-                    historyInfo = `\n• ${res.history_tx_created} transaksi penjualan otomatis dicatat ke Riwayat (HistoriKu).`;
-                } else if (res.android_tx_existed) {
-                    historyInfo = `\n• Riwayat transaksi voucher diutamakan dari aplikasi Android KSP Check (anti-dobel aktif).`;
-                }
+                if (res.session_type === 'initial_baseline' || res.is_baseline) {
+                    alert(`✅ Stok Fisik Awal Berhasil Ditetapkan!\n\n• Sesi: ${res.session_id}\n• Angka fisik riil telah resmi menjadi patokan stok awal Cabang ${currentStoreId}.\n• TIDAK ada transaksi penjualan yang dicatat ke HistoriKu (uang kasir 100% aman).\n• Anda sekarang siap memulai transaksi Shift ${currentShiftNum}!`);
+                } else if (res.session_type === 'stock_adjustment') {
+                    alert(`✅ Koreksi Stok Fisik Berhasil Disimpan!\n\n• Sesi: ${res.session_id}\n• Angka stok fisik cabang telah disesuaikan.\n• TIDAK ada transaksi penjualan yang dicatat ke HistoriKu (tanpa omset semu).`);
+                } else {
+                    let historyInfo = '';
+                    if (res.history_tx_created > 0) {
+                        historyInfo = `\n• ${res.history_tx_created} transaksi penjualan otomatis dicatat ke Riwayat (HistoriKu).`;
+                    } else if (res.android_tx_existed) {
+                        historyInfo = `\n• Riwayat transaksi voucher diutamakan dari aplikasi Android KSP Check (anti-dobel aktif).`;
+                    }
 
-                alert(`✅ Hasil Opname Berhasil Disimpan!\n\n• Sesi: ${res.session_id}\n• Shift ${currentShiftNum} resmi ditutup.\n• Sisa fisik telah dialihkan ke Shift berikutnya.${historyInfo}`);
+                    alert(`✅ Hasil Opname Berhasil Disimpan!\n\n• Sesi: ${res.session_id}\n• Shift ${currentShiftNum} resmi ditutup.\n• Sisa fisik telah dialihkan ke Shift berikutnya.${historyInfo}`);
+                }
                 window.location.href = 'karyawan.html';
 
             } catch (err) {

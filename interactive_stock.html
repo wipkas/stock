@@ -3473,6 +3473,24 @@
                 </select>
             </div>
 
+            <!-- Pilihan Nilai Stok Awal -->
+            <div style="margin-bottom: 12px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px;">
+                <label style="display: block; font-size: 11.5px; font-weight: 750; color: var(--text-main); margin-bottom: 6px;">Nilai Stok Awal Cabang:</label>
+                <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11.5px;">
+                    <label style="display: flex; align-items: center; gap: 7px; cursor: pointer;">
+                        <input type="radio" name="radInitStockVal" id="radInitStockMaster" value="master" checked style="accent-color: var(--primary);">
+                        <span><b>Gunakan Nilai Stok Master</b> (Sebagai estimasi/patokan awal)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 7px; cursor: pointer;">
+                        <input type="radio" name="radInitStockVal" id="radInitStockZero" value="zero" style="accent-color: var(--primary);">
+                        <span><b>Set Stok Awal 0</b> (Wajibkan kasir cabang hitung fisik dari nol)</span>
+                    </label>
+                </div>
+                <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">
+                    💡 <i>Kasir di cabang akan melakukan penyesuaian fisik awal. Selisih fisik awal <b>TIDAK AKAN dicatat sebagai penjualan</b> di HistoriKu (tanpa omset fiktif).</i>
+                </div>
+            </div>
+
             <div id="syncCatalogStatus" style="display: none; padding: 8px 12px; border-radius: 8px; font-size: 11.5px; margin-bottom: 10px;"></div>
 
             <!-- Modal Footer -->
@@ -14376,13 +14394,15 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
                     if (storeVouchers.length === 0) continue;
 
+                    const isZeroStock = !!document.getElementById('radInitStockZero')?.checked;
+
                     // Siapkan payload untuk Project B (ksp_admin_sync_store_stock)
                     const payloadProducts = storeVouchers.map(v => ({
                         product_id: Number(v.product_id),
                         product_name: v.product_name,
                         provider_name: v.provider_name || 'VOUCHER',
                         category_name: v.category_name || v.category || '',
-                        stock: Number(v.stock !== undefined ? v.stock : 0),
+                        stock: isZeroStock ? 0 : Number(v.stock !== undefined ? v.stock : 0),
                         sell_price: Number(v.sell_price || v.unit_price || v.price || 0),
                         cost_price: Number(v.cost_price || 0),
                         sort_order: Number(v.sort_order || 9999),
