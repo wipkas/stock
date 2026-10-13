@@ -26,7 +26,7 @@
     <script src="js/ksp_theme.js?v=20261005"></script>
     <script src="js/ksp_auth.js?v=20261005"></script>
     <script src="js/ksp_multiday_layouts.js?v=20261013_v1"></script>
-    <script src="js/ksp_historiku.js?v=20261013_v1"></script>
+    <script src="js/ksp_historiku.js?v=20261013_v2"></script>
 
     <style>
         /* PIN Security Gate Modal */
@@ -444,22 +444,21 @@
 
                 <!-- Quick Presets -->
                 <div class="range-preset-row" id="modalPresetsRow">
-                    <button type="button" class="range-preset-btn active" data-preset="today" onclick="KspHistoriku.selectRangePreset('today')">Hari Ini</button>
-                    <button type="button" class="range-preset-btn" data-preset="yesterday" onclick="KspHistoriku.selectRangePreset('yesterday')">Kemarin</button>
-                    <button type="button" class="range-preset-btn" data-preset="last7" onclick="KspHistoriku.selectRangePreset('last7')">7 Hari</button>
-                    <button type="button" class="range-preset-btn" data-preset="last30" onclick="KspHistoriku.selectRangePreset('last30')">30 Hari</button>
-                    <button type="button" class="range-preset-btn" data-preset="thisMonth" onclick="KspHistoriku.selectRangePreset('thisMonth')">Bulan Ini</button>
+                    <button type="button" class="range-preset-btn active" data-preset="days2" onclick="KspHistoriku.selectRangePreset('days2')">2 Hari (dari hari ini)</button>
+                    <button type="button" class="range-preset-btn" data-preset="days3" onclick="KspHistoriku.selectRangePreset('days3')">3 Hari</button>
+                    <button type="button" class="range-preset-btn" data-preset="days4" onclick="KspHistoriku.selectRangePreset('days4')">4 Hari</button>
+                    <button type="button" class="range-preset-btn" data-preset="days5" onclick="KspHistoriku.selectRangePreset('days5')">5 Hari</button>
                 </div>
 
                 <!-- Inputs Tanggal -->
                 <div class="range-input-group">
                     <div class="range-input-field">
                         <label class="range-input-label" id="labelStartDate">Tanggal</label>
-                        <input type="date" id="rangeStartDate" class="range-input">
+                        <input type="date" id="rangeStartDate" class="range-input" onchange="if(window.KspHistoriku) KspHistoriku.updateActivePresetBtn()">
                     </div>
                     <div class="range-input-field" id="rangeEndFieldWrapper" style="display: none;">
                         <label class="range-input-label">Sampai Tanggal</label>
-                        <input type="date" id="rangeEndDate" class="range-input">
+                        <input type="date" id="rangeEndDate" class="range-input" onchange="if(window.KspHistoriku) KspHistoriku.updateActivePresetBtn()">
                     </div>
                 </div>
 
@@ -985,7 +984,7 @@
 
             if (modeParam === 'multiday' || (rangeStart && rangeEnd)) {
                 const start = rangeStart || (function() {
-                    const d = new Date(); d.setDate(d.getDate() - 6);
+                    const d = new Date(); d.setDate(d.getDate() - 1);
                     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
                 })();
                 const end = rangeEnd || (function() {
@@ -1169,6 +1168,11 @@
                 if (presetsRow) presetsRow.style.display = 'flex';
                 if (layoutWrapper) layoutWrapper.style.display = 'block';
                 if (lblStart) lblStart.textContent = 'Mulai Tanggal';
+                const startInput = document.getElementById('rangeStartDate');
+                const endInput = document.getElementById('rangeEndDate');
+                if (startInput && endInput && (!endInput.value || startInput.value === endInput.value) && window.KspHistoriku) {
+                    KspHistoriku.selectRangePreset('days2');
+                }
             }
         }
 

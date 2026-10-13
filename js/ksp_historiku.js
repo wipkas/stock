@@ -5978,6 +5978,28 @@ function renderModalFormatOptions() {
   }
 }
 
+function updateActivePresetBtn() {
+  const startInput = document.getElementById('rangeStartDate');
+  const endInput = document.getElementById('rangeEndDate');
+  if (!startInput || !endInput) return;
+  const s = startInput.value;
+  const e = endInput.value;
+  const today = getTodayDbDate();
+  let matchedPreset = '';
+  if (e === today && s) {
+    const dS = new Date(s + 'T00:00:00');
+    const dE = new Date(e + 'T00:00:00');
+    const diffDays = Math.round((dE - dS) / (1000 * 60 * 60 * 24)) + 1;
+    if (diffDays === 2) matchedPreset = 'days2';
+    else if (diffDays === 3) matchedPreset = 'days3';
+    else if (diffDays === 4) matchedPreset = 'days4';
+    else if (diffDays === 5) matchedPreset = 'days5';
+  }
+  document.querySelectorAll('#dateRangePickerModal .range-preset-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.preset === matchedPreset);
+  });
+}
+
 function openDateRangePickerModal() {
   const modal = document.getElementById('dateRangePickerModal');
   if (!modal) return;
@@ -5988,6 +6010,7 @@ function openDateRangePickerModal() {
   if (endInput && !endInput.value) endInput.value = todayStr;
   renderModalFormatOptions();
   setPeriodMode(window.ACTIVE_PERIOD_MODE || 'singleday');
+  updateActivePresetBtn();
   modal.classList.add('open');
 }
 
@@ -6002,7 +6025,19 @@ function selectRangePreset(presetKey) {
   let start = formatD(today);
   let end = formatD(today);
 
-  if (presetKey === 'yesterday') {
+  if (presetKey === 'days2' || presetKey === '2days') {
+    const d2 = new Date(); d2.setDate(d2.getDate() - 1);
+    start = formatD(d2); end = formatD(today);
+  } else if (presetKey === 'days3' || presetKey === '3days') {
+    const d3 = new Date(); d3.setDate(d3.getDate() - 2);
+    start = formatD(d3); end = formatD(today);
+  } else if (presetKey === 'days4' || presetKey === '4days') {
+    const d4 = new Date(); d4.setDate(d4.getDate() - 3);
+    start = formatD(d4); end = formatD(today);
+  } else if (presetKey === 'days5' || presetKey === '5days') {
+    const d5 = new Date(); d5.setDate(d5.getDate() - 4);
+    start = formatD(d5); end = formatD(today);
+  } else if (presetKey === 'yesterday') {
     const y = new Date(); y.setDate(y.getDate() - 1);
     start = formatD(y); end = formatD(y);
   } else if (presetKey === 'last7') {
@@ -6190,6 +6225,7 @@ window.KspHistoriku = {
   handleFileImport: handleReportFileImport,
   exportHistoryJson: exportHistoryJson,
   copyRekapFormula: copyRekapFormula,
+  updateActivePresetBtn: updateActivePresetBtn,
   setTextSize: setTextSize
 };
 
