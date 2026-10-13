@@ -667,12 +667,12 @@
                 </div>
 
                 <!-- Opsi Sinkronisasi ke Riwayat Transaksi (store_history.html) -->
-                <div style="margin-top: 10px; padding: 10px; background: var(--card-inner); border: 1px solid var(--card-border); border-radius: 8px;">
+                <div id="boxSyncHistory" style="margin-top: 10px; padding: 10px; background: var(--card-inner); border: 1px solid var(--card-border); border-radius: 8px;">
                     <label style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; cursor: pointer; user-select: none;">
                         <input type="checkbox" id="chkSyncToHistory" checked style="width: 16px; height: 16px; accent-color: var(--primary);">
-                        <span style="font-weight: 750; color: var(--text-main);">Catat ke Riwayat Transaksi (HistoriKu)</span>
+                        <span id="lblSyncToHistory" style="font-weight: 750; color: var(--text-main);">Catat ke Riwayat Transaksi (HistoriKu)</span>
                     </label>
-                    <div style="font-size: 10.5px; color: var(--text-muted); margin-left: 24px; margin-top: 2px;">
+                    <div id="descSyncHistory" style="font-size: 10.5px; color: var(--text-muted); margin-left: 24px; margin-top: 3px; line-height: 1.4;">
                         *Penjualan voucher otomatis masuk ke store_history.html. Jika shift ini sudah dicatat di aplikasi Android KSP Check, sistem otomatis mencegah duplikasi.
                     </div>
                 </div>
@@ -773,6 +773,9 @@
                 renderProducts();
                 updateProgressUI();
 
+                // Cek apakah cabang ini aktif menggunakan HP Android KSP Check untuk mengatur default opsi riwayat
+                checkAndApplyStorePlatformMode(res.store_id);
+
             } catch (err) {
                 console.error('Error fetchStoreStock:', err);
                 document.getElementById('productsListMount').innerHTML = `
@@ -784,8 +787,43 @@
                     </div>`;
             }
         }
+ 
+        // ==================== DETEKSI SUMBER & ANTI-DUPLIKASI ====================
+        async function checkAndApplyStorePlatformMode(storeId) {
+            const chk = document.getElementById('chkSyncToHistory');
+            const desc = document.getElementById('descSyncHistory');
+            if (!chk || !desc) return;
 
-        // ==================== DRAFT RESTORATION & PERSISTENCE ====================
+            try {
+                const cfg = window.KSP_SYNC_CONFIG || {};
+                if (!cfg.url || !cfg.key || !storeId) return;
+
+                const baseUrl = cfg.url.replace(/\/+$/, '');
+                const headers = { 'apikey': cfg.key };
+                if (String(cfg.key).indexOf('sb_') !== 0) {
+                    headers['Authorization'] = 'Bearer ' + cfg.key;
+                }
+
+                // Cek apakah cabang ini aktif memiliki transaksi dari HP Android KSP Check (device_id bukan web)
+                const endpoint = `${baseUrl}/rest/v1/ksp_history_transactions?store_id=eq.${encodeURIComponent(storeId)}&device_id=not.like.web*&select=id&limit=1`;
+                const res = await fetch(endpoint, { headers });
+                if (res.ok) {
+                    const data = await res.json();
+                    const hasAndroidApp = Array.isArray(data) && data.length > 0;
+                    if (hasAndroidApp) {
+                        // Terdeteksi Cabang dengan HP Android KSP Check
+                        chk.checked = false;
+                        desc.innerHTML = `<span style="color: #38bdf8; font-weight: 700;">📱 Cabang HP Android KSP Check:</span> Penjualan voucher sudah otomatis dicatat lewat aplikasi HP Android. Opsi ini dinonaktifkan agar tidak tercatat ganda di HistoriKu.`;
+                    } else {
+                        // Terdeteksi Cabang Murni Web
+                        chk.checked = true;
+                        desc.innerHTML = `<span style="color: #4ade80; font-weight: 700;">🌐 Cabang Murni Web:</span> Selisih stok fisik berkurang akan otomatis dicatat sebagai transaksi penjualan voucher di HistoriKu.`;
+                    }
+                }
+            } catch (e) {
+                console.warn('Deteksi platform cabang dilewati:', e);
+            }
+        }
         function restoreLocalDraft() {
             newStockMap.clear();
             const draftKey = 'ksp_draft_stock_' + currentStoreId;
