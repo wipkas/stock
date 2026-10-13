@@ -161,7 +161,7 @@
       }
       const desc = (item.customerName ? item.customerName + ' - ' : '') + (item.category || 'TopUp') + (item.destination ? ' (' + item.destination + ')' : '');
       const timeVal = timeColFmt ? formatDisplayTime(item.date, item.time) : (item.time || '00:00');
-      rowsHtml += opt.renderRowHtml(globalSeqRef.val++, timeVal, amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee || 0, item.date || dateAttr, item.rowId || item.id);
+      rowsHtml += opt.renderRowHtml(globalSeqRef.val++, timeVal, amtCharged, true, desc, false, item.orig, item.deleted, item.read, item.isNew, amtNominal, item.fee || 0, item.date || dateAttr, item.rowId || item.id, item.app || 'com.kspcheck.topup', item.appName || 'TopUp');
     });
     const thead = `<thead class="lv-thead"><tr>
       <th class="lv-th c" style="width:36px;">#</th>
