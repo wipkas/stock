@@ -5885,12 +5885,17 @@ function setPeriodMode(mode) {
   const layoutWrap = document.getElementById('modalLayoutSelectWrapper');
   const endWrap = document.getElementById('rangeEndFieldWrapper');
   const presetsWrap = document.getElementById('modalPresetsRow');
+  const inputGroup = document.getElementById('modalRangeInputGroup');
+  const lblStart = document.getElementById('labelStartDate');
   if (btnSingle) btnSingle.classList.toggle('active', mode === 'singleday');
   if (btnMulti) btnMulti.classList.toggle('active', mode === 'multiday');
   if (btnFormat) btnFormat.style.display = (mode === 'multiday') ? 'inline-flex' : 'none';
   if (layoutWrap) layoutWrap.style.display = (mode === 'multiday') ? 'block' : 'none';
   if (endWrap) endWrap.style.display = (mode === 'multiday') ? 'flex' : 'none';
   if (presetsWrap) presetsWrap.style.display = (mode === 'multiday') ? 'flex' : 'none';
+  if (inputGroup) inputGroup.classList.toggle('single-mode', mode === 'singleday');
+  if (lblStart) lblStart.textContent = (mode === 'singleday') ? 'Pilih Tanggal' : 'Mulai Tanggal';
+  updateModalDateDisplay();
 }
 
 function openFormatLayoutModal() {
@@ -5978,6 +5983,113 @@ function renderModalFormatOptions() {
   }
 }
 
+function formatCompactDateDisplay(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return '--';
+  const parts = dateStr.trim().split('-');
+  if (parts.length === 3) {
+    const day = parseInt(parts[2], 10);
+    const mIdx = parseInt(parts[1], 10) - 1;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    if (!isNaN(day) && mIdx >= 0 && mIdx < 12) {
+      return `${day} ${months[mIdx]}`;
+    }
+  }
+  try {
+    const d = new Date(dateStr + 'T00:00:00');
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+    }
+  } catch(e) {}
+  return dateStr;
+}
+
+function updateModalDateDisplay(field) {
+  if (!field || field === 'start') {
+    const startInput = document.getElementById('rangeStartDate');
+    const dispStart = document.getElementById('displayStartDate');
+    if (startInput && dispStart) {
+      dispStart.textContent = formatCompactDateDisplay(startInput.value);
+    }
+  }
+  if (!field || field === 'end') {
+    const endInput = document.getElementById('rangeEndDate');
+    const dispEnd = document.getElementById('displayEndDate');
+    if (endInput && dispEnd) {
+      dispEnd.textContent = formatCompactDateDisplay(endInput.value);
+    }
+  }
+}
+
+function stepModalDate(field, delta) {
+  const isStart = (field === 'start');
+  const targetId = isStart ? 'rangeStartDate' : 'rangeEndDate';
+  const input = document.getElementById(targetId);
+  if (!input) return;
+  const curVal = input.value || getTodayDbDate();
+  const d = new Date(curVal + 'T00:00:00');
+  d.setDate(d.getDate() + delta);
+  const newVal = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  input.value = newVal;
+
+  if (window.ACTIVE_PERIOD_MODE === 'singleday') {
+    const otherInput = document.getElementById('rangeEndDate');
+    if (otherInput) otherInput.value = newVal;
+    updateModalDateDisplay('end');
+  } else {
+    const startInput = document.getElementById('rangeStartDate');
+    const endInput = document.getElementById('rangeEndDate');
+    if (startInput && endInput && startInput.value && endInput.value) {
+      if (isStart && startInput.value > endInput.value) {
+        endInput.value = startInput.value;
+        updateModalDateDisplay('end');
+      } else if (!isStart && endInput.value < startInput.value) {
+        startInput.value = endInput.value;
+        updateModalDateDisplay('start');
+      }
+    }
+  }
+
+  updateModalDateDisplay(field);
+  updateActivePresetBtn();
+}
+
+function onModalDateChanged(field) {
+  const startInput = document.getElementById('rangeStartDate');
+  const endInput = document.getElementById('rangeEndDate');
+
+  if (window.ACTIVE_PERIOD_MODE === 'singleday') {
+    if (startInput && endInput) {
+      endInput.value = startInput.value;
+      updateModalDateDisplay('end');
+    }
+  } else {
+    if (startInput && endInput && startInput.value && endInput.value) {
+      if (field === 'start' && startInput.value > endInput.value) {
+        endInput.value = startInput.value;
+        updateModalDateDisplay('end');
+      } else if (field === 'end' && endInput.value < startInput.value) {
+        startInput.value = endInput.value;
+        updateModalDateDisplay('start');
+      }
+    }
+  }
+
+  updateModalDateDisplay(field);
+  updateActivePresetBtn();
+}
+
+function triggerDatePicker(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (typeof input.showPicker === 'function') {
+    try {
+      input.showPicker();
+      return;
+    } catch(e) {}
+  }
+  try { input.focus(); } catch(e) {}
+}
+
 function updateActivePresetBtn() {
   const startInput = document.getElementById('rangeStartDate');
   const endInput = document.getElementById('rangeEndDate');
@@ -6008,6 +6120,7 @@ function openDateRangePickerModal() {
   const todayStr = getTodayDbDate();
   if (startInput && !startInput.value) startInput.value = todayStr;
   if (endInput && !endInput.value) endInput.value = todayStr;
+  updateModalDateDisplay();
   renderModalFormatOptions();
   setPeriodMode(window.ACTIVE_PERIOD_MODE || 'singleday');
   updateActivePresetBtn();
@@ -6055,6 +6168,8 @@ function selectRangePreset(presetKey) {
   const endInput = document.getElementById('rangeEndDate');
   if (startInput) startInput.value = start;
   if (endInput) endInput.value = end;
+
+  updateModalDateDisplay();
 
   document.querySelectorAll('#dateRangePickerModal .range-preset-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.preset === presetKey);
@@ -6118,6 +6233,7 @@ function navigateDate(direction) {
     const endInput = document.getElementById('rangeEndDate');
     if (startInput) startInput.value = newStart;
     if (endInput) endInput.value = newEnd;
+    updateModalDateDisplay();
 
     loadMultiDayForStore(storeId, storeName, newStart, newEnd);
     return;
@@ -6140,6 +6256,7 @@ function navigateDate(direction) {
   const endInput = document.getElementById('rangeEndDate');
   if (startInput) startInput.value = newDateStr;
   if (endInput) endInput.value = newDateStr;
+  updateModalDateDisplay();
 
   const currentShift = (window.REPORT_DATA && typeof window.REPORT_DATA.shift === 'number') ? window.REPORT_DATA.shift : 0;
   window.KspHistoriku.loadForStore(storeId, storeName, newDateStr, currentShift);
@@ -6226,6 +6343,11 @@ window.KspHistoriku = {
   exportHistoryJson: exportHistoryJson,
   copyRekapFormula: copyRekapFormula,
   updateActivePresetBtn: updateActivePresetBtn,
+  formatCompactDateDisplay: formatCompactDateDisplay,
+  updateModalDateDisplay: updateModalDateDisplay,
+  stepModalDate: stepModalDate,
+  onModalDateChanged: onModalDateChanged,
+  triggerDatePicker: triggerDatePicker,
   setTextSize: setTextSize
 };
 

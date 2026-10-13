@@ -15,7 +15,7 @@
 
     <!-- CSS Dependencies -->
     <link rel="stylesheet" href="css/ksp_historiku.css?v=20261007_v4">
-    <link rel="stylesheet" href="css/ksp_multiday_layouts.css?v=20261007_v4">
+    <link rel="stylesheet" href="css/ksp_multiday_layouts.css?v=20261013_v2">
 
     <!-- Core Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
@@ -26,7 +26,7 @@
     <script src="js/ksp_theme.js?v=20261005"></script>
     <script src="js/ksp_auth.js?v=20261005"></script>
     <script src="js/ksp_multiday_layouts.js?v=20261013_v1"></script>
-    <script src="js/ksp_historiku.js?v=20261013_v2"></script>
+    <script src="js/ksp_historiku.js?v=20261013_v3"></script>
 
     <style>
         /* PIN Security Gate Modal */
@@ -450,15 +450,31 @@
                     <button type="button" class="range-preset-btn" data-preset="days5" onclick="KspHistoriku.selectRangePreset('days5')">5 Hari</button>
                 </div>
 
-                <!-- Inputs Tanggal -->
-                <div class="range-input-group">
+                <!-- Inputs Tanggal Stepper & Compact Picker -->
+                <div class="range-input-group single-mode" id="modalRangeInputGroup">
                     <div class="range-input-field">
                         <label class="range-input-label" id="labelStartDate">Tanggal</label>
-                        <input type="date" id="rangeStartDate" class="range-input" onchange="if(window.KspHistoriku) KspHistoriku.updateActivePresetBtn()">
+                        <div class="range-stepper-box">
+                            <button type="button" class="range-step-btn" onclick="KspHistoriku.stepModalDate('start', -1)" title="Hari Sebelumnya">‹</button>
+                            <div class="range-date-display-center" onclick="KspHistoriku.triggerDatePicker('rangeStartDate')" title="Klik untuk buka kalender">
+                                <span class="range-date-text" id="displayStartDate">--</span>
+                                <span class="range-date-icon">📅</span>
+                                <input type="date" id="rangeStartDate" class="hidden-native-date-input" onclick="if(typeof this.showPicker==='function'){try{this.showPicker();}catch(e){}}" onchange="KspHistoriku.onModalDateChanged('start')">
+                            </div>
+                            <button type="button" class="range-step-btn" onclick="KspHistoriku.stepModalDate('start', 1)" title="Hari Berikutnya">›</button>
+                        </div>
                     </div>
                     <div class="range-input-field" id="rangeEndFieldWrapper" style="display: none;">
-                        <label class="range-input-label">Sampai Tanggal</label>
-                        <input type="date" id="rangeEndDate" class="range-input" onchange="if(window.KspHistoriku) KspHistoriku.updateActivePresetBtn()">
+                        <label class="range-input-label" id="labelEndDate">Sampai Tanggal</label>
+                        <div class="range-stepper-box">
+                            <button type="button" class="range-step-btn" onclick="KspHistoriku.stepModalDate('end', -1)" title="Hari Sebelumnya">‹</button>
+                            <div class="range-date-display-center" onclick="KspHistoriku.triggerDatePicker('rangeEndDate')" title="Klik untuk buka kalender">
+                                <span class="range-date-text" id="displayEndDate">--</span>
+                                <span class="range-date-icon">📅</span>
+                                <input type="date" id="rangeEndDate" class="hidden-native-date-input" onclick="if(typeof this.showPicker==='function'){try{this.showPicker();}catch(e){}}" onchange="KspHistoriku.onModalDateChanged('end')">
+                            </div>
+                            <button type="button" class="range-step-btn" onclick="KspHistoriku.stepModalDate('end', 1)" title="Hari Berikutnya">›</button>
+                        </div>
                     </div>
                 </div>
 
@@ -1155,6 +1171,8 @@
             const layoutWrapper = document.getElementById('modalLayoutSelectWrapper');
             const lblStart = document.getElementById('labelStartDate');
 
+            const inputGroup = document.getElementById('modalRangeInputGroup');
+
             if (tabSingle) tabSingle.classList.toggle('active', mode === 'singleday');
             if (tabMulti) tabMulti.classList.toggle('active', mode === 'multiday');
 
@@ -1163,16 +1181,21 @@
                 if (presetsRow) presetsRow.style.display = 'none';
                 if (layoutWrapper) layoutWrapper.style.display = 'none';
                 if (lblStart) lblStart.textContent = 'Pilih Tanggal';
+                if (inputGroup) inputGroup.classList.add('single-mode');
             } else {
                 if (endWrapper) endWrapper.style.display = 'flex';
                 if (presetsRow) presetsRow.style.display = 'flex';
                 if (layoutWrapper) layoutWrapper.style.display = 'block';
                 if (lblStart) lblStart.textContent = 'Mulai Tanggal';
+                if (inputGroup) inputGroup.classList.remove('single-mode');
                 const startInput = document.getElementById('rangeStartDate');
                 const endInput = document.getElementById('rangeEndDate');
                 if (startInput && endInput && (!endInput.value || startInput.value === endInput.value) && window.KspHistoriku) {
                     KspHistoriku.selectRangePreset('days2');
                 }
+            }
+            if (window.KspHistoriku && window.KspHistoriku.updateModalDateDisplay) {
+                window.KspHistoriku.updateModalDateDisplay();
             }
         }
 
