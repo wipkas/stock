@@ -26,7 +26,7 @@
     <script src="js/ksp_theme.js?v=20261005"></script>
     <script src="js/ksp_auth.js?v=20261005"></script>
     <script src="js/ksp_multiday_layouts.js?v=20261013_v1"></script>
-    <script src="js/ksp_historiku.js?v=20261013_v3"></script>
+    <script src="js/ksp_historiku.js?v=20261013_v4"></script>
 
     <style>
         /* PIN Security Gate Modal */
@@ -431,17 +431,11 @@
         <div class="ksp-modal-card" style="max-width: 440px;" onclick="event.stopPropagation()">
             <div class="ksp-modal-hd">
                 <div class="ksp-modal-title">
-                    <span>📅</span> <span>Pilih Tanggal / Rentang</span>
+                    <span>📅</span> <span>Pilih Rentang Tanggal</span>
                 </div>
                 <button class="ksp-modal-close" onclick="KspHistoriku.closeDateRangePickerModal()" title="Tutup">✕</button>
             </div>
             <div class="ksp-modal-body">
-                <!-- Mode Tabs: 1 Hari vs Rentang Tanggal -->
-                <div class="modal-period-tabs">
-                    <button id="modalTabSingle" type="button" class="modal-tab-btn active" onclick="setModalPeriodTab('singleday')">1 Hari</button>
-                    <button id="modalTabMulti" type="button" class="modal-tab-btn" onclick="setModalPeriodTab('multiday')">Rentang Tanggal</button>
-                </div>
-
                 <!-- Quick Presets -->
                 <div class="range-preset-row" id="modalPresetsRow">
                     <button type="button" class="range-preset-btn active" data-preset="days2" onclick="KspHistoriku.selectRangePreset('days2')">2 Hari (dari hari ini)</button>
@@ -451,9 +445,9 @@
                 </div>
 
                 <!-- Inputs Tanggal Stepper & Compact Picker -->
-                <div class="range-input-group single-mode" id="modalRangeInputGroup">
+                <div class="range-input-group" id="modalRangeInputGroup">
                     <div class="range-input-field">
-                        <label class="range-input-label" id="labelStartDate">Tanggal</label>
+                        <label class="range-input-label" id="labelStartDate">Mulai Tanggal</label>
                         <div class="range-stepper-box">
                             <button type="button" class="range-step-btn" onclick="KspHistoriku.stepModalDate('start', -1)" title="Hari Sebelumnya">‹</button>
                             <div class="range-date-display-center" onclick="KspHistoriku.triggerDatePicker('rangeStartDate')" title="Klik untuk buka kalender">
@@ -464,7 +458,7 @@
                             <button type="button" class="range-step-btn" onclick="KspHistoriku.stepModalDate('start', 1)" title="Hari Berikutnya">›</button>
                         </div>
                     </div>
-                    <div class="range-input-field" id="rangeEndFieldWrapper" style="display: none;">
+                    <div class="range-input-field" id="rangeEndFieldWrapper">
                         <label class="range-input-label" id="labelEndDate">Sampai Tanggal</label>
                         <div class="range-stepper-box">
                             <button type="button" class="range-step-btn" onclick="KspHistoriku.stepModalDate('end', -1)" title="Hari Sebelumnya">‹</button>
@@ -478,8 +472,8 @@
                     </div>
                 </div>
 
-                <!-- Pilihan Format Layout jika Rentang dipilih -->
-                <div id="modalLayoutSelectWrapper" style="display: none; border-top: 1px dashed var(--border); padding-top: 10px;">
+                <!-- Pilihan Format Layout Laporan -->
+                <div id="modalLayoutSelectWrapper" style="border-top: 1px dashed var(--border); padding-top: 10px;">
                     <label class="range-input-label" style="margin-bottom: 6px; display: block;">Format Tampilan Laporan:</label>
                     <div class="format-option-list" id="modalFormatOptionsList"></div>
                 </div>
@@ -1159,43 +1153,9 @@
             }
         }
 
-        // Tab switcher di dalam Date Modal
         function setModalPeriodTab(mode) {
             if (window.KspHistoriku) {
-                KspHistoriku.setPeriodMode(mode);
-            }
-            const tabSingle = document.getElementById('modalTabSingle');
-            const tabMulti = document.getElementById('modalTabMulti');
-            const endWrapper = document.getElementById('rangeEndFieldWrapper');
-            const presetsRow = document.getElementById('modalPresetsRow');
-            const layoutWrapper = document.getElementById('modalLayoutSelectWrapper');
-            const lblStart = document.getElementById('labelStartDate');
-
-            const inputGroup = document.getElementById('modalRangeInputGroup');
-
-            if (tabSingle) tabSingle.classList.toggle('active', mode === 'singleday');
-            if (tabMulti) tabMulti.classList.toggle('active', mode === 'multiday');
-
-            if (mode === 'singleday') {
-                if (endWrapper) endWrapper.style.display = 'none';
-                if (presetsRow) presetsRow.style.display = 'none';
-                if (layoutWrapper) layoutWrapper.style.display = 'none';
-                if (lblStart) lblStart.textContent = 'Pilih Tanggal';
-                if (inputGroup) inputGroup.classList.add('single-mode');
-            } else {
-                if (endWrapper) endWrapper.style.display = 'flex';
-                if (presetsRow) presetsRow.style.display = 'flex';
-                if (layoutWrapper) layoutWrapper.style.display = 'block';
-                if (lblStart) lblStart.textContent = 'Mulai Tanggal';
-                if (inputGroup) inputGroup.classList.remove('single-mode');
-                const startInput = document.getElementById('rangeStartDate');
-                const endInput = document.getElementById('rangeEndDate');
-                if (startInput && endInput && (!endInput.value || startInput.value === endInput.value) && window.KspHistoriku) {
-                    KspHistoriku.selectRangePreset('days2');
-                }
-            }
-            if (window.KspHistoriku && window.KspHistoriku.updateModalDateDisplay) {
-                window.KspHistoriku.updateModalDateDisplay();
+                KspHistoriku.setPeriodMode(mode || 'multiday');
             }
         }
 
