@@ -3611,11 +3611,14 @@
                 </select>
             </div>
 
-            <!-- Template Source (Jika ada cabang baru web yang belum ada di Project A) -->
-            <div id="boxSyncTemplateSource" style="display: none; margin-bottom: 12px; background: rgba(79, 142, 247, 0.08); border: 1px dashed rgba(79, 142, 247, 0.35); border-radius: 10px; padding: 10px 12px;">
-                <label style="display: block; font-size: 11px; font-weight: 750; color: var(--primary); margin-bottom: 4px;">Cabang belum terdaftar di Project A. Salin katalog dari:</label>
-                <select id="selSyncCatalogTemplate" style="width: 100%; padding: 7px 10px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 11.5px;">
+            <!-- Template Source (Sumber Katalog Acuan) -->
+            <div id="boxSyncTemplateSource" style="margin-bottom: 12px; background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.35); border-radius: 10px; padding: 10px 12px;">
+                <label style="display: block; font-size: 11.5px; font-weight: 750; color: var(--primary); margin-bottom: 4px;">Pilih Sumber Template Katalog:</label>
+                <select id="selSyncCatalogTemplate" style="width: 100%; padding: 8px 10px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 12px; font-weight: 600;">
                 </select>
+                <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 5px; line-height: 1.4;">
+                    ⭐ <b>Rekomendasi:</b> Gunakan data <b>Master</b> agar seluruh cabang memiliki nama produk, kategori, dan harga standar yang seragam.
+                </div>
             </div>
 
             <!-- Pilihan Nilai Stok Awal -->
@@ -14590,19 +14593,27 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
             if (selTarget) selTarget.innerHTML = '<option value="all">🚀 Semua Cabang Terdaftar Sekaligus</option>';
             if (selTemplate) selTemplate.innerHTML = '';
-            if (boxTemplate) boxTemplate.style.display = 'none';
+            if (boxTemplate) boxTemplate.style.display = 'block';
 
             // Ambil perangkat yang terdeteksi di Project A
             const devicesMap = getDiscoveredDevicesMap();
 
-            // Isi template device select (dari Project A)
+            // Isi template device select: Utamakan ⭐ Master
             if (selTemplate) {
+                const optMaster = document.createElement('option');
+                optMaster.value = 'master';
+                optMaster.textContent = '⭐ Master (Katalog Acuan Baku)';
+                selTemplate.appendChild(optMaster);
+
                 devicesMap.forEach((name, id) => {
-                    const opt = document.createElement('option');
-                    opt.value = id;
-                    opt.textContent = `📱 ${name} (${id})`;
-                    selTemplate.appendChild(opt);
+                    if (id !== 'master') {
+                        const opt = document.createElement('option');
+                        opt.value = id;
+                        opt.textContent = `📱 ${name} (${id})`;
+                        selTemplate.appendChild(opt);
+                    }
                 });
+                selTemplate.value = 'master';
             }
 
             // Ambil toko dari Project B (ksp_stores)
@@ -14656,22 +14667,6 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     selTarget.appendChild(optGroupA);
                 }
 
-                // Event listener onchange untuk menampilkan pilihan template jika cabang belum ada di Project A
-                selTarget.onchange = function() {
-                    const selected = selTarget.options[selTarget.selectedIndex];
-                    if (!selected || selected.value === 'all') {
-                        if (boxTemplate) boxTemplate.style.display = 'none';
-                        return;
-                    }
-
-                    const targetId = selected.dataset.id;
-                    const existsInProjectA = devicesMap.has(targetId);
-                    if (!existsInProjectA && boxTemplate) {
-                        boxTemplate.style.display = 'block';
-                    } else if (boxTemplate) {
-                        boxTemplate.style.display = 'none';
-                    }
-                };
             }
         }
         window.showSyncCatalogModal = showSyncCatalogModal;
@@ -14691,7 +14686,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             if (!selTarget) return;
             const targetVal = selTarget.value;
 
-            if (!confirm('Inisialisasi katalog dan stok riil saat ini ke Portal Kasir (Project B)?\n\nStok riil di Project A akan menjadi stok baseline awal kasir saat opname.')) {
+            if (!confirm('Inisialisasi katalog dan stok ke cabang terpilih (Project A & Portal Karyawan Project B)?\n\nKatalog acuan (Master/Template) akan disalin ke cabang terpilih.')) {
                 return;
             }
 
@@ -14704,8 +14699,11 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             }
 
             try {
-                const templateDeviceId = selTemplate ? selTemplate.value : '';
-                const templateVouchers = allVouchers.filter(v => v.device_id === templateDeviceId);
+                const templateDeviceId = selTemplate ? selTemplate.value : 'master';
+                let templateVouchers = allVouchers.filter(v => v.device_id === templateDeviceId);
+                if (templateVouchers.length === 0 && templateDeviceId !== 'master') {
+                    templateVouchers = allVouchers.filter(v => v.device_id === 'master');
+                }
 
                 let storesToSync = [];
                 if (targetVal === 'all') {
@@ -14714,7 +14712,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     } else {
                         const devMap = getDiscoveredDevicesMap();
                         devMap.forEach((name, id) => {
-                            storesToSync.push({ id, name });
+                            if (id !== 'master') storesToSync.push({ id, name });
                         });
                     }
                 } else {
@@ -14729,12 +14727,19 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     const storeId = store.id;
                     const storeName = store.name || storeId;
 
+                    const isZeroStock = !!document.getElementById('radInitStockZero')?.checked;
+
                     // Cari apakah ada voucher di Project A untuk storeId ini
                     let storeVouchers = allVouchers.filter(v => v.device_id === storeId);
 
-                    // Jika belum ada di Project A, daftarkan cabang baru ke Project A menggunakan template
-                    if (storeVouchers.length === 0 && templateVouchers.length > 0 && supabaseClient) {
-                        const newVouchersPayload = templateVouchers.map(tv => ({
+                    // Tentukan blueprint produk acuan (utamakan template Master / template terpilih)
+                    const baseVouchers = (templateVouchers.length > 0) ? templateVouchers : storeVouchers;
+
+                    if (baseVouchers.length === 0) continue;
+
+                    // Daftarkan / sinkronkan katalog cabang ke Project A (tabel vouchers)
+                    if (supabaseClient) {
+                        const newVouchersPayload = baseVouchers.map(tv => ({
                             id: `${storeId}_${tv.product_id}`,
                             device_id: storeId,
                             device_name: storeName,
@@ -14742,7 +14747,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                             product_name: tv.product_name,
                             provider_name: tv.provider_name,
                             category_name: tv.category_name || tv.category || '',
-                            stock: Number(tv.stock || 0),
+                            stock: isZeroStock ? 0 : Number(tv.stock || 0),
                             cost_price: Number(tv.cost_price || 0),
                             sell_price: Number(tv.sell_price || tv.unit_price || tv.price || 0),
                             min_limit: Number(tv.min_limit || 0),
@@ -14760,21 +14765,11 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         } else {
                             storeVouchers = newVouchersPayload;
                         }
-                    } else if (storeVouchers.length === 0 && allVouchers.length > 0) {
-                        // Fallback jika tidak ada template: kumpulkan voucher unik dari allVouchers
-                        const uniqueMap = new Map();
-                        allVouchers.forEach(v => {
-                            if (!uniqueMap.has(v.product_id)) uniqueMap.set(v.product_id, v);
-                        });
-                        storeVouchers = Array.from(uniqueMap.values());
                     }
 
-                    if (storeVouchers.length === 0) continue;
-
-                    const isZeroStock = !!document.getElementById('radInitStockZero')?.checked;
-
                     // Siapkan payload untuk Project B (ksp_admin_sync_store_stock)
-                    const payloadProducts = storeVouchers.map(v => ({
+                    const sourceForB = (storeVouchers.length > 0) ? storeVouchers : baseVouchers;
+                    const payloadProducts = sourceForB.map(v => ({
                         product_id: Number(v.product_id),
                         product_name: v.product_name,
                         provider_name: v.provider_name || 'VOUCHER',
