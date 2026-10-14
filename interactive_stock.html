@@ -4522,6 +4522,45 @@
             fetchVouchersFromSupabase();
         }
 
+        // ============================================================================
+        // Cabang Resmi (Store-Centric Architecture)
+        // ============================================================================
+        let officialStores = []; // [{ id: 'karya2', name: 'Cabang Karya 2', ... }]
+
+        async function fetchOfficialStores() {
+            try {
+                // 1. Coba dari Project B via window.KSP_SYNC_CONFIG
+                const cfg = window.KSP_SYNC_CONFIG || {};
+                if (cfg.url && cfg.key) {
+                    const baseUrl = cfg.url.replace(/\/+$/, '');
+                    const headers = { 'apikey': cfg.key };
+                    if (String(cfg.key).indexOf('sb_') !== 0) headers['Authorization'] = 'Bearer ' + cfg.key;
+                    const resp = await fetch(baseUrl + '/rest/v1/ksp_stores?select=id,name,data&order=name.asc', { headers });
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (Array.isArray(data) && data.length > 0) {
+                            officialStores = data;
+                            cachedProjectBStores = data;
+                            return officialStores;
+                        }
+                    }
+                }
+                // 2. Fallback via supabaseClient jika sudah terkoneksi
+                if (supabaseClient) {
+                    const { data, error } = await supabaseClient.from('ksp_stores').select('id, name, data').order('name');
+                    if (!error && Array.isArray(data) && data.length > 0) {
+                        officialStores = data;
+                        cachedProjectBStores = data;
+                        return officialStores;
+                    }
+                }
+            } catch (err) {
+                console.warn('Gagal fetchOfficialStores:', err);
+            }
+            return officialStores;
+        }
+        window.fetchOfficialStores = fetchOfficialStores;
+
         function getDiscoveredDevicesMap(includeDeleted = false) {
             const devices = new Map();
 
@@ -5368,6 +5407,9 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                     } catch (e) {}
                 }
 
+                // Ambil cabang resmi ksp_stores sebelum membangun UI dropdown
+                await fetchOfficialStores();
+
                 populateDeviceDropdown();
                 renderProductList();
                 initDailyReport();
@@ -5391,19 +5433,68 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             }
         }
 
-        // 3. Populate Device Dropdown
+        // 3. Populate Device Dropdown (Store-Centric Architecture)
         function populateDeviceDropdown() {
             const select = document.getElementById('navDeviceFilter');
+            if (!select) return;
             const currentVal = select.value;
-            const devices = getDiscoveredDevicesMap();
+            const legacyDevices = getDiscoveredDevicesMap();
 
-            select.innerHTML = '<option value="all">📱 Semua Perangkat (' + devices.size + ')</option>';
-            devices.forEach((name, id) => {
-                const opt = document.createElement('option');
-                opt.value = id;
-                opt.textContent = '📱 ' + name;
-                select.appendChild(opt);
+            select.innerHTML = '';
+
+            // 1. Opsi Semua Cabang
+            const optAll = document.createElement('option');
+            optAll.value = 'all';
+            optAll.textContent = '🏢 Semua Cabang (' + (officialStores.length || legacyDevices.size) + ')';
+            select.appendChild(optAll);
+
+            // 2. Optgroup Cabang Resmi (ksp_stores)
+            const officialStoreIds = new Set();
+            if (Array.isArray(officialStores) && officialStores.length > 0) {
+                const grpStore = document.createElement('optgroup');
+                grpStore.label = '🏬 Cabang Resmi (Store-Centric)';
+                officialStores.forEach(st => {
+                    officialStoreIds.add(st.id);
+                    const opt = document.createElement('option');
+                    opt.value = st.id;
+                    const prodCount = allVouchers.filter(v => v.device_id === st.id).length;
+                    const countLabel = prodCount > 0 ? `(${prodCount} produk)` : `(Belum Inisialisasi)`;
+                    opt.textContent = `🏢 ${st.name || st.id} ${countLabel}`;
+                    grpStore.appendChild(opt);
+                });
+                select.appendChild(grpStore);
+            }
+
+            // 3. Optgroup Perangkat Legacy / Lainnya (yang ada di vouchers tapi belum di ksp_stores, bukan 'master')
+            const extraDevices = [];
+            legacyDevices.forEach((name, id) => {
+                if (id !== 'master' && !officialStoreIds.has(id)) {
+                    extraDevices.push({ id, name });
+                }
             });
+
+            if (extraDevices.length > 0) {
+                const grpDev = document.createElement('optgroup');
+                grpDev.label = '📱 Perangkat Lainnya / Terdeteksi';
+                extraDevices.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.id;
+                    const count = allVouchers.filter(v => v.device_id === d.id).length;
+                    opt.textContent = `📱 ${d.name} (${count} produk)`;
+                    grpDev.appendChild(opt);
+                });
+                select.appendChild(grpDev);
+            }
+
+            // 4. Optgroup Acuan Pusat: Master Blueprint
+            const grpMaster = document.createElement('optgroup');
+            grpMaster.label = '⭐ Acuan Master';
+            const optMaster = document.createElement('option');
+            optMaster.value = 'master';
+            const masterCount = allVouchers.filter(v => v.device_id === 'master').length;
+            optMaster.textContent = `⭐ Master Blueprint (${masterCount} produk)`;
+            grpMaster.appendChild(optMaster);
+            select.appendChild(grpMaster);
 
             // Cek jika ada parameter device atau dev di URL
             const urlDev = (function() {
@@ -5413,10 +5504,10 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                 } catch(e) { return ''; }
             })();
 
-            if (urlDev && devices.has(urlDev)) {
+            if (urlDev && (officialStoreIds.has(urlDev) || legacyDevices.has(urlDev) || urlDev === 'master')) {
                 select.value = urlDev;
                 hasPromptedInitialDevice = true; // Jangan tampilkan dialog popup jika sudah ditentukan lewat URL
-            } else if (devices.has(currentVal)) {
+            } else if (officialStoreIds.has(currentVal) || legacyDevices.has(currentVal) || currentVal === 'master') {
                 select.value = currentVal;
             } else {
                 select.value = 'all';
@@ -5424,10 +5515,11 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             updateOrderHeaderTitle();
             updateSettingsMenuUI();
 
-            // Munculkan dialog pilihan perangkat di awal load halaman jika perangkat ada > 1
-            if (devices.size > 1 && !hasPromptedInitialDevice) {
+            // Munculkan dialog pilihan cabang/perangkat di awal load halaman jika opsi > 1
+            const totalOptions = (officialStores.length || 0) + extraDevices.length;
+            if (totalOptions > 1 && !hasPromptedInitialDevice) {
                 hasPromptedInitialDevice = true;
-                showDeviceModal(devices);
+                showDeviceModal();
             }
         }
 
@@ -5444,51 +5536,113 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             const currentVal = document.getElementById('navDeviceFilter')?.value || 'all';
 
             let html = '';
-            // Opsi 1: Semua Perangkat (Gabungan)
+            // Opsi 1: Semua Cabang (Gabungan)
             const isAllActive = (currentVal === 'all');
             html += `
                 <button type="button" onclick="selectDeviceFromModal('all')" class="device-modal-item ${isAllActive ? 'active' : ''}">
                     <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                         <div style="font-weight: 700; font-size: 13.5px; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
-                            <span>🌐</span> Semua Perangkat
+                            <span>🌐</span> Semua Cabang &amp; Perangkat
                         </div>
                         <span style="font-size: 11px; background: rgba(79, 142, 247, 0.15); color: var(--primary); padding: 2px 8px; border-radius: 12px; font-weight: 700;">
                             ${allVouchers.length} item
                         </span>
                     </div>
                     <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
-                        Tampilkan data gabungan dari seluruh perangkat kasir (${devices.size} perangkat)
+                        Tampilkan data gabungan seluruh cabang (${officialStores.length || devices.size} cabang)
                     </div>
                 </button>
             `;
 
-            if (devices.size > 0) {
+            // Opsi 2: Cabang Resmi (ksp_stores)
+            const officialStoreIds = new Set();
+            if (Array.isArray(officialStores) && officialStores.length > 0) {
                 html += `
-                    <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 6px; margin-bottom: 2px;">
-                        Perangkat Kasir Terdeteksi:
+                    <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; margin-bottom: 4px;">
+                        🏬 Cabang Resmi (Store-Centric):
                     </div>
                 `;
 
-                devices.forEach((name, id) => {
-                    const isActive = (currentVal === id);
-                    const count = allVouchers.filter(v => v.device_id === id).length;
+                officialStores.forEach(st => {
+                    officialStoreIds.add(st.id);
+                    const isActive = (currentVal === st.id);
+                    const count = allVouchers.filter(v => v.device_id === st.id).length;
+                    const hasData = count > 0;
                     html += `
-                        <button type="button" onclick="selectDeviceFromModal('${escapeHtml(id)}')" class="device-modal-item ${isActive ? 'active' : ''}">
+                        <button type="button" onclick="selectDeviceFromModal('${escapeHtml(st.id)}')" class="device-modal-item ${isActive ? 'active' : ''}">
                             <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                                 <div style="font-weight: 700; font-size: 13.5px; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
-                                    <span>📱</span> ${escapeHtml(name)}
+                                    <span>🏢</span> ${escapeHtml(st.name || st.id)}
+                                </div>
+                                <span style="font-size: 11px; background: ${hasData ? 'rgba(79, 142, 247, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; color: ${hasData ? 'var(--primary)' : 'var(--danger)'}; padding: 2px 8px; border-radius: 12px; font-weight: 700;">
+                                    ${hasData ? count + ' item' : 'Belum Inisialisasi'}
+                                </span>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: monospace;">
+                                Store ID: ${escapeHtml(st.id)}
+                            </div>
+                        </button>
+                    `;
+                });
+            }
+
+            // Opsi 3: Perangkat Legacy Lainnya
+            const extraDevices = [];
+            devices.forEach((name, id) => {
+                if (id !== 'master' && !officialStoreIds.has(id)) {
+                    extraDevices.push({ id, name });
+                }
+            });
+
+            if (extraDevices.length > 0) {
+                html += `
+                    <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; margin-bottom: 4px;">
+                        📱 Perangkat Terdeteksi Lainnya:
+                    </div>
+                `;
+
+                extraDevices.forEach(d => {
+                    const isActive = (currentVal === d.id);
+                    const count = allVouchers.filter(v => v.device_id === d.id).length;
+                    html += `
+                        <button type="button" onclick="selectDeviceFromModal('${escapeHtml(d.id)}')" class="device-modal-item ${isActive ? 'active' : ''}">
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                <div style="font-weight: 700; font-size: 13.5px; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                                    <span>📱</span> ${escapeHtml(d.name)}
                                 </div>
                                 <span style="font-size: 11px; background: rgba(79, 142, 247, 0.15); color: var(--primary); padding: 2px 8px; border-radius: 12px; font-weight: 700;">
                                     ${count} item
                                 </span>
                             </div>
                             <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: monospace;">
-                                ID: ${escapeHtml(id)}
+                                Device ID: ${escapeHtml(d.id)}
                             </div>
                         </button>
                     `;
                 });
             }
+
+            // Opsi 4: Master Blueprint
+            const isMasterActive = (currentVal === 'master');
+            const masterCount = allVouchers.filter(v => v.device_id === 'master').length;
+            html += `
+                <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; margin-bottom: 4px;">
+                    ⭐ Data Acuan Pusat:
+                </div>
+                <button type="button" onclick="selectDeviceFromModal('master')" class="device-modal-item ${isMasterActive ? 'active' : ''}">
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                        <div style="font-weight: 700; font-size: 13.5px; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                            <span>⭐</span> Master Blueprint (Katalog Pusat)
+                        </div>
+                        <span style="font-size: 11px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 2px 8px; border-radius: 12px; font-weight: 700;">
+                            ${masterCount} item
+                        </span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                        Katalog acuan baku yang dipakai sebagai template inisialisasi cabang
+                    </div>
+                </button>
+            `;
 
             list.innerHTML = html;
             modal.style.display = 'flex';
@@ -5502,8 +5656,8 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             }
             closeDeviceModal();
             updateSettingsMenuUI();
-            const displayName = (deviceId === 'all') ? 'Semua Perangkat' : (select?.options[select?.selectedIndex]?.text || deviceId);
-            showToast(`📱 Memilih: ${displayName}`);
+            const displayName = (deviceId === 'all') ? 'Semua Cabang' : (select?.options[select?.selectedIndex]?.text || deviceId);
+            showToast(`🏢 Memilih: ${displayName}`);
         }
 
         function closeDeviceModal() {
@@ -5814,10 +5968,28 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
 
             const container = document.getElementById('productList');
             if (filtered.length === 0) {
-                const emptyMsg = (!orderShowArchived && allVouchers.some(v => v.is_active === false))
-                    ? 'Semua voucher yang ada sedang diarsipkan. Klik tombol "📦 Arsip" di atas untuk melihat.'
-                    : 'Tidak ada data voucher untuk perangkat ini';
-                container.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">${emptyMsg}</div>`;
+                const isOfficialStore = Array.isArray(officialStores) && officialStores.find(s => s.id === selectedDevice);
+                if (isOfficialStore) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 46px 20px; background: var(--card-bg); border: 1px dashed var(--border-color); border-radius: 16px; margin: 20px 0;">
+                            <div style="font-size: 38px; margin-bottom: 10px;">🏬</div>
+                            <div style="font-size: 16px; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">
+                                Cabang "${escapeHtml(isOfficialStore.name || selectedDevice)}" Belum Memiliki Produk
+                            </div>
+                            <div style="font-size: 12.5px; color: var(--text-muted); max-width: 440px; margin: 0 auto 18px; line-height: 1.5;">
+                                Data katalog dan stok cabang ini belum diinisialisasi. Anda dapat menyalin data Master atau template cabang lain ke cabang ini dalam 1 klik.
+                            </div>
+                            <button type="button" onclick="openInitForStore('${escapeHtml(selectedDevice)}')" class="btn-primary" style="padding: 10px 22px; font-size: 13px; font-weight: 800; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                                <span>🚀</span> Inisialisasi Katalog ke Cabang Ini
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    const emptyMsg = (!orderShowArchived && allVouchers.some(v => v.is_active === false))
+                        ? 'Semua voucher yang ada sedang diarsipkan. Klik tombol "📦 Arsip" di atas untuk melihat.'
+                        : 'Tidak ada data voucher untuk filter ini.';
+                    container.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">${emptyMsg}</div>`;
+                }
                 return;
             }
 
@@ -14594,6 +14766,23 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
         }
         window.checkPendingOpnameCount = checkPendingOpnameCount;
 
+        function openInitForStore(storeId) {
+            showSyncCatalogModal();
+            setTimeout(() => {
+                const selTarget = document.getElementById('selSyncCatalogTarget');
+                if (selTarget) {
+                    for (let i = 0; i < selTarget.options.length; i++) {
+                        const opt = selTarget.options[i];
+                        if (opt.value === `store_${storeId}` || opt.dataset?.id === storeId || opt.value === storeId) {
+                            selTarget.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }, 150);
+        }
+        window.openInitForStore = openInitForStore;
+
         async function showSyncCatalogModal() {
             const modal = document.getElementById('syncCatalogModal');
             if (!modal) return;
@@ -14613,78 +14802,87 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             if (selTemplate) selTemplate.innerHTML = '';
             if (boxTemplate) boxTemplate.style.display = 'block';
 
-            // Ambil perangkat yang terdeteksi di Project A
+            // Ambil perangkat yang terdeteksi
             const devicesMap = getDiscoveredDevicesMap();
 
-            // Isi template device select: Utamakan ⭐ Master
+            // Isi template device select: Utamakan template yang memiliki produk
             if (selTemplate) {
+                const masterCount = allVouchers.filter(v => v.device_id === 'master').length;
                 const optMaster = document.createElement('option');
                 optMaster.value = 'master';
-                optMaster.textContent = '⭐ Master (Katalog Acuan Baku)';
+                optMaster.textContent = `⭐ Master Blueprint (${masterCount} produk)`;
                 selTemplate.appendChild(optMaster);
+
+                let bestTemplate = masterCount > 0 ? 'master' : '';
+                let maxProducts = masterCount;
 
                 devicesMap.forEach((name, id) => {
                     if (id !== 'master') {
+                        const count = allVouchers.filter(v => v.device_id === id).length;
                         const opt = document.createElement('option');
                         opt.value = id;
-                        opt.textContent = `📱 ${name} (${id})`;
+                        opt.textContent = `📱 ${name} (${count} produk)`;
                         selTemplate.appendChild(opt);
+
+                        if (count > maxProducts) {
+                            maxProducts = count;
+                            bestTemplate = id;
+                        }
                     }
                 });
-                selTemplate.value = 'master';
+
+                if (bestTemplate) {
+                    selTemplate.value = bestTemplate;
+                }
             }
 
             // Ambil toko dari Project B (ksp_stores)
-            try {
-                const cfg = window.KSP_SYNC_CONFIG || {};
-                if (cfg.url && cfg.key) {
-                    const baseUrl = cfg.url.replace(/\/+$/, '');
-                    const headers = { 'apikey': cfg.key };
-                    if (String(cfg.key).indexOf('sb_') !== 0) headers['Authorization'] = 'Bearer ' + cfg.key;
-
-                    const resp = await fetch(baseUrl + '/rest/v1/ksp_stores?select=id,name', { headers });
-                    if (resp.ok) {
-                        cachedProjectBStores = await resp.json();
-                    }
-                }
-            } catch (err) {
-                console.warn('Gagal mengambil ksp_stores dari Project B:', err);
-            }
+            await fetchOfficialStores();
 
             // Gabungkan target ke selTarget
             if (selTarget) {
-                // Tambahkan toko dari Project B
-                if (Array.isArray(cachedProjectBStores) && cachedProjectBStores.length > 0) {
+                // Tambahkan toko dari Cabang Resmi Project B
+                if (Array.isArray(officialStores) && officialStores.length > 0) {
                     const optGroupB = document.createElement('optgroup');
-                    optGroupB.label = '🏬 Cabang Portal Karyawan (Project B)';
-                    cachedProjectBStores.forEach(st => {
+                    optGroupB.label = '🏬 Cabang Resmi (Store-Centric)';
+                    officialStores.forEach(st => {
                         const opt = document.createElement('option');
                         opt.value = `store_${st.id}`;
                         opt.dataset.type = 'b_store';
                         opt.dataset.id = st.id;
                         opt.dataset.name = st.name || st.id;
-                        opt.textContent = `🏪 ${st.name} [${st.id}]`;
+                        const prodCount = allVouchers.filter(v => v.device_id === st.id).length;
+                        const labelCount = prodCount > 0 ? `(${prodCount} produk)` : `(Belum Inisialisasi)`;
+                        opt.textContent = `🏪 ${st.name} [${st.id}] ${labelCount}`;
                         optGroupB.appendChild(opt);
                     });
                     selTarget.appendChild(optGroupB);
                 }
 
-                // Tambahkan perangkat dari Project A
-                if (devicesMap.size > 0) {
+                // Tambahkan perangkat lainnya jika ada yang belum terdaftar di ksp_stores
+                const officialStoreIds = new Set((officialStores || []).map(s => s.id));
+                const extraDevices = [];
+                devicesMap.forEach((name, id) => {
+                    if (id !== 'master' && !officialStoreIds.has(id)) {
+                        extraDevices.push({ id, name });
+                    }
+                });
+
+                if (extraDevices.length > 0) {
                     const optGroupA = document.createElement('optgroup');
-                    optGroupA.label = '📱 Perangkat Terdaftar Project A';
-                    devicesMap.forEach((name, id) => {
+                    optGroupA.label = '📱 Perangkat Lainnya / Terdeteksi';
+                    extraDevices.forEach(d => {
                         const opt = document.createElement('option');
-                        opt.value = `dev_${id}`;
+                        opt.value = `dev_${d.id}`;
                         opt.dataset.type = 'a_dev';
-                        opt.dataset.id = id;
-                        opt.dataset.name = name;
-                        opt.textContent = `📱 ${name} [${id}]`;
+                        opt.dataset.id = d.id;
+                        opt.dataset.name = d.name;
+                        const prodCount = allVouchers.filter(v => v.device_id === d.id).length;
+                        opt.textContent = `📱 ${d.name} [${d.id}] (${prodCount} produk)`;
                         optGroupA.appendChild(opt);
                     });
                     selTarget.appendChild(optGroupA);
                 }
-
             }
         }
         window.showSyncCatalogModal = showSyncCatalogModal;
@@ -14703,6 +14901,24 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
             if (!selTarget) return;
             const targetVal = selTarget.value;
+
+            // 1. Verifikasi PIN Admin untuk otorisasi RPC Project B
+            let pin = localStorage.getItem('kspcheck_viewer_pin') || (typeof DEFAULT_PIN !== 'undefined' ? DEFAULT_PIN : '');
+            if (!pin) {
+                pin = prompt('Masukkan PIN Admin Toko untuk otorisasi sinkronisasi ke Cabang (Project B):');
+                if (pin) {
+                    pin = pin.trim();
+                    localStorage.setItem('kspcheck_viewer_pin', pin);
+                } else {
+                    if (statusEl) {
+                        statusEl.style.display = 'block';
+                        statusEl.style.background = 'rgba(239, 68, 68, 0.12)';
+                        statusEl.style.color = 'var(--danger)';
+                        statusEl.textContent = '❌ Sinkronisasi dibatalkan: PIN Admin diperlukan untuk mengupdate database cabang.';
+                    }
+                    return;
+                }
+            }
 
             if (!confirm('Inisialisasi katalog dan stok ke cabang terpilih (Project A & Portal Karyawan Project B)?\n\nKatalog acuan (Master/Template) akan disalin ke cabang terpilih.')) {
                 return;
@@ -14723,9 +14939,32 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     templateVouchers = allVouchers.filter(v => v.device_id === 'master');
                 }
 
+                // Jika template masih kosong, coba fallback ke perangkat/cabang yang memiliki item terbanyak
+                if (templateVouchers.length === 0) {
+                    const devCounts = new Map();
+                    allVouchers.forEach(v => {
+                        devCounts.set(v.device_id, (devCounts.get(v.device_id) || 0) + 1);
+                    });
+                    let bestDev = null;
+                    let maxC = 0;
+                    devCounts.forEach((c, d) => {
+                        if (c > maxC) { maxC = c; bestDev = d; }
+                    });
+                    if (bestDev) {
+                        console.log(`[SyncCatalog] Template '${templateDeviceId}' kosong, menggunakan fallback data dari '${bestDev}' (${maxC} produk)`);
+                        templateVouchers = allVouchers.filter(v => v.device_id === bestDev);
+                    }
+                }
+
+                if (templateVouchers.length === 0) {
+                    throw new Error('Tidak ada data produk pada blueprint template terpilih. Silakan pastikan Master atau template cabang sudah memiliki produk.');
+                }
+
                 let storesToSync = [];
                 if (targetVal === 'all') {
-                    if (Array.isArray(cachedProjectBStores) && cachedProjectBStores.length > 0) {
+                    if (Array.isArray(officialStores) && officialStores.length > 0) {
+                        storesToSync = officialStores.map(s => ({ id: s.id, name: s.name }));
+                    } else if (Array.isArray(cachedProjectBStores) && cachedProjectBStores.length > 0) {
                         storesToSync = cachedProjectBStores.map(s => ({ id: s.id, name: s.name }));
                     } else {
                         const devMap = getDiscoveredDevicesMap();
@@ -14735,27 +14974,25 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     }
                 } else {
                     const selectedOpt = selTarget.options[selTarget.selectedIndex];
-                    storesToSync = [{ id: selectedOpt.dataset.id, name: selectedOpt.dataset.name }];
+                    const cleanId = selectedOpt?.dataset?.id || targetVal.replace(/^(store_|dev_)/, '');
+                    const cleanName = selectedOpt?.dataset?.name || selectedOpt?.textContent?.replace(/^[^\w\d]+/, '') || cleanId;
+                    storesToSync = [{ id: cleanId, name: cleanName }];
                 }
 
                 let syncedStoresCount = 0;
                 let totalProductsSynced = 0;
+                let syncErrors = [];
 
                 for (const store of storesToSync) {
                     const storeId = store.id;
                     const storeName = store.name || storeId;
-
                     const isZeroStock = !!document.getElementById('radInitStockZero')?.checked;
 
-                    // Cari apakah ada voucher di Project A untuk storeId ini
-                    let storeVouchers = allVouchers.filter(v => v.device_id === storeId);
-
-                    // Tentukan blueprint produk acuan (utamakan template Master / template terpilih)
-                    const baseVouchers = (templateVouchers.length > 0) ? templateVouchers : storeVouchers;
-
+                    const baseVouchers = templateVouchers;
                     if (baseVouchers.length === 0) continue;
 
-                    // Daftarkan / sinkronkan katalog cabang ke Project A (tabel vouchers)
+                    // 1. Daftarkan / sinkronkan katalog cabang ke Project A (tabel vouchers)
+                    let vouchersOk = false;
                     if (supabaseClient) {
                         const newVouchersPayload = baseVouchers.map(tv => ({
                             id: `${storeId}_${tv.product_id}`,
@@ -14779,15 +15016,15 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
                         const { error: insErr } = await supabaseClient.from('vouchers').upsert(newVouchersPayload);
                         if (insErr) {
-                            console.warn(`Gagal mendaftarkan cabang ${storeName} ke Project A:`, insErr);
+                            console.warn(`Gagal mendaftarkan cabang ${storeName} ke vouchers:`, insErr);
+                            syncErrors.push(`${storeName} (vouchers: ${insErr.message})`);
                         } else {
-                            storeVouchers = newVouchersPayload;
+                            vouchersOk = true;
                         }
                     }
 
-                    // Siapkan payload untuk Project B (ksp_admin_sync_store_stock)
-                    const sourceForB = (storeVouchers.length > 0) ? storeVouchers : baseVouchers;
-                    const payloadProducts = sourceForB.map(v => ({
+                    // 2. Siapkan payload untuk Project B (ksp_admin_sync_store_stock)
+                    const payloadProducts = baseVouchers.map(v => ({
                         product_id: Number(v.product_id),
                         product_name: v.product_name,
                         provider_name: v.provider_name || 'VOUCHER',
@@ -14799,28 +15036,52 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         is_active: v.is_active !== undefined ? !!v.is_active : true
                     }));
 
-                    const res = await window.KspSync.adminSyncStoreStock(storeId, payloadProducts);
-                    if (res && res.ok) {
+                    let rpcOk = false;
+                    try {
+                        const res = await window.KspSync.adminSyncStoreStock(storeId, payloadProducts);
+                        if (res && res.ok) {
+                            rpcOk = true;
+                        } else {
+                            const errDetail = (res && res.error) || 'Otorisasi ditolak';
+                            console.warn(`Gagal sync store ${storeId} ke Project B:`, errDetail);
+                            syncErrors.push(`${storeName} (Portal Kasir: ${errDetail})`);
+                        }
+                    } catch (errRpc) {
+                        console.warn(`RPC error sync store ${storeId}:`, errRpc);
+                        syncErrors.push(`${storeName} (Portal Kasir: ${errRpc.message})`);
+                    }
+
+                    if (rpcOk || vouchersOk) {
                         syncedStoresCount++;
                         totalProductsSynced += payloadProducts.length;
-                    } else {
-                        console.warn(`Gagal sync store ${storeId} ke Project B:`, res);
                     }
                 }
 
-                if (statusEl) {
-                    statusEl.style.background = 'rgba(34, 197, 94, 0.12)';
-                    statusEl.style.color = 'var(--success)';
-                    statusEl.textContent = `✅ Berhasil menginisialisasi ${totalProductsSynced} produk untuk ${syncedStoresCount} cabang ke Portal Kasir!`;
+                if (syncErrors.length > 0 && syncedStoresCount === 0) {
+                    if (statusEl) {
+                        statusEl.style.background = 'rgba(239, 68, 68, 0.12)';
+                        statusEl.style.color = 'var(--danger)';
+                        statusEl.textContent = `❌ Gagal sinkronisasi:\n${syncErrors.join('\n')}`;
+                    }
+                } else {
+                    if (statusEl) {
+                        statusEl.style.background = 'rgba(34, 197, 94, 0.12)';
+                        statusEl.style.color = 'var(--success)';
+                        let msg = `✅ Berhasil menginisialisasi ${totalProductsSynced} produk untuk ${syncedStoresCount} cabang!`;
+                        if (syncErrors.length > 0) {
+                            msg += `\n⚠️ Catatan kendala: ${syncErrors.join(', ')}`;
+                        }
+                        statusEl.textContent = msg;
+                    }
+                    showToast(`✅ Inisialisasi katalog selesai (${syncedStoresCount} cabang)!`);
+
+                    // Refresh data vouchers dan dropdown
+                    fetchVouchersFromSupabase();
+
+                    setTimeout(() => {
+                        closeSyncCatalogModal();
+                    }, 2400);
                 }
-                showToast(`✅ Inisialisasi katalog berhasil (${syncedStoresCount} cabang)!`);
-
-                // Refresh data vouchers jika ada cabang baru yang dibuat di Project A
-                fetchVouchersFromSupabase();
-
-                setTimeout(() => {
-                    closeSyncCatalogModal();
-                }, 1600);
 
             } catch (err) {
                 console.error('Error executeSyncCatalogToEmployees:', err);

@@ -802,6 +802,53 @@
 
                 allProducts = Array.isArray(res.products) ? res.products : [];
 
+                // Fallback Cerdas: Jika tabel ksp_store_stock masih kosong (misal baru dibuat atau belum di-sync via RPC),
+                // coba cari apakah katalog produk cabang ini sudah terdaftar di tabel 'vouchers'
+                if (allProducts.length === 0 && window.KSP_SYNC_CONFIG && window.KSP_SYNC_CONFIG.url) {
+                    try {
+                        const targetStore = res.store_id || currentStoreId;
+                        console.log(`[QuickStock] ksp_store_stock kosong untuk cabang "${targetStore}", mencoba fallback ke tabel vouchers...`);
+                        const baseUrl = window.KSP_SYNC_CONFIG.url.replace(/\/+$/, '');
+                        const headers = { 'apikey': window.KSP_SYNC_CONFIG.key };
+                        if (String(window.KSP_SYNC_CONFIG.key).indexOf('sb_') !== 0) {
+                            headers['Authorization'] = 'Bearer ' + window.KSP_SYNC_CONFIG.key;
+                        }
+
+                        // 1. Coba exact match device_id = store_id
+                        let vResp = await fetch(baseUrl + '/rest/v1/vouchers?device_id=eq.' + encodeURIComponent(targetStore) + '&is_active=neq.false&select=product_id,product_name,provider_name,category_name,stock,sell_price,cost_price,sort_order&order=sort_order.asc,product_name.asc', { headers });
+                        let vData = vResp.ok ? await vResp.json() : [];
+
+                        // 2. Jika masih kosong, coba variasi format (hapus strip/spasi, contoh: 'karya-2' -> 'karya 2' atau 'karya2')
+                        if ((!vData || vData.length === 0) && targetStore.includes('-')) {
+                            const altStore = targetStore.replace(/-/g, ' ');
+                            vResp = await fetch(baseUrl + '/rest/v1/vouchers?device_id=eq.' + encodeURIComponent(altStore) + '&is_active=neq.false&select=product_id,product_name,provider_name,category_name,stock,sell_price,cost_price,sort_order&order=sort_order.asc,product_name.asc', { headers });
+                            if (vResp.ok) vData = await vResp.json();
+                        }
+                        if ((!vData || vData.length === 0) && (targetStore.includes('-') || targetStore.includes(' '))) {
+                            const altStore2 = targetStore.replace(/[-\s]/g, '');
+                            vResp = await fetch(baseUrl + '/rest/v1/vouchers?device_id=eq.' + encodeURIComponent(altStore2) + '&is_active=neq.false&select=product_id,product_name,provider_name,category_name,stock,sell_price,cost_price,sort_order&order=sort_order.asc,product_name.asc', { headers });
+                            if (vResp.ok) vData = await vResp.json();
+                        }
+
+                        if (Array.isArray(vData) && vData.length > 0) {
+                            console.log(`[QuickStock Fallback] Ditemukan ${vData.length} produk di tabel vouchers!`);
+                            allProducts = vData.map(v => ({
+                                product_id: Number(v.product_id),
+                                product_name: v.product_name,
+                                provider_name: v.provider_name || 'VOUCHER',
+                                category_name: v.category_name || '',
+                                current_stock: Number(v.stock !== undefined ? v.stock : 0),
+                                sell_price: Number(v.sell_price || 0),
+                                cost_price: Number(v.cost_price || 0),
+                                sort_order: Number(v.sort_order || 0),
+                                is_active: true
+                            }));
+                        }
+                    } catch (errFb) {
+                        console.warn('[QuickStock Fallback] Gagal memuat fallback dari vouchers:', errFb);
+                    }
+                }
+
                 // Simpan initial stock & pulihkan draft
                 initialStockMap.clear();
                 allProducts.forEach(p => {
@@ -1009,10 +1056,24 @@
             });
 
             if (filtered.length === 0) {
-                mount.innerHTML = `
-                    <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 30px;">
-                        Tidak ada produk yang cocok dengan filter.
-                    </div>`;
+                if (allProducts.length === 0) {
+                    mount.innerHTML = `
+                        <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 40px 16px; background: var(--card-bg); border: 1px dashed var(--card-border); border-radius: 14px; margin-top: 10px;">
+                            <div style="font-size: 38px; margin-bottom: 8px;">📦</div>
+                            <div style="font-size: 15px; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">Katalog Cabang Belum Diinisialisasi</div>
+                            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5; max-width: 320px; margin: 0 auto 16px;">
+                                Belum ada daftar produk untuk <b>Cabang ${currentStoreId}</b>. Silakan hubungi Admin untuk melakukan inisialisasi katalog melalui Web Admin.
+                            </div>
+                            <button onclick="fetchStoreStock()" class="btn-modal-cancel" style="border-color: var(--primary); color: var(--primary); font-weight: 750;">
+                                🔄 Muat Ulang
+                            </button>
+                        </div>`;
+                } else {
+                    mount.innerHTML = `
+                        <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 30px;">
+                            Tidak ada produk yang cocok dengan filter atau pencarian.
+                        </div>`;
+                }
                 return;
             }
 
