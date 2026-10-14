@@ -6470,10 +6470,10 @@
                             </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                            <button type="button" class="btn-secondary" onclick="handleRenameDevicePrompt('${escapeHtml(devId)}', '${escapeHtml(devName)}')" style="padding: 6px 10px; font-size: 12px;" title="Ubah Nama Alias HP">
+                            <button type="button" class="btn-secondary" onclick="handleRenameDevicePrompt('${escapeHtml(devId)}')" style="padding: 6px 10px; font-size: 12px;" title="Ubah Nama Alias HP">
                                 ✏️
                             </button>
-                            <button type="button" class="btn-secondary" onclick="handleUnbindDevicePrompt('${escapeHtml(devId)}', '${escapeHtml(devName)}')" style="padding: 6px 10px; font-size: 12px; color: var(--danger); border-color: rgba(239,68,68,0.3);" title="Putuskan / Hapus HP ini">
+                            <button type="button" class="btn-secondary" onclick="handleUnbindDevicePrompt('${escapeHtml(devId)}')" style="padding: 6px 10px; font-size: 12px; color: var(--danger); border-color: rgba(239,68,68,0.3);" title="Putuskan / Hapus HP ini">
                                 🗑️
                             </button>
                         </div>
@@ -6547,7 +6547,10 @@
             }
         }
 
-        async function handleUnbindDevicePrompt(deviceId, deviceName) {
+        async function handleUnbindDevicePrompt(deviceId) {
+            const dev = currentStoreDevices.find(d => d.id === deviceId);
+            const deviceName = dev ? dev.device_name : deviceId;
+
             if (!confirm(`Apakah Anda yakin ingin memutuskan perangkat "${deviceName}" dari cabang ini?\n\nHP kasir ini tidak akan lagi dapat menyinkronkan transaksi hingga di-scan ulang.`)) {
                 return;
             }
@@ -6563,7 +6566,10 @@
             }
         }
 
-        async function handleRenameDevicePrompt(deviceId, currentName) {
+        async function handleRenameDevicePrompt(deviceId) {
+            const dev = currentStoreDevices.find(d => d.id === deviceId);
+            const currentName = dev ? dev.device_name : 'Kasir Android';
+
             const newName = prompt(`Ubah nama alias perangkat:`, currentName);
             if (!newName || newName.trim() === '' || newName.trim() === currentName) return;
 
