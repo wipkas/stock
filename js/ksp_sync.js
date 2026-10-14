@@ -444,6 +444,8 @@
         });
     }
 
+    var _warnedMissingDevicesRpc = false;
+
     function adminGetDevices(storeId) {
         if (!enabled()) return Promise.resolve([]);
         return rpc('ksp_admin_get_devices', { p_pin: adminPin(), p_store_id: storeId || null }).then(function (r) {
@@ -451,7 +453,10 @@
             if (r && Array.isArray(r.devices)) return r.devices;
             return [];
         }).catch(function (err) {
-            console.warn('[KspSync] ksp_admin_get_devices RPC error, trying direct table select:', err);
+            if (!_warnedMissingDevicesRpc) {
+                _warnedMissingDevicesRpc = true;
+                console.info('[KspSync] RPC ksp_admin_get_devices belum aktif di database Supabase (menjalankan fallback atau jalankan patch_add_device_store_binding.sql):', err.message || err);
+            }
             var url = CFG.url.replace(/\/+$/, '') + '/rest/v1/ksp_devices?select=*' +
                 (storeId ? '&store_id=eq.' + encodeURIComponent(storeId) : '') +
                 '&order=last_active_at.desc.nullslast';
