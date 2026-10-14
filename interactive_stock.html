@@ -6503,7 +6503,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                             <input type="number" class="qty-input" value="${savedQty}" min="0" oninput="onQtyInputChange(event, this)">
                             <button class="qty-btn" onclick="changeQty(event, this, 1)">+</button>
                         </div>
-                        <button type="button" onclick="event.stopPropagation(); openEditProductModal('${escapeHtml(String(v.product_id))}', '${escapeHtml(String(v.device_id))}')" title="Edit Metadata &amp; Broadcast ke Cabang" style="background: rgba(79, 142, 247, 0.12); border: 1px solid rgba(79, 142, 247, 0.3); border-radius: 8px; color: var(--primary); padding: 5px 8px; font-size: 13px; cursor: pointer; margin-left: 6px; flex-shrink: 0; line-height: 1;">
+                        <button type="button" onclick="event.stopPropagation(); openEditProductModal('${escapeHtml(String(prod.product_id || prod.id || 0))}', '${escapeHtml(String(prod.device_id || 'master'))}')" title="Edit Metadata &amp; Broadcast ke Cabang" style="background: rgba(79, 142, 247, 0.12); border: 1px solid rgba(79, 142, 247, 0.3); border-radius: 8px; color: var(--primary); padding: 5px 8px; font-size: 13px; cursor: pointer; margin-left: 6px; flex-shrink: 0; line-height: 1;">
                             ✏️
                         </button>
                     </div>`;
