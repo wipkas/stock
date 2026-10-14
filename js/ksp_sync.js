@@ -424,6 +424,49 @@
         });
     }
 
+    function adminGetDevices(storeId) {
+        if (!enabled()) return Promise.resolve([]);
+        return rpc('ksp_admin_get_devices', { p_pin: adminPin(), p_store_id: storeId || null }).then(function (r) {
+            if (Array.isArray(r)) return r;
+            if (r && Array.isArray(r.devices)) return r.devices;
+            return [];
+        }).catch(function (err) {
+            console.warn('[KspSync] ksp_admin_get_devices RPC error, trying direct table select:', err);
+            var url = CFG.url.replace(/\/+$/, '') + '/rest/v1/ksp_devices?select=*' +
+                (storeId ? '&store_id=eq.' + encodeURIComponent(storeId) : '') +
+                '&order=last_active_at.desc.nullslast';
+            var headers = { 'apikey': CFG.key };
+            if (String(CFG.key).indexOf('sb_') !== 0) headers['Authorization'] = 'Bearer ' + CFG.key;
+            return fetch(url, { headers: headers }).then(function (res) {
+                return res.ok ? res.json() : [];
+            }).catch(function () { return []; });
+        });
+    }
+
+    function adminUnbindDevice(deviceId) {
+        if (!enabled()) return Promise.reject(new Error('Sinkronisasi cloud tidak dikonfigurasi'));
+        return rpc('ksp_admin_unbind_device', { p_pin: adminPin(), p_device_id: deviceId }).catch(function () {
+            var url = CFG.url.replace(/\/+$/, '') + '/rest/v1/ksp_devices?id=eq.' + encodeURIComponent(deviceId);
+            var headers = { 'apikey': CFG.key, 'Content-Type': 'application/json' };
+            if (String(CFG.key).indexOf('sb_') !== 0) headers['Authorization'] = 'Bearer ' + CFG.key;
+            return fetch(url, { method: 'DELETE', headers: headers }).then(function (res) {
+                return { success: res.ok };
+            });
+        });
+    }
+
+    function adminRenameDevice(deviceId, newName) {
+        if (!enabled()) return Promise.reject(new Error('Sinkronisasi cloud tidak dikonfigurasi'));
+        return rpc('ksp_admin_rename_device', { p_pin: adminPin(), p_device_id: deviceId, p_new_name: newName }).catch(function () {
+            var url = CFG.url.replace(/\/+$/, '') + '/rest/v1/ksp_devices?id=eq.' + encodeURIComponent(deviceId);
+            var headers = { 'apikey': CFG.key, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+            if (String(CFG.key).indexOf('sb_') !== 0) headers['Authorization'] = 'Bearer ' + CFG.key;
+            return fetch(url, { method: 'PATCH', headers: headers, body: JSON.stringify({ device_name: newName }) }).then(function (res) {
+                return { success: res.ok };
+            });
+        });
+    }
+
     // ---------- KARYAWAN ----------
     function empLogin(password) {
         if (!enabled()) return Promise.reject(new Error('Sinkronisasi cloud tidak dikonfigurasi'));
@@ -751,6 +794,9 @@
         adminSyncStoreStock: adminSyncStoreStock,
         adminGetOpnameSessions: adminGetOpnameSessions,
         adminMarkOpnameSynced: adminMarkOpnameSynced,
+        adminGetDevices: adminGetDevices,
+        adminUnbindDevice: adminUnbindDevice,
+        adminRenameDevice: adminRenameDevice,
         setStatus: setStatus
     };
 })();

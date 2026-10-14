@@ -27,6 +27,7 @@
     <script src="js/ksp_target_card.js?v=20261005"></script>
     <script src="js/ksp_leaderboard.js?v=20261006"></script>
     <script src="js/ksp_performance_reasons.js?v=20261010_v1"></script>
+    <script src="js/qrcode.min.js?v=20261014"></script>
 
     <style>
         :root {
@@ -2822,6 +2823,21 @@
                     </div>
                 </div>
 
+                <!-- Perangkat HP Kasir (Devices) -->
+                <div class="feature-card" style="--feature-accent: #8B5CF6; cursor: pointer;" onclick="openStoreDevicesModal(activeStoreId)">
+                    <div>
+                        <div class="feature-card-top">
+                            <div class="feature-icon">📱</div>
+                            <div class="feature-title">Perangkat HP Kasir</div>
+                        </div>
+                        <p class="feature-desc">Hubungkan HP Android via Scan QR Code, monitor perangkat kasir aktif di cabang ini, dan kontrol hak akses.</p>
+                    </div>
+                    <div class="feature-action">
+                        <span id="labelStoreDevicesCount">Kelola Perangkat</span>
+                        <span>&rarr;</span>
+                    </div>
+                </div>
+
             </div>
         </section>
 
@@ -2956,6 +2972,58 @@
         </section>
 
         <!-- HISTORIKU TRANSAKSI: Dikelola di store_history.html -->
+    </div>
+
+    <!-- MODAL PERANGKAT HP KASIR (DEVICES) -->
+    <div id="storeDevicesModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'storeDevicesModal')">
+        <div class="modal-card" style="max-width: 600px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="devicesModalTitle">📱 Perangkat HP Kasir</h3>
+                    <p class="modal-subtitle" id="devicesModalSubtitle">Daftar HP Android yang terhubung ke cabang ini</p>
+                </div>
+                <button type="button" class="modal-close-btn" aria-label="Tutup" onclick="closeModal('storeDevicesModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 16px;">
+                <!-- Action Bar -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                    <div style="font-size: 13px; font-weight: 700; color: var(--text-muted);" id="devicesCountSummary">
+                        Memuat data perangkat...
+                    </div>
+                    <button class="btn-primary" onclick="toggleDeviceQrSection()" style="background: #8B5CF6; border: none; padding: 8px 14px; font-size: 13px;">
+                        📷 + Hubungkan HP (QR Code)
+                    </button>
+                </div>
+
+                <!-- QR Pairing Section (Collapsible) -->
+                <div id="deviceQrPairingSection" style="display: none; background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 16px; text-align: center;">
+                    <h4 style="font-size: 15px; font-weight: 800; color: #A78BFA; margin-bottom: 6px;">📷 Scan QR Pairing Cabang</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                        Buka aplikasi <b>KSP Check</b> di HP Kasir ➔ Pengaturan ➔ <b>Scan QR Cabang</b>
+                    </p>
+                    <div id="deviceQrContainer" style="display: inline-block; background: #FFFFFF; padding: 12px; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.3); margin-bottom: 10px;">
+                        <!-- QR Code Canvas / Img generated here -->
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); max-width: 400px; margin: 0 auto; line-height: 1.4;">
+                        🏬 Cabang: <b id="qrLabelStoreName">-</b> (<span id="qrLabelStoreId">-</span>)<br>
+                        ⚡ Dual-Provisioning: Master Voucher &amp; Riwayat Cabang langsung terhubung!
+                    </div>
+                </div>
+
+                <!-- Devices List Container -->
+                <div id="devicesListContainer" style="display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto;">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                <button type="button" class="btn-secondary" onclick="refreshStoreDevices(activeStoreId)">
+                    🔄 Muat Ulang
+                </button>
+                <button type="button" class="btn-secondary" onclick="closeModal('storeDevicesModal')">
+                    Tutup
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL ATUR CABANG TOKO -->
@@ -6238,6 +6306,16 @@
                     </div>`;
             }
 
+            // Refresh badge device count silently in background
+            if (window.KspSync && typeof window.KspSync.adminGetDevices === 'function') {
+                window.KspSync.adminGetDevices(store.id).then(devs => {
+                    const badge = document.getElementById('labelStoreDevicesCount');
+                    if (badge && Array.isArray(devs)) {
+                        badge.innerText = devs.length > 0 ? `${devs.length} HP Terdaftar` : 'Kelola Perangkat';
+                    }
+                }).catch(() => {});
+            }
+
             const hView = document.getElementById('historikuView');
             if (hView) hView.style.display = 'none';
         }
@@ -6249,6 +6327,255 @@
             const store = storesData.find(s => s.id === storeId);
             const storeName = store ? store.name : '';
             window.location.href = `store_history.html?store=${encodeURIComponent(storeId || '')}&name=${encodeURIComponent(storeName)}`;
+        }
+
+        // ============================================================
+        // MANAJEMEN PERANGKAT HP KASIR (DEVICES) & QR CODE PAIRING
+        // ============================================================
+        let currentStoreDevices = [];
+        let deviceQrInstance = null;
+
+        async function openStoreDevicesModal(storeId = null) {
+            storeId = storeId || activeStoreId;
+            if (!storeId) {
+                showToast('Pilih cabang terlebih dahulu', '⚠️');
+                return;
+            }
+
+            const store = storesData.find(s => s.id === storeId);
+            const storeName = store ? store.name : storeId;
+
+            const titleEl = document.getElementById('devicesModalTitle');
+            const subEl = document.getElementById('devicesModalSubtitle');
+            if (titleEl) titleEl.innerText = `📱 Perangkat HP Kasir - ${storeName}`;
+            if (subEl) subEl.innerText = `Cabang ID: ${storeId}`;
+
+            // Reset QR section
+            const qrSec = document.getElementById('deviceQrPairingSection');
+            if (qrSec) qrSec.style.display = 'none';
+
+            openModal('storeDevicesModal');
+            await refreshStoreDevices(storeId);
+        }
+
+        async function refreshStoreDevices(storeId) {
+            storeId = storeId || activeStoreId;
+            const container = document.getElementById('devicesListContainer');
+            const summary = document.getElementById('devicesCountSummary');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px;">
+                    ⏳ Memuat daftar perangkat kasir dari cloud...
+                </div>
+            `;
+
+            try {
+                if (window.KspSync && typeof window.KspSync.adminGetDevices === 'function') {
+                    currentStoreDevices = await window.KspSync.adminGetDevices(storeId);
+                } else {
+                    currentStoreDevices = [];
+                }
+            } catch (err) {
+                console.warn('[StoreManager] Gagal mengambil perangkat:', err);
+                currentStoreDevices = [];
+            }
+
+            renderStoreDevicesList(currentStoreDevices, storeId);
+        }
+
+        function renderStoreDevicesList(devices, storeId) {
+            const container = document.getElementById('devicesListContainer');
+            const summary = document.getElementById('devicesCountSummary');
+            if (!container) return;
+
+            const badgeCount = document.getElementById('labelStoreDevicesCount');
+            if (badgeCount) {
+                badgeCount.innerText = devices.length > 0 ? `${devices.length} HP Terdaftar` : 'Kelola Perangkat';
+            }
+
+            if (summary) {
+                summary.innerText = `Total Terdaftar: ${devices.length} Perangkat`;
+            }
+
+            if (!devices || devices.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 32px 16px; background: rgba(255,255,255,0.02); border: 1px dashed var(--card-border); border-radius: 12px;">
+                        <div style="font-size: 32px; margin-bottom: 8px;">📱</div>
+                        <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Belum Ada HP Kasir Terhubung</div>
+                        <p style="font-size: 12px; color: var(--text-muted); max-width: 320px; margin: 0 auto 14px auto;">
+                            Gunakan tombol <b>"+ Hubungkan HP (QR Code)"</b> di atas untuk menghubungkan HP Android ke cabang ini secara instan.
+                        </p>
+                        <button class="btn-primary" onclick="toggleDeviceQrSection(true)" style="background: #8B5CF6; border: none; font-size: 12px; padding: 6px 14px;">
+                            📷 Tampilkan QR Code Sekarang
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            const now = Date.now();
+            let html = '';
+
+            devices.forEach(dev => {
+                const devId = dev.id || '';
+                const devName = dev.device_name || 'Kasir Android';
+                const model = dev.device_model || '-';
+                const appVer = dev.app_version ? `v${dev.app_version}` : '';
+                const lastEmp = dev.last_emp_name && dev.last_emp_name !== '-' ? `Kasir: ${dev.last_emp_name}` : '';
+
+                // Periksa status online (aktif dalam 15 menit terakhir)
+                let isOnline = false;
+                let activeTimeStr = 'Belum pernah aktif';
+                if (dev.last_active_at) {
+                    const actDate = new Date(dev.last_active_at);
+                    const diffMinutes = Math.floor((now - actDate.getTime()) / (1000 * 60));
+                    if (diffMinutes < 15) {
+                        isOnline = true;
+                        activeTimeStr = diffMinutes <= 1 ? 'Aktif baru saja' : `Aktif ${diffMinutes} mnt lalu`;
+                    } else if (diffMinutes < 60 * 24) {
+                        const h = String(actDate.getHours()).padStart(2, '0');
+                        const m = String(actDate.getMinutes()).padStart(2, '0');
+                        activeTimeStr = `Hari ini ${h}:${m}`;
+                    } else {
+                        const d = String(actDate.getDate()).padStart(2, '0');
+                        const mo = String(actDate.getMonth() + 1).padStart(2, '0');
+                        const h = String(actDate.getHours()).padStart(2, '0');
+                        const m = String(actDate.getMinutes()).padStart(2, '0');
+                        activeTimeStr = `${d}/${mo} ${h}:${m}`;
+                    }
+                }
+
+                html += `
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px 14px; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(139, 92, 246, 0.15); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+                                📱
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-weight: 700; font-size: 14px; color: var(--text-main); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                                        ${escapeHtml(devName)}
+                                    </span>
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 700; ${isOnline ? 'background: rgba(16, 185, 129, 0.15); color: #10B981;' : 'background: rgba(148, 163, 184, 0.15); color: #94A3B8;'}">
+                                        <span style="width: 6px; height: 6px; border-radius: 50%; background: ${isOnline ? '#10B981' : '#94A3B8'};"></span>
+                                        ${isOnline ? 'Online' : 'Offline'}
+                                    </span>
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px; display: flex; flex-wrap: wrap; gap: 8px;">
+                                    <span>⚙️ ${escapeHtml(model)} ${escapeHtml(appVer)}</span>
+                                    <span>⏱️ ${activeTimeStr}</span>
+                                    ${lastEmp ? `<span>👤 ${escapeHtml(lastEmp)}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                            <button type="button" class="btn-secondary" onclick="handleRenameDevicePrompt('${escapeHtml(devId)}', '${escapeHtml(devName)}')" style="padding: 6px 10px; font-size: 12px;" title="Ubah Nama Alias HP">
+                                ✏️
+                            </button>
+                            <button type="button" class="btn-secondary" onclick="handleUnbindDevicePrompt('${escapeHtml(devId)}', '${escapeHtml(devName)}')" style="padding: 6px 10px; font-size: 12px; color: var(--danger); border-color: rgba(239,68,68,0.3);" title="Putuskan / Hapus HP ini">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function toggleDeviceQrSection(forceOpen = false) {
+            const qrSec = document.getElementById('deviceQrPairingSection');
+            if (!qrSec) return;
+
+            const shouldOpen = forceOpen || qrSec.style.display === 'none';
+            if (shouldOpen) {
+                qrSec.style.display = 'block';
+                generateDevicePairingQr(activeStoreId);
+            } else {
+                qrSec.style.display = 'none';
+            }
+        }
+
+        function generateDevicePairingQr(storeId) {
+            storeId = storeId || activeStoreId;
+            const container = document.getElementById('deviceQrContainer');
+            if (!container) return;
+
+            const store = storesData.find(s => s.id === storeId);
+            const storeName = store ? store.name : storeId;
+
+            const lblName = document.getElementById('qrLabelStoreName');
+            const lblId = document.getElementById('qrLabelStoreId');
+            if (lblName) lblName.innerText = storeName;
+            if (lblId) lblId.innerText = storeId;
+
+            container.innerHTML = '';
+
+            // Hitung URL dasar stock GitHub Pages
+            const currentPath = window.location.pathname;
+            const stockBasePath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+            const fullStockUrl = window.location.origin + stockBasePath;
+
+            const adminPin = (window.KspAuth && typeof window.KspAuth.getAdminPin === 'function')
+                ? window.KspAuth.getAdminPin()
+                : (localStorage.getItem('kspcheck_viewer_pin') || '');
+
+            // Payload compact QR code (< 100 karakter)
+            const payload = {
+                act: "bind",
+                url: fullStockUrl,
+                sid: storeId,
+                sn: storeName,
+                pin: adminPin
+            };
+
+            const payloadStr = JSON.stringify(payload);
+
+            if (typeof QRCode !== 'undefined') {
+                deviceQrInstance = new QRCode(container, {
+                    text: payloadStr,
+                    width: 200,
+                    height: 200,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            } else {
+                const enc = encodeURIComponent(payloadStr);
+                container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${enc}" alt="QR Pairing" style="width:200px; height:200px; display:block;" />`;
+            }
+        }
+
+        async function handleUnbindDevicePrompt(deviceId, deviceName) {
+            if (!confirm(`Apakah Anda yakin ingin memutuskan perangkat "${deviceName}" dari cabang ini?\n\nHP kasir ini tidak akan lagi dapat menyinkronkan transaksi hingga di-scan ulang.`)) {
+                return;
+            }
+
+            try {
+                if (window.KspSync && typeof window.KspSync.adminUnbindDevice === 'function') {
+                    await window.KspSync.adminUnbindDevice(deviceId);
+                    showToast(`Perangkat "${deviceName}" berhasil diputuskan`, '🗑️');
+                    await refreshStoreDevices(activeStoreId);
+                }
+            } catch (err) {
+                alert('Gagal memutuskan perangkat: ' + (err.message || err));
+            }
+        }
+
+        async function handleRenameDevicePrompt(deviceId, currentName) {
+            const newName = prompt(`Ubah nama alias perangkat:`, currentName);
+            if (!newName || newName.trim() === '' || newName.trim() === currentName) return;
+
+            try {
+                if (window.KspSync && typeof window.KspSync.adminRenameDevice === 'function') {
+                    await window.KspSync.adminRenameDevice(deviceId, newName.trim());
+                    showToast(`Nama perangkat diubah menjadi "${newName.trim()}"`, '✏️');
+                    await refreshStoreDevices(activeStoreId);
+                }
+            } catch (err) {
+                alert('Gagal mengubah nama perangkat: ' + (err.message || err));
+            }
         }
 
         function backFromHistorikuView() {
