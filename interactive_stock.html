@@ -4499,13 +4499,21 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                     return;
                 }
 
-                // Prioritas 2: PIN dari URL (jika ada)
+                // Prioritas 2: Kredensial Utama Project B dari window.KSP_SYNC_CONFIG (js/ksp_sync_config.js)
+                if (window.KSP_SYNC_CONFIG && window.KSP_SYNC_CONFIG.url && window.KSP_SYNC_CONFIG.key) {
+                    console.log('Menghubungkan ke Supabase Project B via KSP_SYNC_CONFIG:', window.KSP_SYNC_CONFIG.url);
+                    supabaseClient = supabase.createClient(window.KSP_SYNC_CONFIG.url, window.KSP_SYNC_CONFIG.key);
+                    fetchVouchersFromSupabase();
+                    return;
+                }
+
+                // Prioritas 3: PIN dari URL (jika ada)
                 if (urlPin) {
                     unlockWithPin(urlPin, false);
                     return;
                 }
 
-                // Prioritas 3: DEFAULT_PIN atau PIN tersimpan di browser
+                // Prioritas 4: DEFAULT_PIN atau PIN tersimpan di browser
                 const pinToUse = DEFAULT_PIN || localStorage.getItem('kspcheck_viewer_pin');
                 if (pinToUse) {
                     unlockWithPin(pinToUse, false);
@@ -5046,6 +5054,16 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             }
 
             try {
+                // Prioritas: Hubungkan ke Project B jika window.KSP_SYNC_CONFIG tersedia
+                if (window.KSP_SYNC_CONFIG && window.KSP_SYNC_CONFIG.url && window.KSP_SYNC_CONFIG.key) {
+                    if (pin) localStorage.setItem('kspcheck_viewer_pin', pin);
+                    supabaseClient = supabase.createClient(window.KSP_SYNC_CONFIG.url, window.KSP_SYNC_CONFIG.key);
+                    document.getElementById('pinModal').style.display = 'none';
+                    fetchVouchersFromSupabase();
+                    return;
+                }
+
+                // Fallback ke config.enc (Project A / Backup)
                 const res = await fetch('./config.enc?t=' + Date.now());
                 if (!res.ok) throw new Error('File config.enc tidak ditemukan.');
                 const base64Encrypted = await res.text();
