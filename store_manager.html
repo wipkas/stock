@@ -4917,6 +4917,20 @@
                     openHistorikuView(storeParam);
                 } else if (viewParam === 'leaderboard') {
                     openLeaderboardModal(storeParam);
+                } else if (viewParam === 'devices' || viewParam === 'qr') {
+                    if (storeParam && storesData.some(s => s.id === storeParam)) {
+                        selectStore(storeParam);
+                    }
+                    setTimeout(() => {
+                        if (typeof openStoreDevicesModal === 'function') {
+                            openStoreDevicesModal(storeParam);
+                            if (viewParam === 'qr') {
+                                setTimeout(() => {
+                                    if (typeof toggleDeviceQrSection === 'function') toggleDeviceQrSection(true);
+                                }, 150);
+                            }
+                        }
+                    }, 250);
                 } else if (storeParam && storesData.some(s => s.id === storeParam)) {
                     selectStore(storeParam);
                 }

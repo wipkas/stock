@@ -2507,6 +2507,11 @@
                     <span id="badgePendingOpnameCount" style="display: none; position: absolute; top: -4px; right: -4px; background: #EF4444; color: #FFFFFF; border-radius: 10px; font-size: 10px; font-weight: 850; padding: 1px 5px; line-height: 1.2; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);">0</span>
                 </button>
 
+                <!-- Store Manager & QR Pairing Shortcut -->
+                <a href="store_manager.html" class="btn-nav-action" title="Buka Store Manager &amp; QR Pairing Cabang" style="text-decoration:none; display: inline-flex; align-items: center; justify-content: center;">
+                    <span>🏬</span>
+                </a>
+
                 <!-- Unified Settings / Toggle Menu -->
                 <div class="header-settings" id="headerSettings">
                     <button class="btn-nav-action btn-settings" id="btnSettingsToggle" onclick="toggleSettingsMenu(event)" title="Pengaturan tampilan" aria-label="Pengaturan tampilan" aria-expanded="false">⚙️</button>
@@ -3734,6 +3739,165 @@
                 <button type="button" id="btnExecuteSyncCatalog" onclick="executeSyncCatalogToEmployees()" style="padding: 9px 20px; background: var(--primary); border: none; border-radius: 8px; font-size: 12px; font-weight: 800; color: #FFFFFF; cursor: pointer; box-shadow: 0 2px 10px rgba(79, 142, 247, 0.35);">
                     🚀 Inisialisasi Sekarang
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT PRODUK & BROADCAST PERUBAHAN KE SEMUA CABANG (STOK AMAN) -->
+    <div id="editMasterProductModal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closeEditProductModal()">
+        <div class="device-manage-card" style="max-width: 540px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div>
+                    <h2 style="font-size: 16px; font-weight: 850; color: var(--text-main); margin-bottom: 3px; display: flex; align-items: center; gap: 8px;">
+                        <span>✏️</span> Edit Data Produk &amp; Broadcast
+                    </h2>
+                    <p style="font-size: 11.5px; color: var(--text-muted); margin: 0;">Perbarui atribut produk dan sebarkan ke semua cabang tanpa mereset stok.</p>
+                </div>
+                <button type="button" onclick="closeEditProductModal()" title="Tutup" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1;">&times;</button>
+            </div>
+
+            <form id="formEditProduct" onsubmit="event.preventDefault(); saveAndBroadcastProduct();">
+                <input type="hidden" id="editProdOriginalId">
+                <input type="hidden" id="editProdDeviceId">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div>
+                        <label style="display: block; font-size: 11px; font-weight: 750; color: var(--text-muted); margin-bottom: 4px;">Product ID (Database):</label>
+                        <input type="text" id="editProdId" readonly style="width: 100%; padding: 8px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--card-border); border-radius: 8px; color: var(--primary); font-size: 12px; font-weight: 800; font-family: monospace;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11px; font-weight: 750; color: var(--text-muted); margin-bottom: 4px;">Provider / Brand:</label>
+                        <input type="text" id="editProdProvider" required placeholder="Telkomsel, XL, Axis..." style="width: 100%; padding: 8px 10px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 12px; font-weight: 700;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; font-size: 11px; font-weight: 750; color: var(--text-muted); margin-bottom: 4px;">Nama Produk Voucher:</label>
+                    <input type="text" id="editProdName" required placeholder="Nama lengkap paket / voucher..." style="width: 100%; padding: 8px 10px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 13px; font-weight: 700;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div>
+                        <label style="display: block; font-size: 11px; font-weight: 750; color: var(--text-muted); margin-bottom: 4px;">Kategori:</label>
+                        <input type="text" id="editProdCategory" placeholder="Umum, Data, Pulsa..." style="width: 100%; padding: 8px 10px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 12px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11px; font-weight: 750; color: var(--text-muted); margin-bottom: 4px;">Urutan (Sort Order):</label>
+                        <input type="number" id="editProdSortOrder" min="0" style="width: 100%; padding: 8px 10px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 12px;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 11px; font-weight: 750; color: var(--text-muted); margin-bottom: 4px;">Harga Modal (Rp):</label>
+                        <input type="number" id="editProdCost" min="0" style="width: 100%; padding: 8px 10px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 12px; font-weight: 700;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11px; font-weight: 750; color: var(--text-muted); margin-bottom: 4px;">Harga Jual (Rp):</label>
+                        <input type="number" id="editProdPrice" min="0" style="width: 100%; padding: 8px 10px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; color: #10B981; font-size: 12px; font-weight: 700;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11px; font-weight: 750; color: var(--text-muted); margin-bottom: 4px;">Min. Limit Stok:</label>
+                        <input type="number" id="editProdMinLimit" min="0" style="width: 100%; padding: 8px 10px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 12px;">
+                    </div>
+                </div>
+
+                <!-- Opsi Broadcast Cerdas -->
+                <div style="background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.35); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px;">
+                    <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="chkBroadcastToBranches" checked style="width: 16px; height: 16px; accent-color: var(--primary); margin-top: 2px;">
+                        <div>
+                            <div style="font-size: 12px; font-weight: 800; color: var(--primary);">
+                                📢 Terapkan perubahan ini ke SEMUA CABANG (Stok Cabang Tetap Utuh)
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px; line-height: 1.4;">
+                                Nama produk, harga jual, harga modal, dan kategori akan diseragamkan di tabel cabang (vouchers &amp; portal kasir ksp_store_stock). Nilai sisa stok fisik di tiap cabang <b>100% TIDAK diubah</b>.
+                            </div>
+                        </div>
+                    </label>
+                </div>
+
+                <div id="editProductStatus" style="display: none; padding: 8px 12px; border-radius: 8px; font-size: 11.5px; margin-bottom: 12px; line-height: 1.4; white-space: pre-wrap;"></div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                    <button type="button" onclick="triggerSafetyStockCheckFromEdit()" style="padding: 8px 14px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; font-size: 11.5px; font-weight: 700; color: var(--danger); cursor: pointer;">
+                        🗑️ Hapus / Arsipkan...
+                    </button>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button type="button" onclick="closeEditProductModal()" style="padding: 8px 16px; background: transparent; border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer;">Batal</button>
+                        <button type="submit" id="btnSaveEditProduct" style="padding: 8px 18px; background: var(--primary); border: none; border-radius: 8px; font-size: 12px; font-weight: 800; color: #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(79, 142, 247, 0.35);">
+                            💾 Simpan Perubahan
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: SAFETY CHECK SISA STOK CABANG SEBELUM HAPUS / ARSIP -->
+    <div id="productStockSafetyModal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closeProductStockSafetyModal()">
+        <div class="device-manage-card" style="max-width: 520px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <div>
+                    <h2 style="font-size: 15.5px; font-weight: 850; color: var(--warning); margin-bottom: 3px; display: flex; align-items: center; gap: 8px;">
+                        <span>⚠️</span> Peringatan Sisa Stok Fisik Cabang
+                    </h2>
+                    <p style="font-size: 11.5px; color: var(--text-muted); margin: 0;">Pemeriksaan aset fisik sebelum produk dihapus atau dinonaktifkan</p>
+                </div>
+                <button type="button" onclick="closeProductStockSafetyModal()" title="Tutup" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1;">&times;</button>
+            </div>
+
+            <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;">
+                <div style="font-size: 11px; color: var(--text-muted);">Produk yang akan diproses:</div>
+                <div id="safetyModalProdTitle" style="font-size: 14px; font-weight: 800; color: var(--text-main); margin-top: 2px;">-</div>
+            </div>
+
+            <!-- List Cabang yang Masih Punya Stok -->
+            <div id="safetyModalStockAlertBox" style="margin-bottom: 14px;">
+                <div style="font-size: 11.5px; font-weight: 750; color: var(--danger); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                    <span>🚨</span> Cabang berikut masih memiliki sisa stok fisik:
+                </div>
+                <div id="safetyModalStoresList" style="display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 8px 10px;">
+                    <!-- Diisi via JS -->
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">
+                    💡 <b>Rekomendasi:</b> Gunakan opsi <b>Arsipkan Produk</b> agar item tidak muncul di pesanan restok baru, namun kasir cabang tetap dapat menjual sisa fisik di toko sampai habis (stok 0).
+                </div>
+            </div>
+
+            <div id="safetyModalNoStockBox" style="display: none; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px;">
+                <div style="font-size: 12px; font-weight: 750; color: #10B981; display: flex; align-items: center; gap: 6px;">
+                    <span>✅</span> Aman: Seluruh cabang memiliki sisa stok 0 pcs.
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                    Tidak ada aset fisik yang akan hilang dari etalase toko.
+                </div>
+            </div>
+
+            <!-- Konfirmasi Paksa Hapus (Hidden by default) -->
+            <div id="boxForceDeleteConfirm" style="display: none; margin-top: 10px; margin-bottom: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 10px 12px;">
+                <label style="display: block; font-size: 11.5px; font-weight: 800; color: var(--danger); margin-bottom: 4px;">
+                    Ketik "HAPUS" untuk konfirmasi penghapusan permanen:
+                </label>
+                <input type="text" id="inputForceDeleteText" placeholder="HAPUS" style="width: 100%; padding: 7px 10px; background: var(--input-bg); border: 1px solid var(--danger); border-radius: 6px; color: #fff; font-size: 12px; font-weight: 800; letter-spacing: 0.1em; outline: none;">
+            </div>
+
+            <div id="safetyModalStatus" style="display: none; padding: 8px 12px; border-radius: 8px; font-size: 11.5px; margin-bottom: 10px; line-height: 1.4;"></div>
+
+            <!-- Footer Buttons -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 12px;">
+                <button type="button" id="btnToggleForceDelete" onclick="toggleForceDeleteSection()" style="padding: 7px 12px; background: transparent; border: 1px solid var(--card-border); border-radius: 8px; font-size: 11.5px; font-weight: 600; color: var(--text-muted); cursor: pointer;">
+                    Opsi Hapus Permanen
+                </button>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <button type="button" onclick="closeProductStockSafetyModal()" style="padding: 7px 14px; background: transparent; border: 1px solid var(--card-border); border-radius: 8px; font-size: 11.5px; font-weight: 600; color: var(--text-muted); cursor: pointer;">Batal</button>
+                    <button type="button" id="btnExecuteArchiveSafe" onclick="executeArchiveProductSafely()" style="padding: 7px 16px; background: #8B5CF6; border: none; border-radius: 8px; font-size: 11.5px; font-weight: 800; color: #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35);">
+                        📦 Arsipkan (Aman)
+                    </button>
+                    <button type="button" id="btnExecuteForceDelete" onclick="executeForceDeleteProduct()" style="display: none; padding: 7px 16px; background: var(--danger); border: none; border-radius: 8px; font-size: 11.5px; font-weight: 800; color: #fff; cursor: pointer;">
+                        ❌ Hapus Permanen
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -5708,19 +5872,29 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                     const count = allVouchers.filter(v => v.device_id === st.id).length;
                     const hasData = count > 0;
                     html += `
-                        <button type="button" onclick="selectDeviceFromModal('${escapeHtml(st.id)}')" class="device-modal-item ${isActive ? 'active' : ''}">
+                        <div class="device-modal-item ${isActive ? 'active' : ''}" style="cursor: pointer;" onclick="selectDeviceFromModal('${escapeHtml(st.id)}')">
                             <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                                 <div style="font-weight: 700; font-size: 13.5px; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
                                     <span>🏢</span> ${escapeHtml(st.name || st.id)}
                                 </div>
-                                <span style="font-size: 11px; background: ${hasData ? 'rgba(79, 142, 247, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; color: ${hasData ? 'var(--primary)' : 'var(--danger)'}; padding: 2px 8px; border-radius: 12px; font-weight: 700;">
-                                    ${hasData ? count + ' item' : 'Belum Inisialisasi'}
-                                </span>
+                                <div style="display: flex; align-items: center; gap: 6px;" onclick="event.stopPropagation()">
+                                    <a href="store_manager.html?store=${encodeURIComponent(st.id)}&view=qr" target="_blank" title="Scan QR Pairing HP Kasir untuk Cabang ini" style="font-size: 11px; background: rgba(139, 92, 246, 0.15); color: #8B5CF6; border: 1px solid rgba(139, 92, 246, 0.3); padding: 2px 7px; border-radius: 6px; font-weight: 750; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                        <span>📱</span> QR HP
+                                    </a>
+                                    <span style="font-size: 11px; background: ${hasData ? 'rgba(79, 142, 247, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; color: ${hasData ? 'var(--primary)' : 'var(--danger)'}; padding: 2px 8px; border-radius: 12px; font-weight: 700;">
+                                        ${hasData ? count + ' item' : 'Belum Inisialisasi'}
+                                    </span>
+                                </div>
                             </div>
-                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: monospace;">
-                                Store ID: ${escapeHtml(st.id)}
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                                <div style="font-size: 11px; color: var(--text-muted); font-family: monospace;">
+                                    Store ID: ${escapeHtml(st.id)}
+                                </div>
+                                <div onclick="event.stopPropagation()">
+                                    <button type="button" onclick="openInitForStore('${escapeHtml(st.id)}')" style="background: none; border: none; font-size: 11px; color: var(--primary); font-weight: 750; cursor: pointer; padding: 0;">🚀 Inisialisasi</button>
+                                </div>
                             </div>
-                        </button>
+                        </div>
                     `;
                 });
             }
@@ -6329,6 +6503,9 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                             <input type="number" class="qty-input" value="${savedQty}" min="0" oninput="onQtyInputChange(event, this)">
                             <button class="qty-btn" onclick="changeQty(event, this, 1)">+</button>
                         </div>
+                        <button type="button" onclick="event.stopPropagation(); openEditProductModal('${escapeHtml(String(v.product_id))}', '${escapeHtml(String(v.device_id))}')" title="Edit Metadata &amp; Broadcast ke Cabang" style="background: rgba(79, 142, 247, 0.12); border: 1px solid rgba(79, 142, 247, 0.3); border-radius: 8px; color: var(--primary); padding: 5px 8px; font-size: 13px; cursor: pointer; margin-left: 6px; flex-shrink: 0; line-height: 1;">
+                            ✏️
+                        </button>
                     </div>`;
                     idCounter++;
                 });
@@ -15637,6 +15814,425 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
         window.executeSyncCatalogToEmployees = executeSyncCatalogToEmployees;
 
         // ============================================================================
+        // FITUR: EDIT METADATA PRODUK & BROADCAST KE SEMUA CABANG (STOK AMAN)
+        // ============================================================================
+        let currentSafetyCheckProductId = null;
+
+        function openEditProductModal(productId, deviceId) {
+            const pId = Number(productId);
+            const prod = (allVouchers || []).find(v => Number(v.product_id) === pId && (deviceId ? v.device_id === deviceId : true))
+                || (allVouchers || []).find(v => Number(v.product_id) === pId);
+
+            if (!prod) {
+                alert(`Produk dengan ID #${productId} tidak ditemukan.`);
+                return;
+            }
+
+            const inputOrigId = document.getElementById('editProdOriginalId');
+            const inputDevId = document.getElementById('editProdDeviceId');
+            const inputId = document.getElementById('editProdId');
+            const inputProv = document.getElementById('editProdProvider');
+            const inputName = document.getElementById('editProdName');
+            const inputCat = document.getElementById('editProdCategory');
+            const inputSort = document.getElementById('editProdSortOrder');
+            const inputCost = document.getElementById('editProdCost');
+            const inputPrice = document.getElementById('editProdPrice');
+            const inputMin = document.getElementById('editProdMinLimit');
+            const statusEl = document.getElementById('editProductStatus');
+
+            if (inputOrigId) inputOrigId.value = prod.product_id;
+            if (inputDevId) inputDevId.value = prod.device_id || 'master';
+            if (inputId) inputId.value = prod.product_id;
+            if (inputProv) inputProv.value = prod.provider_name || 'VOUCHER';
+            if (inputName) inputName.value = prod.product_name || '';
+            if (inputCat) inputCat.value = prod.category_name || prod.category || '';
+            if (inputSort) inputSort.value = prod.sort_order !== undefined ? prod.sort_order : 9999;
+            if (inputCost) inputCost.value = prod.cost_price !== undefined ? prod.cost_price : 0;
+            if (inputPrice) inputPrice.value = prod.sell_price || prod.unit_price || prod.price || 0;
+            if (inputMin) inputMin.value = prod.min_limit !== undefined ? prod.min_limit : 5;
+
+            if (statusEl) {
+                statusEl.style.display = 'none';
+                statusEl.textContent = '';
+            }
+
+            const chkBroadcast = document.getElementById('chkBroadcastToBranches');
+            if (chkBroadcast) chkBroadcast.checked = true;
+
+            const modal = document.getElementById('editMasterProductModal');
+            if (modal) modal.style.display = 'flex';
+        }
+        window.openEditProductModal = openEditProductModal;
+
+        function closeEditProductModal() {
+            const modal = document.getElementById('editMasterProductModal');
+            if (modal) modal.style.display = 'none';
+        }
+        window.closeEditProductModal = closeEditProductModal;
+
+        async function saveAndBroadcastProduct() {
+            const pId = Number(document.getElementById('editProdId')?.value || document.getElementById('editProdOriginalId')?.value);
+            const targetDeviceId = document.getElementById('editProdDeviceId')?.value || 'master';
+            const newProvider = (document.getElementById('editProdProvider')?.value || '').trim() || 'VOUCHER';
+            const newName = (document.getElementById('editProdName')?.value || '').trim();
+            const newCategory = (document.getElementById('editProdCategory')?.value || '').trim();
+            const newSortOrder = parseInt(document.getElementById('editProdSortOrder')?.value || '9999', 10);
+            const newCost = parseFloat(document.getElementById('editProdCost')?.value || '0');
+            const newPrice = parseFloat(document.getElementById('editProdPrice')?.value || '0');
+            const newMinLimit = parseInt(document.getElementById('editProdMinLimit')?.value || '5', 10);
+            const isBroadcast = !!document.getElementById('chkBroadcastToBranches')?.checked;
+
+            if (!newName) {
+                alert('Nama produk tidak boleh kosong!');
+                return;
+            }
+            if (newPrice < 0 || newCost < 0) {
+                alert('Harga jual / harga modal tidak boleh negatif!');
+                return;
+            }
+
+            const statusEl = document.getElementById('editProductStatus');
+            const btnSave = document.getElementById('btnSaveEditProduct');
+
+            if (btnSave) btnSave.disabled = true;
+            if (statusEl) {
+                statusEl.style.display = 'block';
+                statusEl.style.background = 'rgba(79, 142, 247, 0.12)';
+                statusEl.style.color = 'var(--primary)';
+                statusEl.textContent = isBroadcast
+                    ? '⏳ Menyebarkan perubahan metadata ke SEMUA CABANG (Stok fisik cabang aman)...'
+                    : '⏳ Menyimpan perubahan produk...';
+            }
+
+            try {
+                const nowIso = new Date().toISOString();
+                const updatePayload = {
+                    product_name: newName,
+                    provider_name: newProvider,
+                    category_name: newCategory,
+                    sell_price: newPrice,
+                    cost_price: newCost,
+                    sort_order: newSortOrder,
+                    min_limit: newMinLimit,
+                    updated_at: nowIso
+                };
+
+                if (isBroadcast) {
+                    // Update table vouchers di Supabase (SELURUH CABANG) - TANPA MENGUBAH KOLOM STOCK
+                    if (supabaseClient) {
+                        const { error: errV } = await supabaseClient
+                            .from('vouchers')
+                            .update(updatePayload)
+                            .eq('product_id', pId);
+                        if (errV) console.warn('[vouchers] Broadcast update warning:', errV);
+
+                        // Update table ksp_store_stock (portal kasir) - TANPA MENGUBAH CURRENT_STOCK
+                        try {
+                            const storeStockPayload = {
+                                product_name: newName,
+                                provider_name: newProvider,
+                                category_name: newCategory,
+                                sell_price: newPrice,
+                                cost_price: newCost,
+                                sort_order: newSortOrder,
+                                updated_at: nowIso
+                            };
+                            await supabaseClient
+                                .from('ksp_store_stock')
+                                .update(storeStockPayload)
+                                .eq('product_id', pId);
+                        } catch (errSs) {
+                            console.warn('[ksp_store_stock] Broadcast update warning:', errSs);
+                        }
+                    }
+
+                    // Update memory cache lokal (allVouchers)
+                    let branchCount = 0;
+                    (allVouchers || []).forEach(v => {
+                        if (Number(v.product_id) === pId) {
+                            v.product_name = newName;
+                            v.provider_name = newProvider;
+                            v.category_name = newCategory;
+                            v.sell_price = newPrice;
+                            v.cost_price = newCost;
+                            v.sort_order = newSortOrder;
+                            v.min_limit = newMinLimit;
+                            v.updated_at = nowIso;
+                            if (v.device_id !== 'master') branchCount++;
+                        }
+                    });
+
+                    // Update cache Project A jika terhubung
+                    if (cachedProjectAData && Array.isArray(cachedProjectAData.vouchers)) {
+                        cachedProjectAData.vouchers.forEach(v => {
+                            if (Number(v.product_id) === pId) {
+                                v.product_name = newName;
+                                v.provider_name = newProvider;
+                                v.category_name = newCategory;
+                                v.sell_price = newPrice;
+                                v.cost_price = newCost;
+                                v.sort_order = newSortOrder;
+                                v.min_limit = newMinLimit;
+                            }
+                        });
+                    }
+
+                    if (statusEl) {
+                        statusEl.style.background = 'rgba(34, 197, 94, 0.12)';
+                        statusEl.style.color = 'var(--success)';
+                        statusEl.textContent = `✅ Berhasil disebarkan ke ${branchCount} cabang & master!\nStok fisik di tiap cabang 100% tetap utuh.`;
+                    }
+                    showToast(`✅ Metadata disiarkan ke ${branchCount} cabang!`);
+
+                } else {
+                    // Update spesifik perangkat/cabang saja
+                    if (supabaseClient) {
+                        const { error: errV } = await supabaseClient
+                            .from('vouchers')
+                            .update(updatePayload)
+                            .eq('product_id', pId)
+                            .eq('device_id', targetDeviceId);
+                        if (errV) console.warn('[vouchers] Single update warning:', errV);
+                    }
+
+                    (allVouchers || []).forEach(v => {
+                        if (Number(v.product_id) === pId && v.device_id === targetDeviceId) {
+                            v.product_name = newName;
+                            v.provider_name = newProvider;
+                            v.category_name = newCategory;
+                            v.sell_price = newPrice;
+                            v.cost_price = newCost;
+                            v.sort_order = newSortOrder;
+                            v.min_limit = newMinLimit;
+                            v.updated_at = nowIso;
+                        }
+                    });
+
+                    if (statusEl) {
+                        statusEl.style.background = 'rgba(34, 197, 94, 0.12)';
+                        statusEl.style.color = 'var(--success)';
+                        statusEl.textContent = '✅ Berhasil menyimpan perubahan produk.';
+                    }
+                    showToast('✅ Data produk diperbarui.');
+                }
+
+                if (typeof renderProductList === 'function') renderProductList();
+                if (typeof filterOrderProducts === 'function') filterOrderProducts();
+
+                setTimeout(() => {
+                    closeEditProductModal();
+                }, 1400);
+
+            } catch (err) {
+                console.error('Error saveAndBroadcastProduct:', err);
+                if (statusEl) {
+                    statusEl.style.background = 'rgba(239, 68, 68, 0.12)';
+                    statusEl.style.color = 'var(--danger)';
+                    statusEl.textContent = `❌ Gagal menyimpan: ${err.message || 'Terjadi kesalahan sistem'}`;
+                }
+            } finally {
+                if (btnSave) btnSave.disabled = false;
+            }
+        }
+        window.saveAndBroadcastProduct = saveAndBroadcastProduct;
+
+        // ============================================================================
+        // FITUR: AUDIT SISA STOK FISIK SEBELUM HAPUS / ARSIP PRODUK (SAFETY CHECK)
+        // ============================================================================
+        function triggerSafetyStockCheckFromEdit() {
+            const pId = Number(document.getElementById('editProdId')?.value || document.getElementById('editProdOriginalId')?.value);
+            closeEditProductModal();
+            if (pId) {
+                checkProductStockBeforeDelete(pId);
+            }
+        }
+        window.triggerSafetyStockCheckFromEdit = triggerSafetyStockCheckFromEdit;
+
+        function checkProductStockBeforeDelete(productId) {
+            const pId = Number(productId);
+            currentSafetyCheckProductId = pId;
+
+            const sample = (allVouchers || []).find(v => Number(v.product_id) === pId) || {};
+            const titleEl = document.getElementById('safetyModalProdTitle');
+            if (titleEl) {
+                titleEl.textContent = `${sample.product_name || 'Produk'} (ID: ${pId}) • ${sample.provider_name || 'Voucher'}`;
+            }
+
+            // Pindai sisa stok di seluruh cabang (selain 'master')
+            const branchesWithStock = [];
+            (allVouchers || []).forEach(v => {
+                if (Number(v.product_id) === pId && v.device_id !== 'master') {
+                    const st = Number(v.stock || 0);
+                    if (st > 0) {
+                        branchesWithStock.push({
+                            deviceId: v.device_id,
+                            deviceName: v.device_name || v.device_id,
+                            stock: st
+                        });
+                    }
+                }
+            });
+
+            const alertBox = document.getElementById('safetyModalStockAlertBox');
+            const noStockBox = document.getElementById('safetyModalNoStockBox');
+            const listContainer = document.getElementById('safetyModalStoresList');
+            const forceSec = document.getElementById('boxForceDeleteConfirm');
+            const btnForce = document.getElementById('btnExecuteForceDelete');
+            const btnToggle = document.getElementById('btnToggleForceDelete');
+            const statusBox = document.getElementById('safetyModalStatus');
+            const inputForce = document.getElementById('inputForceDeleteText');
+
+            if (forceSec) forceSec.style.display = 'none';
+            if (btnForce) btnForce.style.display = 'none';
+            if (btnToggle) btnToggle.textContent = 'Opsi Hapus Permanen';
+            if (statusBox) statusBox.style.display = 'none';
+            if (inputForce) inputForce.value = '';
+
+            if (branchesWithStock.length > 0) {
+                if (alertBox) alertBox.style.display = 'block';
+                if (noStockBox) noStockBox.style.display = 'none';
+                if (listContainer) {
+                    listContainer.innerHTML = branchesWithStock.map(b => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(0,0,0,0.18); border-radius: 6px; font-size: 12px;">
+                            <span style="font-weight: 750; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                                <span>🏬</span> ${escapeHtml(b.deviceName)}
+                            </span>
+                            <span style="font-weight: 850; color: #EF4444; background: rgba(239,68,68,0.15); padding: 2px 8px; border-radius: 12px;">
+                                ${b.stock} pcs fisik
+                            </span>
+                        </div>
+                    `).join('');
+                }
+            } else {
+                if (alertBox) alertBox.style.display = 'none';
+                if (noStockBox) noStockBox.style.display = 'block';
+                if (listContainer) listContainer.innerHTML = '';
+            }
+
+            const modal = document.getElementById('productStockSafetyModal');
+            if (modal) modal.style.display = 'flex';
+        }
+        window.checkProductStockBeforeDelete = checkProductStockBeforeDelete;
+
+        function closeProductStockSafetyModal() {
+            const modal = document.getElementById('productStockSafetyModal');
+            if (modal) modal.style.display = 'none';
+        }
+        window.closeProductStockSafetyModal = closeProductStockSafetyModal;
+
+        function toggleForceDeleteSection() {
+            const forceSec = document.getElementById('boxForceDeleteConfirm');
+            const btnForce = document.getElementById('btnExecuteForceDelete');
+            const btnToggle = document.getElementById('btnToggleForceDelete');
+            if (!forceSec) return;
+
+            const isHidden = forceSec.style.display === 'none';
+            if (isHidden) {
+                forceSec.style.display = 'block';
+                if (btnForce) btnForce.style.display = 'inline-block';
+                if (btnToggle) btnToggle.textContent = 'Tutup Opsi Hapus';
+                const inputForce = document.getElementById('inputForceDeleteText');
+                if (inputForce) {
+                    inputForce.value = '';
+                    inputForce.focus();
+                }
+            } else {
+                forceSec.style.display = 'none';
+                if (btnForce) btnForce.style.display = 'none';
+                if (btnToggle) btnToggle.textContent = 'Opsi Hapus Permanen';
+            }
+        }
+        window.toggleForceDeleteSection = toggleForceDeleteSection;
+
+        async function executeArchiveProductSafely() {
+            if (!currentSafetyCheckProductId) return;
+            const pId = currentSafetyCheckProductId;
+            const statusBox = document.getElementById('safetyModalStatus');
+
+            if (statusBox) {
+                statusBox.style.display = 'block';
+                statusBox.style.background = 'rgba(139, 92, 246, 0.15)';
+                statusBox.style.color = '#8B5CF6';
+                statusBox.textContent = '⏳ Mengarsipkan produk di seluruh cabang (is_active = false)...';
+            }
+
+            try {
+                const nowIso = new Date().toISOString();
+                if (supabaseClient) {
+                    await supabaseClient.from('vouchers').update({ is_active: false, updated_at: nowIso }).eq('product_id', pId);
+                    try {
+                        await supabaseClient.from('ksp_store_stock').update({ is_active: false, updated_at: nowIso }).eq('product_id', pId);
+                    } catch (eSs) {}
+                }
+
+                (allVouchers || []).forEach(v => {
+                    if (Number(v.product_id) === pId) v.is_active = false;
+                });
+
+                if (typeof renderProductList === 'function') renderProductList();
+                if (typeof filterOrderProducts === 'function') filterOrderProducts();
+
+                showToast('📦 Produk berhasil diarsipkan secara aman! Kasir cabang tetap dapat menjual sisa stok fisik.');
+                closeProductStockSafetyModal();
+            } catch (err) {
+                console.error('Error executeArchiveProductSafely:', err);
+                if (statusBox) {
+                    statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
+                    statusBox.style.color = 'var(--danger)';
+                    statusBox.textContent = `❌ Gagal mengarsipkan: ${err.message || 'Terjadi kesalahan sistem'}`;
+                }
+            }
+        }
+        window.executeArchiveProductSafely = executeArchiveProductSafely;
+
+        async function executeForceDeleteProduct() {
+            if (!currentSafetyCheckProductId) return;
+            const pId = currentSafetyCheckProductId;
+            const confirmText = (document.getElementById('inputForceDeleteText')?.value || '').trim();
+
+            if (confirmText !== 'HAPUS') {
+                alert('Ketik kata "HAPUS" dengan huruf kapital untuk konfirmasi penghapusan permanen!');
+                return;
+            }
+
+            if (!confirm('PERINGATAN TERAKHIR: Produk ini akan dihapus permanen dari seluruh cabang dan master. Data sisa stok fisik cabang akan ikut terhapus. Lanjutkan?')) {
+                return;
+            }
+
+            const statusBox = document.getElementById('safetyModalStatus');
+            if (statusBox) {
+                statusBox.style.display = 'block';
+                statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
+                statusBox.style.color = 'var(--danger)';
+                statusBox.textContent = '⏳ Menghapus produk dari seluruh cabang di cloud...';
+            }
+
+            try {
+                if (supabaseClient) {
+                    const { error: errDel } = await supabaseClient.from('vouchers').delete().eq('product_id', pId);
+                    if (errDel) console.warn('[vouchers] Delete warning:', errDel);
+                    try {
+                        await supabaseClient.from('ksp_store_stock').delete().eq('product_id', pId);
+                    } catch (eSs) {}
+                }
+
+                allVouchers = (allVouchers || []).filter(v => Number(v.product_id) !== pId);
+
+                if (typeof renderProductList === 'function') renderProductList();
+                if (typeof filterOrderProducts === 'function') filterOrderProducts();
+
+                showToast('❌ Produk telah dihapus permanen dari seluruh database.');
+                closeProductStockSafetyModal();
+            } catch (err) {
+                console.error('Error executeForceDeleteProduct:', err);
+                if (statusBox) {
+                    statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
+                    statusBox.style.color = 'var(--danger)';
+                    statusBox.textContent = `❌ Gagal menghapus: ${err.message || 'Terjadi kesalahan sistem'}`;
+                }
+            }
+        }
+        window.executeForceDeleteProduct = executeForceDeleteProduct;
         // FITUR: TETAPKAN DATA MASTER DARI PERANGKAT (PRODUK & VOUCHER MASTER)
         // ============================================================================
         let projectAClient = null;
