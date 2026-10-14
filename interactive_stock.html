@@ -3521,6 +3521,9 @@
                 <button type="button" id="tabOpnamePending" onclick="switchOpnameReviewTab('pending')" style="width: auto; padding: 6px 14px; font-size: 11.5px; font-weight: 800; border-radius: 8px; border: none; background: var(--primary); color: #fff; cursor: pointer;">
                     Menunggu Sync (<span id="countPendingOpname">0</span>)
                 </button>
+                <button type="button" id="tabOpnameRestock" onclick="switchOpnameReviewTab('restock')" style="width: auto; padding: 6px 14px; font-size: 11.5px; font-weight: 700; border-radius: 8px; border: 1px solid var(--card-border); background: transparent; color: var(--text-muted); cursor: pointer;">
+                    Restok Nota (<span id="countRestockOpname">0</span>)
+                </button>
                 <button type="button" id="tabOpnameAll" onclick="switchOpnameReviewTab('all')" style="width: auto; padding: 6px 14px; font-size: 11.5px; font-weight: 700; border-radius: 8px; border: 1px solid var(--card-border); background: transparent; color: var(--text-muted); cursor: pointer;">
                     Semua Riwayat
                 </button>
@@ -8780,6 +8783,10 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const d2 = new Date(now); d2.setDate(d2.getDate() - 1);
             const d1 = new Date(now); d1.setDate(d1.getDate() - 2);
 
+            const d3Ymd = getLocalDateString(d3);
+            const d2Ymd = getLocalDateString(d2);
+            const d1Ymd = getLocalDateString(d1);
+
             const optIndo = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
             const optShort = { day: 'numeric', month: 'short' };
 
@@ -8787,6 +8794,63 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const filtered = (selectedDevice === 'all')
                 ? allVouchers
                 : allVouchers.filter(v => v.device_id === selectedDevice);
+
+            // Kumpulkan mutasi opname per product_id dari cachedOpnameSessions jika ada
+            const opnameMutations = new Map();
+            if (Array.isArray(cachedOpnameSessions) && cachedOpnameSessions.length > 0) {
+                cachedOpnameSessions.forEach(sess => {
+                    if (!sess || !Array.isArray(sess.details) || sess.status === 'cancelled') return;
+                    if (selectedDevice !== 'all' && String(sess.store_id) !== String(selectedDevice)) return;
+                    if (sess.session_type !== 'shift_sales' && sess.session_type !== 'stock_adjustment') return;
+
+                    const sessDate = sess.created_at ? getLocalDateString(new Date(sess.created_at)) : d3Ymd;
+                    const shiftNum = Number(sess.shift_num) || 1;
+                    const isSales = (sess.session_type === 'shift_sales');
+
+                    sess.details.forEach(it => {
+                        const pId = it.product_id;
+                        if (!pId) return;
+                        if (!opnameMutations.has(pId)) {
+                            opnameMutations.set(pId, {
+                                d3Pagi: 0, d3Malam: 0, d3Total: 0, d3Restock: 0,
+                                d2Pagi: 0, d2Malam: 0, d2Total: 0, d2Restock: 0,
+                                d1Pagi: 0, d1Malam: 0, d1Total: 0, d1Restock: 0
+                            });
+                        }
+                        const m = opnameMutations.get(pId);
+                        const delta = Number(it.delta || 0);
+
+                        if (sessDate === d3Ymd) {
+                            if (delta < 0 && isSales) {
+                                const sold = Math.abs(delta);
+                                if (shiftNum === 1) m.d3Pagi += sold;
+                                else m.d3Malam += sold;
+                                m.d3Total += sold;
+                            } else if (delta > 0) {
+                                m.d3Restock += delta;
+                            }
+                        } else if (sessDate === d2Ymd) {
+                            if (delta < 0 && isSales) {
+                                const sold = Math.abs(delta);
+                                if (shiftNum === 1) m.d2Pagi += sold;
+                                else m.d2Malam += sold;
+                                m.d2Total += sold;
+                            } else if (delta > 0) {
+                                m.d2Restock += delta;
+                            }
+                        } else if (sessDate === d1Ymd) {
+                            if (delta < 0 && isSales) {
+                                const sold = Math.abs(delta);
+                                if (shiftNum === 1) m.d1Pagi += sold;
+                                else m.d1Malam += sold;
+                                m.d1Total += sold;
+                            } else if (delta > 0) {
+                                m.d1Restock += delta;
+                            }
+                        }
+                    });
+                });
+            }
 
             // Group items by provider
             const items = [];
@@ -8807,6 +8871,22 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     curCat = cat;
                 }
 
+                const m = opnameMutations.get(v.product_id);
+                const soldD3Pagi = m ? m.d3Pagi : 0;
+                const soldD3Malam = m ? m.d3Malam : 0;
+                const soldD3Total = m ? m.d3Total : 0;
+                const restockedD3 = m ? m.d3Restock : 0;
+
+                const soldD2Pagi = m ? m.d2Pagi : 0;
+                const soldD2Malam = m ? m.d2Malam : 0;
+                const soldD2Total = m ? m.d2Total : 0;
+                const restockedD2 = m ? m.d2Restock : 0;
+
+                const soldD1Pagi = m ? m.d1Pagi : 0;
+                const soldD1Malam = m ? m.d1Malam : 0;
+                const soldD1Total = m ? m.d1Total : 0;
+                const restockedD1 = m ? m.d1Restock : 0;
+
                 items.push({
                     type: 'product',
                     productId: v.product_id,
@@ -8818,9 +8898,9 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     isActive: true,
                     price: String(v.sell_price || 0),
                     cost: String(v.cost_price || 0),
-                    soldD1Total: 0, soldD1Pagi: 0, soldD1Malam: 0, addedD1: 0, restockedD1: 0,
-                    soldD2Total: 0, soldD2Pagi: 0, soldD2Malam: 0, addedD2: 0, restockedD2: 0,
-                    soldD3Total: 0, soldD3Pagi: 0, soldD3Malam: 0, addedD3: 0, restockedD3: 0,
+                    soldD1Total, soldD1Pagi, soldD1Malam, addedD1: 0, restockedD1,
+                    soldD2Total, soldD2Pagi, soldD2Malam, addedD2: 0, restockedD2,
+                    soldD3Total, soldD3Pagi, soldD3Malam, addedD3: 0, restockedD3,
                     soldAfter: 0, addedAfter: 0,
                     isNew: false, isDeleted: false,
                     demandDaily: 0, suggestedOrder: 0
@@ -8828,7 +8908,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             });
 
             return {
-                dateStr: d3.toISOString().split('T')[0],
+                dateStr: d3Ymd,
                 displayDate: d3.toLocaleDateString('id-ID', optIndo),
                 d1Date: d1.toLocaleDateString('id-ID', optShort),
                 d2Date: d2.toLocaleDateString('id-ID', optShort),
@@ -14168,10 +14248,14 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 if (res && res.ok && Array.isArray(res.sessions)) {
                     cachedOpnameSessions = res.sessions;
                     const pendingList = res.sessions.filter(s => s.status === 'pending');
+                    const restockList = res.sessions.filter(s => s.session_type === 'ai_restock');
                     const count = pendingList.length;
 
                     const countEl = document.getElementById('countPendingOpname');
                     if (countEl) countEl.textContent = count;
+
+                    const countRestockEl = document.getElementById('countRestockOpname');
+                    if (countRestockEl) countRestockEl.textContent = restockList.length;
 
                     const badgeTop = document.getElementById('badgePendingOpnameCount');
                     if (badgeTop) {
@@ -14462,31 +14546,31 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
         function switchOpnameReviewTab(tab) {
             currentOpnameTab = tab;
             const tabPending = document.getElementById('tabOpnamePending');
+            const tabRestock = document.getElementById('tabOpnameRestock');
             const tabAll = document.getElementById('tabOpnameAll');
 
-            if (tab === 'pending') {
-                if (tabPending) {
-                    tabPending.style.background = 'var(--primary)';
-                    tabPending.style.color = '#fff';
-                    tabPending.style.border = 'none';
+            const resetBtn = (btn) => {
+                if (btn) {
+                    btn.style.background = 'transparent';
+                    btn.style.color = 'var(--text-muted)';
+                    btn.style.border = '1px solid var(--card-border)';
                 }
-                if (tabAll) {
-                    tabAll.style.background = 'transparent';
-                    tabAll.style.color = 'var(--text-muted)';
-                    tabAll.style.border = '1px solid var(--card-border)';
+            };
+            const activeBtn = (btn) => {
+                if (btn) {
+                    btn.style.background = 'var(--primary)';
+                    btn.style.color = '#fff';
+                    btn.style.border = 'none';
                 }
-            } else {
-                if (tabAll) {
-                    tabAll.style.background = 'var(--primary)';
-                    tabAll.style.color = '#fff';
-                    tabAll.style.border = 'none';
-                }
-                if (tabPending) {
-                    tabPending.style.background = 'transparent';
-                    tabPending.style.color = 'var(--text-muted)';
-                    tabPending.style.border = '1px solid var(--card-border)';
-                }
-            }
+            };
+
+            resetBtn(tabPending);
+            resetBtn(tabRestock);
+            resetBtn(tabAll);
+
+            if (tab === 'pending') activeBtn(tabPending);
+            else if (tab === 'restock') activeBtn(tabRestock);
+            else activeBtn(tabAll);
 
             renderOpnameSessionsList();
         }
@@ -14508,24 +14592,31 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             let list = cachedOpnameSessions || [];
             if (currentOpnameTab === 'pending') {
                 list = list.filter(s => s.status === 'pending');
+            } else if (currentOpnameTab === 'restock') {
+                list = list.filter(s => s.session_type === 'ai_restock');
             }
 
             if (list.length === 0) {
                 mount.innerHTML = `
                     <div style="text-align: center; color: var(--text-muted); font-size: 12.5px; padding: 36px 16px; background: var(--card-inner); border-radius: 12px; border: 1px dashed var(--card-border);">
-                        ${currentOpnameTab === 'pending' ? '✨ Tidak ada sesi opname yang menunggu sinkronisasi.' : '📭 Belum ada riwayat sesi opname kasir.'}
+                        ${currentOpnameTab === 'pending' ? '✨ Tidak ada sesi opname yang menunggu sinkronisasi.' : currentOpnameTab === 'restock' ? '🤖 Belum ada riwayat Tambah Stok Nota AI dari kasir.' : '📭 Belum ada riwayat sesi opname kasir.'}
                     </div>`;
                 return;
             }
 
             let html = '';
             list.forEach(s => {
+                const isRestock = (s.session_type === 'ai_restock');
                 const dateStr = s.created_at ? new Date(s.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-';
                 const statusBadge = s.status === 'pending'
                     ? '<span style="background: rgba(234, 179, 8, 0.15); color: #EAB308; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 10.5px;">⏳ Menunggu Sync</span>'
                     : s.status === 'synced'
                         ? '<span style="background: rgba(34, 197, 94, 0.15); color: #22C55E; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 10.5px;">✅ Tersinkron</span>'
                         : '<span style="background: rgba(239, 68, 68, 0.15); color: #EF4444; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 10.5px;">❌ Dibatalkan</span>';
+
+                const typeBadge = isRestock
+                    ? '<span style="background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.35); padding: 1px 7px; border-radius: 5px; font-weight: 850; font-size: 10.5px;">🤖 Tambah Stok Nota</span>'
+                    : `<span style="font-size: 10.5px; font-weight: 750; background: var(--card-border); padding: 1px 6px; border-radius: 4px;">Shift ${s.shift_num || 1}</span>`;
 
                 // Hitung rincian selisih
                 const details = Array.isArray(s.details) ? s.details : [];
@@ -14535,15 +14626,23 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 if (diffItems.length > 0) {
                     diffItemsHtml = `
                         <div style="margin-top: 8px; background: var(--input-bg); border-radius: 8px; padding: 8px 10px; font-size: 11px;">
-                            <div style="font-weight: 750; color: var(--text-muted); margin-bottom: 5px;">Rincian Selisih Fisik (${diffItems.length} produk):</div>
+                            <div style="font-weight: 750; color: var(--text-muted); margin-bottom: 5px;">
+                                ${isRestock ? `Daftar Produk Tambah Stok (${diffItems.length} produk):` : `Rincian Selisih Fisik (${diffItems.length} produk):`}
+                            </div>
                             <div style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto;">
                                 ${diffItems.map(it => {
                                     const isPlus = it.delta > 0;
                                     const color = isPlus ? 'var(--success)' : 'var(--danger)';
                                     const sign = isPlus ? '+' : '';
+                                    const costHtml = (it.cost && Number(it.cost) > 0)
+                                        ? `<span style="font-size: 10px; color: var(--text-muted); margin-left: 5px;">(Modal: Rp ${Number(it.cost).toLocaleString('id-ID')})</span>`
+                                        : '';
                                     return `
                                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--card-border); padding-bottom: 2px;">
-                                            <span style="font-weight: 700; color: var(--text-main);">${escapeHtml(it.product_name)}</span>
+                                            <div>
+                                                <span style="font-weight: 700; color: var(--text-main);">${escapeHtml(it.product_name)}</span>
+                                                ${costHtml}
+                                            </div>
                                             <span style="font-weight: 800; color: ${color};">${it.initial_stock} ➜ ${it.new_stock} (${sign}${it.delta})</span>
                                         </div>`;
                                 }).join('')}
@@ -14556,13 +14655,49 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         </div>`;
                 }
 
+                const summaryHtml = isRestock ? `
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: var(--input-bg); padding: 6px 8px; border-radius: 8px; text-align: center; font-size: 11px; margin-top: 4px;">
+                        <div>
+                            <div style="color: var(--text-muted); font-size: 10px;">Item Produk</div>
+                            <div style="font-weight: 800; color: var(--text-main);">${s.total_products || diffItems.length}</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--success); font-size: 10px;">Total Qty Tambah</div>
+                            <div style="font-weight: 800; color: var(--success);">+${s.total_restock || 0} pcs</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--primary); font-size: 10px;">Total Belanja Modal</div>
+                            <div style="font-weight: 800; color: var(--primary);">Rp ${Number(s.total_cost || 0).toLocaleString('id-ID')}</div>
+                        </div>
+                    </div>
+                ` : `
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: var(--input-bg); padding: 6px 8px; border-radius: 8px; text-align: center; font-size: 11px; margin-top: 4px;">
+                        <div>
+                            <div style="color: var(--text-muted); font-size: 10px;">Produk</div>
+                            <div style="font-weight: 800; color: var(--text-main);">${s.total_products || 0}</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--danger); font-size: 10px;">Terjual</div>
+                            <div style="font-weight: 800; color: var(--danger);">${s.total_sold || 0}</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--success); font-size: 10px;">Restok</div>
+                            <div style="font-weight: 800; color: var(--success);">${s.total_restock || 0}</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--primary); font-size: 10px;">Net Selisih</div>
+                            <div style="font-weight: 800; color: var(--primary);">${(s.total_diff || 0) >= 0 ? '+' : ''}${s.total_diff || 0}</div>
+                        </div>
+                    </div>
+                `;
+
                 html += `
                     <div style="background: var(--card-inner); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 6px;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
                             <div>
                                 <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
                                     <span style="font-size: 13px; font-weight: 850; color: var(--text-main);">${escapeHtml(s.store_name || s.store_id)}</span>
-                                    <span style="font-size: 10.5px; font-weight: 750; background: var(--card-border); padding: 1px 6px; border-radius: 4px;">Shift ${s.shift_num || 1}</span>
+                                    ${typeBadge}
                                 </div>
                                 <div style="font-size: 11px; color: var(--text-muted);">
                                     👤 Kasir: <b>${escapeHtml(s.emp_name || '-')}</b> • 🕒 ${dateStr}
@@ -14571,25 +14706,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                             <div>${statusBadge}</div>
                         </div>
 
-                        <!-- Ringkasan Angka -->
-                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: var(--input-bg); padding: 6px 8px; border-radius: 8px; text-align: center; font-size: 11px; margin-top: 4px;">
-                            <div>
-                                <div style="color: var(--text-muted); font-size: 10px;">Produk</div>
-                                <div style="font-weight: 800; color: var(--text-main);">${s.total_products || 0}</div>
-                            </div>
-                            <div>
-                                <div style="color: var(--danger); font-size: 10px;">Terjual</div>
-                                <div style="font-weight: 800; color: var(--danger);">${s.total_sold || 0}</div>
-                            </div>
-                            <div>
-                                <div style="color: var(--success); font-size: 10px;">Restok</div>
-                                <div style="font-weight: 800; color: var(--success);">${s.total_restock || 0}</div>
-                            </div>
-                            <div>
-                                <div style="color: var(--primary); font-size: 10px;">Net Selisih</div>
-                                <div style="font-weight: 800; color: var(--primary);">${(s.total_diff || 0) >= 0 ? '+' : ''}${s.total_diff || 0}</div>
-                            </div>
-                        </div>
+                        ${summaryHtml}
 
                         ${diffItemsHtml}
 
@@ -14602,7 +14719,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         ${s.status === 'pending' ? `
                             <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 6px;">
                                 <button type="button" onclick="syncOpnameSessionToProjectA('${s.id}')" style="padding: 7px 14px; background: var(--success); border: none; border-radius: 8px; font-size: 11.5px; font-weight: 800; color: #FFFFFF; cursor: pointer; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.35);">
-                                    ✅ Sinkronkan ke Stok Master
+                                    ${isRestock ? '✅ Setujui & Terapkan ke Stok Master' : '✅ Sinkronkan ke Stok Master'}
                                 </button>
                             </div>
                         ` : ''}
@@ -14624,31 +14741,49 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 return;
             }
 
+            const isRestock = (session.session_type === 'ai_restock');
             const details = Array.isArray(session.details) ? session.details : [];
-            const confirmMsg = `Sinkronkan hasil opname ini ke Stok Master Project A?\n\n• Cabang: ${session.store_name} (Shift ${session.shift_num})\n• Kasir: ${session.emp_name}\n• Total Produk: ${details.length}\n\nStok master di Project A akan disesuaikan dengan stok fisik hasil opname kasir.`;
+            const changedItems = details.filter(it => it.delta !== 0);
+
+            const confirmMsg = isRestock
+                ? `Setujui dan sinkronkan Tambah Stok Nota ini ke Stok Master Project A?\n\n• Cabang: ${session.store_name}\n• Kasir: ${session.emp_name}\n• Total Produk: ${changedItems.length}\n• Total Stok Masuk: +${session.total_restock || 0} pcs\n• Total Biaya Modal: Rp ${Number(session.total_cost || 0).toLocaleString('id-ID')}\n\nStok master voucher dan harga modal (cost_price) di Project A akan disesuaikan, serta dicatat pada Laporan Restok.`
+                : `Sinkronkan hasil opname ini ke Stok Master Project A?\n\n• Cabang: ${session.store_name} (Shift ${session.shift_num})\n• Kasir: ${session.emp_name}\n• Total Produk: ${details.length}\n\nStok master di Project A akan disesuaikan dengan stok fisik hasil opname kasir.`;
+
             if (!confirm(confirmMsg)) return;
 
             showToast('⏳ Menyelaraskan stok ke Project A...');
 
             try {
                 let updatedCount = 0;
-                // Hanya update produk yang mengalami selisih mutasi (terjual / restok)
-                const changedItems = details.filter(it => it.delta !== 0);
 
                 if (changedItems.length > 0) {
                     for (const it of changedItems) {
                         const finalStock = Number(it.new_stock !== undefined ? it.new_stock : it.initial_stock);
+                        const updatePayload = {
+                            stock: finalStock,
+                            updated_at: new Date().toISOString()
+                        };
+
+                        // Jika sesi restok dan ada harga modal, perbarui harga modal cost_price di Stok Master
+                        if (isRestock && it.cost !== undefined && it.cost !== null && Number(it.cost) > 0) {
+                            updatePayload.cost_price = Number(it.cost);
+                        }
+
                         const { error } = await supabaseClient
                             .from('vouchers')
-                            .update({
-                                stock: finalStock,
-                                updated_at: new Date().toISOString()
-                            })
+                            .update(updatePayload)
                             .eq('device_id', session.store_id)
                             .eq('product_id', it.product_id);
 
                         if (!error) updatedCount++;
                     }
+                }
+
+                // Perbarui tabel daily_reports di Supabase Project A agar Tab Laporan otomatis terisi
+                try {
+                    await updateBranchDailyReportFromOpname(session);
+                } catch (eRep) {
+                    console.warn('Pembaruan daily_reports cabang dilewati:', eRep);
                 }
 
                 // Tandai sesi sebagai synced di Project B
@@ -14657,7 +14792,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     console.warn('Mark opname synced warning:', markRes);
                 }
 
-                showToast(`✅ Berhasil! ${updatedCount} stok voucher yang berubah di Project A disinkronkan.`);
+                showToast(`✅ Berhasil! ${updatedCount} stok voucher di Project A disinkronkan.`);
 
                 // Refresh data vouchers Project A agar UI admin langsung terupdate
                 await fetchVouchersFromSupabase();
@@ -14670,6 +14805,204 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             }
         }
         window.syncOpnameSessionToProjectA = syncOpnameSessionToProjectA;
+
+        async function updateBranchDailyReportFromOpname(session) {
+            if (!supabaseClient || !session || !session.store_id) return;
+
+            try {
+                const storeId = String(session.store_id);
+                const storeName = session.store_name || ('Cabang ' + storeId);
+                const todayObj = new Date();
+                const ymd = getLocalDateString(todayObj);
+                const optIndo = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+                const optShort = { day: 'numeric', month: 'short' };
+
+                const d3 = new Date(todayObj);
+                const d2 = new Date(todayObj); d2.setDate(d2.getDate() - 1);
+                const d1 = new Date(todayObj); d1.setDate(d1.getDate() - 2);
+
+                // Ambil existing daily report untuk storeId jika ada
+                let existingReport = allDailyReports.get(storeId);
+                if (!existingReport) {
+                    const { data } = await supabaseClient
+                        .from('daily_reports')
+                        .select('*')
+                        .eq('device_id', storeId)
+                        .maybeSingle();
+                    if (data && data.report_data) {
+                        existingReport = typeof data.report_data === 'string' ? JSON.parse(data.report_data) : data.report_data;
+                    }
+                }
+
+                // Ambil katalog voucher cabang dari allVouchers
+                const branchVouchers = allVouchers.filter(v => String(v.device_id) === storeId);
+                if (branchVouchers.length === 0) return;
+
+                let reportData = null;
+                if (existingReport && existingReport.dateStr === ymd && Array.isArray(existingReport.items) && existingReport.items.length > 0) {
+                    // Hari yang sama: gunakan report yang ada untuk diakumulasi
+                    reportData = JSON.parse(JSON.stringify(existingReport));
+                } else {
+                    // Hari baru atau belum ada report: buat struktur report baru
+                    reportData = {
+                        dateStr: ymd,
+                        displayDate: d3.toLocaleDateString('id-ID', optIndo),
+                        d1Date: d1.toLocaleDateString('id-ID', optShort),
+                        d2Date: d2.toLocaleDateString('id-ID', optShort),
+                        d3Date: d3.toLocaleDateString('id-ID', optShort),
+                        filters: { shift: 0, daysMode: 1, profitMode: false, hideZeroSell: false },
+                        items: []
+                    };
+
+                    const prevItemsMap = new Map();
+                    if (existingReport && Array.isArray(existingReport.items)) {
+                        existingReport.items.forEach(it => {
+                            if (it.type === 'product' && it.productId) {
+                                prevItemsMap.set(it.productId, it);
+                            }
+                        });
+                    }
+
+                    let curProv = null;
+                    let curCat = null;
+                    branchVouchers.forEach(v => {
+                        const prov = v.provider_name || 'Lainnya';
+                        const cat = v.category_name || 'Umum';
+
+                        if (curProv !== prov) {
+                            reportData.items.push({ type: 'header', providerName: prov });
+                            curProv = prov;
+                            curCat = null;
+                        }
+                        if (curCat !== cat) {
+                            reportData.items.push({ type: 'category', categoryName: cat });
+                            curCat = cat;
+                        }
+
+                        const prev = prevItemsMap.get(v.product_id);
+                        const soldD2Total = prev ? (prev.soldD3Total || 0) : 0;
+                        const soldD2Pagi = prev ? (prev.soldD3Pagi || 0) : 0;
+                        const soldD2Malam = prev ? (prev.soldD3Malam || 0) : 0;
+                        const restockedD2 = prev ? (prev.restockedD3 || 0) : 0;
+
+                        const soldD1Total = prev ? (prev.soldD2Total || 0) : 0;
+                        const soldD1Pagi = prev ? (prev.soldD2Pagi || 0) : 0;
+                        const soldD1Malam = prev ? (prev.soldD2Malam || 0) : 0;
+                        const restockedD1 = prev ? (prev.restockedD2 || 0) : 0;
+
+                        reportData.items.push({
+                            type: 'product',
+                            productId: v.product_id,
+                            productName: v.product_name,
+                            providerName: prov,
+                            categoryName: cat,
+                            currentStock: parseInt(v.stock || 0),
+                            lowStockThreshold: parseInt(v.min_limit || 5),
+                            isActive: true,
+                            price: String(v.sell_price || 0),
+                            cost: String(v.cost_price || 0),
+                            soldD1Total, soldD1Pagi, soldD1Malam, addedD1: 0, restockedD1,
+                            soldD2Total, soldD2Pagi, soldD2Malam, addedD2: 0, restockedD2,
+                            soldD3Total: 0, soldD3Pagi: 0, soldD3Malam: 0, addedD3: 0, restockedD3: 0,
+                            soldAfter: 0, addedAfter: 0,
+                            isNew: false, isDeleted: false,
+                            demandDaily: 0, suggestedOrder: 0
+                        });
+                    });
+                }
+
+                // Terapkan mutasi dari sesi opname saat ini
+                const shiftNum = Number(session.shift_num) || 1;
+                const isSales = (session.session_type === 'shift_sales');
+                const details = Array.isArray(session.details) ? session.details : [];
+
+                const detailMap = new Map();
+                details.forEach(d => {
+                    detailMap.set(d.product_id, d);
+                });
+
+                let totalSoldQty = 0;
+                let totalOmset = 0;
+                let totalProfit = 0;
+
+                reportData.items.forEach(it => {
+                    if (it.type !== 'product') return;
+
+                    const d = detailMap.get(it.productId);
+                    if (d) {
+                        it.currentStock = Number(d.new_stock !== undefined ? d.new_stock : it.currentStock);
+                        if (d.cost !== undefined && d.cost !== null && Number(d.cost) > 0) {
+                            it.cost = String(d.cost);
+                        }
+
+                        if (d.delta < 0 && isSales) {
+                            const qtySold = Math.abs(d.delta);
+                            if (shiftNum === 1) {
+                                it.soldD3Pagi = (it.soldD3Pagi || 0) + qtySold;
+                            } else {
+                                it.soldD3Malam = (it.soldD3Malam || 0) + qtySold;
+                            }
+                            it.soldD3Total = (it.soldD3Pagi || 0) + (it.soldD3Malam || 0);
+                        } else if (d.delta > 0) {
+                            it.restockedD3 = (it.restockedD3 || 0) + d.delta;
+                        }
+                    }
+
+                    const soldTotal = it.soldD3Total || 0;
+                    if (soldTotal > 0) {
+                        totalSoldQty += soldTotal;
+                        const price = Number(it.price || 0);
+                        const cost = Number(it.cost || 0);
+                        totalOmset += soldTotal * price;
+                        totalProfit += soldTotal * (price - cost);
+                    }
+                });
+
+                reportData.summary = {
+                    totalSoldQty,
+                    totalOmset,
+                    totalProfit
+                };
+
+                // Upsert ke tabel daily_reports Project A
+                const upsertRow = {
+                    device_id: storeId,
+                    device_name: storeName,
+                    report_data: reportData,
+                    updated_at: new Date().toISOString()
+                };
+
+                const { error: repErr } = await supabaseClient
+                    .from('daily_reports')
+                    .upsert([upsertRow], { onConflict: 'device_id' });
+
+                if (repErr) {
+                    console.warn('Gagal upsert daily_reports:', repErr);
+                } else {
+                    allDailyReports.set(storeId, reportData);
+                }
+
+                // Arsipkan ke daily_report_archives
+                const archiveId = `${storeId}_${ymd}`;
+                await supabaseClient
+                    .from('daily_report_archives')
+                    .upsert([{
+                        id: archiveId,
+                        device_id: storeId,
+                        device_name: storeName,
+                        report_date: ymd,
+                        total_sold_qty: totalSoldQty,
+                        total_omset: totalOmset,
+                        total_profit: totalProfit,
+                        report_data: reportData
+                    }], { onConflict: 'id' })
+                    .catch(e => console.warn('Archive daily report warning:', e));
+
+            } catch (e) {
+                console.error('Error in updateBranchDailyReportFromOpname:', e);
+            }
+        }
+        window.updateBranchDailyReportFromOpname = updateBranchDailyReportFromOpname;
     </script>
 </body>
 </html>

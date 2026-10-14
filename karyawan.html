@@ -336,7 +336,7 @@
 
         .grid-features {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 10px;
             margin-bottom: 16px;
         }
@@ -696,11 +696,19 @@
                 <a href="store_transactions.html" class="feat-box">
                     <div class="feat-icon">📊</div>
                     <div class="feat-title">Rekap Transaksi</div>
+                    <div class="feat-sub">Riwayat & detail kasir</div>
                 </a>
                 <!-- 2. Cek Stok Cepat (Opname) -->
                 <a href="quick_stock.html" class="feat-box">
                     <div class="feat-icon">📦</div>
                     <div class="feat-title">Cek Stok Cepat</div>
+                    <div class="feat-sub">Opname fisik & tutup shift</div>
+                </a>
+                <!-- 3. Tambah Stok (Restok Nota) -->
+                <a href="ai_stock_update.html" class="feat-box" style="border-color: rgba(16, 185, 129, 0.4); background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(30, 41, 59, 0.2) 100%);">
+                    <div class="feat-icon">🤖</div>
+                    <div class="feat-title" style="color: #10B981;">Tambah Stok</div>
+                    <div class="feat-sub">Restok nota supplier AI</div>
                 </a>
             </div>
 

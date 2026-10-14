@@ -1,0 +1,2161 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tambah Stok Nota AI - KSP Check</title>
+
+    <!-- Web App Manifest & Favicons -->
+    <link rel="manifest" href="assets/manifests/manifest-karyawan.json">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-karyawan.svg">
+    <meta name="theme-color" content="#0F1117">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Tambah Stok AI">
+
+    <!-- Supabase Sync & Config Scripts -->
+    <script src="js/ksp_sync_config.js"></script>
+    <script src="js/ksp_sync.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0F1117;
+            --card-bg: #181C27;
+            --card-inner: #1E2333;
+            --card-border: #262B3D;
+            --card-hover: #242B40;
+            --primary: #4F8EF7;
+            --primary-hover: #3B7ADF;
+            --primary-glow: rgba(79, 142, 247, 0.2);
+            --success: #10B981;
+            --success-glow: rgba(16, 185, 129, 0.2);
+            --warning: #F59E0B;
+            --warning-glow: rgba(245, 158, 11, 0.2);
+            --danger: #EF4444;
+            --danger-glow: rgba(239, 68, 68, 0.2);
+            --text-main: #FFFFFF;
+            --text-muted: #8A92A6;
+            --chip-bg: #222736;
+            --input-bg: #11141F;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --modal-backdrop: rgba(0, 0, 0, 0.75);
+            --speaking-highlight: #1E3A5F;
+        }
+
+        body.light-theme {
+            --bg-color: #F8F5EE;
+            --card-bg: #FFFFFF;
+            --card-inner: #F3EFE6;
+            --card-border: #E8E1D5;
+            --card-hover: #EDE7DC;
+            --primary: #2B6CB0;
+            --primary-hover: #2C5282;
+            --primary-glow: rgba(43, 108, 176, 0.15);
+            --success: #059669;
+            --success-glow: rgba(5, 150, 105, 0.15);
+            --warning: #D97706;
+            --warning-glow: rgba(217, 119, 6, 0.15);
+            --danger: #DC2626;
+            --danger-glow: rgba(220, 38, 38, 0.15);
+            --text-main: #2D3748;
+            --text-muted: #718096;
+            --chip-bg: #EFE8DC;
+            --input-bg: #FAF8F5;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --modal-backdrop: rgba(0, 0, 0, 0.5);
+            --speaking-highlight: #E0EFFF;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.25s ease, color 0.25s ease;
+            padding-bottom: 90px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 12px 14px;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0 12px 0;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 14px;
+            gap: 10px;
+        }
+
+        .top-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .btn-nav-action {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-nav-action:hover {
+            border-color: var(--primary);
+            background: var(--card-hover);
+        }
+
+        .header-title-box {
+            min-width: 0;
+        }
+
+        .header-title {
+            font-size: 16px;
+            font-weight: 850;
+            color: var(--text-main);
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .header-subtitle {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        /* Info Banner */
+        .info-banner {
+            background: linear-gradient(135deg, rgba(79, 142, 247, 0.1) 0%, rgba(30, 41, 59, 0.25) 100%);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .info-banner-icon {
+            font-size: 22px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .info-banner-text {
+            font-size: 12px;
+            line-height: 1.45;
+            color: var(--text-muted);
+        }
+
+        .info-banner-text b {
+            color: var(--text-main);
+        }
+
+        /* Card Section */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 14px;
+            box-shadow: 0 4px 14px var(--shadow-color);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 11.5px;
+            font-weight: 750;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 10px 12px;
+            color: var(--text-main);
+            font-size: 13.5px;
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+
+        .form-textarea {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 12px;
+            line-height: 1.45;
+            min-height: 140px;
+            resize: vertical;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            border-color: var(--primary);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 750;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #FFFFFF;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #FFFFFF;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+        }
+
+        .btn-outline:hover {
+            background: var(--chip-bg);
+            border-color: var(--primary);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 11.5px;
+            border-radius: 8px;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        /* Views (Phase 1 vs Phase 2) */
+        #viewInput {
+            display: block;
+        }
+
+        #viewPreview {
+            display: none;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .stat-box {
+            background: var(--card-inner);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 8px 6px;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 16px;
+            font-weight: 850;
+            line-height: 1.1;
+        }
+
+        .stat-lbl {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 3px;
+            font-weight: 600;
+        }
+
+        /* Filter Chips */
+        .chip-scroll {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+            scrollbar-width: none;
+        }
+
+        .chip-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .chip {
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: var(--chip-bg);
+            border: 1px solid var(--card-border);
+            font-size: 11.5px;
+            font-weight: 750;
+            color: var(--text-muted);
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s ease;
+        }
+
+        .chip.active {
+            background: var(--primary);
+            color: #FFFFFF;
+            border-color: var(--primary);
+        }
+
+        /* Audio / TTS Bar */
+        .audio-bar {
+            background: var(--card-inner);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .audio-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .audio-status-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .btn-audio {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn-audio:hover {
+            border-color: var(--primary);
+        }
+
+        /* Item Cards */
+        .preview-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .item-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .item-card:hover {
+            border-color: var(--primary);
+            background: var(--card-hover);
+        }
+
+        .item-card.speaking {
+            background: var(--speaking-highlight) !important;
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        .item-card.unselected {
+            opacity: 0.55;
+        }
+
+        .item-checkbox {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .item-top-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 2px;
+        }
+
+        .item-status-icon {
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .item-raw-name {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .item-matched-name {
+            font-size: 11.5px;
+            color: var(--primary);
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+
+        .item-matched-name.ambiguous {
+            color: var(--warning);
+        }
+
+        .item-matched-name.error {
+            color: var(--danger);
+        }
+
+        .item-bottom-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+        }
+
+        .badge-stock {
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: var(--card-inner);
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .badge-cost {
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: var(--card-inner);
+            font-weight: 800;
+            color: var(--text-muted);
+        }
+
+        .badge-cost.cost-up {
+            color: var(--danger);
+        }
+
+        .badge-cost.cost-down {
+            color: var(--success);
+        }
+
+        .item-qty-pill {
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 850;
+            flex-shrink: 0;
+            text-align: right;
+        }
+
+        .item-qty-pill.matched {
+            background: var(--success-glow);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .item-qty-pill.ambiguous {
+            background: var(--warning-glow);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .item-qty-pill.error {
+            background: var(--danger-glow);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        /* Sticky Bottom Bar */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border-top: 1px solid var(--card-border);
+            padding: 10px 14px;
+            z-index: 99;
+            box-shadow: 0 -4px 16px var(--shadow-color);
+        }
+
+        .bottom-bar-inner {
+            max-width: 680px;
+            margin: 0 auto;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--modal-backdrop);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 20px;
+            box-shadow: 0 16px 40px var(--shadow-color);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .modal-title {
+            font-size: 15px;
+            font-weight: 850;
+            color: var(--text-main);
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+
+        .stepper-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stepper-btn {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background: var(--card-inner);
+            color: var(--text-main);
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        /* Toast */
+        #toastBox {
+            position: fixed;
+            bottom: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 24, 38, 0.95);
+            color: #FFFFFF;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--primary);
+            font-size: 12px;
+            font-weight: 750;
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+            white-space: nowrap;
+        }
+
+        #toastBox.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="top-left">
+                <a href="karyawan.html" class="btn-nav-action" title="Kembali ke Portal Kasir">←</a>
+                <div class="header-title-box">
+                    <h1 class="header-title">Tambah Stok Nota</h1>
+                    <div class="header-subtitle" id="txtBranchInfo">Memuat cabang...</div>
+                </div>
+            </div>
+            <div class="top-actions">
+                <button type="button" class="btn-nav-action" onclick="showAliasModal()" title="Kelola Pemetaan Alias">🔗</button>
+                <button type="button" class="btn-nav-action" onclick="showTtsModal()" title="Pengaturan Suara Nota">⚙️</button>
+                <button type="button" class="btn-nav-action" onclick="toggleTheme()" title="Ubah Tema">🌓</button>
+            </div>
+        </header>
+
+        <!-- ==================== VIEW 1: INPUT NOTA AI ==================== -->
+        <main id="viewInput">
+            <div class="info-banner">
+                <div class="info-banner-icon">🤖</div>
+                <div class="info-banner-text">
+                    <b>Faktur Belanja Supplier Cepat:</b> Foto nota kulakan, minta AI (Gemini / ChatGPT) ekstrak ke format kolom, lalu tempel di sini. Stok cabang akan <b>langsung bertambah</b> seketika!
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📝 Format &amp; Tanggal Faktur</span>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="copyAiPrompt()">
+                        📋 Salin Format Prompt AI
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="inputInvoiceDate">Tanggal Nota / Faktur Supplier:</label>
+                    <input type="date" id="inputInvoiceDate" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="txtAiInput">Tempelkan Teks Hasil Ekstraksi AI:</label>
+                    <textarea id="txtAiInput" class="form-textarea" placeholder="Contoh format:
+AXIS|AIGO 2GB 5HR|10|8500
+THREE|VC TRI 42GB PM4|3|78000
+TELKOMSEL|MAX 2.5GB 5HR|5|11000
+INDOSAT|FREEDOM 3GB 30HR|4|24500"></textarea>
+                </div>
+
+                <button type="button" class="btn btn-primary btn-block" style="padding: 12px; font-size: 14px;" onclick="processAiInput()">
+                    ✨ Analisa &amp; Verifikasi Nota
+                </button>
+            </div>
+        </main>
+
+        <!-- ==================== VIEW 2: VERIFIKASI & PREVIEW ==================== -->
+        <main id="viewPreview">
+            <!-- Header Nav Back to Edit -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="backToInputView()">
+                    ← Ubah Teks Nota
+                </button>
+                <span id="txtInvoiceDateBadge" style="font-size: 11.5px; color: var(--text-muted); font-weight: 700;"></span>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-val" id="statMatched" style="color: var(--success);">0</div>
+                    <div class="stat-lbl">✅ Cocok</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-val" id="statAmbiguous" style="color: var(--warning);">0</div>
+                    <div class="stat-lbl">⚠️ Ambigu</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-val" id="statError" style="color: var(--danger);">0</div>
+                    <div class="stat-lbl">❌ Error</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-val" id="statSelected" style="color: var(--primary);">0</div>
+                    <div class="stat-lbl">Terpilih</div>
+                </div>
+            </div>
+
+            <!-- Summary Total Bar -->
+            <div class="card" style="padding: 10px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">TOTAL NOTA KULAKAN</div>
+                    <div style="font-size: 15px; font-weight: 850; color: var(--text-main);" id="txtTotalNotaCost">Rp 0</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">TOTAL FISIK MASUK</div>
+                    <div style="font-size: 15px; font-weight: 850; color: var(--success);" id="txtTotalNotaQty">0 pcs</div>
+                </div>
+            </div>
+
+            <!-- Audio / TTS Player Bar -->
+            <div class="audio-bar">
+                <div class="audio-info">
+                    <span style="font-size: 16px;">🔊</span>
+                    <div class="audio-status-text" id="txtTtsStatus">Asisten Suara Siap</div>
+                </div>
+                <div class="audio-controls">
+                    <button type="button" class="btn-audio" id="btnTtsToggle" onclick="toggleTts()" title="Putar / Hentikan Suara">▶️</button>
+                    <button type="button" class="btn-audio" onclick="showTtsModal()" title="Pengaturan Suara">⚙️</button>
+                </div>
+            </div>
+
+            <!-- Filter Chips -->
+            <div class="chip-scroll">
+                <div class="chip active" onclick="setFilter(0, this)">Semua (<span id="chipCountAll">0</span>)</div>
+                <div class="chip" onclick="setFilter(1, this)">✅ Cocok (<span id="chipCountMatched">0</span>)</div>
+                <div class="chip" onclick="setFilter(2, this)">⚠️ Ambigu (<span id="chipCountAmbiguous">0</span>)</div>
+                <div class="chip" onclick="setFilter(3, this)">❌ Error (<span id="chipCountError">0</span>)</div>
+            </div>
+
+            <!-- Parsed Items List -->
+            <div class="preview-list" id="previewListMount"></div>
+        </main>
+    </div>
+
+    <!-- STICKY BOTTOM ACTION BAR -->
+    <div class="bottom-bar" id="bottomActionBar" style="display: none;">
+        <div class="bottom-bar-inner">
+            <button type="button" id="btnSubmitRestock" class="btn btn-success btn-block" style="padding: 12px; font-size: 14px; font-weight: 850;" onclick="confirmAndSubmitRestock()">
+                💾 Tambah Stok (0 Item)
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: EDIT & PEMETAAN ITEM ==================== -->
+    <div id="modalEditItem" class="modal-overlay" onclick="if(event.target===this) closeEditModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ Penyesuaian Item Nota</h3>
+                <button type="button" class="btn-close" onclick="closeEditModal()">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="editName">Nama di Nota Supplier:</label>
+                <input type="text" id="editName" class="form-input">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label class="form-label" for="editQty">Jumlah (Qty Masuk):</label>
+                    <input type="number" id="editQty" class="form-input" min="1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="editCost">Harga Modal (Cost):</label>
+                    <input type="number" id="editCost" class="form-input" min="0">
+                </div>
+            </div>
+
+            <!-- Reference Last Cost -->
+            <div id="boxLastCostRef" style="display: none; margin-bottom: 10px; font-size: 11.5px; color: var(--success); display: flex; justify-content: space-between; align-items: center; background: var(--card-inner); padding: 6px 10px; border-radius: 8px;">
+                <span id="txtLastCostRef">💰 Modal Sebelumnya: Rp 0</span>
+                <button type="button" class="btn btn-outline btn-sm" style="padding: 2px 8px; font-size: 10.5px;" onclick="useLastCost()">Gunakan</button>
+            </div>
+
+            <!-- Selling Price with Stepper -->
+            <div class="form-group">
+                <label class="form-label" for="editPrice">Harga Jual (Price):</label>
+                <div class="stepper-row">
+                    <button type="button" class="stepper-btn" onclick="stepEditPrice(-1000)">-1000</button>
+                    <input type="number" id="editPrice" class="form-input" style="text-align: center;">
+                    <button type="button" class="stepper-btn" onclick="stepEditPrice(1000)">+1000</button>
+                </div>
+            </div>
+
+            <!-- Margin Display -->
+            <div id="editMarginBadge" style="font-size: 12.5px; font-weight: 800; padding: 6px 10px; border-radius: 8px; margin-bottom: 10px; display: none;"></div>
+
+            <!-- Warnings Area -->
+            <div id="editWarningsBox" style="font-size: 11.5px; color: var(--danger); background: var(--danger-glow); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 8px; margin-bottom: 12px; display: none;"></div>
+
+            <!-- Target Mapped Product -->
+            <div class="form-group">
+                <label class="form-label">Terpetakan ke Produk Cabang:</label>
+                <div style="background: var(--card-inner); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                    <div style="min-width: 0;">
+                        <div id="txtMappedProdName" style="font-size: 13px; font-weight: 800; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Belum Terpetakan</div>
+                        <div id="txtMappedProdCategory" style="font-size: 11px; color: var(--text-muted);">-</div>
+                    </div>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="openProductPicker()">Pilih / Ganti</button>
+                </div>
+            </div>
+
+            <!-- Remember Alias Checkbox -->
+            <div style="margin-bottom: 16px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; color: var(--text-main);">
+                    <input type="checkbox" id="chkRememberAlias" checked style="width: 16px; height: 16px; accent-color: var(--primary);">
+                    <span>Ingat pemetaan ini untuk nota supplier berikutnya (Alias)</span>
+                </label>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" class="btn btn-outline" onclick="closeEditModal()">Batal</button>
+                <button type="button" class="btn btn-primary" onclick="saveEditModal()">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: PILIH PRODUK KATALOG ==================== -->
+    <div id="modalProductPicker" class="modal-overlay" onclick="if(event.target===this) closeProductPicker()">
+        <div class="modal-content" style="max-height: 80vh;">
+            <div class="modal-header">
+                <h3 class="modal-title">📦 Pilih Produk Katalog Cabang</h3>
+                <button type="button" class="btn-close" onclick="closeProductPicker()">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <input type="text" id="searchProductInput" class="form-input" placeholder="🔍 Cari nama produk / provider..." oninput="renderProductPickerList()">
+            </div>
+
+            <div id="productPickerMount" style="display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: PENGATURAN TTS ==================== -->
+    <div id="modalTts" class="modal-overlay" onclick="if(event.target===this) closeTtsModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">⚙️ Pengaturan Asisten Suara (TTS)</h3>
+                <button type="button" class="btn-close" onclick="closeTtsModal()">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <label class="form-label" for="rangeTtsSpeed">Kecepatan Bicara:</label>
+                    <span id="lblTtsSpeed" style="font-size: 12px; font-weight: 800; color: var(--primary);">1.5x</span>
+                </div>
+                <input type="range" id="rangeTtsSpeed" min="0.5" max="2.5" step="0.1" value="1.5" style="width: 100%; accent-color: var(--primary);" oninput="document.getElementById('lblTtsSpeed').innerText = this.value + 'x'">
+            </div>
+
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <label class="form-label" for="rangeTtsDelay">Jeda Antar Item:</label>
+                    <span id="lblTtsDelay" style="font-size: 12px; font-weight: 800; color: var(--primary);">200 ms</span>
+                </div>
+                <input type="range" id="rangeTtsDelay" min="0" max="1500" step="50" value="200" style="width: 100%; accent-color: var(--primary);" oninput="document.getElementById('lblTtsDelay').innerText = this.value + ' ms'">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Mode Pembacaan Suara:</label>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; cursor: pointer;">
+                        <input type="radio" name="ttsMode" id="rbModeFull" value="full" checked style="accent-color: var(--primary);">
+                        <span>Lengkap (Nama Produk + Stok Qty)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; cursor: pointer;">
+                        <input type="radio" name="ttsMode" id="rbModeStockOnly" value="stock_only" style="accent-color: var(--primary);">
+                        <span>Hanya Stok (Hanya sebutkan angka kuantiti)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="inputTtsAbbreviations">Kamus Singkatan Kata:</label>
+                <input type="text" id="inputTtsAbbreviations" class="form-input" value="GB:Giga,MB:Mega,VC:Voucher,PM:P M,HR:Hari,K:Ribu">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+                <button type="button" class="btn btn-primary" onclick="saveTtsSettings()">Simpan Pengaturan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: KELOLA ALIAS ==================== -->
+    <div id="modalAlias" class="modal-overlay" onclick="if(event.target===this) closeAliasModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🔗 Kelola Pemetaan Alias Nota</h3>
+                <button type="button" class="btn-close" onclick="closeAliasModal()">&times;</button>
+            </div>
+            <p style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 12px;">
+                Alias memudahkan pencocokan otomatis nama singkatan unik dari nota supplier ke katalog produk cabang Anda.
+            </p>
+
+            <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="exportAliases()">📤 Ekspor JSON</button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('fileImportAlias').click()">📥 Impor JSON</button>
+                <input type="file" id="fileImportAlias" accept=".json" style="display: none;" onchange="importAliases(event)">
+            </div>
+
+            <div id="aliasListMount" style="display: flex; flex-direction: column; gap: 6px; max-height: 40vh; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toastBox">Notifikasi</div>
+
+    <!-- ==================== SCRIPT ENGINE ==================== -->
+    <script>
+        'use strict';
+
+        // ── Auth & Context State ──
+        let currentCred = '';
+        let currentActiveEmp = null;
+        let currentStoreId = '';
+        let currentStoreName = '';
+        let currentEmpName = '';
+        let currentShiftNum = 1;
+
+        // ── Catalog & Parser State ──
+        let allProducts = []; // Array of products for this store
+        let allItems = [];    // All parsed items from AI input
+        let displayItems = [];
+        let currentFilter = 0; // 0: All, 1: Matched, 2: Ambiguous, 3: Error
+        let editingIndex = -1;
+
+        // ── Alias Map (Key: UPPERCASE INVOICE NAME, Val: product_id) ──
+        let aliasMap = {};
+
+        // ── TTS State ──
+        let ttsSpeed = 1.5;
+        let ttsDelayMs = 200;
+        let ttsSpeakStockOnly = false;
+        let ttsAbbreviations = "GB:Giga,MB:Mega,VC:Voucher,PM:P M,HR:Hari,K:Ribu";
+        let ttsCurrentIndex = -1;
+        let ttsIsSpeaking = false;
+        let ttsSynth = window.speechSynthesis || null;
+
+        // Provider Normalization Map
+        const PROVIDER_MAP = {
+            'AXIS': 'AXIS',
+            'TRI': 'THREE',
+            'THREE': 'THREE',
+            'TSEL': 'TELKOMSEL',
+            'TELKOMSEL': 'TELKOMSEL',
+            'ISAT': 'INDOSAT',
+            'IM3': 'INDOSAT',
+            'INDOSAT': 'INDOSAT',
+            'XL': 'XL',
+            'SM': 'SMARTFREN',
+            'SMARTFREN': 'SMARTFREN',
+            'BYU': 'BY U',
+            'BY U': 'BY U'
+        };
+
+        // ── Init on DOM Loaded ──
+        document.addEventListener('DOMContentLoaded', async () => {
+            initTheme();
+            loadSavedTtsSettings();
+            loadAliases();
+
+            // Set default date to today
+            const todayStr = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('inputInvoiceDate');
+            if (dateInput) dateInput.value = todayStr;
+
+            // Check Employee Auth
+            currentCred = sessionStorage.getItem('kspcheck_emp_cred') || localStorage.getItem('kspcheck_emp_cred') || '';
+            const rawActive = sessionStorage.getItem('kspcheck_active_emp') || localStorage.getItem('kspcheck_active_emp');
+            if (rawActive) {
+                try { currentActiveEmp = JSON.parse(rawActive); } catch (e) {}
+            }
+
+            if (!currentCred || !currentActiveEmp) {
+                alert('Silakan login ke Portal Kasir terlebih dahulu.');
+                window.location.href = 'karyawan.html';
+                return;
+            }
+
+            currentStoreId = currentActiveEmp.store_id || '';
+            currentStoreName = currentActiveEmp.store_name || ('Cabang ' + currentStoreId);
+            currentEmpName = currentActiveEmp.emp_name || 'Kasir';
+            currentShiftNum = currentActiveEmp.shift_num || 1;
+
+            document.getElementById('txtBranchInfo').innerText = `${currentStoreName} • ${currentEmpName} (Shift ${currentShiftNum})`;
+
+            // Load Store Catalog from Project B
+            await fetchStoreProducts();
+        });
+
+        // ── Fetch Products from Project B ──
+        async function fetchStoreProducts() {
+            try {
+                showToast('⏳ Memuat katalog cabang...');
+                const res = await KspSync.empGetStoreStock(currentCred);
+                if (!res || !res.ok) {
+                    throw new Error((res && (res.message || res.error)) || 'Gagal memuat produk cabang');
+                }
+
+                allProducts = Array.isArray(res.products) ? res.products : [];
+                console.log(`Loaded ${allProducts.length} products for ${currentStoreName}`);
+            } catch (err) {
+                console.error('Error fetching store products:', err);
+                alert('Gagal memuat katalog cabang: ' + (err.message || 'Cek koneksi internet'));
+            }
+        }
+
+        // ── Theme Helpers ──
+        function initTheme() {
+            const savedTheme = localStorage.getItem('kspcheck_theme') || 'dark';
+            document.body.classList.toggle('light-theme', savedTheme === 'light');
+        }
+
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light-theme');
+            localStorage.setItem('kspcheck_theme', isLight ? 'light' : 'dark');
+        }
+
+        // ── Toast Helper ──
+        function showToast(msg) {
+            const box = document.getElementById('toastBox');
+            if (!box) return;
+            box.innerText = msg;
+            box.classList.add('show');
+            setTimeout(() => box.classList.remove('show'), 2600);
+        }
+
+        // ── Format Currency ──
+        function formatRupiah(num) {
+            return new Intl.NumberFormat('id-ID').format(num || 0);
+        }
+
+        // ── Copy Prompt AI ──
+        function copyAiPrompt() {
+            const promptText = `Tolong ekstrak semua item voucher/barang pada foto nota/faktur ke dalam format teks berikut tanpa teks pengantar atau penjelasan tambahan:
+
+PROVIDER|NAMA PRODUK|QTY|HARGA MODAL
+
+Aturan:
+1. Provider harus berupa salah satu dari: TELKOMSEL, INDOSAT, XL, AXIS, THREE, SMARTFREN, BY U
+2. QTY dan HARGA MODAL hanya berupa angka murni (tanpa Rp, titik, koma, atau kata pcs)
+3. Satu baris per item produk
+4. Jangan gunakan markdown table atau penomoran baris
+
+Contoh output:
+AXIS|AIGO 2GB 5HR|10|8500
+THREE|VC TRI 42GB PM4|3|78000
+TELKOMSEL|MAX 2.5GB 5HR|5|11000
+INDOSAT|FREEDOM 3GB 30HR|4|24500`;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(promptText).then(() => {
+                    showToast('✓ Format prompt AI disalin ke clipboard!');
+                }).catch(() => {
+                    promptFallback(promptText);
+                });
+            } else {
+                promptFallback(promptText);
+            }
+        }
+
+        function promptFallback(text) {
+            window.prompt('Salin prompt teks AI di bawah ini:', text);
+        }
+
+        // ==================== LOGIKA PARSER & MATCHING ====================
+
+        function parseInput(input) {
+            const result = [];
+            if (!input || !input.trim()) return result;
+
+            const lines = input.split('\n');
+            for (let rawLine of lines) {
+                const line = rawLine.trim();
+                if (!line || line.startsWith('#') || line.startsWith('//')) continue;
+
+                const parts = line.split('|');
+                if (parts.length < 4) {
+                    result.push({
+                        rawLine: line,
+                        error: 'Format salah (butuh 4 kolom, pisahkan dengan |)',
+                        isSelected: false,
+                        isMatched: false,
+                        isAmbiguous: false,
+                        candidates: []
+                    });
+                    continue;
+                }
+
+                try {
+                    const provider = parts[0].trim();
+                    const name = parts[1].trim();
+                    const qty = parseInt(parts[2].trim().replace(/\D/g, ''), 10) || 0;
+                    const cost = parseInt(parts[3].trim().replace(/\D/g, ''), 10) || 0;
+
+                    result.push({
+                        rawLine: line,
+                        provider: provider,
+                        name: name,
+                        qty: qty,
+                        cost: cost,
+                        error: null,
+                        isSelected: true,
+                        isMatched: false,
+                        isAmbiguous: false,
+                        matchedProduct: null,
+                        matchedByAlias: false,
+                        candidates: []
+                    });
+                } catch (e) {
+                    result.push({
+                        rawLine: line,
+                        error: 'QTY atau COST bukan angka',
+                        isSelected: false,
+                        isMatched: false,
+                        isAmbiguous: false,
+                        candidates: []
+                    });
+                }
+            }
+            return result;
+        }
+
+        function resolveProvider(raw) {
+            if (!raw) return null;
+            const u = raw.toUpperCase().trim();
+            for (let k in PROVIDER_MAP) {
+                if (u === k || u.startsWith(k)) {
+                    return PROVIDER_MAP[k];
+                }
+            }
+            return null;
+        }
+
+        function normalizeName(name) {
+            if (!name) return '';
+            let s = name.toUpperCase().trim();
+            s = s.replace(/^(?:VC|VOUCHER|PAKET|DATA)\s+/i, '');
+            s = s.replace(/[^A-Z0-9.]+/g, ' ').trim();
+            return s;
+        }
+
+        function extractSpecs(name) {
+            const specs = { gb: null, dur: null };
+            if (!name) return specs;
+
+            const n = name.toUpperCase().replace(/,/g, '.');
+
+            const gbMatch = n.match(/(\d+(?:\.\d+)?)\s*GB/);
+            if (gbMatch) {
+                specs.gb = parseFloat(gbMatch[1]);
+            }
+
+            const durMatch = n.match(/(\d+)\s*(?:H(?:ARI)?)/);
+            if (durMatch) {
+                specs.dur = parseInt(durMatch[1], 10);
+            }
+
+            return specs;
+        }
+
+        function matchByAlias(items) {
+            if (!aliasMap || Object.keys(aliasMap).length === 0) return;
+
+            items.forEach(item => {
+                if (item.error || item.isMatched) return;
+                const key = (item.name || '').trim().toUpperCase();
+                const targetPid = aliasMap[key];
+                if (!targetPid) return;
+
+                const found = allProducts.find(p => p.product_id === targetPid);
+                if (found) {
+                    item.matchedProduct = found;
+                    item.isMatched = true;
+                    item.isAmbiguous = false;
+                    item.matchedByAlias = true;
+                    item.isSelected = true;
+                }
+            });
+        }
+
+        function matchItems(items) {
+            items.forEach(item => {
+                if (item.error || item.isMatched) return;
+
+                const mappedProvider = resolveProvider(item.provider);
+                if (!mappedProvider) {
+                    item.error = 'Provider tidak dikenali: ' + item.provider;
+                    return;
+                }
+
+                // Filter products matching provider
+                const provProducts = allProducts.filter(p => {
+                    const pName = (p.provider_name || '').toUpperCase();
+                    return pName.includes(mappedProvider);
+                });
+
+                if (provProducts.length === 0) {
+                    item.error = 'Tidak ada produk untuk provider ' + mappedProvider;
+                    return;
+                }
+
+                const specs = extractSpecs(item.name);
+                const cleanItemName = normalizeName(item.name);
+
+                let bestScore = 0;
+                let bestProd = null;
+                item.candidates = [];
+
+                for (let prod of provProducts) {
+                    const cleanProdName = normalizeName(prod.product_name);
+                    const prodSpecs = extractSpecs(prod.product_name);
+                    let score = 0;
+
+                    // Exact or clean substring match
+                    if (cleanProdName && cleanProdName === cleanItemName) {
+                        score += 20;
+                    } else if (cleanItemName && (cleanProdName.includes(cleanItemName) || cleanItemName.includes(cleanProdName))) {
+                        score += 10;
+                    }
+
+                    // GB match
+                    if (specs.gb !== null && prodSpecs.gb !== null) {
+                        if (Math.abs(specs.gb - prodSpecs.gb) < 0.01) {
+                            score += 6;
+                        } else if (Math.abs(specs.gb - prodSpecs.gb) < 0.5) {
+                            score += 2;
+                        }
+                    }
+
+                    // Duration match
+                    if (specs.dur !== null && prodSpecs.dur !== null) {
+                        if (specs.dur === prodSpecs.dur) {
+                            score += 6;
+                        }
+                    }
+
+                    if (score >= 6) {
+                        item.candidates.push({ product: prod, score: score });
+                    }
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestProd = prod;
+                    }
+                }
+
+                if (bestScore >= 12 && bestProd) {
+                    item.isMatched = true;
+                    item.matchedProduct = bestProd;
+                    item.isAmbiguous = false;
+                    item.error = null;
+                } else if (item.candidates.length > 0) {
+                    item.isAmbiguous = true;
+                    if (item.candidates.length === 1) {
+                        item.matchedProduct = item.candidates[0].product;
+                        item.isMatched = true;
+                    } else {
+                        item.error = `Ambigu: Ada ${item.candidates.length} produk mirip`;
+                    }
+                } else {
+                    item.error = 'Tidak ada produk cocok di ' + mappedProvider;
+                }
+            });
+        }
+
+        // ==================== FLOW & PHASE SWITCHING ====================
+
+        function processAiInput() {
+            const raw = document.getElementById('txtAiInput').value || '';
+            if (!raw.trim()) {
+                alert('Silakan tempelkan teks hasil AI terlebih dahulu.');
+                return;
+            }
+
+            allItems = parseInput(raw);
+            matchByAlias(allItems);
+            matchItems(allItems);
+
+            // Switch to Preview Phase
+            document.getElementById('viewInput').style.display = 'none';
+            document.getElementById('viewPreview').style.display = 'block';
+            document.getElementById('bottomActionBar').style.display = 'block';
+
+            const invoiceDate = document.getElementById('inputInvoiceDate').value;
+            document.getElementById('txtInvoiceDateBadge').innerText = '📅 Nota: ' + (invoiceDate || 'Hari Ini');
+
+            applyFilter();
+            updateStatsUI();
+        }
+
+        function backToInputView() {
+            stopTts();
+            document.getElementById('viewPreview').style.display = 'none';
+            document.getElementById('bottomActionBar').style.display = 'none';
+            document.getElementById('viewInput').style.display = 'block';
+        }
+
+        function setFilter(filterType, el) {
+            currentFilter = filterType;
+            document.querySelectorAll('.chip-scroll .chip').forEach(c => c.classList.remove('active'));
+            if (el) el.classList.add('active');
+            applyFilter();
+        }
+
+        function applyFilter() {
+            displayItems = allItems.filter(it => {
+                if (currentFilter === 1) return (it.isMatched && !it.isAmbiguous);
+                if (currentFilter === 2) return it.isAmbiguous;
+                if (currentFilter === 3) return (it.error && !it.isAmbiguous);
+                return true;
+            });
+            renderPreviewList();
+        }
+
+        function updateStatsUI() {
+            let matched = 0, ambiguous = 0, error = 0, selected = 0;
+            let totalQtyAll = 0, totalCostAll = 0;
+            let totalQtySelected = 0, totalCostSelected = 0;
+
+            allItems.forEach(it => {
+                const itemCost = (it.qty || 0) * (it.cost || 0);
+                totalQtyAll += (it.qty || 0);
+                totalCostAll += itemCost;
+
+                if (it.error && !it.isAmbiguous) error++;
+                else if (it.isAmbiguous) ambiguous++;
+                else if (it.isMatched) matched++;
+
+                if (it.isSelected && it.isMatched) {
+                    selected++;
+                    totalQtySelected += (it.qty || 0);
+                    totalCostSelected += itemCost;
+                }
+            });
+
+            document.getElementById('statMatched').innerText = matched;
+            document.getElementById('statAmbiguous').innerText = ambiguous;
+            document.getElementById('statError').innerText = error;
+            document.getElementById('statSelected').innerText = selected;
+
+            document.getElementById('chipCountAll').innerText = allItems.length;
+            document.getElementById('chipCountMatched').innerText = matched;
+            document.getElementById('chipCountAmbiguous').innerText = ambiguous;
+            document.getElementById('chipCountError').innerText = error;
+
+            document.getElementById('txtTotalNotaCost').innerText = 'Rp ' + formatRupiah(totalCostAll);
+            document.getElementById('txtTotalNotaQty').innerText = totalQtyAll + ' pcs (' + allItems.length + ' item)';
+
+            const btnSubmit = document.getElementById('btnSubmitRestock');
+            if (btnSubmit) {
+                btnSubmit.disabled = (selected === 0);
+                btnSubmit.innerText = selected > 0
+                    ? `💾 Tambah Stok (${selected} Item - Rp ${formatRupiah(totalCostSelected)})`
+                    : '💾 Tambah Stok (0 Item)';
+            }
+        }
+
+        function renderPreviewList() {
+            const mount = document.getElementById('previewListMount');
+            if (!mount) return;
+
+            if (displayItems.length === 0) {
+                mount.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 30px;">Tidak ada item yang cocok dengan filter.</div>`;
+                return;
+            }
+
+            let html = '';
+            displayItems.forEach((it, idx) => {
+                const globalIndex = allItems.indexOf(it);
+                const isSpeaking = (globalIndex === ttsCurrentIndex);
+
+                let statusIcon = '✅';
+                let matchedText = 'Cocok: ' + (it.matchedProduct ? it.matchedProduct.product_name : '');
+                let matchedClass = '';
+                let pillClass = 'matched';
+
+                if (it.error && !it.isAmbiguous) {
+                    statusIcon = '❌';
+                    matchedText = it.error;
+                    matchedClass = 'error';
+                    pillClass = 'error';
+                } else if (it.isAmbiguous) {
+                    statusIcon = '⚠️';
+                    matchedText = 'Ragu: ' + (it.matchedProduct ? it.matchedProduct.product_name : 'Klik untuk pilih produk');
+                    matchedClass = 'ambiguous';
+                    pillClass = 'ambiguous';
+                } else if (it.matchedByAlias) {
+                    statusIcon = '🔗';
+                    matchedText = 'Alias: ' + (it.matchedProduct ? it.matchedProduct.product_name : '');
+                }
+
+                // Baseline and stock change calculation
+                let stockChangeHtml = '';
+                let costChangeHtml = '';
+                if (it.matchedProduct) {
+                    const initStock = parseInt(it.matchedProduct.current_stock || 0, 10);
+                    const newStock = initStock + (it.qty || 0);
+                    stockChangeHtml = `<span class="badge-stock">Stok: ${initStock} ➔ ${newStock} (+${it.qty})</span>`;
+
+                    const oldCost = parseInt(it.matchedProduct.cost_price || 0, 10);
+                    const newCost = it.cost || 0;
+                    const diff = newCost - oldCost;
+
+                    let diffClass = '';
+                    let diffText = `= 0`;
+                    if (diff > 0) {
+                        diffClass = 'cost-up';
+                        diffText = `+Rp ${formatRupiah(diff)}`;
+                    } else if (diff < 0) {
+                        diffClass = 'cost-down';
+                        diffText = `-Rp ${formatRupiah(Math.abs(diff))}`;
+                    }
+                    costChangeHtml = `<span class="badge-cost ${diffClass}">Cost: Rp ${formatRupiah(newCost)} (${diffText})</span>`;
+                }
+
+                html += `
+                    <div class="item-card ${isSpeaking ? 'speaking' : ''} ${it.isSelected ? '' : 'unselected'}" id="cardItem_${globalIndex}" onclick="openEditModal(${globalIndex})">
+                        <input type="checkbox" class="item-checkbox" ${it.isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleItemSelect(${globalIndex})">
+                        <div class="item-content">
+                            <div class="item-top-row">
+                                <span class="item-status-icon">${statusIcon}</span>
+                                <span class="item-raw-name">${escapeHtml(it.name || it.rawLine)}</span>
+                            </div>
+                            <div class="item-matched-name ${matchedClass}">${escapeHtml(matchedText)}</div>
+                            <div class="item-bottom-row">
+                                ${stockChangeHtml}
+                                ${costChangeHtml}
+                            </div>
+                        </div>
+                        <div class="item-qty-pill ${pillClass}">
+                            +${it.qty || 0} pcs
+                        </div>
+                    </div>`;
+            });
+
+            mount.innerHTML = html;
+        }
+
+        function toggleItemSelect(idx) {
+            if (allItems[idx]) {
+                allItems[idx].isSelected = !allItems[idx].isSelected;
+                updateStatsUI();
+                renderPreviewList();
+            }
+        }
+
+        // ==================== EDIT ITEM MODAL ====================
+
+        function openEditModal(idx) {
+            editingIndex = idx;
+            const item = allItems[idx];
+            if (!item) return;
+
+            document.getElementById('editName').value = item.name || item.rawLine;
+            document.getElementById('editQty').value = item.qty || 0;
+            document.getElementById('editCost').value = item.cost || 0;
+
+            const p = item.matchedProduct;
+            if (p) {
+                document.getElementById('txtMappedProdName').innerText = p.product_name;
+                document.getElementById('txtMappedProdCategory').innerText = (p.provider_name || '') + ' • ' + (p.category_name || 'Voucher');
+                document.getElementById('editPrice').value = p.sell_price || 0;
+
+                // Show last cost if available
+                const boxLast = document.getElementById('boxLastCostRef');
+                const lastC = parseInt(p.cost_price || 0, 10);
+                if (lastC > 0) {
+                    document.getElementById('txtLastCostRef').innerText = '💰 Modal Sebelumnya: Rp ' + formatRupiah(lastC);
+                    boxLast.style.display = 'flex';
+                } else {
+                    boxLast.style.display = 'none';
+                }
+            } else {
+                document.getElementById('txtMappedProdName').innerText = 'Belum Terpetakan';
+                document.getElementById('txtMappedProdCategory').innerText = '-';
+                document.getElementById('editPrice').value = 0;
+                document.getElementById('boxLastCostRef').style.display = 'none';
+            }
+
+            document.getElementById('chkRememberAlias').checked = true;
+            updateEditMarginAndWarnings();
+
+            // Bind real-time change events
+            document.getElementById('editCost').oninput = updateEditMarginAndWarnings;
+            document.getElementById('editPrice').oninput = updateEditMarginAndWarnings;
+            document.getElementById('editQty').oninput = updateEditMarginAndWarnings;
+
+            document.getElementById('modalEditItem').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('modalEditItem').style.display = 'none';
+            editingIndex = -1;
+        }
+
+        function useLastCost() {
+            const item = allItems[editingIndex];
+            if (item && item.matchedProduct) {
+                const lastC = parseInt(item.matchedProduct.cost_price || 0, 10);
+                if (lastC > 0) {
+                    document.getElementById('editCost').value = lastC;
+                    updateEditMarginAndWarnings();
+                }
+            }
+        }
+
+        function stepEditPrice(delta) {
+            const inp = document.getElementById('editPrice');
+            let cur = parseInt(inp.value, 10) || 0;
+            cur = Math.max(0, cur + delta);
+            inp.value = cur;
+            updateEditMarginAndWarnings();
+        }
+
+        function updateEditMarginAndWarnings() {
+            const cost = parseInt(document.getElementById('editCost').value, 10) || 0;
+            const price = parseInt(document.getElementById('editPrice').value, 10) || 0;
+            const qty = parseInt(document.getElementById('editQty').value, 10) || 0;
+
+            const marginBadge = document.getElementById('editMarginBadge');
+            const warningsBox = document.getElementById('editWarningsBox');
+
+            // Margin
+            if (price > 0) {
+                const margin = price - cost;
+                marginBadge.style.display = 'block';
+                if (margin >= 0) {
+                    marginBadge.style.background = 'var(--success-glow)';
+                    marginBadge.style.color = 'var(--success)';
+                    marginBadge.innerText = '📈 Margin Untung: +Rp ' + formatRupiah(margin) + ' / pcs';
+                } else {
+                    marginBadge.style.background = 'var(--danger-glow)';
+                    marginBadge.style.color = 'var(--danger)';
+                    marginBadge.innerText = '📉 Margin Rugi: -Rp ' + formatRupiah(Math.abs(margin)) + ' / pcs';
+                }
+            } else {
+                marginBadge.style.display = 'none';
+            }
+
+            // Warnings
+            const warnings = [];
+            if (qty <= 0) warnings.push('⚠️ Jumlah QTY tidak boleh 0 atau negatif.');
+            if (qty > 200) warnings.push('⚠️ QTY sangat besar (>200 pcs), pastikan tidak salah ketik.');
+            if (cost >= price && price > 0) warnings.push('⚠️ Harga modal sama atau melebihi harga jual!');
+
+            const item = allItems[editingIndex];
+            if (item && item.matchedProduct) {
+                const lastC = parseInt(item.matchedProduct.cost_price || 0, 10);
+                if (lastC > 0) {
+                    const diffRatio = Math.abs(cost - lastC) / lastC;
+                    if (diffRatio > 0.3) {
+                        warnings.push(`⚠️ Selisih modal >30% dari modal sebelumnya (Rp ${formatRupiah(lastC)}).`);
+                    }
+                }
+            }
+
+            if (warnings.length > 0) {
+                warningsBox.innerHTML = warnings.join('<br>');
+                warningsBox.style.display = 'block';
+            } else {
+                warningsBox.style.display = 'none';
+            }
+        }
+
+        function saveEditModal() {
+            if (editingIndex < 0) return;
+            const item = allItems[editingIndex];
+            if (!item) return;
+
+            const newName = document.getElementById('editName').value.trim();
+            const newQty = parseInt(document.getElementById('editQty').value, 10) || 0;
+            const newCost = parseInt(document.getElementById('editCost').value, 10) || 0;
+            const newPrice = parseInt(document.getElementById('editPrice').value, 10) || 0;
+
+            if (newName) item.name = newName;
+            item.qty = newQty;
+            item.cost = newCost;
+
+            if (item.matchedProduct) {
+                item.matchedProduct.cost_price = newCost;
+                if (newPrice > 0) item.matchedProduct.sell_price = newPrice;
+                item.isMatched = true;
+                item.isAmbiguous = false;
+                item.error = null;
+                item.isSelected = true;
+
+                // Save Alias if checked
+                const chkAlias = document.getElementById('chkRememberAlias');
+                if (chkAlias && chkAlias.checked && item.name) {
+                    saveAlias(item.name, item.matchedProduct.product_id);
+                }
+            }
+
+            closeEditModal();
+            updateStatsUI();
+            applyFilter();
+            showToast('✓ Perubahan item disimpan.');
+        }
+
+        // ==================== PRODUCT PICKER MODAL ====================
+
+        function openProductPicker() {
+            document.getElementById('modalProductPicker').style.display = 'flex';
+            document.getElementById('searchProductInput').value = '';
+            renderProductPickerList();
+        }
+
+        function closeProductPicker() {
+            document.getElementById('modalProductPicker').style.display = 'none';
+        }
+
+        function renderProductPickerList() {
+            const mount = document.getElementById('productPickerMount');
+            if (!mount) return;
+
+            const q = (document.getElementById('searchProductInput').value || '').toLowerCase().trim();
+            const filtered = allProducts.filter(p => {
+                if (!q) return true;
+                const matchName = (p.product_name || '').toLowerCase().includes(q);
+                const matchProv = (p.provider_name || '').toLowerCase().includes(q);
+                const matchCat = (p.category_name || '').toLowerCase().includes(q);
+                return matchName || matchProv || matchCat;
+            });
+
+            if (filtered.length === 0) {
+                mount.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px;">Tidak ada produk cocok.</div>`;
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(p => {
+                html += `
+                    <div style="background: var(--card-inner); border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="selectProductFromPicker(${p.product_id})">
+                        <div>
+                            <div style="font-weight: 800; font-size: 12.5px; color: var(--text-main);">${escapeHtml(p.product_name)}</div>
+                            <div style="font-size: 10.5px; color: var(--text-muted);">${escapeHtml(p.provider_name || '')} • ${escapeHtml(p.category_name || 'Voucher')}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 11px; font-weight: 800; color: var(--primary);">Stok: ${p.current_stock || 0}</div>
+                            <div style="font-size: 10.5px; color: var(--text-muted);">Jual: Rp ${formatRupiah(p.sell_price)}</div>
+                        </div>
+                    </div>`;
+            });
+            mount.innerHTML = html;
+        }
+
+        function selectProductFromPicker(pid) {
+            const p = allProducts.find(x => x.product_id === pid);
+            if (!p || editingIndex < 0) return;
+
+            const item = allItems[editingIndex];
+            item.matchedProduct = p;
+            item.isMatched = true;
+            item.isAmbiguous = false;
+            item.error = null;
+
+            document.getElementById('txtMappedProdName').innerText = p.product_name;
+            document.getElementById('txtMappedProdCategory').innerText = (p.provider_name || '') + ' • ' + (p.category_name || 'Voucher');
+            document.getElementById('editPrice').value = p.sell_price || 0;
+
+            closeProductPicker();
+            updateEditMarginAndWarnings();
+            showToast('✓ Produk berhasil dipetakan.');
+        }
+
+        // ==================== ALIAS MANAGEMENT ====================
+
+        function loadAliases() {
+            try {
+                const raw = localStorage.getItem('kspcheck_stock_aliases');
+                if (raw) aliasMap = JSON.parse(raw);
+            } catch (e) {
+                aliasMap = {};
+            }
+        }
+
+        function saveAlias(invoiceName, productId) {
+            if (!invoiceName || !productId) return;
+            aliasMap[invoiceName.trim().toUpperCase()] = productId;
+            try {
+                localStorage.setItem('kspcheck_stock_aliases', JSON.stringify(aliasMap));
+            } catch (e) {}
+        }
+
+        function showAliasModal() {
+            renderAliasList();
+            document.getElementById('modalAlias').style.display = 'flex';
+        }
+
+        function closeAliasModal() {
+            document.getElementById('modalAlias').style.display = 'none';
+        }
+
+        function renderAliasList() {
+            const mount = document.getElementById('aliasListMount');
+            if (!mount) return;
+
+            const keys = Object.keys(aliasMap);
+            if (keys.length === 0) {
+                mount.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px;">Belum ada alias yang disimpan.</div>`;
+                return;
+            }
+
+            let html = '';
+            keys.forEach(k => {
+                const pid = aliasMap[k];
+                const prod = allProducts.find(p => p.product_id === pid);
+                const prodName = prod ? prod.product_name : `ID: ${pid}`;
+
+                html += `
+                    <div style="background: var(--card-inner); border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 800; font-size: 12px; color: var(--text-main);">"${escapeHtml(k)}"</div>
+                            <div style="font-size: 11px; color: var(--primary);">➔ ${escapeHtml(prodName)}</div>
+                        </div>
+                        <button type="button" class="btn btn-outline btn-sm" style="color: var(--danger); border-color: rgba(239,68,68,0.3); padding: 2px 6px;" onclick="deleteAlias('${escapeHtml(k)}')">🗑️</button>
+                    </div>`;
+            });
+            mount.innerHTML = html;
+        }
+
+        function deleteAlias(key) {
+            if (!confirm(`Hapus alias untuk "${key}"?`)) return;
+            delete aliasMap[key];
+            try {
+                localStorage.setItem('kspcheck_stock_aliases', JSON.stringify(aliasMap));
+            } catch (e) {}
+            renderAliasList();
+            showToast('✓ Alias dihapus.');
+        }
+
+        function exportAliases() {
+            const jsonStr = JSON.stringify(aliasMap, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `kspcheck_stock_aliases_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importAliases(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed && typeof parsed === 'object') {
+                        let count = 0;
+                        for (let k in parsed) {
+                            aliasMap[k.toUpperCase()] = parsed[k];
+                            count++;
+                        }
+                        localStorage.setItem('kspcheck_stock_aliases', JSON.stringify(aliasMap));
+                        renderAliasList();
+                        showToast(`✓ Berhasil mengimpor ${count} alias!`);
+                    }
+                } catch (err) {
+                    alert('Gagal membaca file JSON alias: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // ==================== TTS (TEXT TO SPEECH) ENGINE ====================
+
+        function loadSavedTtsSettings() {
+            try {
+                ttsSpeed = parseFloat(localStorage.getItem('kspcheck_tts_speed') || '1.5');
+                ttsDelayMs = parseInt(localStorage.getItem('kspcheck_tts_delay') || '200', 10);
+                ttsSpeakStockOnly = (localStorage.getItem('kspcheck_tts_stock_only') === 'true');
+                ttsAbbreviations = localStorage.getItem('kspcheck_tts_abbrevs') || "GB:Giga,MB:Mega,VC:Voucher,PM:P M,HR:Hari,K:Ribu";
+
+                document.getElementById('rangeTtsSpeed').value = ttsSpeed;
+                document.getElementById('lblTtsSpeed').innerText = ttsSpeed + 'x';
+                document.getElementById('rangeTtsDelay').value = ttsDelayMs;
+                document.getElementById('lblTtsDelay').innerText = ttsDelayMs + ' ms';
+                document.getElementById('inputTtsAbbreviations').value = ttsAbbreviations;
+                if (ttsSpeakStockOnly) document.getElementById('rbModeStockOnly').checked = true;
+                else document.getElementById('rbModeFull').checked = true;
+            } catch (e) {}
+        }
+
+        function saveTtsSettings() {
+            ttsSpeed = parseFloat(document.getElementById('rangeTtsSpeed').value);
+            ttsDelayMs = parseInt(document.getElementById('rangeTtsDelay').value, 10);
+            ttsSpeakStockOnly = document.getElementById('rbModeStockOnly').checked;
+            ttsAbbreviations = document.getElementById('inputTtsAbbreviations').value.trim();
+
+            localStorage.setItem('kspcheck_tts_speed', String(ttsSpeed));
+            localStorage.setItem('kspcheck_tts_delay', String(ttsDelayMs));
+            localStorage.setItem('kspcheck_tts_stock_only', String(ttsSpeakStockOnly));
+            localStorage.setItem('kspcheck_tts_abbrevs', ttsAbbreviations);
+
+            closeTtsModal();
+            showToast('✓ Pengaturan suara disimpan.');
+        }
+
+        function showTtsModal() {
+            document.getElementById('modalTts').style.display = 'flex';
+        }
+
+        function closeTtsModal() {
+            document.getElementById('modalTts').style.display = 'none';
+        }
+
+        function numberToIndonesian(num) {
+            if (num === 0) return "nol";
+            const ones = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan"];
+            const teens = ["sepuluh", "sebelas", "dua belas", "tiga belas", "empat belas", "lima belas", "enam belas", "tujuh belas", "delapan belas", "sembilan belas"];
+
+            let res = "";
+            let n = num;
+
+            if (n >= 1000) {
+                const thousands = Math.floor(n / 1000);
+                if (thousands === 1) res += "seribu";
+                else res += numberToIndonesian(thousands) + " ribu";
+                n %= 1000;
+                if (n > 0) res += " ";
+            }
+            if (n >= 100) {
+                const hundreds = Math.floor(n / 100);
+                if (hundreds === 1) res += "seratus";
+                else res += ones[hundreds] + " ratus";
+                n %= 100;
+                if (n > 0) res += " ";
+            }
+            if (n >= 20) {
+                const tens = Math.floor(n / 10);
+                res += ones[tens] + " puluh";
+                n %= 10;
+                if (n > 0) res += " ";
+            } else if (n >= 10) {
+                res += teens[n - 10];
+                n = 0;
+            }
+            if (n > 0 && n < 10) {
+                res += ones[n];
+            }
+            return res.trim();
+        }
+
+        function normalizeTextForSpeech(text) {
+            if (!text) return '';
+            let s = text.replace(/\(.*?\)/g, ' ').replace(/\[.*?\]/g, ' ').replace(/\{.*?\}/g, ' ');
+
+            if (ttsAbbreviations) {
+                const pairs = ttsAbbreviations.split(',');
+                pairs.forEach(p => {
+                    const kv = p.split(':');
+                    if (kv.length === 2) {
+                        const from = kv[0].trim();
+                        const to = kv[1].trim();
+                        if (from) {
+                            const reg = new RegExp(`(?<=\\d)${from}|\\b${from}\\b`, 'gi');
+                            s = s.replace(reg, ' ' + to);
+                        }
+                    }
+                });
+            }
+
+            s = s.replace(/[|_]/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+            return s;
+        }
+
+        function toggleTts() {
+            if (ttsIsSpeaking) {
+                stopTts();
+            } else {
+                startTts();
+            }
+        }
+
+        function startTts() {
+            if (!ttsSynth) {
+                alert('Browser Anda tidak mendukung Web Speech API.');
+                return;
+            }
+
+            stopTts();
+            ttsIsSpeaking = true;
+            document.getElementById('btnTtsToggle').innerText = '⏹️';
+            ttsCurrentIndex = -1;
+            speakNextItem();
+        }
+
+        function stopTts() {
+            if (ttsSynth) ttsSynth.cancel();
+            ttsIsSpeaking = false;
+            ttsCurrentIndex = -1;
+            const btn = document.getElementById('btnTtsToggle');
+            if (btn) btn.innerText = '▶️';
+            const statusTxt = document.getElementById('txtTtsStatus');
+            if (statusTxt) statusTxt.innerText = 'Asisten Suara Siap';
+
+            document.querySelectorAll('.item-card').forEach(c => c.classList.remove('speaking'));
+        }
+
+        function speakNextItem() {
+            if (!ttsIsSpeaking) return;
+
+            ttsCurrentIndex++;
+            if (ttsCurrentIndex >= displayItems.length) {
+                stopTts();
+                showToast('✓ Selesai membaca semua item nota.');
+                return;
+            }
+
+            const item = displayItems[ttsCurrentIndex];
+            const globalIndex = allItems.indexOf(item);
+
+            // Highlight card & auto scroll
+            document.querySelectorAll('.item-card').forEach(c => c.classList.remove('speaking'));
+            const cardEl = document.getElementById('cardItem_' + globalIndex);
+            if (cardEl) {
+                cardEl.classList.add('speaking');
+                cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            const qtyWords = numberToIndonesian(item.qty || 0);
+            let textToSpeak = '';
+
+            if (ttsSpeakStockOnly) {
+                textToSpeak = qtyWords;
+            } else {
+                const nameToSpeak = item.name || (item.matchedProduct ? item.matchedProduct.product_name : item.rawLine);
+                const normName = normalizeTextForSpeech(nameToSpeak);
+                textToSpeak = `${normName}, stok ${qtyWords}`;
+            }
+
+            document.getElementById('txtTtsStatus').innerText = `🔊 Membaca (${ttsCurrentIndex + 1}/${displayItems.length}): ${item.name || item.rawLine}`;
+
+            const utter = new SpeechSynthesisUtterance(textToSpeak);
+            utter.lang = 'id-ID';
+            utter.rate = ttsSpeed;
+
+            utter.onend = () => {
+                if (ttsDelayMs > 0) {
+                    setTimeout(() => speakNextItem(), ttsDelayMs);
+                } else {
+                    speakNextItem();
+                }
+            };
+
+            utter.onerror = () => {
+                stopTts();
+            };
+
+            ttsSynth.speak(utter);
+        }
+
+        // ==================== SUBMISSION TO PROJECT B ====================
+
+        function confirmAndSubmitRestock() {
+            const selectedItems = allItems.filter(it => it.isSelected && it.isMatched && it.matchedProduct);
+            if (selectedItems.length === 0) {
+                alert('Pilih setidaknya satu item yang sudah cocok dengan produk cabang.');
+                return;
+            }
+
+            const ambiguousCount = selectedItems.filter(it => it.isAmbiguous).length;
+            if (ambiguousCount > 0) {
+                if (!confirm(`⚠️ Ada ${ambiguousCount} item bertanda ambigu/ragu yang dicentang.\n\nYakin tetap ingin menambahkan semua item terpilih ke stok cabang?`)) {
+                    return;
+                }
+            }
+
+            let totalQty = 0;
+            let totalCost = 0;
+            selectedItems.forEach(it => {
+                totalQty += (it.qty || 0);
+                totalCost += (it.qty || 0) * (it.cost || 0);
+            });
+
+            const confirmMsg = `Tambah stok berikut ke Cabang ${currentStoreName}?\n\n• Kasir: ${currentEmpName} (Shift ${currentShiftNum})\n• Total Produk: ${selectedItems.length} macam\n• Total Fisik: +${totalQty} pcs\n• Total Modal Nota: Rp ${formatRupiah(totalCost)}\n\nStok fisik di cabang akan langsung bertambah seketika di sistem web.`;
+            if (!confirm(confirmMsg)) return;
+
+            executeSubmitRestock(selectedItems, totalQty, totalCost);
+        }
+
+        async function executeSubmitRestock(selectedItems, totalQty, totalCost) {
+            const btn = document.getElementById('btnSubmitRestock');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Menyimpan ke Stok Cabang...';
+            }
+
+            try {
+                showToast('⏳ Menyimpan restok ke cabang...');
+
+                const detailsArray = [];
+                let totalInitial = 0;
+                let totalFinal = 0;
+
+                selectedItems.forEach(it => {
+                    const p = it.matchedProduct;
+                    const initStock = parseInt(p.current_stock || 0, 10);
+                    const qtyRestock = parseInt(it.qty || 0, 10);
+                    const newStock = initStock + qtyRestock;
+
+                    totalInitial += initStock;
+                    totalFinal += newStock;
+
+                    detailsArray.push({
+                        product_id: p.product_id,
+                        product_name: p.product_name,
+                        provider_name: p.provider_name || 'Voucher',
+                        category_name: p.category_name || 'Voucher',
+                        initial_stock: initStock,
+                        qty_restock: qtyRestock,
+                        new_stock: newStock,
+                        delta: qtyRestock,
+                        cost_price: it.cost || p.cost_price || 0,
+                        sell_price: it.matchedProduct.sell_price || p.sell_price || 0,
+                        raw_name: it.name || it.rawLine
+                    });
+                });
+
+                const invoiceDate = document.getElementById('inputInvoiceDate').value || new Date().toISOString().split('T')[0];
+                const summaryText = `Tambah Stok Nota AI: ${selectedItems.length} produk (+${totalQty} pcs) oleh ${currentEmpName} (Shift ${currentShiftNum}). Total Modal Rp ${formatRupiah(totalCost)}`;
+
+                const payload = {
+                    store_name: currentStoreName,
+                    shift_num: currentShiftNum,
+                    session_type: 'ai_restock',
+                    is_baseline: false,
+                    is_shift_closed: false,
+                    sync_to_history: false,
+                    total_products: selectedItems.length,
+                    total_initial: totalInitial,
+                    total_final: totalFinal,
+                    total_sold: 0,
+                    total_restock: totalQty,
+                    total_diff: totalQty,
+                    total_cost: totalCost,
+                    opname_date: invoiceDate,
+                    summary_text: summaryText,
+                    details: detailsArray
+                };
+
+                const res = await KspSync.empSubmitStockOpname(currentCred, payload);
+                if (!res || !res.ok) {
+                    throw new Error((res && (res.message || res.error)) || 'Gagal menyimpan restok ke server cabang');
+                }
+
+                alert(`✅ Stok Berhasil Ditambahkan ke Cabang!\n\n• Sesi: ${res.session_id}\n• Cabang: ${currentStoreName}\n• Total Produk: ${selectedItems.length} macam (+${totalQty} pcs)\n• Total Modal: Rp ${formatRupiah(totalCost)}\n\nStok fisik di sistem web cabang (quick_stock.html) sudah langsung bertambah. Data faktur ini juga telah dicatat untuk disinkronkan oleh Admin ke Master Stok.`);
+
+                window.location.href = 'karyawan.html';
+
+            } catch (err) {
+                console.error('Error submit restock:', err);
+                alert('❌ Gagal menambahkan stok: ' + (err.message || 'Terjadi kesalahan sistem'));
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = `💾 Tambah Stok (${selectedItems.length} Item - Rp ${formatRupiah(totalCost)})`;
+                }
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
