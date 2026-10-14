@@ -3464,6 +3464,24 @@
                 ℹ️ <b>Aman & Non-Destruktif:</b> Data perangkat asli <b>tidak akan dihapus/diubah</b>. Sistem akan menduplikasi item terpilih dengan ID baku <code>master</code> sehingga otomatis muncul sebagai <b>📱 Master</b> di seluruh dashboard & portal.
             </div>
 
+            <!-- Pilihan Sumber Database Cloud (Project A vs Project B) -->
+            <div style="margin-bottom: 12px; background: rgba(79, 142, 247, 0.06); border: 1px solid rgba(79, 142, 247, 0.25); border-radius: 10px; padding: 10px 12px;">
+                <label style="display: block; font-size: 11.5px; font-weight: 750; color: var(--primary); margin-bottom: 6px;">Sumber Database Cloud:</label>
+                <div style="display: flex; gap: 14px; font-size: 11.5px; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                        <input type="radio" name="radPromoteDbSource" id="radPromoteSourceProjectA" value="project_a" checked onchange="onPromoteDbSourceChange()" style="accent-color: var(--primary);">
+                        <span>🅰️ <b>Project A</b> (Data Lama / Perangkat Sebelumnya)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                        <input type="radio" name="radPromoteDbSource" id="radPromoteSourceProjectB" value="project_b" onchange="onPromoteDbSourceChange()" style="accent-color: var(--primary);">
+                        <span>🅱️ <b>Project B</b> (Database Baru Saat Ini)</span>
+                    </label>
+                </div>
+                <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 5px; line-height: 1.35;">
+                    💡 <i>Pilih <b>Project A</b> untuk mengambil data dari perangkat sebelumnya (misal "Karya 2") yang tersimpan di cloud lama.</i>
+                </div>
+            </div>
+
             <!-- Pilih Perangkat Sumber -->
             <div style="margin-bottom: 12px;">
                 <label style="display: block; font-size: 11.5px; font-weight: 750; color: var(--text-main); margin-bottom: 5px;">Pilih Perangkat Sumber:</label>
@@ -14820,6 +14838,94 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
         // ============================================================================
         // FITUR: TETAPKAN DATA MASTER DARI PERANGKAT (PRODUK & VOUCHER MASTER)
         // ============================================================================
+        let projectAClient = null;
+        let cachedProjectAData = null;
+
+        async function getProjectAClient(promptIfMissing = true) {
+            if (projectAClient) return projectAClient;
+
+            let pin = localStorage.getItem('kspcheck_viewer_pin') || (typeof DEFAULT_PIN !== 'undefined' ? DEFAULT_PIN : '');
+            if (!pin && promptIfMissing) {
+                pin = prompt('Masukkan PIN Admin Toko untuk membuka database Project A (config.enc):');
+                if (pin) {
+                    pin = pin.trim();
+                    localStorage.setItem('kspcheck_viewer_pin', pin);
+                }
+            }
+            if (!pin) throw new Error('PIN Admin diperlukan untuk membuka database Project A (config.enc).');
+
+            const res = await fetch('./config.enc?t=' + Date.now());
+            if (!res.ok) throw new Error('File config.enc tidak ditemukan di server.');
+            const base64Encrypted = await res.text();
+
+            const combined = CryptoJS.enc.Base64.parse(base64Encrypted.trim());
+            const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4), 16);
+            const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4), combined.sigBytes - 16);
+            const cipherParams = CryptoJS.lib.CipherParams.create({ ciphertext: ciphertext });
+
+            const key = CryptoJS.SHA256(pin);
+            const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
+                iv: iv,
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7
+            });
+
+            const decryptedJson = decrypted.toString(CryptoJS.enc.Utf8);
+            if (!decryptedJson) {
+                localStorage.removeItem('kspcheck_viewer_pin');
+                throw new Error('PIN salah untuk membuka Project A (config.enc)!');
+            }
+
+            const config = JSON.parse(decryptedJson);
+            if (!config.supabase_url || !config.supabase_anon_key) {
+                throw new Error('Format kredensial Project A pada config.enc tidak valid.');
+            }
+
+            projectAClient = supabase.createClient(config.supabase_url, config.supabase_anon_key);
+            return projectAClient;
+        }
+
+        async function fetchProjectAData() {
+            if (cachedProjectAData) return cachedProjectAData;
+
+            const client = await getProjectAClient(true);
+
+            const [vRes, bRes, rRes, balRes] = await Promise.all([
+                client.from('vouchers').select('*').limit(3000),
+                client.from('barang').select('*').limit(3000),
+                client.from('fee_rules').select('*').limit(1000),
+                client.from('app_balances').select('*').limit(500)
+            ]);
+
+            const vData = Array.isArray(vRes.data) ? vRes.data : [];
+            const bData = Array.isArray(bRes.data) ? bRes.data : [];
+            const rData = Array.isArray(rRes.data) ? rRes.data : [];
+            const balData = Array.isArray(balRes.data) ? balRes.data : [];
+
+            const devicesMap = new Map();
+            vData.forEach(v => {
+                if (v.device_id && !devicesMap.has(v.device_id)) devicesMap.set(v.device_id, v.device_name || v.device_id);
+            });
+            bData.forEach(b => {
+                if (b.device_id && !devicesMap.has(b.device_id)) devicesMap.set(b.device_id, b.device_name || b.device_id);
+            });
+            rData.forEach(r => {
+                if (r.device_id && !devicesMap.has(r.device_id)) devicesMap.set(r.device_id, r.device_name || r.device_id);
+            });
+            balData.forEach(bal => {
+                if (bal.device_id && !devicesMap.has(bal.device_id)) devicesMap.set(bal.device_id, bal.device_name || bal.device_id);
+            });
+
+            cachedProjectAData = {
+                vouchers: vData,
+                barang: bData,
+                fee_rules: rData,
+                app_balances: balData,
+                devicesMap: devicesMap
+            };
+            return cachedProjectAData;
+        }
+
         function showPromoteMasterModal(targetDevId = null) {
             const modal = document.getElementById('promoteMasterModal');
             const selSource = document.getElementById('selPromoteMasterSource');
@@ -14837,42 +14943,17 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 if (lbl) lbl.textContent = 'Lihat SQL';
             }
 
-            // Ambil daftar seluruh perangkat aktif
-            const devicesMap = getDiscoveredDevicesMap();
-            selSource.innerHTML = '';
-
-            let hasValidDevice = false;
-            devicesMap.forEach((name, id) => {
-                if (id === 'master') return; // Jangan jadikan Master sebagai sumber untuk dirinya sendiri
-                const opt = document.createElement('option');
-                opt.value = id;
-                opt.textContent = `📱 ${name} [${id}]`;
-                opt.dataset.name = name;
-                selSource.appendChild(opt);
-                hasValidDevice = true;
-            });
-
-            // Jika hanya ada 'master' atau belum ada perangkat lain
-            if (!hasValidDevice) {
-                devicesMap.forEach((name, id) => {
-                    const opt = document.createElement('option');
-                    opt.value = id;
-                    opt.textContent = `📱 ${name} [${id}]`;
-                    opt.dataset.name = name;
-                    selSource.appendChild(opt);
-                });
-            }
-
-            // Tentukan default selected device
-            const currentFilteredDev = document.getElementById('navDeviceFilter')?.value || 'all';
-            if (targetDevId && Array.from(selSource.options).some(o => o.value === targetDevId)) {
-                selSource.value = targetDevId;
-            } else if (currentFilteredDev !== 'all' && currentFilteredDev !== 'master' && Array.from(selSource.options).some(o => o.value === currentFilteredDev)) {
-                selSource.value = currentFilteredDev;
-            }
-
-            onPromoteMasterSourceChange();
             modal.style.display = 'flex';
+
+            const radA = document.getElementById('radPromoteSourceProjectA');
+            const radB = document.getElementById('radPromoteSourceProjectB');
+            if (targetDevId && getDiscoveredDevicesMap().has(targetDevId)) {
+                if (radB) radB.checked = true;
+            } else if (!radA?.checked && !radB?.checked) {
+                if (radA) radA.checked = true;
+            }
+
+            onPromoteDbSourceChange(targetDevId);
         }
         window.showPromoteMasterModal = showPromoteMasterModal;
 
@@ -14882,17 +14963,128 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
         }
         window.closePromoteMasterModal = closePromoteMasterModal;
 
+        async function onPromoteDbSourceChange(targetDevId = null) {
+            const selSource = document.getElementById('selPromoteMasterSource');
+            const isProjectA = !!document.getElementById('radPromoteSourceProjectA')?.checked;
+            const bannerEl = document.getElementById('promoteMasterCountsBanner');
+            if (!selSource) return;
+
+            if (isProjectA) {
+                selSource.innerHTML = '<option value="">⏳ Membaca data dari Project A (config.enc)...</option>';
+                if (bannerEl) bannerEl.innerHTML = '<span style="color: var(--primary);">⏳ Menghubungkan ke database Project A...</span>';
+
+                try {
+                    const dataA = await fetchProjectAData();
+                    selSource.innerHTML = '';
+                    let hasValidDevice = false;
+
+                    dataA.devicesMap.forEach((name, id) => {
+                        if (id === 'master') return;
+                        const opt = document.createElement('option');
+                        opt.value = id;
+                        opt.textContent = `📱 ${name} [${id}]`;
+                        opt.dataset.name = name;
+                        selSource.appendChild(opt);
+                        hasValidDevice = true;
+                    });
+
+                    if (!hasValidDevice) {
+                        dataA.devicesMap.forEach((name, id) => {
+                            const opt = document.createElement('option');
+                            opt.value = id;
+                            opt.textContent = `📱 ${name} [${id}]`;
+                            opt.dataset.name = name;
+                            selSource.appendChild(opt);
+                        });
+                    }
+
+                    if (selSource.options.length === 0) {
+                        selSource.innerHTML = '<option value="">⚠️ Tidak ada data perangkat di Project A</option>';
+                    }
+
+                    // Tentukan pilihan target: prioritaskan targetDevId atau yang memuat 'karya'
+                    if (targetDevId && Array.from(selSource.options).some(o => o.value === targetDevId)) {
+                        selSource.value = targetDevId;
+                    } else {
+                        const optK2 = Array.from(selSource.options).find(o => 
+                            o.textContent.toLowerCase().includes('karya 2') || 
+                            o.value.toLowerCase().includes('karya 2') ||
+                            o.textContent.toLowerCase().includes('karya')
+                        );
+                        if (optK2) selSource.value = optK2.value;
+                    }
+
+                    onPromoteMasterSourceChange();
+                } catch (err) {
+                    console.error('Gagal membaca Project A:', err);
+                    alert(`Gagal mengakses database Project A:\n${err.message || err}`);
+                    const radB = document.getElementById('radPromoteSourceProjectB');
+                    if (radB) radB.checked = true;
+                    onPromoteDbSourceChange(targetDevId);
+                }
+            } else {
+                // Project B
+                const devicesMap = getDiscoveredDevicesMap();
+                selSource.innerHTML = '';
+                let hasValidDevice = false;
+
+                devicesMap.forEach((name, id) => {
+                    if (id === 'master') return;
+                    const opt = document.createElement('option');
+                    opt.value = id;
+                    opt.textContent = `📱 ${name} [${id}]`;
+                    opt.dataset.name = name;
+                    selSource.appendChild(opt);
+                    hasValidDevice = true;
+                });
+
+                if (!hasValidDevice) {
+                    devicesMap.forEach((name, id) => {
+                        const opt = document.createElement('option');
+                        opt.value = id;
+                        opt.textContent = `📱 ${name} [${id}]`;
+                        opt.dataset.name = name;
+                        selSource.appendChild(opt);
+                    });
+                }
+
+                if (selSource.options.length === 0) {
+                    selSource.innerHTML = '<option value="">⚠️ Belum ada perangkat di Project B</option>';
+                }
+
+                const currentFilteredDev = document.getElementById('navDeviceFilter')?.value || 'all';
+                if (targetDevId && Array.from(selSource.options).some(o => o.value === targetDevId)) {
+                    selSource.value = targetDevId;
+                } else if (currentFilteredDev !== 'all' && currentFilteredDev !== 'master' && Array.from(selSource.options).some(o => o.value === currentFilteredDev)) {
+                    selSource.value = currentFilteredDev;
+                }
+
+                onPromoteMasterSourceChange();
+            }
+        }
+        window.onPromoteDbSourceChange = onPromoteDbSourceChange;
+
         function onPromoteMasterSourceChange() {
             const selSource = document.getElementById('selPromoteMasterSource');
-            if (!selSource) return;
+            if (!selSource || !selSource.value) {
+                const bannerEl = document.getElementById('promoteMasterCountsBanner');
+                if (bannerEl) bannerEl.innerHTML = '<span style="color: var(--text-muted);">Pilih perangkat sumber untuk melihat rincian data.</span>';
+                return;
+            }
             const devId = selSource.value;
             const devName = selSource.selectedOptions?.[0]?.dataset?.name || selSource.selectedOptions?.[0]?.text?.replace('📱 ', '') || devId;
 
+            const isProjA = !!document.getElementById('radPromoteSourceProjectA')?.checked;
+            const sourceV = isProjA ? (cachedProjectAData?.vouchers || []) : (allVouchers || []);
+            const sourceB = isProjA ? (cachedProjectAData?.barang || []) : (allBarang || []);
+            const sourceR = isProjA ? (cachedProjectAData?.fee_rules || []) : (allFeeRules || []);
+            const sourceBal = isProjA ? (cachedProjectAData?.app_balances || []) : (allBalances || []);
+
             // Hitung data untuk perangkat ini
-            const vCount = Array.isArray(allVouchers) ? allVouchers.filter(v => v.device_id === devId).length : 0;
-            const bCount = Array.isArray(allBarang) ? allBarang.filter(b => b.device_id === devId).length : 0;
-            const rCount = Array.isArray(allFeeRules) ? allFeeRules.filter(r => r.device_id === devId).length : 0;
-            const balCount = Array.isArray(allBalances) ? allBalances.filter(b => b.device_id === devId).length : 0;
+            const vCount = sourceV.filter(v => v.device_id === devId).length;
+            const bCount = sourceB.filter(b => b.device_id === devId).length;
+            const rCount = sourceR.filter(r => r.device_id === devId).length;
+            const balCount = sourceBal.filter(b => b.device_id === devId).length;
 
             const elCountV = document.getElementById('promoteCountVouchers');
             const elCountB = document.getElementById('promoteCountBarang');
@@ -14905,9 +15097,11 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             if (elCountR) elCountR.textContent = `${rCount} aturan`;
             if (elCountBal) elCountBal.textContent = `${balCount} saldo`;
 
+            const dbLabel = isProjA ? 'Project A' : 'Project B';
+
             if (bannerEl) {
                 bannerEl.innerHTML = `
-                    <span style="color: var(--text-muted);">Data terdeteksi pada <b>${escapeHtml(devName)}</b>:</span>
+                    <span style="color: var(--text-muted);">Data [${dbLabel}] pada <b>${escapeHtml(devName)}</b>:</span>
                     <span style="color: var(--primary); font-weight: 700;">🎟️ ${vCount} Voucher</span> • 
                     <span style="color: #10B981; font-weight: 700;">🛍️ ${bCount} Produk</span> • 
                     <span style="color: #F59E0B; font-weight: 700;">⚖️ ${rCount} Fee Rules</span>
@@ -15135,7 +15329,7 @@ END $$;`;
 
         async function executePromoteMaster() {
             if (!supabaseClient) {
-                alert('Supabase belum terhubung! Silakan periksa koneksi atau masukkan PIN Admin.');
+                alert('Supabase Project B belum terhubung! Silakan periksa koneksi.');
                 return;
             }
 
@@ -15145,6 +15339,7 @@ END $$;`;
                 return;
             }
 
+            const isProjA = !!document.getElementById('radPromoteSourceProjectA')?.checked;
             const sourceDevId = selSource.value;
             const sourceDevName = selSource.selectedOptions?.[0]?.dataset?.name || selSource.selectedOptions?.[0]?.text?.replace('📱 ', '') || sourceDevId;
 
@@ -15159,12 +15354,14 @@ END $$;`;
                 return;
             }
 
-            const confirmMsg = `Jadikan data dari "${sourceDevName}" sebagai DATA MASTER acuan baku?\n\n` +
+            const dbSourceText = isProjA ? 'Project A (Database Lama)' : 'Project B (Database Baru)';
+            const confirmMsg = `Jadikan data dari "${sourceDevName}" [${dbSourceText}] sebagai DATA MASTER acuan baku?\n\n` +
                 `- Katalog Voucher: ${copyV ? 'Ya' : 'Tidak'}\n` +
                 `- Barang Retail: ${copyB ? 'Ya' : 'Tidak'}\n` +
                 `- Fee Rules Admin: ${copyR ? 'Ya' : 'Tidak'}\n` +
                 `- Saldo Aplikasi: ${copyBal ? 'Ya' : 'Tidak'}\n` +
                 `- Nilai Stok Awal: ${isStockZero ? 'Mulai dari 0 (Hanya Salin Nama & Modal)' : 'Sesuai Angka Stok Riil'}\n\n` +
+                `🎯 Target: Master akan disimpan ke Project B (katalog aktif) dan disinkronkan ke Project A (backup).\n` +
                 `ℹ️ Data asli perangkat "${sourceDevName}" tetap aman dan tidak akan dihapus.`;
 
             if (!confirm(confirmMsg)) return;
@@ -15182,18 +15379,37 @@ END $$;`;
 
             try {
                 let reportLog = [];
+                let projAClientInstance = null;
+                try {
+                    projAClientInstance = await getProjectAClient(false);
+                } catch(e) {}
+
+                // Ambil data sumber dari cache Project A atau Project B
+                let sourceDataPool = { vouchers: [], barang: [], fee_rules: [], app_balances: [] };
+                if (isProjA) {
+                    if (!cachedProjectAData) await fetchProjectAData();
+                    sourceDataPool = cachedProjectAData || sourceDataPool;
+                } else {
+                    sourceDataPool = {
+                        vouchers: allVouchers || [],
+                        barang: allBarang || [],
+                        fee_rules: allFeeRules || [],
+                        app_balances: allBalances || []
+                    };
+                }
 
                 // 1. Salin Vouchers
+                let masterVouchers = [];
                 if (copyV) {
-                    let sourceVouchers = (allVouchers || []).filter(v => v.device_id === sourceDevId);
-                    if (sourceVouchers.length === 0) {
+                    let sourceVouchers = (sourceDataPool.vouchers || []).filter(v => v.device_id === sourceDevId);
+                    if (sourceVouchers.length === 0 && !isProjA) {
                         const { data: vData } = await supabaseClient.from('vouchers').select('*').eq('device_id', sourceDevId);
                         if (Array.isArray(vData) && vData.length > 0) sourceVouchers = vData;
                     }
 
                     if (sourceVouchers.length > 0) {
                         if (statusEl) statusEl.textContent = `⏳ Menyalin ${sourceVouchers.length} voucher ke Master (${isStockZero ? 'Stok 0' : 'Stok Riil'})...`;
-                        const masterVouchers = sourceVouchers.map(v => ({
+                        masterVouchers = sourceVouchers.map(v => ({
                             id: `master_${v.product_id}`,
                             device_id: 'master',
                             device_name: 'Master',
@@ -15208,7 +15424,7 @@ END $$;`;
                             is_active: v.is_active !== undefined ? !!v.is_active : true,
                             previous_name: v.previous_name || null,
                             name_changed_at: v.name_changed_at || null,
-                            last_change: `Ditetapkan sebagai Master dari ${sourceDevName}${isStockZero ? ' (Stok 0)' : ''}`,
+                            last_change: `Ditetapkan sebagai Master dari [${isProjA ? 'Project A' : 'Project B'}] ${sourceDevName}${isStockZero ? ' (Stok 0)' : ''}`,
                             change_history: [],
                             sort_order: Number(v.sort_order || 9999),
                             provider_order: Number(v.provider_order || 0),
@@ -15217,7 +15433,7 @@ END $$;`;
                             updated_at: new Date().toISOString()
                         }));
 
-                        // Batch upsert 100 items per request
+                        // Batch upsert ke Project B
                         for (let i = 0; i < masterVouchers.length; i += 100) {
                             const chunk = masterVouchers.slice(i, i + 100);
                             const { error: insErr } = await supabaseClient.from('vouchers').upsert(chunk, { onConflict: 'device_id,product_id' });
@@ -15228,16 +15444,17 @@ END $$;`;
                 }
 
                 // 2. Salin Barang Retail
+                let masterBarang = [];
                 if (copyB) {
-                    let sourceBarang = (allBarang || []).filter(b => b.device_id === sourceDevId);
-                    if (sourceBarang.length === 0) {
+                    let sourceBarang = (sourceDataPool.barang || []).filter(b => b.device_id === sourceDevId);
+                    if (sourceBarang.length === 0 && !isProjA) {
                         const { data: bData } = await supabaseClient.from('barang').select('*').eq('device_id', sourceDevId);
                         if (Array.isArray(bData) && bData.length > 0) sourceBarang = bData;
                     }
 
                     if (sourceBarang.length > 0) {
                         if (statusEl) statusEl.textContent = `⏳ Menyalin ${sourceBarang.length} produk retail ke Master (${isStockZero ? 'Stok 0' : 'Stok Riil'})...`;
-                        const masterBarang = sourceBarang.map(b => ({
+                        masterBarang = sourceBarang.map(b => ({
                             id: `master_${b.product_id}`,
                             device_id: 'master',
                             device_name: 'Master',
@@ -15252,7 +15469,7 @@ END $$;`;
                             min_limit: Number(b.min_limit || 0),
                             image_path: b.image_path || '',
                             image_base64: b.image_base64 || '',
-                            last_change: `Ditetapkan sebagai Master dari ${sourceDevName}${isStockZero ? ' (Stok 0)' : ''}`,
+                            last_change: `Ditetapkan sebagai Master dari [${isProjA ? 'Project A' : 'Project B'}] ${sourceDevName}${isStockZero ? ' (Stok 0)' : ''}`,
                             change_history: [],
                             sort_order: Number(b.sort_order || 0),
                             brand_order: Number(b.brand_order || 0),
@@ -15271,16 +15488,17 @@ END $$;`;
                 }
 
                 // 3. Salin Fee Rules
+                let masterRules = [];
                 if (copyR) {
-                    let sourceRules = (allFeeRules || []).filter(r => r.device_id === sourceDevId);
-                    if (sourceRules.length === 0) {
+                    let sourceRules = (sourceDataPool.fee_rules || []).filter(r => r.device_id === sourceDevId);
+                    if (sourceRules.length === 0 && !isProjA) {
                         const { data: rData } = await supabaseClient.from('fee_rules').select('*').eq('device_id', sourceDevId);
                         if (Array.isArray(rData) && rData.length > 0) sourceRules = rData;
                     }
 
                     if (sourceRules.length > 0) {
                         if (statusEl) statusEl.textContent = `⏳ Menyalin ${sourceRules.length} fee rules ke Master...`;
-                        const masterRules = sourceRules.map(r => ({
+                        masterRules = sourceRules.map(r => ({
                             id: `master_${r.rule_id}`,
                             device_id: 'master',
                             device_name: 'Master',
@@ -15306,16 +15524,17 @@ END $$;`;
                     }
                 }
 
-                // 4. Salin Saldo Aplikasi (jika dicentang)
+                // 4. Salin Saldo Aplikasi
+                let masterBal = [];
                 if (copyBal) {
-                    let sourceBal = (allBalances || []).filter(b => b.device_id === sourceDevId);
-                    if (sourceBal.length === 0) {
+                    let sourceBal = (sourceDataPool.app_balances || []).filter(b => b.device_id === sourceDevId);
+                    if (sourceBal.length === 0 && !isProjA) {
                         const { data: balData } = await supabaseClient.from('app_balances').select('*').eq('device_id', sourceDevId);
                         if (Array.isArray(balData) && balData.length > 0) sourceBal = balData;
                     }
 
                     if (sourceBal.length > 0) {
-                        const masterBal = sourceBal.map(b => ({
+                        masterBal = sourceBal.map(b => ({
                             id: `master_${b.package_name}`,
                             device_id: 'master',
                             device_name: 'Master',
@@ -15336,6 +15555,36 @@ END $$;`;
                             if (insErr) throw insErr;
                         }
                         reportLog.push(`${masterBal.length} Saldo`);
+                    }
+                }
+
+                // 5. Dual-Write: Sinkronkan salinan Master ke Project A juga jika klien tersedia
+                if (projAClientInstance) {
+                    try {
+                        if (statusEl) statusEl.textContent = '⏳ Menyinkronkan Master ke Project A (backup)...';
+                        if (masterVouchers.length > 0) {
+                            for (let i = 0; i < masterVouchers.length; i += 100) {
+                                await projAClientInstance.from('vouchers').upsert(masterVouchers.slice(i, i + 100), { onConflict: 'device_id,product_id' });
+                            }
+                        }
+                        if (masterBarang.length > 0) {
+                            for (let i = 0; i < masterBarang.length; i += 100) {
+                                await projAClientInstance.from('barang').upsert(masterBarang.slice(i, i + 100), { onConflict: 'device_id,product_id' });
+                            }
+                        }
+                        if (masterRules.length > 0) {
+                            for (let i = 0; i < masterRules.length; i += 100) {
+                                await projAClientInstance.from('fee_rules').upsert(masterRules.slice(i, i + 100), { onConflict: 'device_id,rule_id' });
+                            }
+                        }
+                        if (masterBal.length > 0) {
+                            for (let i = 0; i < masterBal.length; i += 100) {
+                                await projAClientInstance.from('app_balances').upsert(masterBal.slice(i, i + 100), { onConflict: 'device_id,package_name' });
+                            }
+                        }
+                        console.log('Dual-write Master ke Project A selesai.');
+                    } catch (syncAErr) {
+                        console.warn('Peringatan: Gagal menyinkronkan Master ke Project A:', syncAErr);
                     }
                 }
 
