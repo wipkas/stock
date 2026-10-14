@@ -3515,13 +3515,43 @@
                 </div>
             </div>
 
+            <!-- Pilihan Nilai Stok Awal Master (Stok 0 vs Stok Riil) -->
+            <div style="margin-bottom: 12px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px;">
+                <label style="display: block; font-size: 11.5px; font-weight: 750; color: var(--text-main); margin-bottom: 6px;">
+                    Nilai Stok Awal Master:
+                </label>
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11.5px;">
+                    <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+                        <input type="radio" name="radPromoteStockVal" id="radPromoteStockZero" value="zero" checked onchange="onPromoteOptionsChange()" style="accent-color: var(--primary); margin-top: 2px;">
+                        <span>
+                            <b>Mulai dengan Stok 0 (Hanya Salin Nama &amp; Harga Modal)</b>
+                            <span style="display: block; font-size: 10.5px; color: var(--text-muted); margin-top: 1px;">
+                                Nama item, provider/kategori, harga modal (cost) &amp; harga jual disalin, namun stok di-reset ke <b>0</b>.
+                            </span>
+                        </span>
+                    </label>
+                    <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; border-top: 1px dashed var(--card-border); padding-top: 6px;">
+                        <input type="radio" name="radPromoteStockVal" id="radPromoteStockCurrent" value="current" onchange="onPromoteOptionsChange()" style="accent-color: var(--primary); margin-top: 2px;">
+                        <span>
+                            <b>Salin Beserta Angka Stok Saat Ini</b>
+                            <span style="display: block; font-size: 10.5px; color: var(--text-muted); margin-top: 1px;">
+                                Angka sisa stok fisik disalin apa adanya dari perangkat sumber.
+                            </span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
             <!-- Opsi Cepat (Preset) -->
-            <div style="display: flex; gap: 6px; margin-bottom: 12px;">
-                <button type="button" onclick="setPromotePreset('vouchers_only')" style="padding: 4px 10px; font-size: 11px; background: rgba(79, 142, 247, 0.1); border: 1px solid rgba(79, 142, 247, 0.3); border-radius: 6px; color: var(--primary); cursor: pointer; font-weight: 600;">
-                    🎟️ Hanya Voucher
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;">
+                <button type="button" onclick="setPromotePreset('vouchers_zero')" style="padding: 4px 10px; font-size: 11px; background: rgba(79, 142, 247, 0.1); border: 1px solid rgba(79, 142, 247, 0.3); border-radius: 6px; color: var(--primary); cursor: pointer; font-weight: 600;">
+                    🎟️ Voucher (Stok 0)
                 </button>
-                <button type="button" onclick="setPromotePreset('all')" style="padding: 4px 10px; font-size: 11px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; color: #10B981; cursor: pointer; font-weight: 600;">
-                    📦 Semua Data (Voucher + Retail + Fee)
+                <button type="button" onclick="setPromotePreset('all_zero')" style="padding: 4px 10px; font-size: 11px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; color: #10B981; cursor: pointer; font-weight: 600;">
+                    📦 Semua Katalog (Stok 0)
+                </button>
+                <button type="button" onclick="setPromotePreset('all_current')" style="padding: 4px 10px; font-size: 11px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; color: #F59E0B; cursor: pointer; font-weight: 600;">
+                    🔄 Salin Stok Riil
                 </button>
             </div>
 
@@ -14904,19 +14934,30 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const chkB = document.getElementById('chkPromoteBarang');
             const chkR = document.getElementById('chkPromoteFeeRules');
             const chkBal = document.getElementById('chkPromoteBalances');
+            const radZero = document.getElementById('radPromoteStockZero');
+            const radCurr = document.getElementById('radPromoteStockCurrent');
 
-            if (presetType === 'vouchers_only') {
+            if (presetType === 'vouchers_zero') {
                 if (chkV) chkV.checked = true;
                 if (chkB) chkB.checked = false;
                 if (chkR) chkR.checked = false;
                 if (chkBal) chkBal.checked = false;
-                showToast('🎟️ Mode Preset: Hanya Voucher');
-            } else if (presetType === 'all') {
+                if (radZero) radZero.checked = true;
+                showToast('🎟️ Mode Preset: Voucher Saja (Mulai Stok 0)');
+            } else if (presetType === 'all_zero') {
                 if (chkV) chkV.checked = true;
                 if (chkB) chkB.checked = true;
                 if (chkR) chkR.checked = true;
                 if (chkBal) chkBal.checked = false;
-                showToast('📦 Mode Preset: Semua Data (Voucher + Retail + Fee)');
+                if (radZero) radZero.checked = true;
+                showToast('📦 Mode Preset: Semua Katalog (Mulai Stok 0)');
+            } else if (presetType === 'all_current') {
+                if (chkV) chkV.checked = true;
+                if (chkB) chkB.checked = true;
+                if (chkR) chkR.checked = true;
+                if (chkBal) chkBal.checked = false;
+                if (radCurr) radCurr.checked = true;
+                showToast('🔄 Mode Preset: Semua Katalog (Salin Angka Stok Riil)');
             }
             updatePromoteMasterSqlText();
         }
@@ -14948,8 +14989,9 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const copyB = !!document.getElementById('chkPromoteBarang')?.checked;
             const copyR = !!document.getElementById('chkPromoteFeeRules')?.checked;
             const copyBal = !!document.getElementById('chkPromoteBalances')?.checked;
+            const initStockZero = !!document.getElementById('radPromoteStockZero')?.checked;
 
-            txt.value = generateMasterPromotionSql(devId, devName, copyV, copyB, copyR, copyBal);
+            txt.value = generateMasterPromotionSql(devId, devName, copyV, copyB, copyR, copyBal, initStockZero);
         }
 
         function copyPromoteMasterSql() {
@@ -14970,7 +15012,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
         }
         window.copyPromoteMasterSql = copyPromoteMasterSql;
 
-        function generateMasterPromotionSql(devId, devName, copyV, copyB, copyR, copyBal) {
+        function generateMasterPromotionSql(devId, devName, copyV, copyB, copyR, copyBal, initStockZero = true) {
             const cleanDev = String(devName || devId || '').replace(/'/g, "''");
             const cleanId = String(devId || '').replace(/'/g, "''");
 
@@ -14988,6 +15030,7 @@ DECLARE
     v_copy_barang         BOOLEAN := ${copyB ? 'true' : 'false'};
     v_copy_fee_rules      BOOLEAN := ${copyR ? 'true' : 'false'};
     v_copy_balances       BOOLEAN := ${copyBal ? 'true' : 'false'};
+    v_init_stock_zero     BOOLEAN := ${initStockZero ? 'true' : 'false'}; -- true: reset stok awal ke 0 (katalog & modal saja)
 
     v_source_id           TEXT    := NULL;
     v_source_real_name    TEXT    := NULL;
@@ -15021,9 +15064,11 @@ BEGIN
         )
         SELECT
             v_target_device_id || '_' || product_id, v_target_device_id, v_target_device_name,
-            product_id, product_name, provider_name, category_name, stock, cost_price, sell_price,
-            min_limit, is_active, previous_name, name_changed_at,
-            'Ditetapkan sebagai Master dari ' || v_source_real_name, '[]'::jsonb,
+            product_id, product_name, provider_name, category_name,
+            CASE WHEN v_init_stock_zero THEN 0 ELSE stock END,
+            cost_price, sell_price, min_limit, is_active, previous_name, name_changed_at,
+            'Ditetapkan sebagai Master dari ' || v_source_real_name || CASE WHEN v_init_stock_zero THEN ' (Stok 0)' ELSE '' END,
+            '[]'::jsonb,
             sort_order, provider_order, category_order, product_order, NOW(), NOW()
         FROM public.vouchers
         WHERE device_id = v_source_id
@@ -15035,7 +15080,7 @@ BEGIN
             sort_order = EXCLUDED.sort_order, provider_order = EXCLUDED.provider_order,
             category_order = EXCLUDED.category_order, product_order = EXCLUDED.product_order, updated_at = NOW();
         GET DIAGNOSTICS v_count = ROW_COUNT;
-        RAISE NOTICE 'Vouchers berhasil disalin ke Master: %', v_count;
+        RAISE NOTICE 'Vouchers berhasil disalin ke Master (Stok 0: %): %', v_init_stock_zero, v_count;
     END IF;
 
     -- 3. Salin Barang Retail
@@ -15048,9 +15093,11 @@ BEGIN
         )
         SELECT
             v_target_device_id || '_' || product_id, v_target_device_id, v_target_device_name,
-            product_id, product_code, product_name, brand_name, category_name, stock, cost_price,
-            sell_price, min_limit, image_path, image_base64,
-            'Ditetapkan sebagai Master dari ' || v_source_real_name, '[]'::jsonb,
+            product_id, product_code, product_name, brand_name, category_name,
+            CASE WHEN v_init_stock_zero THEN 0 ELSE stock END,
+            cost_price, sell_price, min_limit, image_path, image_base64,
+            'Ditetapkan sebagai Master dari ' || v_source_real_name || CASE WHEN v_init_stock_zero THEN ' (Stok 0)' ELSE '' END,
+            '[]'::jsonb,
             sort_order, brand_order, category_order, product_order, NOW(), NOW()
         FROM public.barang
         WHERE device_id = v_source_id
@@ -15064,7 +15111,7 @@ BEGIN
             brand_order = EXCLUDED.brand_order, category_order = EXCLUDED.category_order,
             product_order = EXCLUDED.product_order, updated_at = NOW();
         GET DIAGNOSTICS v_count = ROW_COUNT;
-        RAISE NOTICE 'Barang Retail berhasil disalin ke Master: %', v_count;
+        RAISE NOTICE 'Barang Retail berhasil disalin ke Master (Stok 0: %): %', v_init_stock_zero, v_count;
     END IF;
 
     -- 4. Salin Fee Rules
@@ -15110,6 +15157,7 @@ END $$;`;
             const copyB = !!document.getElementById('chkPromoteBarang')?.checked;
             const copyR = !!document.getElementById('chkPromoteFeeRules')?.checked;
             const copyBal = !!document.getElementById('chkPromoteBalances')?.checked;
+            const isStockZero = !!document.getElementById('radPromoteStockZero')?.checked;
 
             if (!copyV && !copyB && !copyR && !copyBal) {
                 alert('Pilih minimal satu jenis data (Voucher, Barang, atau Fee Rules) untuk disalin ke Master.');
@@ -15120,7 +15168,8 @@ END $$;`;
                 `- Katalog Voucher: ${copyV ? 'Ya' : 'Tidak'}\n` +
                 `- Barang Retail: ${copyB ? 'Ya' : 'Tidak'}\n` +
                 `- Fee Rules Admin: ${copyR ? 'Ya' : 'Tidak'}\n` +
-                `- Saldo Aplikasi: ${copyBal ? 'Ya' : 'Tidak'}\n\n` +
+                `- Saldo Aplikasi: ${copyBal ? 'Ya' : 'Tidak'}\n` +
+                `- Nilai Stok Awal: ${isStockZero ? 'Mulai dari 0 (Hanya Salin Nama & Modal)' : 'Sesuai Angka Stok Riil'}\n\n` +
                 `ℹ️ Data asli perangkat "${sourceDevName}" tetap aman dan tidak akan dihapus.`;
 
             if (!confirm(confirmMsg)) return;
@@ -15148,7 +15197,7 @@ END $$;`;
                     }
 
                     if (sourceVouchers.length > 0) {
-                        if (statusEl) statusEl.textContent = `⏳ Menyalin ${sourceVouchers.length} voucher ke Master...`;
+                        if (statusEl) statusEl.textContent = `⏳ Menyalin ${sourceVouchers.length} voucher ke Master (${isStockZero ? 'Stok 0' : 'Stok Riil'})...`;
                         const masterVouchers = sourceVouchers.map(v => ({
                             id: `master_${v.product_id}`,
                             device_id: 'master',
@@ -15157,14 +15206,14 @@ END $$;`;
                             product_name: v.product_name,
                             provider_name: v.provider_name || 'VOUCHER',
                             category_name: v.category_name || v.category || '',
-                            stock: Number(v.stock || 0),
+                            stock: isStockZero ? 0 : Number(v.stock || 0),
                             cost_price: Number(v.cost_price || 0),
                             sell_price: Number(v.sell_price || v.unit_price || v.price || 0),
                             min_limit: Number(v.min_limit || 0),
                             is_active: v.is_active !== undefined ? !!v.is_active : true,
                             previous_name: v.previous_name || null,
                             name_changed_at: v.name_changed_at || null,
-                            last_change: `Ditetapkan sebagai Master dari ${sourceDevName}`,
+                            last_change: `Ditetapkan sebagai Master dari ${sourceDevName}${isStockZero ? ' (Stok 0)' : ''}`,
                             change_history: [],
                             sort_order: Number(v.sort_order || 9999),
                             provider_order: Number(v.provider_order || 0),
@@ -15179,7 +15228,7 @@ END $$;`;
                             const { error: insErr } = await supabaseClient.from('vouchers').upsert(chunk, { onConflict: 'device_id,product_id' });
                             if (insErr) throw insErr;
                         }
-                        reportLog.push(`${masterVouchers.length} Voucher`);
+                        reportLog.push(`${masterVouchers.length} Voucher (${isStockZero ? 'Stok 0' : 'Stok Riil'})`);
                     }
                 }
 
@@ -15192,7 +15241,7 @@ END $$;`;
                     }
 
                     if (sourceBarang.length > 0) {
-                        if (statusEl) statusEl.textContent = `⏳ Menyalin ${sourceBarang.length} produk retail ke Master...`;
+                        if (statusEl) statusEl.textContent = `⏳ Menyalin ${sourceBarang.length} produk retail ke Master (${isStockZero ? 'Stok 0' : 'Stok Riil'})...`;
                         const masterBarang = sourceBarang.map(b => ({
                             id: `master_${b.product_id}`,
                             device_id: 'master',
@@ -15202,13 +15251,13 @@ END $$;`;
                             product_name: b.product_name,
                             brand_name: b.brand_name || '',
                             category_name: b.category_name || '',
-                            stock: Number(b.stock || 0),
+                            stock: isStockZero ? 0 : Number(b.stock || 0),
                             cost_price: Number(b.cost_price || 0),
                             sell_price: Number(b.sell_price || 0),
                             min_limit: Number(b.min_limit || 0),
                             image_path: b.image_path || '',
                             image_base64: b.image_base64 || '',
-                            last_change: `Ditetapkan sebagai Master dari ${sourceDevName}`,
+                            last_change: `Ditetapkan sebagai Master dari ${sourceDevName}${isStockZero ? ' (Stok 0)' : ''}`,
                             change_history: [],
                             sort_order: Number(b.sort_order || 0),
                             brand_order: Number(b.brand_order || 0),
@@ -15222,7 +15271,7 @@ END $$;`;
                             const { error: insErr } = await supabaseClient.from('barang').upsert(chunk, { onConflict: 'device_id,product_id' });
                             if (insErr) throw insErr;
                         }
-                        reportLog.push(`${masterBarang.length} Produk Retail`);
+                        reportLog.push(`${masterBarang.length} Produk Retail (${isStockZero ? 'Stok 0' : 'Stok Riil'})`);
                     }
                 }
 
