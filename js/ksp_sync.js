@@ -131,29 +131,49 @@
     function unpackLeaveInfoFromRemote(stores) {
         if (!Array.isArray(stores)) return stores;
         stores.forEach(function (s) {
-            if (Array.isArray(s.employees)) {
-                s.employees.forEach(function (e) {
-                    if (e.notes && typeof e.notes === 'string') {
-                        var m = e.notes.match(/\[LEAVE_INFO:(.*?)\]/);
-                        if (m) {
-                            try {
-                                var rawStr = m[1];
-                                var jsonStr = rawStr.indexOf('%') !== -1 ? decodeURIComponent(rawStr) : rawStr;
-                                var meta = JSON.parse(jsonStr);
-                                if (e.status === 'leave' || e.status === 'inactive') {
-                                    e.status = 'leave';
-                                    e.leave_reason = meta.reason || 'Izin Libur';
-                                    e.leave_notes = meta.notes || '';
-                                    e.leave_date = meta.date || null;
-                                    e.replaced_by = meta.replaced_by || null;
-                                    e.replaced_by_name = meta.replaced_by_name || null;
-                                }
-                            } catch(ex) {}
-                            e.notes = e.notes.replace(/\[LEAVE_INFO:.*?\]/g, '').trim();
-                        }
-                    }
-                });
+            if (!s || typeof s !== 'object') return;
+
+            // Pastikan s.shifts berupa Array yang valid
+            if (typeof s.shifts === 'string') {
+                try { s.shifts = JSON.parse(s.shifts); } catch (e) { s.shifts = null; }
             }
+            if (!Array.isArray(s.shifts) || s.shifts.length === 0) {
+                var sc = parseInt(s.shift_count, 10) || 2;
+                s.shifts = (sc === 1)
+                    ? [{ shift_num: 1, name: 'Shift Penuh', start: '07:00', end: '22:00' }]
+                    : [
+                        { shift_num: 1, name: 'Shift Pagi', start: '07:00', end: '15:00' },
+                        { shift_num: 2, name: 'Shift Malam', start: '15:00', end: '23:00' }
+                    ];
+            }
+
+            // Pastikan s.employees berupa Array
+            if (typeof s.employees === 'string') {
+                try { s.employees = JSON.parse(s.employees); } catch (e) { s.employees = []; }
+            }
+            if (!Array.isArray(s.employees)) s.employees = [];
+
+            s.employees.forEach(function (e) {
+                if (e.notes && typeof e.notes === 'string') {
+                    var m = e.notes.match(/\[LEAVE_INFO:(.*?)\]/);
+                    if (m) {
+                        try {
+                            var rawStr = m[1];
+                            var jsonStr = rawStr.indexOf('%') !== -1 ? decodeURIComponent(rawStr) : rawStr;
+                            var meta = JSON.parse(jsonStr);
+                            if (e.status === 'leave' || e.status === 'inactive') {
+                                e.status = 'leave';
+                                e.leave_reason = meta.reason || 'Izin Libur';
+                                e.leave_notes = meta.notes || '';
+                                e.leave_date = meta.date || null;
+                                e.replaced_by = meta.replaced_by || null;
+                                e.replaced_by_name = meta.replaced_by_name || null;
+                            }
+                        } catch(ex) {}
+                        e.notes = e.notes.replace(/\[LEAVE_INFO:.*?\]/g, '').trim();
+                    }
+                }
+            });
         });
         return stores;
     }

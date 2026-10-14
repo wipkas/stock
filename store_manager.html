@@ -4833,7 +4833,7 @@
             if (window.KspSync) {
                 KspSync.init({
                     getStores: () => storesData,
-                    setStores: (v) => { storesData = v; },
+                    setStores: (v) => { storesData = (Array.isArray(v) ? v : []).map(normalizeStore).filter(Boolean); },
                     getUnassigned: () => getUnassignedEmployees(),
                     setUnassigned: (v) => {
                         if (Array.isArray(v)) {
@@ -4946,19 +4946,62 @@
             document.getElementById('mainApp').style.display = 'none';
         }
 
+        // Normalisasi store agar properti shifts, employees, dll selalu aman dan berupa Array
+        function normalizeStore(store) {
+            if (!store || typeof store !== 'object') return null;
+
+            // Normalisasi shifts: dukung JSON string, Array, atau missing/null
+            let shifts = store.shifts;
+            if (typeof shifts === 'string') {
+                try { shifts = JSON.parse(shifts); } catch(e) { shifts = null; }
+            }
+            if (!Array.isArray(shifts) || shifts.length === 0) {
+                const sc = parseInt(store.shift_count, 10) || 2;
+                shifts = (sc === 1)
+                    ? [{ shift_num: 1, name: 'Shift Penuh', start: '07:00', end: '22:00' }]
+                    : [
+                        { shift_num: 1, name: 'Shift Pagi', start: '07:00', end: '15:00' },
+                        { shift_num: 2, name: 'Shift Malam', start: '15:00', end: '23:00' }
+                    ];
+            } else {
+                shifts = shifts.map((s, idx) => ({
+                    shift_num: Number(s.shift_num || (idx + 1)),
+                    name: s.name || `Shift ${idx + 1}`,
+                    start: s.start || (idx === 0 ? '07:00' : '15:00'),
+                    end: s.end || (idx === 0 ? '15:00' : '23:00')
+                }));
+            }
+            store.shifts = shifts;
+
+            // Normalisasi employees: dukung JSON string atau missing/null
+            if (typeof store.employees === 'string') {
+                try { store.employees = JSON.parse(store.employees); } catch(e) { store.employees = []; }
+            }
+            if (!Array.isArray(store.employees)) {
+                store.employees = [];
+            }
+
+            store.shift_count = parseInt(store.shift_count, 10) || store.shifts.length || 2;
+            store.buffer_minutes = parseInt(store.buffer_minutes, 10) || 30;
+            store.monthly_target = Number(store.monthly_target || 0);
+            store.monthly_tx = Number(store.monthly_tx || 0);
+
+            return store;
+        }
+
         // 3. LocalStorage & Stores Data Management
         function loadStoresData() {
             const raw = localStorage.getItem('kspcheck_stores_data');
             if (raw) {
                 try {
                     const parsed = JSON.parse(raw);
-                    storesData = Array.isArray(parsed) ? parsed : [];
+                    storesData = (Array.isArray(parsed) ? parsed : []).map(normalizeStore).filter(Boolean);
                 } catch(e) {
                     storesData = [];
                 }
             } else {
                 if (!window.KspSync || !window.KspSync.enabled()) {
-                    storesData = DEFAULT_STORES;
+                    storesData = DEFAULT_STORES.map(normalizeStore).filter(Boolean);
                     saveStoresData();
                 } else {
                     storesData = [];
@@ -4986,6 +5029,15 @@
 
         // Calculate current shift and if in transition buffer window
         function getShiftStatus(store) {
+            if (!store) {
+                return { currentShift: { shift_num: 1, name: 'Shift Pagi', start: '07:00', end: '15:00' }, inTransition: false, transitionInfo: '' };
+            }
+
+            normalizeStore(store);
+            const shifts = Array.isArray(store.shifts) && store.shifts.length > 0
+                ? store.shifts
+                : [{ shift_num: 1, name: 'Shift Pagi', start: '07:00', end: '15:00' }];
+
             const now = new Date();
             const nowMin = now.getHours() * 60 + now.getMinutes();
             const buffer = parseInt(store.buffer_minutes || 30);
@@ -4994,11 +5046,12 @@
             let inTransition = false;
             let transitionInfo = '';
 
-            for (const s of store.shifts) {
-                const [startH, startM] = s.start.split(':').map(Number);
-                const [endH, endM] = s.end.split(':').map(Number);
-                let startMin = startH * 60 + startM;
-                let endMin = endH * 60 + endM;
+            for (const s of shifts) {
+                if (!s || !s.start || !s.end) continue;
+                const startParts = String(s.start).split(':');
+                const endParts = String(s.end).split(':');
+                let startMin = (parseInt(startParts[0], 10) || 0) * 60 + (parseInt(startParts[1], 10) || 0);
+                let endMin = (parseInt(endParts[0], 10) || 0) * 60 + (parseInt(endParts[1], 10) || 0);
 
                 if (endMin < startMin) {
                     // Overnight shift
@@ -5011,12 +5064,12 @@
                 const diffToEnd = Math.abs(nowMin - endMin);
                 if (diffToEnd <= buffer) {
                     inTransition = true;
-                    transitionInfo = `Transisi Shift ${s.shift_num} (Toleransi ${buffer}m)`;
+                    transitionInfo = `Transisi Shift ${s.shift_num || 1} (Toleransi ${buffer}m)`;
                 }
             }
 
             return {
-                currentShift: currentShift || store.shifts[0],
+                currentShift: currentShift || shifts[0] || { shift_num: 1, name: 'Shift Pagi', start: '07:00', end: '15:00' },
                 inTransition: inTransition,
                 transitionInfo: transitionInfo
             };
