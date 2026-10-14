@@ -3604,21 +3604,17 @@
         </div>
     </div>
 
-    <!-- MODAL: INISIALISASI KATALOG & STOK KE PORTAL KARYAWAN (PROJECT B) -->
+    <!-- MODAL: INISIALISASI DATA KE CABANG (MULTI-ENTITAS: VOUCHER, BARANG, FEE RULES, SALDO) -->
     <div id="syncCatalogModal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closeSyncCatalogModal()">
-        <div class="device-manage-card" style="max-width: 540px;">
+        <div class="device-manage-card" style="max-width: 580px; max-height: 90vh; overflow-y: auto;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                 <div>
                     <h2 style="font-size: 16px; font-weight: 850; color: var(--text-main); margin-bottom: 3px; display: flex; align-items: center; gap: 8px;">
-                        <span>📤</span> Inisialisasi Stok ke Portal Kasir
+                        <span>🚀</span> Inisialisasi Data ke Cabang
                     </h2>
-                    <p style="font-size: 11.5px; color: var(--text-muted); margin: 0;">Salin katalog &amp; stok riil Project A ke Project B (Portal Karyawan)</p>
+                    <p style="font-size: 11.5px; color: var(--text-muted); margin: 0;">Salin katalog voucher, produk retail, fee rules, dan saldo kasir ke cabang</p>
                 </div>
                 <button type="button" onclick="closeSyncCatalogModal()" title="Tutup" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1;">&times;</button>
-            </div>
-
-            <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; margin-bottom: 12px; font-size: 12px; line-height: 1.45;">
-                ℹ️ <b>Mekanisme:</b> Stok riil saat ini dari Project A akan disalin ke cabang toko di Project B sebagai baseline awal. Kasir di cabang akan langsung melihat stok ini saat opname.
             </div>
 
             <!-- Target Selection -->
@@ -3629,40 +3625,113 @@
                 </select>
             </div>
 
-            <!-- Template Source (Sumber Katalog Acuan) -->
+            <!-- Template Source (Sumber Blueprint Acuan) -->
             <div id="boxSyncTemplateSource" style="margin-bottom: 12px; background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.35); border-radius: 10px; padding: 10px 12px;">
-                <label style="display: block; font-size: 11.5px; font-weight: 750; color: var(--primary); margin-bottom: 4px;">Pilih Sumber Template Katalog:</label>
-                <select id="selSyncCatalogTemplate" style="width: 100%; padding: 8px 10px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 12px; font-weight: 600;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label style="font-size: 11.5px; font-weight: 750; color: var(--primary);">Pilih Sumber Template Acuan:</label>
+                    <button type="button" onclick="pullProjectAForSyncTemplate()" style="background: rgba(79, 142, 247, 0.15); border: 1px solid rgba(79, 142, 247, 0.3); color: var(--primary); font-size: 10.5px; font-weight: 700; border-radius: 6px; padding: 2px 8px; cursor: pointer;">
+                        📥 Ambil dari Project A
+                    </button>
+                </div>
+                <select id="selSyncCatalogTemplate" onchange="updateSyncModalTemplateCounts()" style="width: 100%; padding: 8px 10px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 12px; font-weight: 600;">
                 </select>
                 <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 5px; line-height: 1.4;">
-                    ⭐ <b>Rekomendasi:</b> Gunakan data <b>Master</b> agar seluruh cabang memiliki nama produk, kategori, dan harga standar yang seragam.
+                    ⭐ <b>Tips:</b> Anda bisa memilih Master atau cabang acuan (misal: Karya 2) yang datanya sudah lengkap.
                 </div>
             </div>
 
-            <!-- Pilihan Nilai Stok Awal -->
-            <div style="margin-bottom: 12px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px;">
-                <label style="display: block; font-size: 11.5px; font-weight: 750; color: var(--text-main); margin-bottom: 6px;">Nilai Stok Awal Cabang:</label>
-                <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11.5px;">
-                    <label style="display: flex; align-items: center; gap: 7px; cursor: pointer;">
-                        <input type="radio" name="radInitStockVal" id="radInitStockMaster" value="master" checked style="accent-color: var(--primary);">
-                        <span><b>Gunakan Nilai Stok Master</b> (Sebagai estimasi/patokan awal)</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 7px; cursor: pointer;">
-                        <input type="radio" name="radInitStockVal" id="radInitStockZero" value="zero" style="accent-color: var(--primary);">
-                        <span><b>Set Stok Awal 0</b> (Wajibkan kasir cabang hitung fisik dari nol)</span>
-                    </label>
-                </div>
-                <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">
-                    💡 <i>Kasir di cabang akan melakukan penyesuaian fisik awal. Selisih fisik awal <b>TIDAK AKAN dicatat sebagai penjualan</b> di HistoriKu (tanpa omset fiktif).</i>
+            <!-- Checklist Pilihan Data yang Diinisialisasikan -->
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 11.5px; font-weight: 800; color: var(--text-main); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em;">
+                    Pilih Jenis Data yang Akan Disalin:
+                </label>
+
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- 1. Voucher Fisik -->
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px;">
+                        <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="chkInitVouchers" checked onchange="toggleInitSection('secInitVouchers', this.checked)" style="width: 16px; height: 16px; accent-color: var(--primary);">
+                                <span style="font-size: 12.5px; font-weight: 750; color: var(--text-main);">📦 Voucher Fisik (Katalog &amp; Stok)</span>
+                            </div>
+                            <span id="badgeCountInitVouchers" style="font-size: 10.5px; background: rgba(79, 142, 247, 0.15); color: var(--primary); padding: 2px 7px; border-radius: 10px; font-weight: 700;">0 item</span>
+                        </label>
+                        <div id="secInitVouchers" style="margin-top: 8px; padding-left: 24px; display: flex; flex-direction: column; gap: 4px; font-size: 11px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="radio" name="radInitStockVal" id="radInitStockMaster" value="master" checked style="accent-color: var(--primary);">
+                                <span>Salin stok acuan template</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="radio" name="radInitStockVal" id="radInitStockZero" value="zero" style="accent-color: var(--primary);">
+                                <span>Mulai dengan stok 0 (Wajib hitung fisik kasir)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 2. Barang Retail & Aksesoris -->
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px;">
+                        <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="chkInitBarang" checked onchange="toggleInitSection('secInitBarang', this.checked)" style="width: 16px; height: 16px; accent-color: var(--primary);">
+                                <span style="font-size: 12.5px; font-weight: 750; color: var(--text-main);">🛍️ Produk Retail &amp; Aksesoris</span>
+                            </div>
+                            <span id="badgeCountInitBarang" style="font-size: 10.5px; background: rgba(16, 185, 129, 0.15); color: #10B981; padding: 2px 7px; border-radius: 10px; font-weight: 700;">0 item</span>
+                        </label>
+                        <div id="secInitBarang" style="margin-top: 8px; padding-left: 24px; display: flex; flex-direction: column; gap: 4px; font-size: 11px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="radio" name="radInitBarangVal" id="radInitBarangMaster" value="master" checked style="accent-color: var(--primary);">
+                                <span>Salin stok barang template</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="radio" name="radInitBarangVal" id="radInitBarangZero" value="zero" style="accent-color: var(--primary);">
+                                <span>Mulai stok barang 0</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 3. Aturan Biaya Admin (Fee Rules) -->
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px;">
+                        <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="chkInitFeeRules" checked style="width: 16px; height: 16px; accent-color: var(--primary);">
+                                <span style="font-size: 12.5px; font-weight: 750; color: var(--text-main);">⚡ Aturan Biaya Admin (Fee Rules)</span>
+                            </div>
+                            <span id="badgeCountInitFeeRules" style="font-size: 10.5px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 2px 7px; border-radius: 10px; font-weight: 700;">0 aturan</span>
+                        </label>
+                        <div style="font-size: 10.5px; color: var(--text-muted); margin-left: 24px; margin-top: 4px;">
+                            Aturan fee transfer bank, e-wallet, pulsa, dan token PLN seragam per cabang.
+                        </div>
+                    </div>
+
+                    <!-- 4. Akun Saldo Kasir & E-Wallet -->
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px;">
+                        <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="chkInitBalances" checked onchange="toggleInitSection('secInitBalances', this.checked)" style="width: 16px; height: 16px; accent-color: var(--primary);">
+                                <span style="font-size: 12.5px; font-weight: 750; color: var(--text-main);">💳 Akun Saldo Kasir &amp; E-Wallet</span>
+                            </div>
+                            <span id="badgeCountInitBalances" style="font-size: 10.5px; background: rgba(139, 92, 246, 0.15); color: #8b5cf6; padding: 2px 7px; border-radius: 10px; font-weight: 700;">0 akun</span>
+                        </label>
+                        <div id="secInitBalances" style="margin-top: 8px; padding-left: 24px; display: flex; flex-direction: column; gap: 4px; font-size: 11px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="radio" name="radInitBalVal" id="radInitBalZero" value="zero" checked style="accent-color: var(--primary);">
+                                <span>Set Saldo Awal Rp 0 (Kasir set fisik awal laci &amp; aplikasi)</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="radio" name="radInitBalVal" id="radInitBalMaster" value="master" style="accent-color: var(--primary);">
+                                <span>Salin saldo acuan template</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div id="syncCatalogStatus" style="display: none; padding: 8px 12px; border-radius: 8px; font-size: 11.5px; margin-bottom: 10px;"></div>
+            <div id="syncCatalogStatus" style="display: none; padding: 10px 14px; border-radius: 10px; font-size: 12px; margin-bottom: 12px; line-height: 1.5; white-space: pre-wrap;"></div>
 
             <!-- Modal Footer -->
             <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 10px;">
-                <button type="button" onclick="closeSyncCatalogModal()" style="padding: 8px 16px; background: transparent; border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer;">Batal</button>
-                <button type="button" id="btnExecuteSyncCatalog" onclick="executeSyncCatalogToEmployees()" style="padding: 8px 18px; background: var(--primary); border: none; border-radius: 8px; font-size: 12px; font-weight: 800; color: #FFFFFF; cursor: pointer; box-shadow: 0 2px 10px rgba(79, 142, 247, 0.35);">
+                <button type="button" onclick="closeSyncCatalogModal()" style="padding: 9px 16px; background: transparent; border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer;">Batal</button>
+                <button type="button" id="btnExecuteSyncCatalog" onclick="executeSyncCatalogToEmployees()" style="padding: 9px 20px; background: var(--primary); border: none; border-radius: 8px; font-size: 12px; font-weight: 800; color: #FFFFFF; cursor: pointer; box-shadow: 0 2px 10px rgba(79, 142, 247, 0.35);">
                     🚀 Inisialisasi Sekarang
                 </button>
             </div>
@@ -14853,6 +14922,254 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
         }
         window.openInitForStore = openInitForStore;
 
+        function toggleInitSection(id, show) {
+            const el = document.getElementById(id);
+            if (el) el.style.display = show ? 'flex' : 'none';
+        }
+        window.toggleInitSection = toggleInitSection;
+
+        function dedupeBy(arr, keyFn) {
+            const seen = new Set();
+            const result = [];
+            (arr || []).forEach(item => {
+                const k = keyFn(item);
+                if (k !== null && k !== undefined && !seen.has(k)) {
+                    seen.add(k);
+                    result.push(item);
+                }
+            });
+            return result;
+        }
+
+        function getTemplateData(templateVal) {
+            let vouchers = [];
+            let barang = [];
+            let fee_rules = [];
+            let app_balances = [];
+
+            if (templateVal && templateVal.startsWith('project_a_')) {
+                const devId = templateVal.replace('project_a_', '');
+                const dataA = cachedProjectAData || {};
+                vouchers = (dataA.vouchers || []).filter(v => v.device_id === devId);
+                barang = (dataA.barang || []).filter(b => b.device_id === devId);
+                fee_rules = (dataA.fee_rules || []).filter(r => r.device_id === devId || r.device_id === 'global');
+                app_balances = (dataA.app_balances || []).filter(bal => bal.device_id === devId);
+
+                // Fallback jika fee_rules kosong di perangkat ini di Project A
+                if (fee_rules.length === 0 && Array.isArray(dataA.fee_rules)) {
+                    fee_rules = dataA.fee_rules;
+                }
+                // Fallback jika balances kosong di perangkat ini di Project A
+                if (app_balances.length === 0 && Array.isArray(dataA.app_balances) && dataA.app_balances.length > 0) {
+                    const devBalCounts = new Map();
+                    dataA.app_balances.forEach(b => devBalCounts.set(b.device_id, (devBalCounts.get(b.device_id) || 0) + 1));
+                    let bestBalDev = null, maxB = 0;
+                    devBalCounts.forEach((cnt, d) => { if (cnt > maxB) { maxB = cnt; bestBalDev = d; } });
+                    if (bestBalDev) app_balances = dataA.app_balances.filter(b => b.device_id === bestBalDev);
+                }
+            } else if (templateVal === 'master') {
+                vouchers = (allVouchers || []).filter(v => v.device_id === 'master');
+                barang = (allBarang || []).filter(b => b.device_id === 'master');
+                fee_rules = (allFeeRules || []).filter(r => r.device_id === 'master' || r.device_id === 'global');
+                app_balances = (allBalances || []).filter(bal => bal.device_id === 'master');
+
+                // Fallback cerdas jika master di Project B belum lengkap
+                if (vouchers.length === 0) {
+                    const devCounts = new Map();
+                    (allVouchers || []).forEach(v => {
+                        if (v.device_id !== 'master') devCounts.set(v.device_id, (devCounts.get(v.device_id) || 0) + 1);
+                    });
+                    let bestDev = null, maxC = 0;
+                    devCounts.forEach((c, d) => { if (c > maxC) { maxC = c; bestDev = d; } });
+                    if (bestDev) vouchers = allVouchers.filter(v => v.device_id === bestDev);
+                    else if (cachedProjectAData?.vouchers?.length > 0) {
+                        const aCounts = new Map();
+                        cachedProjectAData.vouchers.forEach(v => aCounts.set(v.device_id, (aCounts.get(v.device_id) || 0) + 1));
+                        let bestADev = null, maxA = 0;
+                        aCounts.forEach((c, d) => { if (c > maxA) { maxA = c; bestADev = d; } });
+                        if (bestADev) vouchers = cachedProjectAData.vouchers.filter(v => v.device_id === bestADev);
+                    }
+                }
+
+                if (barang.length === 0) {
+                    const devCounts = new Map();
+                    (allBarang || []).forEach(b => {
+                        if (b.device_id !== 'master') devCounts.set(b.device_id, (devCounts.get(b.device_id) || 0) + 1);
+                    });
+                    let bestDev = null, maxC = 0;
+                    devCounts.forEach((c, d) => { if (c > maxC) { maxC = c; bestDev = d; } });
+                    if (bestDev) barang = allBarang.filter(b => b.device_id === bestDev);
+                    else if (cachedProjectAData?.barang?.length > 0) {
+                        const aCounts = new Map();
+                        cachedProjectAData.barang.forEach(b => aCounts.set(b.device_id, (aCounts.get(b.device_id) || 0) + 1));
+                        let bestADev = null, maxA = 0;
+                        aCounts.forEach((c, d) => { if (c > maxA) { maxA = c; bestADev = d; } });
+                        if (bestADev) barang = cachedProjectAData.barang.filter(b => b.device_id === bestADev);
+                    }
+                }
+
+                if (fee_rules.length === 0) {
+                    fee_rules = allFeeRules || [];
+                    if (fee_rules.length === 0 && cachedProjectAData?.fee_rules) {
+                        fee_rules = cachedProjectAData.fee_rules;
+                    }
+                }
+
+                if (app_balances.length === 0) {
+                    const devCounts = new Map();
+                    (allBalances || []).forEach(b => {
+                        if (b.device_id !== 'master') devCounts.set(b.device_id, (devCounts.get(b.device_id) || 0) + 1);
+                    });
+                    let bestDev = null, maxC = 0;
+                    devCounts.forEach((c, d) => { if (c > maxC) { maxC = c; bestDev = d; } });
+                    if (bestDev) app_balances = allBalances.filter(b => b.device_id === bestDev);
+                    else if (cachedProjectAData?.app_balances?.length > 0) {
+                        const aCounts = new Map();
+                        cachedProjectAData.app_balances.forEach(b => aCounts.set(b.device_id, (aCounts.get(b.device_id) || 0) + 1));
+                        let bestADev = null, maxA = 0;
+                        aCounts.forEach((c, d) => { if (c > maxA) { maxA = c; bestADev = d; } });
+                        if (bestADev) app_balances = cachedProjectAData.app_balances.filter(b => b.device_id === bestADev);
+                    }
+                }
+            } else {
+                // Perangkat spesifik di Project B
+                vouchers = (allVouchers || []).filter(v => v.device_id === templateVal);
+                barang = (allBarang || []).filter(b => b.device_id === templateVal);
+                fee_rules = (allFeeRules || []).filter(r => r.device_id === templateVal || r.device_id === 'global');
+                if (fee_rules.length === 0 && Array.isArray(allFeeRules)) fee_rules = allFeeRules;
+                app_balances = (allBalances || []).filter(bal => bal.device_id === templateVal);
+                if (app_balances.length === 0 && Array.isArray(allBalances) && allBalances.length > 0) {
+                    const firstWithBal = allBalances.find(b => b.device_id && b.device_id !== templateVal);
+                    if (firstWithBal) app_balances = allBalances.filter(b => b.device_id === firstWithBal.device_id);
+                }
+            }
+
+            return {
+                vouchers: dedupeBy(vouchers, v => Number(v.product_id)),
+                barang: dedupeBy(barang, b => Number(b.product_id)),
+                fee_rules: dedupeBy(fee_rules, r => (r.name ? `${r.category || ''}_${r.name}` : r.rule_id)),
+                app_balances: dedupeBy(app_balances, b => b.package_name)
+            };
+        }
+        window.getTemplateData = getTemplateData;
+
+        function updateSyncModalTemplateCounts() {
+            const selTemplate = document.getElementById('selSyncCatalogTemplate');
+            if (!selTemplate) return;
+            const templateVal = selTemplate.value;
+            const tData = getTemplateData(templateVal);
+
+            const bV = document.getElementById('badgeCountInitVouchers');
+            const bB = document.getElementById('badgeCountInitBarang');
+            const bF = document.getElementById('badgeCountInitFeeRules');
+            const bBal = document.getElementById('badgeCountInitBalances');
+
+            if (bV) bV.textContent = `${tData.vouchers.length} item`;
+            if (bB) bB.textContent = `${tData.barang.length} item`;
+            if (bF) bF.textContent = `${tData.fee_rules.length} aturan`;
+            if (bBal) bBal.textContent = `${tData.app_balances.length} akun`;
+        }
+        window.updateSyncModalTemplateCounts = updateSyncModalTemplateCounts;
+
+        function populateSyncTemplateOptions(dataA = null) {
+            const selTemplate = document.getElementById('selSyncCatalogTemplate');
+            if (!selTemplate) return;
+
+            const prevVal = selTemplate.value;
+            selTemplate.innerHTML = '';
+
+            // Group 1: Database Saat Ini (Project B)
+            const optGroupB = document.createElement('optgroup');
+            optGroupB.label = '⭐ Database Saat Ini (Project B)';
+
+            const masterCount = (allVouchers || []).filter(v => v.device_id === 'master').length;
+            const optMaster = document.createElement('option');
+            optMaster.value = 'master';
+            optMaster.textContent = `⭐ Master Blueprint (${masterCount} voucher)`;
+            optGroupB.appendChild(optMaster);
+
+            const devicesMap = getDiscoveredDevicesMap();
+            let bestTemplate = masterCount > 0 ? 'master' : '';
+            let maxVouchers = masterCount;
+
+            devicesMap.forEach((name, id) => {
+                if (id !== 'master') {
+                    const count = (allVouchers || []).filter(v => v.device_id === id).length;
+                    const opt = document.createElement('option');
+                    opt.value = id;
+                    opt.textContent = `📱 ${name} (${count} voucher)`;
+                    optGroupB.appendChild(opt);
+
+                    if (count > maxVouchers) {
+                        maxVouchers = count;
+                        bestTemplate = id;
+                    }
+                }
+            });
+            selTemplate.appendChild(optGroupB);
+
+            // Group 2: Database Project A (jika tersedia / sudah ditarik)
+            const effectiveDataA = dataA || cachedProjectAData;
+            if (effectiveDataA && effectiveDataA.devicesMap) {
+                const optGroupA = document.createElement('optgroup');
+                optGroupA.label = '🌐 Database Project A (Kredensial Lama)';
+                effectiveDataA.devicesMap.forEach((name, id) => {
+                    const vCount = (effectiveDataA.vouchers || []).filter(v => v.device_id === id).length;
+                    const opt = document.createElement('option');
+                    opt.value = `project_a_${id}`;
+                    opt.dataset.projectA = 'true';
+                    opt.dataset.deviceId = id;
+                    opt.textContent = `🌐 [Project A] ${name} (${vCount} voucher)`;
+                    optGroupA.appendChild(opt);
+
+                    if (vCount > maxVouchers) {
+                        maxVouchers = vCount;
+                        bestTemplate = `project_a_${id}`;
+                    }
+                });
+                selTemplate.appendChild(optGroupA);
+            }
+
+            if (prevVal && Array.from(selTemplate.options).some(o => o.value === prevVal)) {
+                selTemplate.value = prevVal;
+            } else if (bestTemplate) {
+                selTemplate.value = bestTemplate;
+            }
+
+            updateSyncModalTemplateCounts();
+        }
+        window.populateSyncTemplateOptions = populateSyncTemplateOptions;
+
+        async function pullProjectAForSyncTemplate() {
+            const statusEl = document.getElementById('syncCatalogStatus');
+            try {
+                if (statusEl) {
+                    statusEl.style.display = 'block';
+                    statusEl.style.background = 'rgba(79, 142, 247, 0.12)';
+                    statusEl.style.color = 'var(--primary)';
+                    statusEl.textContent = '⏳ Mengambil data dari Project A (config.enc)...';
+                }
+                const dataA = await fetchProjectAData();
+                populateSyncTemplateOptions(dataA);
+                if (statusEl) {
+                    statusEl.style.display = 'block';
+                    statusEl.style.background = 'rgba(34, 197, 94, 0.12)';
+                    statusEl.style.color = 'var(--success)';
+                    statusEl.textContent = '✅ Berhasil memuat perangkat dari Project A! Silakan pilih template acuan di atas.';
+                    setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 2500);
+                }
+            } catch (err) {
+                console.error('Error pullProjectAForSyncTemplate:', err);
+                if (statusEl) {
+                    statusEl.style.display = 'block';
+                    statusEl.style.background = 'rgba(239, 68, 68, 0.12)';
+                    statusEl.style.color = 'var(--danger)';
+                    statusEl.textContent = `❌ Gagal mengambil dari Project A: ${err.message || err}`;
+                }
+            }
+        }
+        window.pullProjectAForSyncTemplate = pullProjectAForSyncTemplate;
+
         async function showSyncCatalogModal() {
             const modal = document.getElementById('syncCatalogModal');
             if (!modal) return;
@@ -14865,45 +15182,24 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             }
 
             const selTarget = document.getElementById('selSyncCatalogTarget');
-            const selTemplate = document.getElementById('selSyncCatalogTemplate');
             const boxTemplate = document.getElementById('boxSyncTemplateSource');
 
             if (selTarget) selTarget.innerHTML = '<option value="all">🚀 Semua Cabang Terdaftar Sekaligus</option>';
-            if (selTemplate) selTemplate.innerHTML = '';
             if (boxTemplate) boxTemplate.style.display = 'block';
 
-            // Ambil perangkat yang terdeteksi
-            const devicesMap = getDiscoveredDevicesMap();
+            // Muat template dropdown
+            populateSyncTemplateOptions();
 
-            // Isi template device select: Utamakan template yang memiliki produk
-            if (selTemplate) {
-                const masterCount = allVouchers.filter(v => v.device_id === 'master').length;
-                const optMaster = document.createElement('option');
-                optMaster.value = 'master';
-                optMaster.textContent = `⭐ Master Blueprint (${masterCount} produk)`;
-                selTemplate.appendChild(optMaster);
-
-                let bestTemplate = masterCount > 0 ? 'master' : '';
-                let maxProducts = masterCount;
-
-                devicesMap.forEach((name, id) => {
-                    if (id !== 'master') {
-                        const count = allVouchers.filter(v => v.device_id === id).length;
-                        const opt = document.createElement('option');
-                        opt.value = id;
-                        opt.textContent = `📱 ${name} (${count} produk)`;
-                        selTemplate.appendChild(opt);
-
-                        if (count > maxProducts) {
-                            maxProducts = count;
-                            bestTemplate = id;
-                        }
-                    }
-                });
-
-                if (bestTemplate) {
-                    selTemplate.value = bestTemplate;
-                }
+            // Background fetch modul lain jika belum ada di memori
+            const fetchPromises = [];
+            if (!allBarang || allBarang.length === 0) {
+                if (typeof fetchBarangFromSupabase === 'function') fetchPromises.push(fetchBarangFromSupabase());
+            }
+            if (!allFeeRules || allFeeRules.length === 0) {
+                if (typeof fetchFeeRulesFromSupabase === 'function') fetchPromises.push(fetchFeeRulesFromSupabase());
+            }
+            if (!allBalances || allBalances.length === 0) {
+                if (typeof fetchBalancesFromSupabase === 'function') fetchPromises.push(fetchBalancesFromSupabase());
             }
 
             // Ambil toko dari Project B (ksp_stores)
@@ -14921,7 +15217,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         opt.dataset.type = 'b_store';
                         opt.dataset.id = st.id;
                         opt.dataset.name = st.name || st.id;
-                        const prodCount = allVouchers.filter(v => v.device_id === st.id).length;
+                        const prodCount = (allVouchers || []).filter(v => v.device_id === st.id).length;
                         const labelCount = prodCount > 0 ? `(${prodCount} produk)` : `(Belum Inisialisasi)`;
                         opt.textContent = `🏪 ${st.name} [${st.id}] ${labelCount}`;
                         optGroupB.appendChild(opt);
@@ -14930,6 +15226,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 }
 
                 // Tambahkan perangkat lainnya jika ada yang belum terdaftar di ksp_stores
+                const devicesMap = getDiscoveredDevicesMap();
                 const officialStoreIds = new Set((officialStores || []).map(s => s.id));
                 const extraDevices = [];
                 devicesMap.forEach((name, id) => {
@@ -14947,12 +15244,21 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         opt.dataset.type = 'a_dev';
                         opt.dataset.id = d.id;
                         opt.dataset.name = d.name;
-                        const prodCount = allVouchers.filter(v => v.device_id === d.id).length;
+                        const prodCount = (allVouchers || []).filter(v => v.device_id === d.id).length;
                         opt.textContent = `📱 ${d.name} [${d.id}] (${prodCount} produk)`;
                         optGroupA.appendChild(opt);
                     });
                     selTarget.appendChild(optGroupA);
                 }
+            }
+
+            // Tunggu fetch paralel modul lain jika ada, lalu segarkan hitungan badge
+            if (fetchPromises.length > 0) {
+                Promise.all(fetchPromises).then(() => {
+                    updateSyncModalTemplateCounts();
+                }).catch(e => console.warn('Fetch additional modules warning:', e));
+            } else {
+                updateSyncModalTemplateCounts();
             }
         }
         window.showSyncCatalogModal = showSyncCatalogModal;
@@ -14972,7 +15278,65 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             if (!selTarget) return;
             const targetVal = selTarget.value;
 
-            // 1. Verifikasi PIN Admin untuk otorisasi RPC Project B
+            // 1. Cek Checklist Entitas yang dipilih
+            const doVouchers = !!document.getElementById('chkInitVouchers')?.checked;
+            const doBarang = !!document.getElementById('chkInitBarang')?.checked;
+            const doFeeRules = !!document.getElementById('chkInitFeeRules')?.checked;
+            const doBalances = !!document.getElementById('chkInitBalances')?.checked;
+
+            if (!doVouchers && !doBarang && !doFeeRules && !doBalances) {
+                if (statusEl) {
+                    statusEl.style.display = 'block';
+                    statusEl.style.background = 'rgba(239, 68, 68, 0.12)';
+                    statusEl.style.color = 'var(--danger)';
+                    statusEl.textContent = '❌ Pilih minimal 1 jenis data (Voucher, Barang, Fee Rules, atau Saldo) yang ingin disalin!';
+                }
+                alert('Pilih minimal 1 jenis data yang ingin diinisialisasikan ke cabang!');
+                return;
+            }
+
+            // 2. Ambil data template acuan
+            const templateVal = selTemplate ? selTemplate.value : 'master';
+            const tData = getTemplateData(templateVal);
+
+            // Validasi ketersediaan data untuk modul yang dicentang
+            const missingModules = [];
+            if (doVouchers && tData.vouchers.length === 0) missingModules.push('Voucher Fisik');
+            if (doBarang && tData.barang.length === 0) missingModules.push('Produk Retail');
+            if (doFeeRules && tData.fee_rules.length === 0) missingModules.push('Fee Rules');
+            if (doBalances && tData.app_balances.length === 0) missingModules.push('Saldo Kasir');
+
+            if (missingModules.length > 0) {
+                const proceed = confirm(`⚠️ Perhatian: Template "${templateVal}" tidak memiliki data untuk: ${missingModules.join(', ')}.\n\nLanjutkan inisialisasi modul yang tersedia saja?`);
+                if (!proceed) return;
+            }
+
+            // 3. Tentukan Target Cabang
+            let storesToSync = [];
+            if (targetVal === 'all') {
+                if (Array.isArray(officialStores) && officialStores.length > 0) {
+                    storesToSync = officialStores.map(s => ({ id: s.id, name: s.name }));
+                } else if (Array.isArray(cachedProjectBStores) && cachedProjectBStores.length > 0) {
+                    storesToSync = cachedProjectBStores.map(s => ({ id: s.id, name: s.name }));
+                } else {
+                    const devMap = getDiscoveredDevicesMap();
+                    devMap.forEach((name, id) => {
+                        if (id !== 'master') storesToSync.push({ id, name });
+                    });
+                }
+            } else {
+                const selectedOpt = selTarget.options[selTarget.selectedIndex];
+                const cleanId = selectedOpt?.dataset?.id || targetVal.replace(/^(store_|dev_)/, '');
+                const cleanName = selectedOpt?.dataset?.name || selectedOpt?.textContent?.replace(/^[^\w\d]+/, '') || cleanId;
+                storesToSync = [{ id: cleanId, name: cleanName }];
+            }
+
+            if (storesToSync.length === 0) {
+                alert('Tidak ada cabang target yang ditemukan.');
+                return;
+            }
+
+            // 4. Verifikasi PIN Admin
             let pin = localStorage.getItem('kspcheck_viewer_pin') || (typeof DEFAULT_PIN !== 'undefined' ? DEFAULT_PIN : '');
             if (!pin) {
                 pin = prompt('Masukkan PIN Admin Toko untuk otorisasi sinkronisasi ke Cabang (Project B):');
@@ -14984,146 +15348,243 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         statusEl.style.display = 'block';
                         statusEl.style.background = 'rgba(239, 68, 68, 0.12)';
                         statusEl.style.color = 'var(--danger)';
-                        statusEl.textContent = '❌ Sinkronisasi dibatalkan: PIN Admin diperlukan untuk mengupdate database cabang.';
+                        statusEl.textContent = '❌ Sinkronisasi dibatalkan: PIN Admin diperlukan.';
                     }
                     return;
                 }
             }
 
-            if (!confirm('Inisialisasi katalog dan stok ke cabang terpilih (Project A & Portal Karyawan Project B)?\n\nKatalog acuan (Master/Template) akan disalin ke cabang terpilih.')) {
-                return;
-            }
+            // 5. Konfirmasi Eksekusi
+            const isZeroStockVoucher = !!document.getElementById('radInitStockZero')?.checked;
+            const isZeroStockBarang = !!document.getElementById('radInitBarangZero')?.checked;
+            const isZeroBalance = !!document.getElementById('radInitBalZero')?.checked;
+
+            const confirmMsg = `Konfirmasi Inisialisasi Data ke ${storesToSync.length} cabang:\n` +
+                (doVouchers ? `• Voucher: ${tData.vouchers.length} item (${isZeroStockVoucher ? 'Stok 0' : 'Stok Template'})\n` : '') +
+                (doBarang ? `• Produk Retail: ${tData.barang.length} item (${isZeroStockBarang ? 'Stok 0' : 'Stok Template'})\n` : '') +
+                (doFeeRules ? `• Fee Rules: ${tData.fee_rules.length} aturan\n` : '') +
+                (doBalances ? `• Saldo Kasir: ${tData.app_balances.length} akun (${isZeroBalance ? 'Rp 0' : 'Saldo Template'})\n` : '') +
+                `\nLanjutkan inisialisasi?`;
+
+            if (!confirm(confirmMsg)) return;
 
             if (btnExec) btnExec.disabled = true;
             if (statusEl) {
                 statusEl.style.display = 'block';
                 statusEl.style.background = 'rgba(79, 142, 247, 0.12)';
                 statusEl.style.color = 'var(--primary)';
-                statusEl.textContent = '⏳ Sedang menyiapkan dan menyinkronkan data katalog...';
+                statusEl.textContent = '⏳ Sedang menyiapkan dan menyinkronkan data multi-entitas ke cabang...';
             }
 
             try {
-                const templateDeviceId = selTemplate ? selTemplate.value : 'master';
-                let templateVouchers = allVouchers.filter(v => v.device_id === templateDeviceId);
-                if (templateVouchers.length === 0 && templateDeviceId !== 'master') {
-                    templateVouchers = allVouchers.filter(v => v.device_id === 'master');
-                }
-
-                // Jika template masih kosong, coba fallback ke perangkat/cabang yang memiliki item terbanyak
-                if (templateVouchers.length === 0) {
-                    const devCounts = new Map();
-                    allVouchers.forEach(v => {
-                        devCounts.set(v.device_id, (devCounts.get(v.device_id) || 0) + 1);
-                    });
-                    let bestDev = null;
-                    let maxC = 0;
-                    devCounts.forEach((c, d) => {
-                        if (c > maxC) { maxC = c; bestDev = d; }
-                    });
-                    if (bestDev) {
-                        console.log(`[SyncCatalog] Template '${templateDeviceId}' kosong, menggunakan fallback data dari '${bestDev}' (${maxC} produk)`);
-                        templateVouchers = allVouchers.filter(v => v.device_id === bestDev);
+                async function upsertInChunks(tableName, rows, chunkSize = 100, onConflict = null) {
+                    if (!rows || rows.length === 0) return;
+                    for (let i = 0; i < rows.length; i += chunkSize) {
+                        const chunk = rows.slice(i, i + chunkSize);
+                        let query = supabaseClient.from(tableName).upsert(chunk);
+                        if (onConflict) {
+                            query = supabaseClient.from(tableName).upsert(chunk, { onConflict: onConflict });
+                        }
+                        const { error } = await query;
+                        if (error) throw new Error(`[${tableName}] ${error.message || JSON.stringify(error)}`);
                     }
-                }
-
-                if (templateVouchers.length === 0) {
-                    throw new Error('Tidak ada data produk pada blueprint template terpilih. Silakan pastikan Master atau template cabang sudah memiliki produk.');
-                }
-
-                let storesToSync = [];
-                if (targetVal === 'all') {
-                    if (Array.isArray(officialStores) && officialStores.length > 0) {
-                        storesToSync = officialStores.map(s => ({ id: s.id, name: s.name }));
-                    } else if (Array.isArray(cachedProjectBStores) && cachedProjectBStores.length > 0) {
-                        storesToSync = cachedProjectBStores.map(s => ({ id: s.id, name: s.name }));
-                    } else {
-                        const devMap = getDiscoveredDevicesMap();
-                        devMap.forEach((name, id) => {
-                            if (id !== 'master') storesToSync.push({ id, name });
-                        });
-                    }
-                } else {
-                    const selectedOpt = selTarget.options[selTarget.selectedIndex];
-                    const cleanId = selectedOpt?.dataset?.id || targetVal.replace(/^(store_|dev_)/, '');
-                    const cleanName = selectedOpt?.dataset?.name || selectedOpt?.textContent?.replace(/^[^\w\d]+/, '') || cleanId;
-                    storesToSync = [{ id: cleanId, name: cleanName }];
                 }
 
                 let syncedStoresCount = 0;
-                let totalProductsSynced = 0;
                 let syncErrors = [];
+                let totalCounts = { vouchers: 0, barang: 0, fee_rules: 0, app_balances: 0 };
 
                 for (const store of storesToSync) {
                     const storeId = store.id;
                     const storeName = store.name || storeId;
-                    const isZeroStock = !!document.getElementById('radInitStockZero')?.checked;
+                    let storeHasSuccess = false;
 
-                    const baseVouchers = templateVouchers;
-                    if (baseVouchers.length === 0) continue;
-
-                    // 1. Daftarkan / sinkronkan katalog cabang ke Project A (tabel vouchers)
-                    let vouchersOk = false;
-                    if (supabaseClient) {
-                        const newVouchersPayload = baseVouchers.map(tv => ({
-                            id: `${storeId}_${tv.product_id}`,
-                            device_id: storeId,
-                            device_name: storeName,
-                            product_id: tv.product_id,
-                            product_name: tv.product_name,
-                            provider_name: tv.provider_name,
-                            category_name: tv.category_name || tv.category || '',
-                            stock: isZeroStock ? 0 : Number(tv.stock || 0),
-                            cost_price: Number(tv.cost_price || 0),
-                            sell_price: Number(tv.sell_price || tv.unit_price || tv.price || 0),
-                            min_limit: Number(tv.min_limit || 0),
-                            is_active: tv.is_active !== undefined ? !!tv.is_active : true,
-                            sort_order: Number(tv.sort_order || 9999),
-                            provider_order: Number(tv.provider_order || 0),
-                            category_order: Number(tv.category_order || 0),
-                            product_order: Number(tv.product_order || 0),
-                            updated_at: new Date().toISOString()
-                        }));
-
-                        const { error: insErr } = await supabaseClient.from('vouchers').upsert(newVouchersPayload);
-                        if (insErr) {
-                            console.warn(`Gagal mendaftarkan cabang ${storeName} ke vouchers:`, insErr);
-                            syncErrors.push(`${storeName} (vouchers: ${insErr.message})`);
-                        } else {
-                            vouchersOk = true;
-                        }
-                    }
-
-                    // 2. Siapkan payload untuk Project B (ksp_admin_sync_store_stock)
-                    const payloadProducts = baseVouchers.map(v => ({
-                        product_id: Number(v.product_id),
-                        product_name: v.product_name,
-                        provider_name: v.provider_name || 'VOUCHER',
-                        category_name: v.category_name || v.category || '',
-                        stock: isZeroStock ? 0 : Number(v.stock !== undefined ? v.stock : 0),
-                        sell_price: Number(v.sell_price || v.unit_price || v.price || 0),
-                        cost_price: Number(v.cost_price || 0),
-                        sort_order: Number(v.sort_order || 9999),
-                        is_active: v.is_active !== undefined ? !!v.is_active : true
-                    }));
-
-                    let rpcOk = false;
+                    // Pastikan record store_id ada di ksp_stores
                     try {
-                        const res = await window.KspSync.adminSyncStoreStock(storeId, payloadProducts);
-                        if (res && res.ok) {
-                            rpcOk = true;
-                        } else {
-                            const errDetail = (res && res.error) || 'Otorisasi ditolak';
-                            console.warn(`Gagal sync store ${storeId} ke Project B:`, errDetail);
-                            syncErrors.push(`${storeName} (Portal Kasir: ${errDetail})`);
-                        }
-                    } catch (errRpc) {
-                        console.warn(`RPC error sync store ${storeId}:`, errRpc);
-                        syncErrors.push(`${storeName} (Portal Kasir: ${errRpc.message})`);
+                        await supabaseClient.from('ksp_stores').upsert({
+                            id: storeId,
+                            name: storeName,
+                            updated_at: new Date().toISOString()
+                        }, { onConflict: 'id' });
+                    } catch (eStore) {
+                        console.warn(`[ksp_stores] Upsert warning for ${storeId}:`, eStore);
                     }
 
-                    if (rpcOk || vouchersOk) {
+                    // A. VOUCHER FISIK & STOK TOKO
+                    if (doVouchers && tData.vouchers.length > 0) {
+                        try {
+                            const newVouchersPayload = tData.vouchers.map(tv => ({
+                                id: `${storeId}_${tv.product_id}`,
+                                device_id: storeId,
+                                device_name: storeName,
+                                product_id: Number(tv.product_id),
+                                product_name: tv.product_name,
+                                provider_name: tv.provider_name || 'VOUCHER',
+                                category_name: tv.category_name || tv.category || '',
+                                stock: isZeroStockVoucher ? 0 : Number(tv.stock || 0),
+                                cost_price: Number(tv.cost_price || 0),
+                                sell_price: Number(tv.sell_price || tv.unit_price || tv.price || 0),
+                                min_limit: Number(tv.min_limit || 0),
+                                is_active: tv.is_active !== undefined ? !!tv.is_active : true,
+                                sort_order: Number(tv.sort_order || 9999),
+                                provider_order: Number(tv.provider_order || 0),
+                                category_order: Number(tv.category_order || 0),
+                                product_order: Number(tv.product_order || 0),
+                                updated_at: new Date().toISOString()
+                            }));
+
+                            await upsertInChunks('vouchers', newVouchersPayload, 100);
+
+                            // Direct upsert ke ksp_store_stock
+                            const storeStockRows = tData.vouchers.map(p => ({
+                                id: `${storeId}_${p.product_id}`,
+                                store_id: storeId,
+                                product_id: Number(p.product_id),
+                                product_name: p.product_name,
+                                provider_name: p.provider_name || 'VOUCHER',
+                                category_name: p.category_name || p.category || '',
+                                current_stock: isZeroStockVoucher ? 0 : Number(p.stock !== undefined ? p.stock : 0),
+                                sell_price: Number(p.sell_price || p.unit_price || p.price || 0),
+                                cost_price: Number(p.cost_price || 0),
+                                sort_order: Number(p.sort_order || 9999),
+                                is_active: p.is_active !== undefined ? !!p.is_active : true,
+                                updated_at: new Date().toISOString()
+                            }));
+                            try {
+                                await upsertInChunks('ksp_store_stock', storeStockRows, 100);
+                            } catch (errSs) {
+                                console.warn(`[ksp_store_stock] Direct upsert error for ${storeId}:`, errSs);
+                            }
+
+                            // Panggil RPC adminSyncStoreStock
+                            try {
+                                const payloadProducts = tData.vouchers.map(v => ({
+                                    product_id: Number(v.product_id),
+                                    product_name: v.product_name,
+                                    provider_name: v.provider_name || 'VOUCHER',
+                                    category_name: v.category_name || v.category || '',
+                                    stock: isZeroStockVoucher ? 0 : Number(v.stock !== undefined ? v.stock : 0),
+                                    sell_price: Number(v.sell_price || v.unit_price || v.price || 0),
+                                    cost_price: Number(v.cost_price || 0),
+                                    sort_order: Number(v.sort_order || 9999),
+                                    is_active: v.is_active !== undefined ? !!v.is_active : true
+                                }));
+                                await window.KspSync.adminSyncStoreStock(storeId, payloadProducts);
+                            } catch (errRpc) {
+                                console.warn(`[adminSyncStoreStock] RPC warning for ${storeId}:`, errRpc);
+                            }
+
+                            totalCounts.vouchers += newVouchersPayload.length;
+                            storeHasSuccess = true;
+                        } catch (errV) {
+                            console.error(`Gagal sync vouchers untuk ${storeName}:`, errV);
+                            syncErrors.push(`${storeName} (vouchers: ${errV.message})`);
+                        }
+                    }
+
+                    // B. PRODUK RETAIL & AKSESORIS
+                    if (doBarang && tData.barang.length > 0) {
+                        try {
+                            const barangPayload = tData.barang.map(b => ({
+                                id: `${storeId}_${b.product_id}`,
+                                device_id: storeId,
+                                device_name: storeName,
+                                product_id: Number(b.product_id),
+                                product_code: b.product_code || '',
+                                product_name: b.product_name,
+                                brand_name: b.brand_name || 'Umum',
+                                category_name: b.category_name || 'Umum',
+                                stock: isZeroStockBarang ? 0 : Number(b.stock || 0),
+                                cost_price: Number(b.cost_price || 0),
+                                sell_price: Number(b.sell_price || 0),
+                                min_limit: Number(b.min_limit || 3),
+                                image_path: b.image_path || '',
+                                image_base64: b.image_base64 || '',
+                                sort_order: Number(b.sort_order || 0),
+                                brand_order: Number(b.brand_order || 0),
+                                category_order: Number(b.category_order || 0),
+                                product_order: Number(b.product_order || 0),
+                                updated_at: new Date().toISOString()
+                            }));
+
+                            await upsertInChunks('barang', barangPayload, 100);
+                            totalCounts.barang += barangPayload.length;
+                            storeHasSuccess = true;
+                        } catch (errB) {
+                            console.error(`Gagal sync barang untuk ${storeName}:`, errB);
+                            syncErrors.push(`${storeName} (barang: ${errB.message})`);
+                        }
+                    }
+
+                    // C. ATURAN BIAYA ADMIN (FEE RULES)
+                    if (doFeeRules && tData.fee_rules.length > 0) {
+                        try {
+                            const feeRulesPayload = tData.fee_rules.map((r, idx) => ({
+                                id: `${storeId}_${r.rule_id || (idx + 1)}`,
+                                device_id: storeId,
+                                device_name: storeName,
+                                rule_id: Number(r.rule_id || (idx + 1)),
+                                name: r.name,
+                                category: r.category || 'Umum',
+                                min_amount: Number(r.min_amount || 0),
+                                max_amount: Number(r.max_amount || 0),
+                                fee_amount: Number(r.fee_amount || 0),
+                                fee_percent: Number(r.fee_percent || 0),
+                                fixed_amount: Number(r.fixed_amount || 0),
+                                is_active: r.is_active !== undefined ? !!r.is_active : true,
+                                priority: Number(r.priority || 10),
+                                updated_at: new Date().toISOString()
+                            }));
+
+                            await upsertInChunks('fee_rules', feeRulesPayload, 100);
+                            totalCounts.fee_rules += feeRulesPayload.length;
+                            storeHasSuccess = true;
+                        } catch (errR) {
+                            console.error(`Gagal sync fee_rules untuk ${storeName}:`, errR);
+                            syncErrors.push(`${storeName} (fee_rules: ${errR.message})`);
+                        }
+                    }
+
+                    // D. AKUN SALDO KASIR & E-WALLET
+                    if (doBalances && tData.app_balances.length > 0) {
+                        try {
+                            const balancesPayload = tData.app_balances.map(bal => {
+                                const rawVal = isZeroBalance ? 0 : Number(bal.balance_value || 0);
+                                const formatted = 'Rp ' + rawVal.toLocaleString('id-ID');
+                                return {
+                                    id: `${storeId}_${bal.package_name}`,
+                                    device_id: storeId,
+                                    device_name: storeName,
+                                    package_name: bal.package_name,
+                                    app_name: bal.app_name,
+                                    balance_value: rawVal,
+                                    formatted_balance: formatted,
+                                    calculation_mode: bal.calculation_mode || 'DIRECT',
+                                    raw_snippet: bal.raw_snippet || '',
+                                    updated_at_str: new Date().toLocaleString('id-ID'),
+                                    baseline_balance: rawVal,
+                                    baseline_timestamp: Date.now(),
+                                    baseline_timestamp_str: new Date().toISOString(),
+                                    last_processed_notif_time: Date.now(),
+                                    delta_count: 0,
+                                    last_delta_amount: 0,
+                                    last_delta_type: '',
+                                    raw_json: bal.raw_json || {},
+                                    updated_at: new Date().toISOString()
+                                };
+                            });
+
+                            await upsertInChunks('app_balances', balancesPayload, 100);
+                            totalCounts.app_balances += balancesPayload.length;
+                            storeHasSuccess = true;
+                        } catch (errBal) {
+                            console.error(`Gagal sync app_balances untuk ${storeName}:`, errBal);
+                            syncErrors.push(`${storeName} (app_balances: ${errBal.message})`);
+                        }
+                    }
+
+                    if (storeHasSuccess) {
                         syncedStoresCount++;
-                        totalProductsSynced += payloadProducts.length;
                     }
                 }
 
@@ -15131,26 +15592,35 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     if (statusEl) {
                         statusEl.style.background = 'rgba(239, 68, 68, 0.12)';
                         statusEl.style.color = 'var(--danger)';
-                        statusEl.textContent = `❌ Gagal sinkronisasi:\n${syncErrors.join('\n')}`;
+                        statusEl.textContent = `❌ Gagal inisialisasi cabang:\n${syncErrors.join('\n')}`;
                     }
                 } else {
                     if (statusEl) {
                         statusEl.style.background = 'rgba(34, 197, 94, 0.12)';
                         statusEl.style.color = 'var(--success)';
-                        let msg = `✅ Berhasil menginisialisasi ${totalProductsSynced} produk untuk ${syncedStoresCount} cabang!`;
+                        let detailsStr = [];
+                        if (doVouchers) detailsStr.push(`${totalCounts.vouchers} voucher`);
+                        if (doBarang) detailsStr.push(`${totalCounts.barang} produk retail`);
+                        if (doFeeRules) detailsStr.push(`${totalCounts.fee_rules} aturan fee`);
+                        if (doBalances) detailsStr.push(`${totalCounts.app_balances} akun saldo`);
+
+                        let msg = `✅ Berhasil menginisialisasi ${syncedStoresCount} cabang!\nDetail: ${detailsStr.join(', ')}`;
                         if (syncErrors.length > 0) {
                             msg += `\n⚠️ Catatan kendala: ${syncErrors.join(', ')}`;
                         }
                         statusEl.textContent = msg;
                     }
-                    showToast(`✅ Inisialisasi katalog selesai (${syncedStoresCount} cabang)!`);
+                    showToast(`✅ Inisialisasi ${syncedStoresCount} cabang selesai!`);
 
-                    // Refresh data vouchers dan dropdown
-                    fetchVouchersFromSupabase();
+                    // Refresh cache data lokal
+                    if (doVouchers && typeof fetchVouchersFromSupabase === 'function') fetchVouchersFromSupabase();
+                    if (doBarang && typeof fetchBarangFromSupabase === 'function') fetchBarangFromSupabase();
+                    if (doFeeRules && typeof fetchFeeRulesFromSupabase === 'function') fetchFeeRulesFromSupabase();
+                    if (doBalances && typeof fetchBalancesFromSupabase === 'function') fetchBalancesFromSupabase();
 
                     setTimeout(() => {
                         closeSyncCatalogModal();
-                    }, 2400);
+                    }, 2800);
                 }
 
             } catch (err) {
