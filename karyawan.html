@@ -693,19 +693,25 @@
             <h3 style="font-size: 13.5px; font-weight: 800; margin-bottom: 10px; color: var(--text-muted);">MENU KARYAWAN</h3>
             <div class="grid-features">
                 <!-- 1. Rekap Transaksi -->
-                <a href="store_transactions.html" class="feat-box">
+                <a href="store_transactions.html" id="featRekapLink" class="feat-box">
                     <div class="feat-icon">📊</div>
                     <div class="feat-title">Rekap Transaksi</div>
                     <div class="feat-sub">Riwayat & detail kasir</div>
                 </a>
-                <!-- 2. Cek Stok Cepat (Opname) -->
-                <a href="quick_stock.html" class="feat-box">
+                <!-- 2. Histori Transaksi Cabang (HistoriKu) -->
+                <a href="store_history.html" id="featHistoryLink" class="feat-box" style="border-color: rgba(79, 142, 247, 0.4); background: linear-gradient(135deg, rgba(79, 142, 247, 0.08) 0%, rgba(30, 41, 59, 0.2) 100%);">
+                    <div class="feat-icon">📑</div>
+                    <div class="feat-title" style="color: #4F8EF7;">Histori Transaksi</div>
+                    <div class="feat-sub">Lihat, edit & coret cabang</div>
+                </a>
+                <!-- 3. Cek Stok Cepat (Opname) -->
+                <a href="quick_stock.html" id="featQuickStockLink" class="feat-box">
                     <div class="feat-icon">📦</div>
                     <div class="feat-title">Cek Stok Cepat</div>
                     <div class="feat-sub">Opname fisik & tutup shift</div>
                 </a>
-                <!-- 3. Tambah Stok (Restok Nota) -->
-                <a href="ai_stock_update.html" class="feat-box" style="border-color: rgba(16, 185, 129, 0.4); background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(30, 41, 59, 0.2) 100%);">
+                <!-- 4. Tambah Stok (Restok Nota) -->
+                <a href="ai_stock_update.html" id="featAiStockLink" class="feat-box" style="border-color: rgba(16, 185, 129, 0.4); background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(30, 41, 59, 0.2) 100%);">
                     <div class="feat-icon">🤖</div>
                     <div class="feat-title" style="color: #10B981;">Tambah Stok</div>
                     <div class="feat-sub">Restok nota supplier AI</div>
@@ -1238,6 +1244,19 @@
             renderDashboardAvatar();
             renderDashStoreTarget();
             renderKaryawanLeaderboard();
+
+            // Pasang parameter cabang aktif ke semua link fitur
+            if (currentStore && currentStore.id) {
+                const sParam = '?store=' + encodeURIComponent(currentStore.id) + '&name=' + encodeURIComponent(currentStore.name || '');
+                const hLink = document.getElementById('featHistoryLink');
+                if (hLink) hLink.href = 'store_history.html' + sParam;
+                const rLink = document.getElementById('featRekapLink');
+                if (rLink) rLink.href = 'store_transactions.html' + sParam;
+                const qLink = document.getElementById('featQuickStockLink');
+                if (qLink) qLink.href = 'quick_stock.html' + sParam;
+                const aLink = document.getElementById('featAiStockLink');
+                if (aLink) aLink.href = 'ai_stock_update.html' + sParam;
+            }
         }
 
         function renderKaryawanLeaderboard() {

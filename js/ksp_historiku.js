@@ -1693,15 +1693,16 @@ async function syncEditsToSupabase() {
 }
 
 async function saveRowToSupabase(rowId, currentVal, origVal, currentDesc, isDel, isRead, isNew, isChanged, rowEl, storeId) {
-  const client = getSupabaseClient();
-  const cfg = window.KSP_SYNC_CONFIG || {};
-  const baseUrl = (cfg.url || '').replace(/\/+$/, '');
-  const headers = {
-    'apikey': cfg.key,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=minimal'
-  };
-  if (cfg.key && !cfg.key.startsWith('sb_')) headers['Authorization'] = 'Bearer ' + cfg.key;
+  const isEmployee = (window.CURRENT_AUTH_ROLE === 'employee');
+  const empName = (window.CURRENT_EMPLOYEE && window.CURRENT_EMPLOYEE.name) || 'Karyawan';
+  const roleName = isEmployee ? empName : 'Admin';
+  const isSynced = !isEmployee; // Admin: langsung tersinkron master; Karyawan: pending sync
+  const devId = isEmployee ? 'web_employee' : 'web_admin';
+  const devName = isEmployee ? ('Portal Web (' + empName + ')') : 'Web Dashboard (Admin)';
+  const modSource = isEmployee ? 'employee_web' : 'admin_web';
+
+  const branchClient = getSupabaseClient();
+  const masterClient = !isEmployee ? getMasterSupabaseClient() : null;
 
   const extra = {
     is_edited: true,
@@ -1709,7 +1710,10 @@ async function saveRowToSupabase(rowId, currentVal, origVal, currentDesc, isDel,
     web_edited_at: new Date().toISOString(),
     orig_amount: origVal,
     web_read: isRead,
-    web_modified: isChanged
+    web_modified: isChanged,
+    is_synced_to_master: isSynced,
+    last_modified_by: roleName,
+    modified_source: modSource
   };
 
   const group = rowEl ? rowEl.closest('.lv-group') : null;
@@ -1756,8 +1760,8 @@ async function saveRowToSupabase(rowId, currentVal, origVal, currentDesc, isDel,
     const newRecord = {
       id: rowId,
       store_id: storeId,
-      device_id: 'web_client',
-      device_name: 'Web Dashboard',
+      device_id: devId,
+      device_name: devName,
       module_type: supabaseModType,
       local_id: rowId,
       trx_date: trxDate.indexOf(' s/d ') > -1 ? getTodayDbDate() : trxDate,
@@ -1779,28 +1783,30 @@ async function saveRowToSupabase(rowId, currentVal, origVal, currentDesc, isDel,
       is_edited: true,
       is_deleted_by_web: isDel,
       web_edited_at: new Date().toISOString(),
+      is_synced_to_master: isSynced,
+      last_modified_by: roleName,
+      modified_source: modSource,
       extra_data: extra
     };
 
-    if (client) {
-      let res = await client.from('ksp_history_transactions').upsert([newRecord], { onConflict: 'id' });
+    // 1. Simpan ke Cabang Staging (Project B)
+    if (branchClient) {
+      let res = await branchClient.from('ksp_history_transactions').upsert([newRecord], { onConflict: 'id' });
       if (res.error) {
-        console.warn('[KspHistoriku] Upsert dengan web flags gagal, coba tanpa flags:', res.error);
-        delete newRecord.is_edited;
-        delete newRecord.is_deleted_by_web;
-        delete newRecord.web_edited_at;
-        let resRetry = await client.from('ksp_history_transactions').upsert([newRecord], { onConflict: 'id' });
-        if (resRetry.error) {
-          console.error('[KspHistoriku] Gagal upsert newRecord ke Supabase:', resRetry.error);
-        }
+        console.warn('[KspHistoriku] Upsert ke Project B coba minimal:', res.error);
+        delete newRecord.is_synced_to_master;
+        delete newRecord.last_modified_by;
+        delete newRecord.modified_source;
+        await branchClient.from('ksp_history_transactions').upsert([newRecord], { onConflict: 'id' });
       }
-    } else {
-      headers['Prefer'] = 'resolution=merge-duplicates,return=minimal';
-      await fetch(`${baseUrl}/rest/v1/ksp_history_transactions`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(newRecord)
-      });
+    }
+    // 2. Jika Admin, simpan langsung juga ke Master (Project A)
+    if (masterClient) {
+      try {
+        await masterClient.from('ksp_history_transactions').upsert([newRecord], { onConflict: 'id' });
+      } catch (e) {
+        console.warn('[KspHistoriku] Gagal upsert newRecord ke Master A:', e);
+      }
     }
     return;
   }
@@ -1813,27 +1819,31 @@ async function saveRowToSupabase(rowId, currentVal, origVal, currentDesc, isDel,
     is_edited: true,
     is_deleted_by_web: isDel,
     web_edited_at: new Date().toISOString(),
+    is_synced_to_master: isSynced,
+    last_modified_by: roleName,
+    modified_source: modSource,
     extra_data: extra
   };
 
-  if (client) {
-    let res = await client.from('ksp_history_transactions').update(updatePayload).eq('id', rowId);
+  if (branchClient) {
+    let res = await branchClient.from('ksp_history_transactions').update(updatePayload).eq('id', rowId);
     if (res.error) {
-      // Fallback jika kolom is_edited belum ditambahkan di Supabase
       const fallbackPayload = {
         amount: currentVal,
         item_name: currentDesc || undefined,
         customer_name: currentDesc || undefined,
         extra_data: extra
       };
-      await client.from('ksp_history_transactions').update(fallbackPayload).eq('id', rowId);
+      await branchClient.from('ksp_history_transactions').update(fallbackPayload).eq('id', rowId);
     }
-  } else {
-    await fetch(`${baseUrl}/rest/v1/ksp_history_transactions?id=eq.${encodeURIComponent(rowId)}`, {
-      method: 'PATCH',
-      headers: headers,
-      body: JSON.stringify(updatePayload)
-    });
+  }
+
+  if (masterClient) {
+    try {
+      await masterClient.from('ksp_history_transactions').update(updatePayload).eq('id', rowId);
+    } catch (e) {
+      console.warn('[KspHistoriku] Gagal update row ke Master A:', e);
+    }
   }
 }
 
@@ -1900,6 +1910,7 @@ async function resetReportEdits() {
   } catch(e) {}
 
   const client = getSupabaseClient();
+  const masterClient = (window.CURRENT_AUTH_ROLE === 'admin') ? getMasterSupabaseClient() : null;
   const rows = document.querySelectorAll('.lv-row');
   const resetPromises = [];
 
@@ -1911,14 +1922,21 @@ async function resetReportEdits() {
     if (rowId) {
       if (isNew) {
         if (client) resetPromises.push(client.from('ksp_history_transactions').delete().eq('id', rowId));
+        if (masterClient) resetPromises.push(masterClient.from('ksp_history_transactions').delete().eq('id', rowId));
       } else {
+        const isEmployee = (window.CURRENT_AUTH_ROLE === 'employee');
+        const empName = (window.CURRENT_EMPLOYEE && window.CURRENT_EMPLOYEE.name) || 'Karyawan';
         const resetPayload = {
           amount: origVal,
           is_edited: false,
           is_deleted_by_web: false,
+          is_synced_to_master: !isEmployee,
+          last_modified_by: isEmployee ? empName : 'Admin',
+          modified_source: isEmployee ? 'employee_web' : 'admin_web',
           extra_data: { reset_to_original: true }
         };
         if (client) resetPromises.push(client.from('ksp_history_transactions').update(resetPayload).eq('id', rowId));
+        if (masterClient) resetPromises.push(masterClient.from('ksp_history_transactions').update(resetPayload).eq('id', rowId));
       }
     }
   });
@@ -5501,9 +5519,10 @@ function getSampleDataForStore(storeId, storeName) {
 }
 
 // ============================================================================
-// SUPABASE HISTORY SYNC & REALTIME INTEGRATION
+// SUPABASE HISTORY SYNC & REALTIME INTEGRATION (PROJECT B & MASTER A)
 // ============================================================================
 let supabaseHistoryClient = null;
+let masterSupabaseClient = null;
 let realtimeHistoryChannel = null;
 
 function getSupabaseClient() {
@@ -5515,11 +5534,113 @@ function getSupabaseClient() {
   return supabaseHistoryClient;
 }
 
+function getMasterSupabaseClient() {
+  if (masterSupabaseClient) return masterSupabaseClient;
+  const cfg = window.MASTER_SUPABASE_CONFIG;
+  if (cfg && cfg.supabase_url && cfg.supabase_anon_key && window.supabase && typeof window.supabase.createClient === 'function') {
+    masterSupabaseClient = window.supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
+  }
+  return masterSupabaseClient;
+}
+
+/**
+ * Sinkronisasi Dua Arah antara Master (Project A) dan Cabang Staging (Project B).
+ * Dipanggil secara otomatis ketika Admin membuka HistoriKu atau saat tombol Sync diklik.
+ * 1. Push perubahan transaksi karyawan dari Project B ke Project A.
+ * 2. Pull / Mirror transaksi terbaru dari Project A ke Project B.
+ */
+async function syncBetweenMasterAndBranch(storeId, startDate, endDate) {
+  const masterClient = getMasterSupabaseClient();
+  const branchClient = getSupabaseClient();
+
+  if (!masterClient || !branchClient || !storeId) {
+    return { ok: false, message: 'Client Master atau Cabang belum siap' };
+  }
+
+  try {
+    let pendingEmpCount = 0;
+    let masterMirroredCount = 0;
+
+    // 1. Ambil semua perubahan transaksi karyawan dari Project B yang belum masuk ke Master
+    const { data: pendingRows, error: pendingErr } = await branchClient
+      .from('ksp_history_transactions')
+      .select('*')
+      .eq('store_id', storeId)
+      .eq('is_synced_to_master', false);
+
+    if (!pendingErr && Array.isArray(pendingRows) && pendingRows.length > 0) {
+      pendingEmpCount = pendingRows.length;
+      console.log(`[KspHistoriku Sync] Mengirim ${pendingEmpCount} perubahan transaksi karyawan ke Master A...`);
+
+      for (const row of pendingRows) {
+        const rowToMaster = {
+          ...row,
+          is_synced_to_master: true
+        };
+        const upRes = await masterClient.from('ksp_history_transactions').upsert([rowToMaster], { onConflict: 'id' });
+        if (!upRes.error) {
+          await branchClient.from('ksp_history_transactions').update({
+            is_synced_to_master: true,
+            synced_at: new Date().toISOString()
+          }).eq('id', row.id);
+        } else {
+          console.warn('[KspHistoriku Sync] Gagal sync row ke Master:', upRes.error);
+        }
+      }
+    }
+
+    // 2. Tarik transaksi dari Master (Project A) dan salin/mirror ke Project B
+    const sDate = startDate || (window.REPORT_DATA && window.REPORT_DATA.startDate) || (window.REPORT_DATA && window.REPORT_DATA.dateDb && window.REPORT_DATA.dateDb.indexOf(' s/d ') === -1 ? window.REPORT_DATA.dateDb : '') || getTodayDbDate();
+    const eDate = endDate || (window.REPORT_DATA && window.REPORT_DATA.endDate) || sDate;
+
+    let masterQuery = masterClient.from('ksp_history_transactions')
+      .select('*')
+      .eq('store_id', storeId);
+
+    if (sDate === eDate) {
+      masterQuery = masterQuery.eq('trx_date', sDate);
+    } else {
+      masterQuery = masterQuery.gte('trx_date', sDate).lte('trx_date', eDate);
+    }
+
+    const { data: masterRows, error: masterErr } = await masterQuery;
+
+    if (!masterErr && Array.isArray(masterRows) && masterRows.length > 0) {
+      const pendingIds = new Set((pendingRows || []).map(r => r.id));
+      const rowsToMirror = masterRows.filter(r => !pendingIds.has(r.id)).map(r => ({
+        ...r,
+        is_synced_to_master: true
+      }));
+
+      if (rowsToMirror.length > 0) {
+        const mirrorRes = await branchClient.from('ksp_history_transactions').upsert(rowsToMirror, { onConflict: 'id' });
+        if (!mirrorRes.error) {
+          masterMirroredCount = rowsToMirror.length;
+        } else {
+          console.warn('[KspHistoriku Sync] Gagal mirror ke Project B:', mirrorRes.error);
+        }
+      }
+    }
+
+    return {
+      ok: true,
+      pendingSynced: pendingEmpCount,
+      masterMirrored: masterMirroredCount
+    };
+  } catch (err) {
+    console.warn('[KspHistoriku Sync] Exception dual-sync:', err);
+    return { ok: false, error: err };
+  }
+}
+
 function fetchSupabaseHistory(storeId, startDate, endDate) {
   const cfg = window.KSP_SYNC_CONFIG || {};
   if (!storeId) return Promise.resolve(null);
 
-  const client = getSupabaseClient();
+  const isEmployee = (window.CURRENT_AUTH_ROLE === 'employee');
+  const masterClient = !isEmployee ? getMasterSupabaseClient() : null;
+  const client = masterClient || getSupabaseClient();
+
   if (client) {
     try {
       let query = client.from('ksp_history_transactions')
@@ -6320,6 +6441,8 @@ window.KspHistoriku = {
 
     initSupabaseRealtime(storeId);
   },
+  syncBetweenMasterAndBranch: syncBetweenMasterAndBranch,
+  getMasterSupabaseClient: getMasterSupabaseClient,
   loadMultiDayForStore: loadMultiDayForStore,
   setPeriodMode: setPeriodMode,
   openFormatLayoutModal: openFormatLayoutModal,

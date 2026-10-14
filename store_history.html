@@ -349,10 +349,14 @@
                     </select>
                 </div>
 
-                <!-- Right: Format Trigger, Download JSON, Hidden Group, Speak All, Settings -->
+                <!-- Right: Format Trigger, Download JSON, Hidden Group, Speak All, Sync Cloud, Settings -->
                 <div class="header-main-right">
                     <button class="btn-format-trigger" id="btnFormatLayout" onclick="KspHistoriku.openFormatLayoutModal()" style="display: none;" title="Pilih Format Layout">
                         📖 <span id="formatLayoutCurrentLabel">Lembar Buku</span> ▾
+                    </button>
+
+                    <button class="toggle-btn" id="btn-sync-cloud" onclick="triggerManualCloudSync()" title="Sinkronkan Perubahan Karyawan & Master (Project B ⇄ Project A)" style="display: none; padding: 4px 8px; font-size: 13px; color: var(--accent);">
+                        <span class="btn-icon" id="syncCloudIcon">🔄</span>
                     </button>
 
                     <button class="toggle-btn" id="btn-download-json" onclick="KspHistoriku.exportHistoryJson()" title="Unduh Riwayat ke File JSON (1 Hari / Rentang Tanggal)" style="padding: 4px 8px; font-size: 13px;">
@@ -870,11 +874,19 @@
         // Inisialisasi Halaman & Autentikasi
         document.addEventListener('DOMContentLoaded', async function() {
             syncPageTheme();
-            const savedPin = KspAuth.getAdminPin();
+            const savedPin = (window.KspAuth && typeof KspAuth.getAdminPin === 'function') ? KspAuth.getAdminPin() : '';
             if (savedPin) {
                 unlockWithPin(savedPin);
             } else {
-                document.getElementById('pinModal').style.display = 'flex';
+                // Cek apakah ada kredensial sesi karyawan aktif (dari karyawan.html)
+                const savedEmpCred = (window.KspAuth && typeof KspAuth.getEmployeeCredential === 'function') 
+                    ? KspAuth.getEmployeeCredential() 
+                    : (sessionStorage.getItem('kspcheck_emp_cred') || localStorage.getItem('kspcheck_emp_cred'));
+                if (savedEmpCred) {
+                    unlockWithPin(savedEmpCred);
+                } else {
+                    document.getElementById('pinModal').style.display = 'flex';
+                }
             }
         });
 
@@ -897,31 +909,38 @@
 
                 // 1. Coba verifikasi sebagai PIN Admin (decryptConfig)
                 try {
-                    await KspAuth.decryptConfig(pin);
-                    KspAuth.setAdminSession(pin);
-                    unlocked = true;
+                    const masterCfg = await KspAuth.decryptConfig(pin);
+                    if (masterCfg && masterCfg.supabase_url) {
+                        KspAuth.setAdminSession(pin);
+                        window.MASTER_SUPABASE_CONFIG = masterCfg;
+                        window.CURRENT_AUTH_ROLE = 'admin';
+                        unlocked = true;
+                    }
                 } catch(e) {
                     unlocked = false;
                 }
 
-                // 2. Jika bukan PIN Admin, verifikasi sebagai Password Karyawan (sama seperti karyawan.html)
+                // 2. Jika bukan PIN Admin, verifikasi sebagai Password Karyawan (Project B RPC)
                 if (!unlocked) {
                     if (window.KspSync && KspSync.enabled()) {
                         const empRes = await KspSync.empLogin(pin);
                         if (empRes && empRes.ok) {
                             unlocked = true;
+                            window.CURRENT_AUTH_ROLE = 'employee';
+                            window.CURRENT_EMPLOYEE = empRes.employee;
                             if (empRes.store) {
                                 currentStoreId = empRes.store.id;
                                 currentStoreName = empRes.store.name;
-                                if (Array.isArray(empRes.all_stores) && empRes.all_stores.length > 0) {
-                                    mergeStoresList(empRes.all_stores);
-                                } else {
-                                    mergeStoresList([empRes.store]);
-                                }
+                                storesList = [empRes.store];
+                                try { localStorage.setItem('kspcheck_stores_data', JSON.stringify([empRes.store])); } catch(e) {}
                             }
                             try {
                                 sessionStorage.setItem('kspcheck_emp_cred', pin);
                                 localStorage.setItem('kspcheck_emp_cred', pin);
+                                if (empRes.employee) {
+                                    sessionStorage.setItem('kspcheck_active_emp', JSON.stringify(empRes.employee));
+                                    localStorage.setItem('kspcheck_active_emp', JSON.stringify(empRes.employee));
+                                }
                             } catch(e) {}
                         } else {
                             throw new Error('PIN Admin atau Password Karyawan salah!');
@@ -950,6 +969,17 @@
 
         // Setup Toko & Parameter URL
         function initHistoryPage() {
+            const isEmployee = (window.CURRENT_AUTH_ROLE === 'employee');
+
+            if (isEmployee) {
+                document.body.classList.add('role-employee');
+                if (window.CURRENT_EMPLOYEE && window.CURRENT_EMPLOYEE.store_id) {
+                    currentStoreId = window.CURRENT_EMPLOYEE.store_id;
+                }
+            } else {
+                document.body.classList.remove('role-employee');
+            }
+
             loadStoresList();
 
             const params = new URLSearchParams(window.location.search);
@@ -965,7 +995,10 @@
                 KspHistoriku.selectFormatLayoutMode(layoutParam);
             }
 
-            if (storeParam) {
+            // Jika role adalah Karyawan, kunci storeId hanya ke cabang miliknya
+            if (isEmployee) {
+                if (!currentStoreId && storeParam) currentStoreId = storeParam;
+            } else if (storeParam) {
                 currentStoreId = storeParam;
                 const found = storesList.find(s => s.id === storeParam);
                 currentStoreName = found ? found.name : (nameParam || storeParam);
@@ -982,15 +1015,52 @@
                 currentStoreName = 'Cabang Utama';
             }
 
+            // Konfigurasi tombol kembali (Back Button)
             const backBtn = document.getElementById('btnBackToStore');
             if (backBtn) {
-                backBtn.href = 'store_manager.html?store=' + encodeURIComponent(currentStoreId);
+                if (isEmployee) {
+                    backBtn.href = 'karyawan.html';
+                    backBtn.title = 'Kembali ke Portal Karyawan';
+                    backBtn.innerHTML = '👤';
+                } else {
+                    backBtn.href = 'store_manager.html?store=' + encodeURIComponent(currentStoreId);
+                    backBtn.title = 'Kembali ke Cabang';
+                    backBtn.innerHTML = '←';
+                }
+            }
+
+            // Tombol Sinkronisasi Cloud (Hanya untuk Admin)
+            const syncBtn = document.getElementById('btn-sync-cloud');
+            if (syncBtn) {
+                syncBtn.style.display = isEmployee ? 'none' : 'inline-flex';
             }
 
             const storeSelect = document.getElementById('storeSelect');
-            if (storeSelect) storeSelect.value = currentStoreId;
+            if (storeSelect) {
+                storeSelect.value = currentStoreId;
+                storeSelect.disabled = isEmployee;
+                if (isEmployee) {
+                    storeSelect.title = 'Cabang Anda (' + currentStoreName + ')';
+                    storeSelect.style.cursor = 'default';
+                } else {
+                    storeSelect.title = 'Pilih Cabang';
+                    storeSelect.style.cursor = 'pointer';
+                }
+            }
 
             if (window.KspHistoriku) KspHistoriku.updateLayoutModeUI();
+
+            // Jalankan sinkronisasi dua arah Master & Cabang jika Admin
+            if (!isEmployee && window.KspHistoriku && typeof window.KspHistoriku.syncBetweenMasterAndBranch === 'function') {
+                window.KspHistoriku.syncBetweenMasterAndBranch(currentStoreId, rangeStart || dateParam, rangeEnd || dateParam)
+                    .then(r => {
+                        if (r && r.ok && (r.pendingSynced > 0 || r.masterMirrored > 0)) {
+                            // Muat ulang data terbaru setelah sync
+                            reloadCurrentReportData();
+                        }
+                    })
+                    .catch(err => console.warn('[KspHistoriku] Background sync warning:', err));
+            }
 
             if (modeParam === 'multiday' || (rangeStart && rangeEnd)) {
                 const start = rangeStart || (function() {
@@ -1007,37 +1077,98 @@
             }
         }
 
-        function loadStoresList() {
+        function reloadCurrentReportData() {
+            if (!window.KspHistoriku) return;
+            const curData = window.REPORT_DATA;
+            if (curData && curData.isMultiDay && curData.startDate && curData.endDate) {
+                window.KspHistoriku.loadMultiDayForStore(currentStoreId, currentStoreName, curData.startDate, curData.endDate);
+            } else {
+                const curDate = (curData && curData.dateDb && curData.dateDb.indexOf(' s/d ') === -1) ? curData.dateDb : getTodayDbDate();
+                window.KspHistoriku.loadForStore(currentStoreId, currentStoreName, curDate);
+            }
+        }
+
+        async function triggerManualCloudSync() {
+            const btn = document.getElementById('btn-sync-cloud');
+            const icon = document.getElementById('syncCloudIcon');
+            if (btn) btn.classList.add('loading');
+            if (icon) icon.style.display = 'inline-block';
+            showToast('⏳ Memeriksa sinkronisasi Master (A) & Cabang (B)...', '🔄');
+
             try {
-                const raw = localStorage.getItem('kspcheck_stores_data');
-                if (raw) {
-                    storesList = JSON.parse(raw);
+                if (window.KspHistoriku && typeof window.KspHistoriku.syncBetweenMasterAndBranch === 'function') {
+                    const curData = window.REPORT_DATA;
+                    const start = (curData && curData.startDate) || (curData && curData.dateDb && curData.dateDb.indexOf(' s/d ') === -1 ? curData.dateDb : '') || getTodayDbDate();
+                    const end = (curData && curData.endDate) || start;
+                    const res = await window.KspHistoriku.syncBetweenMasterAndBranch(currentStoreId, start, end);
+                    if (res && res.ok) {
+                        reloadCurrentReportData();
+                        const msg = (res.pendingSynced > 0)
+                            ? `✅ Sukses! ${res.pendingSynced} perubahan karyawan disinkronkan ke Master.`
+                            : `✅ Master & Cabang sudah sinkron (${res.masterMirrored || 0} transaksi dimirror).`;
+                        showToast(msg, '☁️');
+                    } else {
+                        showToast('ℹ️ ' + (res.message || 'Tidak ada perubahan baru.'), '☁️');
+                    }
+                } else {
+                    showToast('⚠️ Fitur sinkronisasi belum siap.', '⚠️');
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error(e);
+                showToast('❌ Gagal sinkronisasi: ' + (e.message || e), '❌');
+            } finally {
+                if (btn) btn.classList.remove('loading');
+            }
+        }
+
+        function loadStoresList() {
+            const isEmployee = (window.CURRENT_AUTH_ROLE === 'employee');
+
+            if (!isEmployee) {
+                try {
+                    const raw = localStorage.getItem('kspcheck_stores_data');
+                    if (raw) {
+                        storesList = JSON.parse(raw);
+                    }
+                } catch(e) {}
+            }
 
             if (!storesList || storesList.length === 0) {
                 storesList = [
-                    { id: 'store_pusat', name: 'Cabang Utama' },
-                    { id: 'store_pasar', name: 'Cabang Pasar' }
+                    { id: currentStoreId || 'store_pusat', name: currentStoreName || 'Cabang Utama' }
                 ];
             }
 
             renderStoreSelectOptions();
-            fetchStoresFromCloud();
+            if (!isEmployee) {
+                fetchStoresFromCloud();
+            }
         }
 
         function renderStoreSelectOptions() {
             const select = document.getElementById('storeSelect');
             if (!select) return;
+            const isEmployee = (window.CURRENT_AUTH_ROLE === 'employee');
+
+            if (isEmployee) {
+                // Khusus karyawan: hanya tampilkan 1 opsi cabang sendiri
+                select.innerHTML = `<option value="${currentStoreId}">${currentStoreName} (${currentStoreId})</option>`;
+                select.value = currentStoreId;
+                select.disabled = true;
+                return;
+            }
+
             let html = storesList.map(s => `
                 <option value="${s.id}">${s.name} (${s.id})</option>
             `).join('');
             html += `<option value="__custom_store_action__">➕ Tambah / Pilih ID Cabang Lain...</option>`;
             select.innerHTML = html;
             if (currentStoreId) select.value = currentStoreId;
+            select.disabled = false;
         }
 
         function fetchStoresFromCloud() {
+            if (window.CURRENT_AUTH_ROLE === 'employee') return; // Jangan load cabang lain untuk karyawan
             const cfg = window.KSP_SYNC_CONFIG || {};
             if (!cfg.url || !cfg.key) return;
 
@@ -1087,6 +1218,7 @@
         }
 
         function mergeStoresList(newStores) {
+            if (window.CURRENT_AUTH_ROLE === 'employee') return; // Isolasi cabang karyawan
             if (!Array.isArray(newStores) || newStores.length === 0) return;
             newStores.forEach(st => {
                 const sId = st.id || st.store_id;
@@ -1104,6 +1236,10 @@
         }
 
         function onStoreSelectChange(storeId) {
+            if (window.CURRENT_AUTH_ROLE === 'employee') {
+                renderStoreSelectOptions();
+                return;
+            }
             if (!storeId) return;
             if (storeId === '__custom_store_action__') {
                 const newId = prompt('Masukkan ID Cabang (store_id) yang diset di HP:\nContoh: store_pusat, store_pasar, cabang_1', currentStoreId || '');
