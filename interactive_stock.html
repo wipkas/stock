@@ -4528,35 +4528,105 @@
         let officialStores = []; // [{ id: 'karya2', name: 'Cabang Karya 2', ... }]
 
         async function fetchOfficialStores() {
+            let storesMap = new Map(); // id -> { id, name, ... }
+
+            // Sumber 1: Ambil dari cache localStorage 'kspcheck_stores_data' (Data resmi Store Manager)
             try {
-                // 1. Coba dari Project B via window.KSP_SYNC_CONFIG
-                const cfg = window.KSP_SYNC_CONFIG || {};
-                if (cfg.url && cfg.key) {
-                    const baseUrl = cfg.url.replace(/\/+$/, '');
-                    const headers = { 'apikey': cfg.key };
-                    if (String(cfg.key).indexOf('sb_') !== 0) headers['Authorization'] = 'Bearer ' + cfg.key;
-                    const resp = await fetch(baseUrl + '/rest/v1/ksp_stores?select=id,name,data&order=name.asc', { headers });
+                const rawLocal = localStorage.getItem('kspcheck_stores_data');
+                if (rawLocal) {
+                    const parsedLocal = JSON.parse(rawLocal);
+                    if (Array.isArray(parsedLocal) && parsedLocal.length > 0) {
+                        parsedLocal.forEach(s => {
+                            if (s && s.id) {
+                                storesMap.set(s.id, { id: s.id, name: s.name || s.id, source: 'local_stores' });
+                            }
+                        });
+                    }
+                }
+            } catch (e) {
+                console.warn('Gagal membaca cache kspcheck_stores_data:', e);
+            }
+
+            const cfg = window.KSP_SYNC_CONFIG || {};
+            const baseUrl = (cfg.url || '').replace(/\/+$/, '');
+            const pin = localStorage.getItem('kspcheck_viewer_pin') || (typeof DEFAULT_PIN !== 'undefined' ? DEFAULT_PIN : '');
+
+            if (baseUrl && cfg.key) {
+                const headers = { 'Content-Type': 'application/json', 'apikey': cfg.key };
+                if (String(cfg.key).indexOf('sb_') !== 0) headers['Authorization'] = 'Bearer ' + cfg.key;
+
+                // Sumber 2: Coba via RPC ksp_admin_get_stores (Mengabaikan RLS jika ada PIN Admin)
+                if (pin) {
+                    try {
+                        const rpcResp = await fetch(baseUrl + '/rest/v1/rpc/ksp_admin_get_stores', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({ p_pin: pin })
+                        });
+                        if (rpcResp.ok) {
+                            const rpcData = await rpcResp.json();
+                            const rpcStores = (rpcData && Array.isArray(rpcData.stores)) ? rpcData.stores : (Array.isArray(rpcData) ? rpcData : []);
+                            if (rpcStores.length > 0) {
+                                rpcStores.forEach(s => {
+                                    if (s && s.id) storesMap.set(s.id, { id: s.id, name: s.name || s.id, source: 'cloud_rpc' });
+                                });
+                                try { localStorage.setItem('kspcheck_stores_data', JSON.stringify(rpcStores)); } catch(e) {}
+                            }
+                        }
+                    } catch (errRpc) {
+                        console.warn('Gagal via RPC ksp_admin_get_stores:', errRpc);
+                    }
+                }
+
+                // Sumber 3: Coba query tabel public.ksp_stores (jika RLS di Supabase sudah dibuka)
+                try {
+                    const resp = await fetch(baseUrl + '/rest/v1/ksp_stores?select=id,name&order=name.asc', {
+                        headers: { 'apikey': cfg.key, ...(String(cfg.key).indexOf('sb_') !== 0 ? { 'Authorization': 'Bearer ' + cfg.key } : {}) }
+                    });
                     if (resp.ok) {
-                        const data = await resp.json();
-                        if (Array.isArray(data) && data.length > 0) {
-                            officialStores = data;
-                            cachedProjectBStores = data;
-                            return officialStores;
+                        const restStores = await resp.json();
+                        if (Array.isArray(restStores) && restStores.length > 0) {
+                            restStores.forEach(s => {
+                                if (s && s.id) storesMap.set(s.id, { id: s.id, name: s.name || s.id, source: 'cloud_rest' });
+                            });
                         }
                     }
+                } catch (errRest) {
+                    console.warn('Gagal REST ksp_stores:', errRest);
                 }
-                // 2. Fallback via supabaseClient jika sudah terkoneksi
-                if (supabaseClient) {
-                    const { data, error } = await supabaseClient.from('ksp_stores').select('id, name, data').order('name');
-                    if (!error && Array.isArray(data) && data.length > 0) {
-                        officialStores = data;
-                        cachedProjectBStores = data;
-                        return officialStores;
+
+                // Sumber 4: Coba baca tabel public.ksp_devices (memiliki policy publik)
+                try {
+                    const devResp = await fetch(baseUrl + '/rest/v1/ksp_devices?select=store_id,device_name&is_active=eq.true', {
+                        headers: { 'apikey': cfg.key, ...(String(cfg.key).indexOf('sb_') !== 0 ? { 'Authorization': 'Bearer ' + cfg.key } : {}) }
+                    });
+                    if (devResp.ok) {
+                        const devs = await devResp.json();
+                        if (Array.isArray(devs) && devs.length > 0) {
+                            devs.forEach(d => {
+                                if (d && d.store_id && !storesMap.has(d.store_id)) {
+                                    storesMap.set(d.store_id, { id: d.store_id, name: d.device_name || d.store_id, source: 'cloud_devices' });
+                                }
+                            });
+                        }
                     }
+                } catch (errDev) {
+                    console.warn('Gagal baca ksp_devices:', errDev);
                 }
-            } catch (err) {
-                console.warn('Gagal fetchOfficialStores:', err);
             }
+
+            // Sumber 5: Ekstrak dari Project A jika Project B benar-benar kosong
+            if (storesMap.size === 0 && cachedProjectAData && Array.isArray(cachedProjectAData.vouchers)) {
+                cachedProjectAData.vouchers.forEach(v => {
+                    if (v.device_id && v.device_id !== 'master' && !storesMap.has(v.device_id)) {
+                        storesMap.set(v.device_id, { id: v.device_id, name: v.device_name || v.device_id, source: 'project_a' });
+                    }
+                });
+            }
+
+            officialStores = Array.from(storesMap.values());
+            cachedProjectBStores = officialStores;
+            console.log(`[OfficialStores] Berhasil memuat ${officialStores.length} cabang:`, officialStores);
             return officialStores;
         }
         window.fetchOfficialStores = fetchOfficialStores;
