@@ -14741,6 +14741,12 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 return;
             }
 
+            if (!window._syncingOpnameSessions) window._syncingOpnameSessions = new Set();
+            if (window._syncingOpnameSessions.has(sessionId)) {
+                showToast('⏳ Sesi ini sedang disinkronkan, mohon tunggu...');
+                return;
+            }
+
             const isRestock = (session.session_type === 'ai_restock');
             const details = Array.isArray(session.details) ? session.details : [];
             const changedItems = details.filter(it => it.delta !== 0);
@@ -14751,6 +14757,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
             if (!confirm(confirmMsg)) return;
 
+            window._syncingOpnameSessions.add(sessionId);
             showToast('⏳ Menyelaraskan stok ke Project A...');
 
             try {
@@ -14758,15 +14765,27 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
                 if (changedItems.length > 0) {
                     for (const it of changedItems) {
-                        const finalStock = Number(it.new_stock !== undefined ? it.new_stock : it.initial_stock);
+                        const curVoucher = allVouchers.find(v => String(v.device_id) === String(session.store_id) && v.product_id === it.product_id);
+                        let finalStock = Number(it.new_stock !== undefined ? it.new_stock : it.initial_stock);
+
+                        if (isRestock) {
+                            // Untuk restok nota, tambahkan delta barang masuk ke stok master yang ada jika voucher ditemukan
+                            if (curVoucher && curVoucher.stock !== undefined && curVoucher.stock !== null) {
+                                finalStock = Math.max(0, parseInt(curVoucher.stock, 10) + Number(it.delta || 0));
+                            } else {
+                                finalStock = Number(it.new_stock !== undefined ? it.new_stock : it.delta);
+                            }
+                        }
+
+                        const itemCost = Number(it.cost || it.cost_price || 0);
                         const updatePayload = {
                             stock: finalStock,
                             updated_at: new Date().toISOString()
                         };
 
                         // Jika sesi restok dan ada harga modal, perbarui harga modal cost_price di Stok Master
-                        if (isRestock && it.cost !== undefined && it.cost !== null && Number(it.cost) > 0) {
-                            updatePayload.cost_price = Number(it.cost);
+                        if (isRestock && itemCost > 0) {
+                            updatePayload.cost_price = itemCost;
                         }
 
                         const { error } = await supabaseClient
@@ -14775,7 +14794,67 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                             .eq('device_id', session.store_id)
                             .eq('product_id', it.product_id);
 
-                        if (!error) updatedCount++;
+                        if (!error) {
+                            updatedCount++;
+                            if (curVoucher) {
+                                curVoucher.stock = finalStock;
+                                if (isRestock && itemCost > 0) curVoucher.cost_price = itemCost;
+                            }
+                        }
+                    }
+                }
+
+                // Jika restok nota, catat faktur belanja supplier ke tabel restock_orders di Project A
+                if (isRestock) {
+                    try {
+                        const restockOrderRow = {
+                            id: session.id,
+                            device_id: String(session.store_id),
+                            device_name: session.store_name || ('Cabang ' + session.store_id),
+                            action_type: 'ai_restock',
+                            order_date: session.opname_date || getLocalDateString(new Date()),
+                            total_items: changedItems.length,
+                            total_pcs: Number(session.total_restock || 0),
+                            total_received_pcs: Number(session.total_restock || 0),
+                            est_cost: Number(session.total_cost || 0),
+                            actual_cost: Number(session.total_cost || 0),
+                            manual_actual_cost: null,
+                            est_margin: 0,
+                            items: changedItems.map(it => ({
+                                productId: it.product_id,
+                                productName: it.product_name,
+                                provider: it.provider_name || 'Voucher',
+                                category: it.category_name || 'Voucher',
+                                qty: Number(it.delta || it.qty_restock || 0),
+                                cost: Number(it.cost || it.cost_price || 0),
+                                price: Number(it.sell_price || 0),
+                                received: Number(it.delta || it.qty_restock || 0)
+                            })),
+                            status: 'completed',
+                            notes: `Restok Nota AI: ${session.emp_name || 'Kasir'} (Shift ${session.shift_num || 1})`,
+                            created_at: session.created_at || new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        };
+
+                        if (typeof allRestockOrders !== 'undefined' && Array.isArray(allRestockOrders)) {
+                            const existIdx = allRestockOrders.findIndex(o => o.id === session.id);
+                            if (existIdx >= 0) {
+                                allRestockOrders[existIdx] = restockOrderRow;
+                            } else {
+                                allRestockOrders.unshift(restockOrderRow);
+                            }
+                            if (typeof saveRestockOrdersToStorage === 'function') {
+                                saveRestockOrdersToStorage();
+                            }
+                        }
+
+                        if (typeof cleanOrderForSupabase === 'function') {
+                            await supabaseClient
+                                .from('restock_orders')
+                                .upsert([cleanOrderForSupabase(restockOrderRow)]);
+                        }
+                    } catch (errOrder) {
+                        console.warn('Pencatatan restock_orders Project A dilewati:', errOrder);
                     }
                 }
 
@@ -14802,6 +14881,8 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             } catch (err) {
                 console.error('Gagal sinkron opname ke Project A:', err);
                 alert(`❌ Gagal sinkronisasi: ${err.message || 'Terjadi kesalahan sistem'}`);
+            } finally {
+                window._syncingOpnameSessions.delete(sessionId);
             }
         }
         window.syncOpnameSessionToProjectA = syncOpnameSessionToProjectA;
@@ -14915,6 +14996,14 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 const shiftNum = Number(session.shift_num) || 1;
                 const isSales = (session.session_type === 'shift_sales');
                 const details = Array.isArray(session.details) ? session.details : [];
+
+                // IDEMPOTENCY CHECK: Mencegah penambahan berulang jika sesi yang sama diproses ulang
+                reportData.synced_session_ids = reportData.synced_session_ids || [];
+                if (reportData.synced_session_ids.includes(session.id)) {
+                    console.log(`Sesi ${session.id} sudah pernah diakumulasikan ke laporan cabang ${storeId}. Mutasi dilewati.`);
+                    return;
+                }
+                reportData.synced_session_ids.push(session.id);
 
                 const detailMap = new Map();
                 details.forEach(d => {

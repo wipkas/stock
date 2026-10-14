@@ -2078,15 +2078,42 @@ INDOSAT|FREEDOM 3GB 30HR|4|24500`;
             try {
                 showToast('⏳ Menyimpan restok ke cabang...');
 
+                // Agregasi dan deduplikasi per product_id untuk mencegah silent overwrite data stok jika satu produk muncul lebih dari sekali pada nota
+                const groupedMap = new Map();
+
+                selectedItems.forEach(it => {
+                    const p = it.matchedProduct;
+                    const pid = p.product_id;
+                    const qty = parseInt(it.qty || 0, 10);
+                    const cost = parseInt(it.cost || p.cost_price || 0, 10);
+
+                    if (groupedMap.has(pid)) {
+                        const existing = groupedMap.get(pid);
+                        existing.totalQty += qty;
+                        existing.totalSpent += (qty * cost);
+                        existing.latestCost = cost;
+                    } else {
+                        const initStock = parseInt(p.current_stock || 0, 10);
+                        groupedMap.set(pid, {
+                            product: p,
+                            initialStock: initStock,
+                            totalQty: qty,
+                            totalSpent: (qty * cost),
+                            latestCost: cost
+                        });
+                    }
+                });
+
                 const detailsArray = [];
                 let totalInitial = 0;
                 let totalFinal = 0;
 
-                selectedItems.forEach(it => {
-                    const p = it.matchedProduct;
-                    const initStock = parseInt(p.current_stock || 0, 10);
-                    const qtyRestock = parseInt(it.qty || 0, 10);
+                groupedMap.forEach((entry, pid) => {
+                    const p = entry.product;
+                    const initStock = entry.initialStock;
+                    const qtyRestock = entry.totalQty;
                     const newStock = initStock + qtyRestock;
+                    const finalCost = qtyRestock > 0 ? Math.round(entry.totalSpent / qtyRestock) : entry.latestCost;
 
                     totalInitial += initStock;
                     totalFinal += newStock;
@@ -2100,14 +2127,14 @@ INDOSAT|FREEDOM 3GB 30HR|4|24500`;
                         qty_restock: qtyRestock,
                         new_stock: newStock,
                         delta: qtyRestock,
-                        cost_price: it.cost || p.cost_price || 0,
-                        sell_price: it.matchedProduct.sell_price || p.sell_price || 0,
-                        raw_name: it.name || it.rawLine
+                        cost: finalCost,
+                        cost_price: finalCost,
+                        sell_price: p.sell_price || 0
                     });
                 });
 
                 const invoiceDate = document.getElementById('inputInvoiceDate').value || new Date().toISOString().split('T')[0];
-                const summaryText = `Tambah Stok Nota AI: ${selectedItems.length} produk (+${totalQty} pcs) oleh ${currentEmpName} (Shift ${currentShiftNum}). Total Modal Rp ${formatRupiah(totalCost)}`;
+                const summaryText = `Tambah Stok Nota AI: ${detailsArray.length} produk (+${totalQty} pcs) oleh ${currentEmpName} (Shift ${currentShiftNum}). Total Modal Rp ${formatRupiah(totalCost)}`;
 
                 const payload = {
                     store_name: currentStoreName,
@@ -2116,7 +2143,7 @@ INDOSAT|FREEDOM 3GB 30HR|4|24500`;
                     is_baseline: false,
                     is_shift_closed: false,
                     sync_to_history: false,
-                    total_products: selectedItems.length,
+                    total_products: detailsArray.length,
                     total_initial: totalInitial,
                     total_final: totalFinal,
                     total_sold: 0,
