@@ -8777,6 +8777,86 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             renderDailyReportTable();
         }
 
+        function getVoucherArchiveDate(v) {
+            if (!v) return null;
+            if (v.archived_at) {
+                try { return getLocalDateString(new Date(v.archived_at)); } catch (e) {}
+            }
+            if (v.archived_date) {
+                return v.archived_date;
+            }
+            if (Array.isArray(v.change_history)) {
+                for (let i = v.change_history.length - 1; i >= 0; i--) {
+                    const h = v.change_history[i];
+                    if (h && (h.is_active === false || h.action === 'archive' || (h.summary && String(h.summary).toLowerCase().includes('arsip')))) {
+                        if (h.timestamp) {
+                            try { return getLocalDateString(new Date(h.timestamp)); } catch (e) {}
+                        }
+                    }
+                }
+            }
+            if (v.updated_at && v.is_active === false) {
+                try { return getLocalDateString(new Date(v.updated_at)); } catch (e) {}
+            }
+            return null;
+        }
+
+        function evaluateDailyReportItemArchive(it, selDay, daysMode) {
+            if (!it || it.type !== 'product') return { shouldShow: true, isArchived: false };
+
+            const isMarkedInactive = (it.isArchived === true) || (it.isActive === false);
+            let matchV = null;
+            if (Array.isArray(allVouchers) && allVouchers.length > 0) {
+                matchV = allVouchers.find(v => 
+                    (it.productId && (String(v.product_id) === String(it.productId) || String(v.id) === String(it.productId))) ||
+                    (v.product_name && it.productName && v.product_name.trim().toLowerCase() === it.productName.trim().toLowerCase() &&
+                     (!it.providerName || !v.provider_name || v.provider_name.trim().toLowerCase() === it.providerName.trim().toLowerCase()))
+                );
+            }
+
+            const isVoucherArchived = matchV ? (matchV.is_active === false) : false;
+            const isArchivedTarget = isMarkedInactive || isVoucherArchived;
+
+            if (!isArchivedTarget) {
+                return { shouldShow: true, isArchived: false };
+            }
+
+            // Dapatkan tanggal arsip
+            let arcDate = it.archivedDate || null;
+            if (!arcDate && matchV) {
+                arcDate = getVoucherArchiveDate(matchV);
+            }
+
+            const d3Obj = getDailyDateObj(3);
+            const d2Obj = getDailyDateObj(2);
+            const d1Obj = getDailyDateObj(1);
+
+            const d3Ymd = getLocalDateString(d3Obj);
+            const d2Ymd = getLocalDateString(d2Obj);
+            const d1Ymd = getLocalDateString(d1Obj);
+
+            if (!arcDate && it.isArchived === true) {
+                arcDate = d3Ymd;
+            }
+
+            if (!arcDate) {
+                // Produk arsip usang tanpa tanggal jelas, sembunyikan dari laporan harian
+                return { shouldShow: false, isArchived: true };
+            }
+
+            let matchesDate = false;
+            if (daysMode === 1) {
+                const targetYmd = (selDay === 1 ? d1Ymd : (selDay === 2 ? d2Ymd : d3Ymd));
+                matchesDate = (arcDate === targetYmd);
+            } else if (daysMode === 2) {
+                matchesDate = (arcDate === d2Ymd || arcDate === d3Ymd);
+            } else if (daysMode === 3) {
+                matchesDate = (arcDate === d1Ymd || arcDate === d2Ymd || arcDate === d3Ymd);
+            }
+
+            return { shouldShow: matchesDate, isArchived: true };
+        }
+
         function buildFallbackDailyReportData() {
             const now = new Date();
             const d3 = new Date(now);
@@ -8858,6 +8938,13 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             let curCat = null;
 
             filtered.forEach(v => {
+                const isArchived = (v.is_active === false);
+                const vArchiveDate = isArchived ? getVoucherArchiveDate(v) : null;
+                // Hanya muncul hari itu saja: jika diarsipkan, hanya sertakan jika tanggal arsipnya sama dengan tanggal laporan (d3Ymd)
+                if (isArchived && vArchiveDate !== d3Ymd) {
+                    return;
+                }
+
                 const prov = v.provider_name || 'Lainnya';
                 const cat = v.category_name || 'Umum';
 
@@ -8895,7 +8982,9 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     categoryName: cat,
                     currentStock: parseInt(v.stock || 0),
                     lowStockThreshold: parseInt(v.min_limit || 5),
-                    isActive: true,
+                    isActive: !isArchived,
+                    isArchived: isArchived,
+                    archivedDate: vArchiveDate,
                     price: String(v.sell_price || 0),
                     cost: String(v.cost_price || 0),
                     soldD1Total, soldD1Pagi, soldD1Malam, addedD1: 0, restockedD1,
@@ -9285,6 +9374,8 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
             let currentProvName = '';
             let currentCatName = '';
+            let pendingHeaderHtml = '';
+            let pendingCatHtml = '';
             let visibleRows = 0;
 
             for (let i = 0; i < items.length; i++) {
@@ -9292,17 +9383,25 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
                 if (item.type === 'header') {
                     currentProvName = item.providerName;
-                    html += '<tr class="row-provider-header"><td colspan="15">📦 ' + escapeHtml(currentProvName) + '</td></tr>';
+                    pendingHeaderHtml = '<tr class="row-provider-header"><td colspan="15">📦 ' + escapeHtml(currentProvName) + '</td></tr>';
+                    pendingCatHtml = '';
                     continue;
                 }
 
                 if (item.type === 'category') {
                     currentCatName = item.categoryName;
-                    html += '<tr class="row-category-header"><td colspan="15">📁 ' + escapeHtml(currentCatName) + '</td></tr>';
+                    pendingCatHtml = '<tr class="row-category-header"><td colspan="15">📁 ' + escapeHtml(currentCatName) + '</td></tr>';
                     continue;
                 }
 
                 if (item.type === 'product') {
+                    // Evaluasi status arsip: hanya tampilkan jika diarsipkan pada tanggal laporan hari itu
+                    const arcCheck = evaluateDailyReportItemArchive(item, selDay, dailyDaysMode);
+                    if (!arcCheck.shouldShow) {
+                        continue;
+                    }
+                    item.isArchived = arcCheck.isArchived;
+
                     let prodName = (item.productName || '').toLowerCase();
                     let provName = (item.providerName || currentProvName || '').toLowerCase();
                     if (search && !prodName.includes(search) && !provName.includes(search)) {
@@ -9365,8 +9464,18 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     if (dailyDaysMode === 2) totalPeriodSold = activeSoldD2 + activeSoldD3;
                     if (dailyDaysMode === 3) totalPeriodSold = activeSoldD1 + activeSoldD2 + activeSoldD3;
 
-                    if (dailyHideZeroSell && totalPeriodSold === 0 && !item.isNew && !item.isDeleted) {
+                    if (dailyHideZeroSell && totalPeriodSold === 0 && !item.isNew && !item.isDeleted && !item.isArchived) {
                         continue;
+                    }
+
+                    // Tampilkan header provider/kategori yang tertunda jika ada produk yang lolos filter
+                    if (pendingHeaderHtml) {
+                        html += pendingHeaderHtml;
+                        pendingHeaderHtml = '';
+                    }
+                    if (pendingCatHtml) {
+                        html += pendingCatHtml;
+                        pendingCatHtml = '';
                     }
 
                     visibleRows++;
@@ -9381,12 +9490,17 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     totalGrandRevenue += revenue;
                     totalGrandProfit += profit;
 
-                    let nameClass = item.isDeleted ? 'strikethrough-del' : '';
+                    let nameClass = (item.isDeleted || item.isArchived) ? 'strikethrough-del' : '';
                     let newBadge = item.isNew ? '<span class="tag-baru">Baru</span>' : '';
-                    let delBadge = item.isDeleted ? ' <span style="color:var(--danger); font-size:10px; font-weight:bold;">[Dihapus]</span>' : '';
+                    let delBadge = '';
+                    if (item.isDeleted) {
+                        delBadge = ' <span style="color:var(--danger); font-size:10px; font-weight:bold;">[Dihapus]</span>';
+                    } else if (item.isArchived) {
+                        delBadge = ' <span style="color:var(--warning, #f59e0b); font-size:10px; font-weight:bold;">[Diarsipkan]</span>';
+                    }
                     let provPillHtml = (item.providerName || currentProvName) ? ('<span class="prov-pill">' + escapeHtml(item.providerName || currentProvName) + '</span> ') : '';
 
-                    html += '<tr>';
+                    html += '<tr data-product-id="' + (item.productId || '') + '">';
                     html += '<td class="' + nameClass + '">' + provPillHtml + '<b>' + escapeHtml(item.productName) + '</b>' + newBadge + delBadge + '</td>';
 
                     if (dailyProfitMode) {
@@ -9543,6 +9657,13 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     continue;
                 }
                 if (it.type === 'product') {
+                    // Evaluasi status arsip: hanya sertakan jika diarsipkan pada tanggal laporan hari itu
+                    const arcCheck = evaluateDailyReportItemArchive(it, selDay, dailyDaysMode);
+                    if (!arcCheck.shouldShow) {
+                        continue;
+                    }
+                    it.isArchived = arcCheck.isArchived;
+
                     let currentStock = it.currentStock || 0;
                     let soldAfter = it.soldAfter || 0;
                     let addedAfter = it.addedAfter || 0;
@@ -9605,7 +9726,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         itemAdded = addedD1 + addedD2 + addedD3;
                     }
 
-                    if (itemSold === 0 && dailyHideZeroSell && !it.isNew && !it.isDeleted) continue;
+                    if (itemSold === 0 && dailyHideZeroSell && !it.isNew && !it.isDeleted && !it.isArchived) continue;
 
                     let price = parseLong(it.price);
                     let cost = parseLong(it.cost);
@@ -9622,8 +9743,12 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     if (!provGroups[currentProv]) {
                         provGroups[currentProv] = [];
                     }
+                    let statusSuffix = '';
+                    if (it.isDeleted) statusSuffix = ' [Dihapus]';
+                    else if (it.isArchived) statusSuffix = ' [Diarsipkan]';
+
                     provGroups[currentProv].push({
-                        name: it.productName,
+                        name: it.productName + statusSuffix,
                         sold: itemSold,
                         stokAwal: itemStokAwal,
                         added: itemAdded,
@@ -14947,6 +15072,13 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     let curProv = null;
                     let curCat = null;
                     branchVouchers.forEach(v => {
+                        const isArchived = (v.is_active === false);
+                        const vArchiveDate = isArchived ? getVoucherArchiveDate(v) : null;
+                        // Hanya muncul hari itu saja: jika diarsipkan, hanya sertakan jika tanggal arsipnya sama dengan tanggal laporan (ymd)
+                        if (isArchived && vArchiveDate !== ymd) {
+                            return;
+                        }
+
                         const prov = v.provider_name || 'Lainnya';
                         const cat = v.category_name || 'Umum';
 
@@ -14979,7 +15111,9 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                             categoryName: cat,
                             currentStock: parseInt(v.stock || 0),
                             lowStockThreshold: parseInt(v.min_limit || 5),
-                            isActive: true,
+                            isActive: !isArchived,
+                            isArchived: isArchived,
+                            archivedDate: vArchiveDate,
                             price: String(v.sell_price || 0),
                             cost: String(v.cost_price || 0),
                             soldD1Total, soldD1Pagi, soldD1Malam, addedD1: 0, restockedD1,
