@@ -15993,6 +15993,27 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                             .eq('product_id', pId)
                             .eq('device_id', targetDeviceId);
                         if (errV) console.warn('[vouchers] Single update warning:', errV);
+
+                        if (targetDeviceId !== 'master') {
+                            try {
+                                const storeStockPayload = {
+                                    product_name: newName,
+                                    provider_name: newProvider,
+                                    category_name: newCategory,
+                                    sell_price: newPrice,
+                                    cost_price: newCost,
+                                    sort_order: newSortOrder,
+                                    updated_at: nowIso
+                                };
+                                await supabaseClient
+                                    .from('ksp_store_stock')
+                                    .update(storeStockPayload)
+                                    .eq('product_id', pId)
+                                    .eq('store_id', targetDeviceId);
+                            } catch (errSs) {
+                                console.warn('[ksp_store_stock] Single update warning:', errSs);
+                            }
+                        }
                     }
 
                     (allVouchers || []).forEach(v => {
