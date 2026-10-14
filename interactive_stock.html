@@ -2546,6 +2546,9 @@
                             <button class="settings-item" onclick="showOpnameReviewModal(); closeSettingsMenu()">
                                 <span class="settings-icon">📋</span><span class="settings-label">Review Opname Kasir</span><span class="settings-state" id="settingOpnameState">0 Sesi</span>
                             </button>
+                            <button class="settings-item" onclick="showPromoteMasterModal(); closeSettingsMenu()">
+                                <span class="settings-icon">⭐</span><span class="settings-label">Jadikan Data Master</span><span class="settings-state">Katalog ➜</span>
+                            </button>
                         </div>
                         <div class="settings-group">
                             <div class="settings-title">Sistem &amp; Perangkat</div>
@@ -3437,6 +3440,118 @@
                 <button type="button" onclick="closeManageDevicesModal()" style="padding: 7px 16px; background: transparent; border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer;">
                     Tutup
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: TETAPKAN DATA MASTER DARI PERANGKAT (PRODUK & VOUCHER MASTER) -->
+    <div id="promoteMasterModal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closePromoteMasterModal()">
+        <div class="device-manage-card" style="max-width: 540px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <div>
+                    <h2 style="font-size: 16px; font-weight: 850; color: var(--text-main); margin-bottom: 3px; display: flex; align-items: center; gap: 8px;">
+                        <span>⭐</span> Jadikan Data Master
+                    </h2>
+                    <p style="font-size: 11.5px; color: var(--text-muted); margin: 0;">
+                        Salin katalog perangkat kasir menjadi acuan baku Master (device_id: 'master')
+                    </p>
+                </div>
+                <button type="button" onclick="closePromoteMasterModal()" title="Tutup" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1;">&times;</button>
+            </div>
+
+            <!-- Penjelasan Singkat & Status Aman -->
+            <div style="background: rgba(79, 142, 247, 0.08); border: 1px solid rgba(79, 142, 247, 0.25); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; font-size: 11.5px; line-height: 1.45; color: var(--text-main);">
+                ℹ️ <b>Aman & Non-Destruktif:</b> Data perangkat asli <b>tidak akan dihapus/diubah</b>. Sistem akan menduplikasi item terpilih dengan ID baku <code>master</code> sehingga otomatis muncul sebagai <b>📱 Master</b> di seluruh dashboard & portal.
+            </div>
+
+            <!-- Pilih Perangkat Sumber -->
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 11.5px; font-weight: 750; color: var(--text-main); margin-bottom: 5px;">Pilih Perangkat Sumber:</label>
+                <select id="selPromoteMasterSource" onchange="onPromoteMasterSourceChange()" style="width: 100%; padding: 9px 12px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; color: var(--text-main); font-size: 12.5px; font-weight: 700;">
+                    <!-- Populated dynamically via JS -->
+                </select>
+            </div>
+
+            <!-- Info Preview Jumlah Data Perangkat Terpilih -->
+            <div id="promoteMasterCountsBanner" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; padding: 8px 10px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; font-size: 11px;">
+                <!-- Populated dynamically -->
+            </div>
+
+            <!-- Checklist Pilihan Tabel -->
+            <div style="margin-bottom: 12px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px;">
+                <label style="display: block; font-size: 11.5px; font-weight: 750; color: var(--text-main); margin-bottom: 6px;">Pilih Data yang Ingin Dijadikan Master:</label>
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
+                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 4px 0;">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="chkPromoteVouchers" checked onchange="onPromoteOptionsChange()" style="accent-color: var(--primary); transform: scale(1.15);">
+                            <span>🎟️ <b>Katalog Voucher &amp; Paket Data</b></span>
+                        </span>
+                        <span id="promoteCountVouchers" style="font-size: 11px; color: var(--text-muted); font-weight: 600;">0 item</span>
+                    </label>
+
+                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 4px 0; border-top: 1px dashed var(--card-border); padding-top: 6px;">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="chkPromoteBarang" checked onchange="onPromoteOptionsChange()" style="accent-color: var(--primary); transform: scale(1.15);">
+                            <span>🛍️ <b>Barang Retail &amp; Aksesoris</b></span>
+                        </span>
+                        <span id="promoteCountBarang" style="font-size: 11px; color: var(--text-muted); font-weight: 600;">0 item</span>
+                    </label>
+
+                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 4px 0; border-top: 1px dashed var(--card-border); padding-top: 6px;">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="chkPromoteFeeRules" checked onchange="onPromoteOptionsChange()" style="accent-color: var(--primary); transform: scale(1.15);">
+                            <span>⚖️ <b>Aturan Biaya Admin (Fee Rules)</b></span>
+                        </span>
+                        <span id="promoteCountFeeRules" style="font-size: 11px; color: var(--text-muted); font-weight: 600;">0 item</span>
+                    </label>
+
+                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 4px 0; border-top: 1px dashed var(--card-border); padding-top: 6px;">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="chkPromoteBalances" onchange="onPromoteOptionsChange()" style="accent-color: var(--primary); transform: scale(1.15);">
+                            <span>💳 <b>Snapshot Saldo Realtime Aplikasi</b></span>
+                        </span>
+                        <span id="promoteCountBalances" style="font-size: 11px; color: var(--text-muted); font-weight: 600;">0 saldo</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Opsi Cepat (Preset) -->
+            <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+                <button type="button" onclick="setPromotePreset('vouchers_only')" style="padding: 4px 10px; font-size: 11px; background: rgba(79, 142, 247, 0.1); border: 1px solid rgba(79, 142, 247, 0.3); border-radius: 6px; color: var(--primary); cursor: pointer; font-weight: 600;">
+                    🎟️ Hanya Voucher
+                </button>
+                <button type="button" onclick="setPromotePreset('all')" style="padding: 4px 10px; font-size: 11px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; color: #10B981; cursor: pointer; font-weight: 600;">
+                    📦 Semua Data (Voucher + Retail + Fee)
+                </button>
+            </div>
+
+            <!-- Preview SQL Container (Collapsible) -->
+            <div id="boxPromoteMasterSql" style="display: none; margin-bottom: 12px; background: #0F172A; border: 1px solid rgba(79, 142, 247, 0.4); border-radius: 10px; padding: 10px 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 11px; font-weight: 700; color: #38BDF8; display: flex; align-items: center; gap: 4px;">
+                        <span>📋</span> Script SQL Khusus Perangkat Ini:
+                    </span>
+                    <button type="button" onclick="copyPromoteMasterSql()" style="background: var(--primary); color: #fff; border: none; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                        Salin SQL
+                    </button>
+                </div>
+                <textarea id="txtPromoteMasterSql" readonly style="width: 100%; height: 90px; background: #090D16; color: #A5F3FC; border: 1px solid #1E293B; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 11px; padding: 6px 8px; box-sizing: border-box; resize: vertical; outline: none;"></textarea>
+            </div>
+
+            <!-- Status Box -->
+            <div id="promoteMasterStatus" style="display: none; padding: 8px 12px; border-radius: 8px; font-size: 11.5px; margin-bottom: 10px;"></div>
+
+            <!-- Modal Footer -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px;">
+                <button type="button" onclick="togglePromoteMasterSqlPreview()" style="padding: 7px 12px; background: transparent; border: 1px solid var(--card-border); border-radius: 8px; font-size: 11.5px; font-weight: 600; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                    <span>📋</span> <span id="lblBtnToggleSql">Lihat SQL</span>
+                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" onclick="closePromoteMasterModal()" style="padding: 8px 16px; background: transparent; border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer;">Batal</button>
+                    <button type="button" id="btnExecutePromoteMaster" onclick="executePromoteMaster()" style="padding: 8px 18px; background: #F59E0B; border: none; border-radius: 8px; font-size: 12px; font-weight: 800; color: #FFFFFF; cursor: pointer; box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35); display: flex; align-items: center; gap: 6px;">
+                        <span>⭐</span> Jadikan Master Sekarang
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -5420,6 +5535,11 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                             </div>
 
                             <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--card-border);">
+                                ${id !== 'master' ? `
+                                    <button type="button" class="device-manage-btn" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); color: #F59E0B;" onclick="closeManageDevicesModal(); showPromoteMasterModal('${jsId}');" title="Jadikan data perangkat ini sebagai Acuan Master">
+                                        ⭐ Master
+                                    </button>
+                                ` : ''}
                                 ${!isActive ? `
                                     <button type="button" class="device-manage-btn device-manage-btn-outline" onclick="selectDeviceFromModal('${jsId}'); closeManageDevicesModal();" title="Gunakan filter perangkat ini">
                                         📱 Pilih
@@ -14671,6 +14791,547 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             }
         }
         window.executeSyncCatalogToEmployees = executeSyncCatalogToEmployees;
+
+        // ============================================================================
+        // FITUR: TETAPKAN DATA MASTER DARI PERANGKAT (PRODUK & VOUCHER MASTER)
+        // ============================================================================
+        function showPromoteMasterModal(targetDevId = null) {
+            const modal = document.getElementById('promoteMasterModal');
+            const selSource = document.getElementById('selPromoteMasterSource');
+            const statusEl = document.getElementById('promoteMasterStatus');
+            const sqlBox = document.getElementById('boxPromoteMasterSql');
+            if (!modal || !selSource) return;
+
+            if (statusEl) {
+                statusEl.style.display = 'none';
+                statusEl.textContent = '';
+            }
+            if (sqlBox) {
+                sqlBox.style.display = 'none';
+                const lbl = document.getElementById('lblBtnToggleSql');
+                if (lbl) lbl.textContent = 'Lihat SQL';
+            }
+
+            // Ambil daftar seluruh perangkat aktif
+            const devicesMap = getDiscoveredDevicesMap();
+            selSource.innerHTML = '';
+
+            let hasValidDevice = false;
+            devicesMap.forEach((name, id) => {
+                if (id === 'master') return; // Jangan jadikan Master sebagai sumber untuk dirinya sendiri
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = `📱 ${name} [${id}]`;
+                opt.dataset.name = name;
+                selSource.appendChild(opt);
+                hasValidDevice = true;
+            });
+
+            // Jika hanya ada 'master' atau belum ada perangkat lain
+            if (!hasValidDevice) {
+                devicesMap.forEach((name, id) => {
+                    const opt = document.createElement('option');
+                    opt.value = id;
+                    opt.textContent = `📱 ${name} [${id}]`;
+                    opt.dataset.name = name;
+                    selSource.appendChild(opt);
+                });
+            }
+
+            // Tentukan default selected device
+            const currentFilteredDev = document.getElementById('navDeviceFilter')?.value || 'all';
+            if (targetDevId && Array.from(selSource.options).some(o => o.value === targetDevId)) {
+                selSource.value = targetDevId;
+            } else if (currentFilteredDev !== 'all' && currentFilteredDev !== 'master' && Array.from(selSource.options).some(o => o.value === currentFilteredDev)) {
+                selSource.value = currentFilteredDev;
+            }
+
+            onPromoteMasterSourceChange();
+            modal.style.display = 'flex';
+        }
+        window.showPromoteMasterModal = showPromoteMasterModal;
+
+        function closePromoteMasterModal() {
+            const modal = document.getElementById('promoteMasterModal');
+            if (modal) modal.style.display = 'none';
+        }
+        window.closePromoteMasterModal = closePromoteMasterModal;
+
+        function onPromoteMasterSourceChange() {
+            const selSource = document.getElementById('selPromoteMasterSource');
+            if (!selSource) return;
+            const devId = selSource.value;
+            const devName = selSource.selectedOptions?.[0]?.dataset?.name || selSource.selectedOptions?.[0]?.text?.replace('📱 ', '') || devId;
+
+            // Hitung data untuk perangkat ini
+            const vCount = Array.isArray(allVouchers) ? allVouchers.filter(v => v.device_id === devId).length : 0;
+            const bCount = Array.isArray(allBarang) ? allBarang.filter(b => b.device_id === devId).length : 0;
+            const rCount = Array.isArray(allFeeRules) ? allFeeRules.filter(r => r.device_id === devId).length : 0;
+            const balCount = Array.isArray(allBalances) ? allBalances.filter(b => b.device_id === devId).length : 0;
+
+            const elCountV = document.getElementById('promoteCountVouchers');
+            const elCountB = document.getElementById('promoteCountBarang');
+            const elCountR = document.getElementById('promoteCountFeeRules');
+            const elCountBal = document.getElementById('promoteCountBalances');
+            const bannerEl = document.getElementById('promoteMasterCountsBanner');
+
+            if (elCountV) elCountV.textContent = `${vCount} voucher`;
+            if (elCountB) elCountB.textContent = `${bCount} item`;
+            if (elCountR) elCountR.textContent = `${rCount} aturan`;
+            if (elCountBal) elCountBal.textContent = `${balCount} saldo`;
+
+            if (bannerEl) {
+                bannerEl.innerHTML = `
+                    <span style="color: var(--text-muted);">Data terdeteksi pada <b>${escapeHtml(devName)}</b>:</span>
+                    <span style="color: var(--primary); font-weight: 700;">🎟️ ${vCount} Voucher</span> • 
+                    <span style="color: #10B981; font-weight: 700;">🛍️ ${bCount} Produk</span> • 
+                    <span style="color: #F59E0B; font-weight: 700;">⚖️ ${rCount} Fee Rules</span>
+                `;
+            }
+
+            // Update SQL preview jika sedang terbuka
+            updatePromoteMasterSqlText();
+        }
+        window.onPromoteMasterSourceChange = onPromoteMasterSourceChange;
+
+        function onPromoteOptionsChange() {
+            updatePromoteMasterSqlText();
+        }
+        window.onPromoteOptionsChange = onPromoteOptionsChange;
+
+        function setPromotePreset(presetType) {
+            const chkV = document.getElementById('chkPromoteVouchers');
+            const chkB = document.getElementById('chkPromoteBarang');
+            const chkR = document.getElementById('chkPromoteFeeRules');
+            const chkBal = document.getElementById('chkPromoteBalances');
+
+            if (presetType === 'vouchers_only') {
+                if (chkV) chkV.checked = true;
+                if (chkB) chkB.checked = false;
+                if (chkR) chkR.checked = false;
+                if (chkBal) chkBal.checked = false;
+                showToast('🎟️ Mode Preset: Hanya Voucher');
+            } else if (presetType === 'all') {
+                if (chkV) chkV.checked = true;
+                if (chkB) chkB.checked = true;
+                if (chkR) chkR.checked = true;
+                if (chkBal) chkBal.checked = false;
+                showToast('📦 Mode Preset: Semua Data (Voucher + Retail + Fee)');
+            }
+            updatePromoteMasterSqlText();
+        }
+        window.setPromotePreset = setPromotePreset;
+
+        function togglePromoteMasterSqlPreview() {
+            const box = document.getElementById('boxPromoteMasterSql');
+            const lbl = document.getElementById('lblBtnToggleSql');
+            if (!box) return;
+            const isVisible = (box.style.display !== 'none');
+            box.style.display = isVisible ? 'none' : 'block';
+            if (lbl) lbl.textContent = isVisible ? 'Lihat SQL' : 'Tutup SQL';
+            if (!isVisible) {
+                updatePromoteMasterSqlText();
+            }
+        }
+        window.togglePromoteMasterSqlPreview = togglePromoteMasterSqlPreview;
+
+        function updatePromoteMasterSqlText() {
+            const box = document.getElementById('boxPromoteMasterSql');
+            const txt = document.getElementById('txtPromoteMasterSql');
+            if (!box || box.style.display === 'none' || !txt) return;
+
+            const selSource = document.getElementById('selPromoteMasterSource');
+            const devId = selSource ? selSource.value : 'Karya 2';
+            const devName = selSource?.selectedOptions?.[0]?.dataset?.name || selSource?.selectedOptions?.[0]?.text?.replace('📱 ', '') || devId;
+
+            const copyV = !!document.getElementById('chkPromoteVouchers')?.checked;
+            const copyB = !!document.getElementById('chkPromoteBarang')?.checked;
+            const copyR = !!document.getElementById('chkPromoteFeeRules')?.checked;
+            const copyBal = !!document.getElementById('chkPromoteBalances')?.checked;
+
+            txt.value = generateMasterPromotionSql(devId, devName, copyV, copyB, copyR, copyBal);
+        }
+
+        function copyPromoteMasterSql() {
+            const txt = document.getElementById('txtPromoteMasterSql');
+            if (!txt || !txt.value) {
+                updatePromoteMasterSqlText();
+            }
+            const sqlToCopy = txt ? txt.value : '';
+            if (sqlToCopy) {
+                navigator.clipboard.writeText(sqlToCopy).then(() => {
+                    showToast('📋 Script SQL Master berhasil disalin ke clipboard!');
+                }).catch(() => {
+                    txt.select();
+                    document.execCommand('copy');
+                    showToast('📋 Script SQL disalin!');
+                });
+            }
+        }
+        window.copyPromoteMasterSql = copyPromoteMasterSql;
+
+        function generateMasterPromotionSql(devId, devName, copyV, copyB, copyR, copyBal) {
+            const cleanDev = String(devName || devId || '').replace(/'/g, "''");
+            const cleanId = String(devId || '').replace(/'/g, "''");
+
+            return `-- ============================================================================
+-- JADIKAN DATA PERANGKAT "${cleanDev}" SEBAGAI DATA MASTER RESMI
+-- Dihasilkan otomatis oleh KSP Check Interactive Stock Dashboard
+-- ============================================================================
+DO $$
+DECLARE
+    v_source_input        TEXT    := '${cleanId}';
+    v_target_device_id    TEXT    := 'master';
+    v_target_device_name  TEXT    := 'Master';
+
+    v_copy_vouchers       BOOLEAN := ${copyV ? 'true' : 'false'};
+    v_copy_barang         BOOLEAN := ${copyB ? 'true' : 'false'};
+    v_copy_fee_rules      BOOLEAN := ${copyR ? 'true' : 'false'};
+    v_copy_balances       BOOLEAN := ${copyBal ? 'true' : 'false'};
+
+    v_source_id           TEXT    := NULL;
+    v_source_real_name    TEXT    := NULL;
+    v_count               INT     := 0;
+BEGIN
+    -- 1. Deteksi device_id sumber
+    SELECT device_id, device_name INTO v_source_id, v_source_real_name
+    FROM public.vouchers
+    WHERE LOWER(device_name) = LOWER(TRIM(v_source_input)) OR device_id = TRIM(v_source_input)
+    ORDER BY updated_at DESC LIMIT 1;
+
+    IF v_source_id IS NULL AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'barang') THEN
+        SELECT device_id, device_name INTO v_source_id, v_source_real_name
+        FROM public.barang
+        WHERE LOWER(device_name) = LOWER(TRIM(v_source_input)) OR device_id = TRIM(v_source_input)
+        ORDER BY updated_at DESC LIMIT 1;
+    END IF;
+
+    IF v_source_id IS NULL THEN
+        v_source_id := v_source_input;
+        v_source_real_name := '${cleanDev}';
+    END IF;
+
+    -- 2. Salin Vouchers
+    IF v_copy_vouchers AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'vouchers') THEN
+        INSERT INTO public.vouchers (
+            id, device_id, device_name, product_id, product_name, provider_name, category_name,
+            stock, cost_price, sell_price, min_limit, is_active, previous_name, name_changed_at,
+            last_change, change_history, sort_order, provider_order, category_order, product_order,
+            created_at, updated_at
+        )
+        SELECT
+            v_target_device_id || '_' || product_id, v_target_device_id, v_target_device_name,
+            product_id, product_name, provider_name, category_name, stock, cost_price, sell_price,
+            min_limit, is_active, previous_name, name_changed_at,
+            'Ditetapkan sebagai Master dari ' || v_source_real_name, '[]'::jsonb,
+            sort_order, provider_order, category_order, product_order, NOW(), NOW()
+        FROM public.vouchers
+        WHERE device_id = v_source_id
+        ON CONFLICT (device_id, product_id) DO UPDATE SET
+            device_name = EXCLUDED.device_name, product_name = EXCLUDED.product_name,
+            provider_name = EXCLUDED.provider_name, category_name = EXCLUDED.category_name,
+            stock = EXCLUDED.stock, cost_price = EXCLUDED.cost_price, sell_price = EXCLUDED.sell_price,
+            min_limit = EXCLUDED.min_limit, is_active = EXCLUDED.is_active,
+            sort_order = EXCLUDED.sort_order, provider_order = EXCLUDED.provider_order,
+            category_order = EXCLUDED.category_order, product_order = EXCLUDED.product_order, updated_at = NOW();
+        GET DIAGNOSTICS v_count = ROW_COUNT;
+        RAISE NOTICE 'Vouchers berhasil disalin ke Master: %', v_count;
+    END IF;
+
+    -- 3. Salin Barang Retail
+    IF v_copy_barang AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'barang') THEN
+        INSERT INTO public.barang (
+            id, device_id, device_name, product_id, product_code, product_name, brand_name,
+            category_name, stock, cost_price, sell_price, min_limit, image_path, image_base64,
+            last_change, change_history, sort_order, brand_order, category_order, product_order,
+            created_at, updated_at
+        )
+        SELECT
+            v_target_device_id || '_' || product_id, v_target_device_id, v_target_device_name,
+            product_id, product_code, product_name, brand_name, category_name, stock, cost_price,
+            sell_price, min_limit, image_path, image_base64,
+            'Ditetapkan sebagai Master dari ' || v_source_real_name, '[]'::jsonb,
+            sort_order, brand_order, category_order, product_order, NOW(), NOW()
+        FROM public.barang
+        WHERE device_id = v_source_id
+        ON CONFLICT (device_id, product_id) DO UPDATE SET
+            device_name = EXCLUDED.device_name, product_code = EXCLUDED.product_code,
+            product_name = EXCLUDED.product_name, brand_name = EXCLUDED.brand_name,
+            category_name = EXCLUDED.category_name, stock = EXCLUDED.stock,
+            cost_price = EXCLUDED.cost_price, sell_price = EXCLUDED.sell_price,
+            min_limit = EXCLUDED.min_limit, image_path = EXCLUDED.image_path,
+            image_base64 = EXCLUDED.image_base64, sort_order = EXCLUDED.sort_order,
+            brand_order = EXCLUDED.brand_order, category_order = EXCLUDED.category_order,
+            product_order = EXCLUDED.product_order, updated_at = NOW();
+        GET DIAGNOSTICS v_count = ROW_COUNT;
+        RAISE NOTICE 'Barang Retail berhasil disalin ke Master: %', v_count;
+    END IF;
+
+    -- 4. Salin Fee Rules
+    IF v_copy_fee_rules AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'fee_rules') THEN
+        INSERT INTO public.fee_rules (
+            id, device_id, device_name, rule_id, name, category, min_amount, max_amount,
+            fee_amount, fee_percent, fixed_amount, is_active, priority, created_at, updated_at
+        )
+        SELECT
+            v_target_device_id || '_' || rule_id, v_target_device_id, v_target_device_name,
+            rule_id, name, category, min_amount, max_amount, fee_amount, fee_percent,
+            fixed_amount, is_active, priority, NOW(), NOW()
+        FROM public.fee_rules
+        WHERE device_id = v_source_id
+        ON CONFLICT (device_id, rule_id) DO UPDATE SET
+            device_name = EXCLUDED.device_name, name = EXCLUDED.name, category = EXCLUDED.category,
+            min_amount = EXCLUDED.min_amount, max_amount = EXCLUDED.max_amount,
+            fee_amount = EXCLUDED.fee_amount, fee_percent = EXCLUDED.fee_percent,
+            fixed_amount = EXCLUDED.fixed_amount, is_active = EXCLUDED.is_active,
+            priority = EXCLUDED.priority, updated_at = NOW();
+        GET DIAGNOSTICS v_count = ROW_COUNT;
+        RAISE NOTICE 'Fee Rules berhasil disalin ke Master: %', v_count;
+    END IF;
+END $$;`;
+        }
+
+        async function executePromoteMaster() {
+            if (!supabaseClient) {
+                alert('Supabase belum terhubung! Silakan periksa koneksi atau masukkan PIN Admin.');
+                return;
+            }
+
+            const selSource = document.getElementById('selPromoteMasterSource');
+            if (!selSource || !selSource.value) {
+                alert('Pilih perangkat sumber terlebih dahulu.');
+                return;
+            }
+
+            const sourceDevId = selSource.value;
+            const sourceDevName = selSource.selectedOptions?.[0]?.dataset?.name || selSource.selectedOptions?.[0]?.text?.replace('📱 ', '') || sourceDevId;
+
+            const copyV = !!document.getElementById('chkPromoteVouchers')?.checked;
+            const copyB = !!document.getElementById('chkPromoteBarang')?.checked;
+            const copyR = !!document.getElementById('chkPromoteFeeRules')?.checked;
+            const copyBal = !!document.getElementById('chkPromoteBalances')?.checked;
+
+            if (!copyV && !copyB && !copyR && !copyBal) {
+                alert('Pilih minimal satu jenis data (Voucher, Barang, atau Fee Rules) untuk disalin ke Master.');
+                return;
+            }
+
+            const confirmMsg = `Jadikan data dari "${sourceDevName}" sebagai DATA MASTER acuan baku?\n\n` +
+                `- Katalog Voucher: ${copyV ? 'Ya' : 'Tidak'}\n` +
+                `- Barang Retail: ${copyB ? 'Ya' : 'Tidak'}\n` +
+                `- Fee Rules Admin: ${copyR ? 'Ya' : 'Tidak'}\n` +
+                `- Saldo Aplikasi: ${copyBal ? 'Ya' : 'Tidak'}\n\n` +
+                `ℹ️ Data asli perangkat "${sourceDevName}" tetap aman dan tidak akan dihapus.`;
+
+            if (!confirm(confirmMsg)) return;
+
+            const btnExec = document.getElementById('btnExecutePromoteMaster');
+            const statusEl = document.getElementById('promoteMasterStatus');
+
+            if (btnExec) btnExec.disabled = true;
+            if (statusEl) {
+                statusEl.style.display = 'block';
+                statusEl.style.background = 'rgba(79, 142, 247, 0.12)';
+                statusEl.style.color = 'var(--primary)';
+                statusEl.textContent = '⏳ Menyiapkan & menyalin data ke Master...';
+            }
+
+            try {
+                let reportLog = [];
+
+                // 1. Salin Vouchers
+                if (copyV) {
+                    let sourceVouchers = (allVouchers || []).filter(v => v.device_id === sourceDevId);
+                    if (sourceVouchers.length === 0) {
+                        const { data: vData } = await supabaseClient.from('vouchers').select('*').eq('device_id', sourceDevId);
+                        if (Array.isArray(vData) && vData.length > 0) sourceVouchers = vData;
+                    }
+
+                    if (sourceVouchers.length > 0) {
+                        if (statusEl) statusEl.textContent = `⏳ Menyalin ${sourceVouchers.length} voucher ke Master...`;
+                        const masterVouchers = sourceVouchers.map(v => ({
+                            id: `master_${v.product_id}`,
+                            device_id: 'master',
+                            device_name: 'Master',
+                            product_id: Number(v.product_id),
+                            product_name: v.product_name,
+                            provider_name: v.provider_name || 'VOUCHER',
+                            category_name: v.category_name || v.category || '',
+                            stock: Number(v.stock || 0),
+                            cost_price: Number(v.cost_price || 0),
+                            sell_price: Number(v.sell_price || v.unit_price || v.price || 0),
+                            min_limit: Number(v.min_limit || 0),
+                            is_active: v.is_active !== undefined ? !!v.is_active : true,
+                            previous_name: v.previous_name || null,
+                            name_changed_at: v.name_changed_at || null,
+                            last_change: `Ditetapkan sebagai Master dari ${sourceDevName}`,
+                            change_history: [],
+                            sort_order: Number(v.sort_order || 9999),
+                            provider_order: Number(v.provider_order || 0),
+                            category_order: Number(v.category_order || 0),
+                            product_order: Number(v.product_order || 0),
+                            updated_at: new Date().toISOString()
+                        }));
+
+                        // Batch upsert 100 items per request
+                        for (let i = 0; i < masterVouchers.length; i += 100) {
+                            const chunk = masterVouchers.slice(i, i + 100);
+                            const { error: insErr } = await supabaseClient.from('vouchers').upsert(chunk, { onConflict: 'device_id,product_id' });
+                            if (insErr) throw insErr;
+                        }
+                        reportLog.push(`${masterVouchers.length} Voucher`);
+                    }
+                }
+
+                // 2. Salin Barang Retail
+                if (copyB) {
+                    let sourceBarang = (allBarang || []).filter(b => b.device_id === sourceDevId);
+                    if (sourceBarang.length === 0) {
+                        const { data: bData } = await supabaseClient.from('barang').select('*').eq('device_id', sourceDevId);
+                        if (Array.isArray(bData) && bData.length > 0) sourceBarang = bData;
+                    }
+
+                    if (sourceBarang.length > 0) {
+                        if (statusEl) statusEl.textContent = `⏳ Menyalin ${sourceBarang.length} produk retail ke Master...`;
+                        const masterBarang = sourceBarang.map(b => ({
+                            id: `master_${b.product_id}`,
+                            device_id: 'master',
+                            device_name: 'Master',
+                            product_id: Number(b.product_id),
+                            product_code: b.product_code || '',
+                            product_name: b.product_name,
+                            brand_name: b.brand_name || '',
+                            category_name: b.category_name || '',
+                            stock: Number(b.stock || 0),
+                            cost_price: Number(b.cost_price || 0),
+                            sell_price: Number(b.sell_price || 0),
+                            min_limit: Number(b.min_limit || 0),
+                            image_path: b.image_path || '',
+                            image_base64: b.image_base64 || '',
+                            last_change: `Ditetapkan sebagai Master dari ${sourceDevName}`,
+                            change_history: [],
+                            sort_order: Number(b.sort_order || 0),
+                            brand_order: Number(b.brand_order || 0),
+                            category_order: Number(b.category_order || 0),
+                            product_order: Number(b.product_order || 0),
+                            updated_at: new Date().toISOString()
+                        }));
+
+                        for (let i = 0; i < masterBarang.length; i += 100) {
+                            const chunk = masterBarang.slice(i, i + 100);
+                            const { error: insErr } = await supabaseClient.from('barang').upsert(chunk, { onConflict: 'device_id,product_id' });
+                            if (insErr) throw insErr;
+                        }
+                        reportLog.push(`${masterBarang.length} Produk Retail`);
+                    }
+                }
+
+                // 3. Salin Fee Rules
+                if (copyR) {
+                    let sourceRules = (allFeeRules || []).filter(r => r.device_id === sourceDevId);
+                    if (sourceRules.length === 0) {
+                        const { data: rData } = await supabaseClient.from('fee_rules').select('*').eq('device_id', sourceDevId);
+                        if (Array.isArray(rData) && rData.length > 0) sourceRules = rData;
+                    }
+
+                    if (sourceRules.length > 0) {
+                        if (statusEl) statusEl.textContent = `⏳ Menyalin ${sourceRules.length} fee rules ke Master...`;
+                        const masterRules = sourceRules.map(r => ({
+                            id: `master_${r.rule_id}`,
+                            device_id: 'master',
+                            device_name: 'Master',
+                            rule_id: Number(r.rule_id || 0),
+                            name: r.name,
+                            category: r.category || 'Umum',
+                            min_amount: Number(r.min_amount || 0),
+                            max_amount: Number(r.max_amount || 0),
+                            fee_amount: Number(r.fee_amount || 0),
+                            fee_percent: Number(r.fee_percent || 0),
+                            fixed_amount: Number(r.fixed_amount || 0),
+                            is_active: r.is_active !== undefined ? !!r.is_active : true,
+                            priority: Number(r.priority || 10),
+                            updated_at: new Date().toISOString()
+                        }));
+
+                        for (let i = 0; i < masterRules.length; i += 100) {
+                            const chunk = masterRules.slice(i, i + 100);
+                            const { error: insErr } = await supabaseClient.from('fee_rules').upsert(chunk, { onConflict: 'device_id,rule_id' });
+                            if (insErr) throw insErr;
+                        }
+                        reportLog.push(`${masterRules.length} Fee Rules`);
+                    }
+                }
+
+                // 4. Salin Saldo Aplikasi (jika dicentang)
+                if (copyBal) {
+                    let sourceBal = (allBalances || []).filter(b => b.device_id === sourceDevId);
+                    if (sourceBal.length === 0) {
+                        const { data: balData } = await supabaseClient.from('app_balances').select('*').eq('device_id', sourceDevId);
+                        if (Array.isArray(balData) && balData.length > 0) sourceBal = balData;
+                    }
+
+                    if (sourceBal.length > 0) {
+                        const masterBal = sourceBal.map(b => ({
+                            id: `master_${b.package_name}`,
+                            device_id: 'master',
+                            device_name: 'Master',
+                            package_name: b.package_name,
+                            app_name: b.app_name,
+                            balance_value: Number(b.balance_value || 0),
+                            formatted_balance: b.formatted_balance || '',
+                            calculation_mode: b.calculation_mode || '',
+                            raw_snippet: b.raw_snippet || '',
+                            updated_at_str: b.updated_at_str || '',
+                            raw_json: b.raw_json || {},
+                            updated_at: new Date().toISOString()
+                        }));
+
+                        for (let i = 0; i < masterBal.length; i += 100) {
+                            const chunk = masterBal.slice(i, i + 100);
+                            const { error: insErr } = await supabaseClient.from('app_balances').upsert(chunk, { onConflict: 'device_id,package_name' });
+                            if (insErr) throw insErr;
+                        }
+                        reportLog.push(`${masterBal.length} Saldo`);
+                    }
+                }
+
+                // Sukses
+                if (statusEl) {
+                    statusEl.style.background = 'rgba(16, 185, 129, 0.12)';
+                    statusEl.style.color = 'var(--success)';
+                    statusEl.innerHTML = `✅ <b>SUKSES!</b> Data Master resmi ditetapkan: ${reportLog.join(', ')}. Memperbarui antarmuka...`;
+                }
+
+                showToast(`🎉 Data Master berhasil dibuat (${reportLog.join(', ')})!`);
+
+                // Refresh data web
+                await fetchVouchersFromSupabase();
+                if (typeof fetchBarangFromSupabase === 'function') fetchBarangFromSupabase();
+                if (typeof fetchFeeRulesFromSupabase === 'function') fetchFeeRulesFromSupabase();
+                if (typeof fetchBalancesFromSupabase === 'function') fetchBalancesFromSupabase();
+
+                // Otomatis pilih perangkat Master di filter dropdown
+                setTimeout(() => {
+                    const devFilter = document.getElementById('navDeviceFilter');
+                    if (devFilter && Array.from(devFilter.options).some(o => o.value === 'master')) {
+                        devFilter.value = 'master';
+                        if (typeof onDeviceChange === 'function') onDeviceChange();
+                    }
+                    closePromoteMasterModal();
+                }, 1600);
+
+            } catch (err) {
+                console.error('Error executePromoteMaster:', err);
+                if (statusEl) {
+                    statusEl.style.background = 'rgba(239, 68, 68, 0.12)';
+                    statusEl.style.color = 'var(--danger)';
+                    statusEl.textContent = `❌ Gagal: ${err.message || 'Terjadi kesalahan saat menyalin ke Master'}`;
+                }
+            } finally {
+                if (btnExec) btnExec.disabled = false;
+            }
+        }
+        window.executePromoteMaster = executePromoteMaster;
 
         async function showOpnameReviewModal() {
             const modal = document.getElementById('opnameReviewModal');
