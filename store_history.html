@@ -1054,8 +1054,8 @@
             if (!isEmployee && window.KspHistoriku && typeof window.KspHistoriku.syncBetweenMasterAndBranch === 'function') {
                 window.KspHistoriku.syncBetweenMasterAndBranch(currentStoreId, rangeStart || dateParam, rangeEnd || dateParam)
                     .then(r => {
-                        if (r && r.ok && (r.pendingSynced > 0 || r.masterMirrored > 0)) {
-                            // Muat ulang data terbaru setelah sync
+                        // Hanya reload jika ada perubahan kasir yang baru saja berhasil di-push ke Master
+                        if (r && r.ok && r.pendingSynced > 0) {
                             reloadCurrentReportData();
                         }
                     })

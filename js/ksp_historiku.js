@@ -5577,7 +5577,26 @@ async function syncBetweenMasterAndBranch(storeId, startDate, endDate) {
           ...row,
           is_synced_to_master: true
         };
-        const upRes = await masterClient.from('ksp_history_transactions').upsert([rowToMaster], { onConflict: 'id' });
+        let upRes = await masterClient.from('ksp_history_transactions').upsert([rowToMaster], { onConflict: 'id' });
+        
+        // Fallback: Jika Master Project A belum memiliki kolom is_synced_to_master/last_modified_by,
+        // simpan ke extra_data (JSONB) dan kirim hanya kolom standar Master
+        if (upRes.error) {
+          const safeMasterRow = { ...rowToMaster };
+          const extra = Object.assign({}, safeMasterRow.extra_data || {}, {
+            is_synced_to_master: true,
+            last_modified_by: safeMasterRow.last_modified_by || 'Karyawan',
+            modified_source: safeMasterRow.modified_source || 'employee_web'
+          });
+          delete safeMasterRow.is_synced_to_master;
+          delete safeMasterRow.last_modified_by;
+          delete safeMasterRow.modified_source;
+          delete safeMasterRow.synced_at;
+          safeMasterRow.extra_data = extra;
+
+          upRes = await masterClient.from('ksp_history_transactions').upsert([safeMasterRow], { onConflict: 'id' });
+        }
+
         if (!upRes.error) {
           await branchClient.from('ksp_history_transactions').update({
             is_synced_to_master: true,
@@ -5613,7 +5632,20 @@ async function syncBetweenMasterAndBranch(storeId, startDate, endDate) {
       }));
 
       if (rowsToMirror.length > 0) {
-        const mirrorRes = await branchClient.from('ksp_history_transactions').upsert(rowsToMirror, { onConflict: 'id' });
+        let mirrorRes = await branchClient.from('ksp_history_transactions').upsert(rowsToMirror, { onConflict: 'id' });
+        if (mirrorRes.error) {
+          // Fallback jika Project B belum menjalankan patch kolom pelacak
+          const safeMirror = rowsToMirror.map(r => {
+            const copy = { ...r };
+            delete copy.is_synced_to_master;
+            delete copy.last_modified_by;
+            delete copy.modified_source;
+            delete copy.synced_at;
+            return copy;
+          });
+          mirrorRes = await branchClient.from('ksp_history_transactions').upsert(safeMirror, { onConflict: 'id' });
+        }
+
         if (!mirrorRes.error) {
           masterMirroredCount = rowsToMirror.length;
         } else {
