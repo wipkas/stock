@@ -24,14 +24,42 @@
         return resp.ok ? resp.json() : [];
     }
 
-    /** Fallback: katalog cabang belum ada di ksp_store_stock -> coba tabel vouchers (variasi penulisan store id). */
+    /** Ambil semua kemungkinan device_id yang terikat dengan store_id (termasuk dari tabel ksp_devices). */
+    async function queryLinkedDeviceIds(storeId) {
+        const ids = new Set();
+        if (storeId) {
+            ids.add(storeId);
+            if (storeId.indexOf('-') !== -1) ids.add(storeId.replace(/-/g, ' '));
+            if (storeId.indexOf('_') !== -1) ids.add(storeId.replace(/_/g, ' '));
+            if (storeId.indexOf('-') !== -1 || storeId.indexOf(' ') !== -1 || storeId.indexOf('_') !== -1) {
+                ids.add(storeId.replace(/[-_\s]/g, ''));
+            }
+        }
+        try {
+            const url = baseUrl() + '/rest/v1/ksp_devices?store_id=eq.' + encodeURIComponent(storeId)
+                + '&select=id,device_name&is_active=neq.false';
+            const resp = await fetch(url, { headers: restHeaders() });
+            if (resp.ok) {
+                const devs = await resp.json();
+                if (Array.isArray(devs)) {
+                    devs.forEach(function (d) {
+                        if (d && d.id) ids.add(String(d.id));
+                        if (d && d.device_name) ids.add(String(d.device_name));
+                    });
+                }
+            }
+        } catch (e) {
+            console.warn('[QS.Api] queryLinkedDeviceIds dilewati:', e);
+        }
+        return Array.from(ids);
+    }
+
+    /** Fallback: katalog cabang belum ada di ksp_store_stock -> coba tabel vouchers (variasi penulisan store id & ksp_devices). */
     async function fetchVouchersFallback(storeId) {
         const cfg = global.KSP_SYNC_CONFIG || {};
         if (!cfg.url || !storeId) return [];
         try {
-            const candidates = [storeId];
-            if (storeId.indexOf('-') !== -1) candidates.push(storeId.replace(/-/g, ' '));
-            if (storeId.indexOf('-') !== -1 || storeId.indexOf(' ') !== -1) candidates.push(storeId.replace(/[-\s]/g, ''));
+            const candidates = await queryLinkedDeviceIds(storeId);
             for (let i = 0; i < candidates.length; i++) {
                 const data = await queryVouchers(candidates[i]);
                 if (Array.isArray(data) && data.length > 0) {
@@ -45,7 +73,8 @@
                             sell_price: Number(v.sell_price || 0),
                             cost_price: Number(v.cost_price || 0),
                             sort_order: Number(v.sort_order || 0),
-                            is_active: true
+                            is_active: true,
+                            is_baseline_confirmed: true
                         };
                     });
                 }
@@ -67,20 +96,44 @@
         }
         let products = Array.isArray(res.products) ? res.products : [];
         let usedFallback = false;
-        if (products.length === 0) {
-            const fb = await fetchVouchersFallback(res.store_id || storeIdHint);
-            if (fb.length > 0) { products = fb; usedFallback = true; }
+        const targetStoreId = res.store_id || storeIdHint;
+
+        // Cek apakah data dari ksp_store_stock masih kosong atau belum memiliki stok riil
+        const totalStoreStock = products.reduce(function (sum, p) { return sum + (Number(p.current_stock) || 0); }, 0);
+        const hasConfirmedBaseline = products.some(function (p) { return p.is_baseline_confirmed === true; });
+
+        // Jika ksp_store_stock masih kosong ATAU belum terkonfirmasi dan total stoknya 0,
+        // periksa data tabel vouchers (yang di-push oleh HP Android KSP Check)
+        if (products.length === 0 || (!hasConfirmedBaseline && totalStoreStock === 0)) {
+            const fb = await fetchVouchersFallback(targetStoreId);
+            if (fb.length > 0) {
+                products = fb;
+                usedFallback = true;
+            }
         }
+
+        // Tentukan status baseline secara cerdas:
+        // Cabang dianggap SUDAH punya baseline jika:
+        // 1. RPC menyatakan has_baseline true, ATAU
+        // 2. Ada produk yang is_baseline_confirmed = true, ATAU
+        // 3. Total stok yang berhasil dimuat > 0 (artinya stok riil sudah di-push dari KSP Check), ATAU
+        // 4. Memakai data fallback dari tabel vouchers yang memiliki produk
+        const totalFinalStock = products.reduce(function (sum, p) { return sum + (Number(p.current_stock) || 0); }, 0);
+        const resolvedHasBaseline = (res.has_baseline === true)
+            || hasConfirmedBaseline
+            || totalFinalStock > 0
+            || (usedFallback && products.length > 0);
+
         return {
             ok: true,
             usedFallback: usedFallback,
             products: products,
             meta: {
-                storeId: res.store_id || storeIdHint,
+                storeId: targetStoreId,
                 empName: res.emp_name || '',
                 shiftNum: res.shift_num || 1,
                 alreadyClosed: !!res.already_closed,
-                hasBaseline: res.has_baseline !== false
+                hasBaseline: resolvedHasBaseline
             }
         };
     }
