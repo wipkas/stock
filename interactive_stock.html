@@ -15591,9 +15591,15 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 (r.device_id === deviceId && normalizeRuleCompositeKey(r.category, r.name, r.min_amount, r.max_amount, r.fixed_amount) === normalizeRuleCompositeKey(category, name, minAmount, maxAmount, fixedAmount))
             ));
 
-            const rowId = idVal || (existing ? existing.id : `${deviceId}_${rCode}`);
+            let ruleId = (existing && existing.rule_id > 0) ? Number(existing.rule_id) : 0;
+            if (!ruleId) {
+                const deviceRules = allFeeRules.filter(r => r.device_id === deviceId);
+                const maxId = deviceRules.reduce((max, r) => Math.max(max, Number(r.rule_id) || 0), 0);
+                ruleId = maxId + 1;
+            }
+
+            const rowId = idVal || (existing ? existing.id : `${deviceId}_${ruleId}`);
             const devName = (deviceId === 'master' || deviceId === 'global') ? 'Master' : (getDeviceDisplayName(deviceId) || 'Cabang');
-            const ruleId = (existing && existing.rule_id > 0) ? existing.rule_id : (hashString(rCode) % 1000000000 || 1);
 
             const rowData = {
                 id: rowId,
