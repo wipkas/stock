@@ -14869,7 +14869,10 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     .from('fee_rules')
                     .select('*')
                     .order('priority', { ascending: true })
-                    .order('category', { ascending: true });
+                    .order('category', { ascending: true })
+                    .order('min_amount', { ascending: true })
+                    .order('fixed_amount', { ascending: true })
+                    .order('name', { ascending: true });
 
                 if (error) {
                     console.warn('Supabase fetch fee_rules error:', error);
@@ -14953,6 +14956,29 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             filterFeeRules();
         }
 
+        function compareFeeRules(a, b) {
+            const pa = (a.priority !== undefined && a.priority !== null) ? Number(a.priority) : 10;
+            const pb = (b.priority !== undefined && b.priority !== null) ? Number(b.priority) : 10;
+            if (pa !== pb) return pa - pb;
+
+            const ca = a.category || '';
+            const cb = b.category || '';
+            const catCmp = ca.localeCompare(cb);
+            if (catCmp !== 0) return catCmp;
+
+            const minA = Number(a.min_amount) || Number(a.minAmount) || 0;
+            const minB = Number(b.min_amount) || Number(b.minAmount) || 0;
+            if (minA !== minB) return minA - minB;
+
+            const fixA = Number(a.fixed_amount) || Number(a.fixedAmount) || 0;
+            const fixB = Number(b.fixed_amount) || Number(b.fixedAmount) || 0;
+            if (fixA !== fixB) return fixA - fixB;
+
+            const na = a.name || '';
+            const nb = b.name || '';
+            return na.localeCompare(nb, undefined, { numeric: true, sensitivity: 'base' });
+        }
+
         function filterFeeRules() {
             const query = (document.getElementById('feeRuleSearchInput')?.value || '').toLowerCase().trim();
             const btnClear = document.getElementById('btnFeeRuleClearSearch');
@@ -14968,15 +14994,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 return matchDevice && matchCat && matchQuery;
             });
 
-            filtered.sort((a, b) => {
-                const pa = (a.priority !== undefined && a.priority !== null) ? Number(a.priority) : 10;
-                const pb = (b.priority !== undefined && b.priority !== null) ? Number(b.priority) : 10;
-                if (pa !== pb) return pa - pb;
-                const ca = a.category || '';
-                const cb = b.category || '';
-                if (ca !== cb) return ca.localeCompare(cb);
-                return (Number(a.min_amount) || Number(a.minAmount) || 0) - (Number(b.min_amount) || Number(b.minAmount) || 0);
-            });
+            filtered.sort(compareFeeRules);
 
             renderFeeRuleTable(filtered);
             renderFeeRuleGrid(filtered);
@@ -15312,7 +15330,9 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 ? allFeeRules
                 : allFeeRules.filter(r => isDeviceMatchingStore(r.device_id, selectedDevice) || r.device_id === 'global');
 
-            const exportData = scopedRules.map(r => ({
+            const sortedScopedRules = [...scopedRules].sort(compareFeeRules);
+
+            const exportData = sortedScopedRules.map(r => ({
                 category: r.category || 'Umum',
                 name: r.name || 'Rule',
                 minAmount: Number(r.min_amount || r.minAmount || 0),
@@ -15320,6 +15340,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 feeAmount: Number(r.fee_amount || r.feeAmount || 0),
                 feePercent: Number(r.fee_percent || r.feePercent || 0),
                 fixedAmount: Number(r.fixed_amount || r.fixedAmount || 0),
+                priority: (r.priority !== undefined && r.priority !== null) ? Number(r.priority) : 10,
                 isActive: (r.is_active !== undefined) ? !!r.is_active : (r.isActive !== undefined ? !!r.isActive : true)
             }));
 
