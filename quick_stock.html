@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>KSP Check - Cek Stok Cepat Kasir</title>
+
+    <!-- Web App Manifest & Favicons -->
+    <link rel="manifest" href="assets/manifests/manifest-karyawan.json">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-karyawan.svg">
+    <link rel="apple-touch-icon" href="assets/icons/icon-karyawan-192.png">
+    <meta name="theme-color" content="#0F1117">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <link rel="stylesheet" href="css/quickstock.css?v=20261015">
+</head>
+<body>
+
+    <div class="container">
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="top-left">
+                <a href="karyawan.html" class="btn-nav-action" title="Kembali ke Portal Karyawan">←</a>
+                <div>
+                    <div class="top-title"><span>📦</span> Cek Stok Cepat</div>
+                    <div id="topStoreName" class="top-sub">Memuat toko...</div>
+                </div>
+            </div>
+            <div class="top-right">
+                <span id="badgeShiftLabel" class="badge-shift">Shift 1</span>
+                <button type="button" class="btn-nav-action" onclick="toggleTheme()" title="Ubah Tema">🌙</button>
+            </div>
+        </header>
+
+        <!-- BANNER TERKUNCI (SHIFT SUDAH DITUTUP HARI INI) -->
+        <div id="bannerShiftLocked" class="banner-locked">
+            <div class="banner-locked-title"><span>🔒</span> Shift Hari Ini Sudah Ditutup</div>
+            <div class="banner-locked-desc">
+                Anda sudah menyelesaikan cek stok &amp; serah terima shift hari ini. Mode <b>hanya-lihat</b> aktif untuk mencegah perubahan data dari luar jam kerja.
+            </div>
+        </div>
+
+        <!-- BANNER MODE STOK FISIK AWAL (BASELINE CABANG) -->
+        <div id="bannerBaselineMode" class="banner-baseline">
+            <div class="banner-baseline-title"><span>📦</span> Mode Penyesuaian Stok Fisik Awal (Baseline Cabang)</div>
+            <div>
+                Cabang ini baru pertama kali disiapkan. Silakan hitung dan masukkan <b>jumlah fisik voucher riil di etalase/laci saat ini</b>. Angka ini akan disimpan sebagai <b>Stok Awal Resmi</b> dan <b>TIDAK AKAN dicatat sebagai penjualan</b> di HistoriKu (uang kasir aman). Semua produk wajib dihitung.
+            </div>
+        </div>
+
+        <!-- PROGRES, MODE & FILTER -->
+        <div class="progress-card">
+            <div class="pc-row">
+                <div class="pc-title"><span>Progres Cek: </span><span id="progressCountText" class="pc-count">0 / 0</span></div>
+                <label class="pc-skip"><input type="checkbox" id="chkSkipZeroStock"><span>Lewati Stok 0</span></label>
+            </div>
+            <div class="progress-bar-bg"><div id="progressBarFill" class="progress-bar-fill"></div></div>
+            <div class="pc-row">
+                <div class="seg" role="group" aria-label="Mode tampilan">
+                    <button type="button" id="btnModeFocus" class="seg-btn active">🎯 Fokus</button>
+                    <button type="button" id="btnModeList" class="seg-btn">📋 Daftar</button>
+                </div>
+                <button type="button" id="btnOnlyUnchecked" class="chip-toggle">○ Belum dicek (0)</button>
+            </div>
+        </div>
+
+        <!-- CHIP PROVIDER -->
+        <div class="chips-scroll-wrap" id="providerChipsMount"></div>
+
+        <!-- PENCARIAN -->
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" class="search-input" placeholder="Cari voucher..." autocomplete="off">
+        </div>
+
+        <!-- DAFTAR PRODUK -->
+        <div class="products-list" id="productsListMount">
+            <div class="qs-empty">Memuat daftar produk...</div>
+        </div>
+    </div>
+
+    <!-- DOCK BAWAH: PANEL FOKUS + BAR RINGKASAN -->
+    <div class="bottom-dock" id="bottomDock">
+        <div class="focus-panel" id="focusPanel">
+            <div class="fp-inner">
+                <div class="fp-head">
+                    <div class="fp-title">
+                        <div class="fp-cat" id="fpCat">–</div>
+                        <div class="fp-name" id="fpName">Pilih produk untuk mulai</div>
+                    </div>
+                    <div class="fp-side">
+                        <div class="fp-awal">Awal<b id="fpInitial">–</b></div>
+                        <span id="fpDelta" class="badge-delta delta-unchanged">–</span>
+                    </div>
+                </div>
+                <div class="fp-controls">
+                    <button type="button" id="fpMinus" class="btn-step">-</button>
+                    <input type="number" id="fpInput" class="input-stock" inputmode="numeric" pattern="[0-9]*" min="0" enterkeyhint="next" autocomplete="off" disabled>
+                    <button type="button" id="fpPlus" class="btn-step">+</button>
+                </div>
+                <div class="fp-foot">
+                    <button type="button" id="fpPrev" class="fp-nav">◀ Prev</button>
+                    <button type="button" id="fpPas" class="fp-nav pas">✓ Pas</button>
+                    <button type="button" id="fpNext" class="fp-nav next">Next ▶</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-bar">
+            <div class="bottom-bar-inner">
+                <div class="bottom-summary-info">
+                    <div class="bs-label">SELISIH FISIK:</div>
+                    <div class="bs-values">
+                        <span id="txtSoldSummary" class="c-danger">0 Terjual</span>
+                        <span class="c-muted"> • </span>
+                        <span id="txtRestockSummary" class="c-success">0 Restok</span>
+                    </div>
+                    <div id="txtUncheckedSummary" class="bs-unchecked"></div>
+                </div>
+                <button type="button" id="btnOpenSummary" class="btn-submit-summary"><span>📋 Simpan &amp; Tutup Shift</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL REKAP -->
+    <div id="summaryModal" class="modal-backdrop">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h3 style="font-size: 15px; font-weight: 850;">📊 Ringkasan Cek Stok</h3>
+                    <p id="modalSubShift" style="font-size: 11px; color: var(--text-muted);">Shift 1 • Kasir</p>
+                </div>
+                <button type="button" id="btnCloseSummary" class="btn-modal-cancel" style="padding: 4px 10px; font-size: 16px;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="sum-grid">
+                    <div class="sum-tile"><div class="sum-tile-label">DICEK</div><div id="sumTotalChecked" class="sum-tile-value">0 / 0</div></div>
+                    <div class="sum-tile"><div class="sum-tile-label">BELUM DICEK</div><div id="sumTotalUnchecked" class="sum-tile-value">0</div></div>
+                    <div class="sum-tile"><div class="sum-tile-label">TERJUAL 📉</div><div id="sumTotalSold" class="sum-tile-value c-danger">0 pcs</div></div>
+                    <div class="sum-tile"><div class="sum-tile-label">RESTOK 📈</div><div id="sumTotalRestock" class="sum-tile-value c-success">0 pcs</div></div>
+                </div>
+
+                <!-- Produk belum dicek -->
+                <div id="summaryUncheckedBox" class="qs-warn-box">
+                    <div id="summaryUncheckedTitle" class="qs-warn-title">⚠️ Produk belum dicek</div>
+                    <div id="summaryUncheckedList" class="qs-unchecked-list"></div>
+                    <div id="summaryBaselineBlock" class="qs-note-info" style="display: none;">
+                        <b>Mode stok awal:</b> semua produk wajib dihitung sebelum disimpan, agar baseline cabang tidak salah.
+                    </div>
+                    <label id="summaryAckRow" class="qs-ack" style="display: none;">
+                        <input type="checkbox" id="chkAckUnchecked">
+                        <span id="summaryAckText">Anggap produk yang belum dicek sebagai Pas.</span>
+                    </label>
+                    <button type="button" id="btnReviewUnchecked" class="qs-link-btn">○ Cek yang belum dicek</button>
+                </div>
+
+                <div>
+                    <div class="qs-section-title">Rincian Perubahan Stok</div>
+                    <div id="summaryItemsListMount" class="qs-list"></div>
+                </div>
+
+                <!-- Tipe opname (cabang yang sudah baseline) -->
+                <div id="containerOpnameType" class="qs-box">
+                    <div class="qs-box-title">TIPE OPNAME:</div>
+                    <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11.5px;">
+                        <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="radOpnameType" id="radTypeSales" value="shift_sales" checked style="margin-top: 2px;">
+                            <div>
+                                <span style="font-weight: 750;">Tutup Shift Kasir (Penjualan)</span>
+                                <div style="font-size: 10.5px; color: var(--text-muted);">Selisih fisik berkurang otomatis dicatat sebagai penjualan voucher.</div>
+                            </div>
+                        </label>
+                        <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="radOpnameType" id="radTypeAdj" value="stock_adjustment" style="margin-top: 2px;">
+                            <div>
+                                <span style="font-weight: 750; color: #f59e0b;">Koreksi / Audit Stok Fisik (Non-Penjualan)</span>
+                                <div style="font-size: 10.5px; color: var(--text-muted);">Hanya sesuaikan angka stok. TIDAK dicatat ke Riwayat Transaksi (tanpa omset).</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="modalBaselineNotice" class="qs-note-info" style="display: none;">
+                    ℹ️ <b>Penetapan Stok Awal Resmi:</b> Sisa fisik yang Anda masukkan akan langsung menjadi baseline stok cabang. Selisih awal ini <b>TIDAK AKAN dicatat sebagai penjualan</b> di HistoriKu (uang kasir aman).
+                </div>
+
+                <div id="boxSyncHistory" class="qs-box">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="chkSyncToHistory" checked style="width: 16px; height: 16px; accent-color: var(--primary);">
+                        <span id="lblSyncToHistory" style="font-weight: 750;">Catat ke Riwayat Transaksi (HistoriKu)</span>
+                    </label>
+                    <div id="descSyncHistory" style="font-size: 10.5px; color: var(--text-muted); margin-left: 24px; margin-top: 3px; line-height: 1.4;">
+                        *Penjualan voucher otomatis masuk ke store_history.html. Jika shift ini sudah dicatat di aplikasi Android KSP Check, sistem otomatis mencegah duplikasi.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btnContinueCheck" class="btn-modal-cancel">Lanjut Cek</button>
+                <button type="button" id="btnConfirmSubmitOpname" class="btn-modal-confirm">🚀 Simpan &amp; Tutup Shift</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIALOG GENERIK & TOAST -->
+    <div id="qsDialog" class="modal-backdrop">
+        <div class="modal-card">
+            <div class="modal-header"><h3 id="qsDialogTitle" style="font-size: 15px; font-weight: 850;"></h3></div>
+            <div id="qsDialogBody" class="modal-body"></div>
+            <div id="qsDialogFooter" class="modal-footer"></div>
+        </div>
+    </div>
+    <div id="qsToast" class="qs-toast" role="status" aria-live="polite"></div>
+
+    <!-- Scripts: infrastruktur KSP -->
+    <script src="js/ksp_sync_config.js?v=20261013"></script>
+    <script src="js/ksp_sync.js?v=20261013"></script>
+    <script src="js/ksp_theme.js?v=20261005"></script>
+    <script src="js/ksp_ui.js?v=20261005"></script>
+
+    <!-- Scripts: modul Cek Stok Cepat (urutan penting) -->
+    <script src="js/quickstock/qs_ui.js?v=20261015"></script>
+    <script src="js/quickstock/qs_store.js?v=20261015"></script>
+    <script src="js/quickstock/qs_draft.js?v=20261015"></script>
+    <script src="js/quickstock/qs_nav.js?v=20261015"></script>
+    <script src="js/quickstock/qs_api.js?v=20261015"></script>
+    <script src="js/quickstock/qs_render.js?v=20261015"></script>
+    <script src="js/quickstock/qs_focus.js?v=20261015"></script>
+    <script src="js/quickstock/qs_summary.js?v=20261015"></script>
+    <script src="js/quickstock/qs_main.js?v=20261015"></script>
+</body>
+</html>
