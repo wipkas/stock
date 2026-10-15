@@ -534,6 +534,53 @@
         .qty-btn { width: 30px; height: 30px; background: var(--stepper-btn-bg); color: var(--text-main); border: none; font-size: 15px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .qty-input { width: 38px; height: 30px; background: transparent; border: none; text-align: center; color: var(--text-main); font-size: 13px; font-weight: bold; outline: none; }
 
+        /* Edit Product Button in Tab Order */
+        .order-item-edit-btn {
+            display: none;
+            background: rgba(79, 142, 247, 0.12);
+            border: 1px solid rgba(79, 142, 247, 0.3);
+            border-radius: 8px;
+            color: var(--primary);
+            padding: 5px 8px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-left: 6px;
+            flex-shrink: 0;
+            line-height: 1;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+        .order-item-edit-btn:hover {
+            background: var(--primary);
+            color: #fff;
+        }
+        body.show-order-edit-buttons .order-item-edit-btn,
+        #productList.show-edit-buttons .order-item-edit-btn {
+            display: inline-flex !important;
+        }
+        #chipOrderToggleEdit {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 6px 10px;
+            font-size: 13px;
+            line-height: 1;
+            user-select: none;
+            transition: all 0.15s ease;
+        }
+        #chipOrderToggleEdit:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        #chipOrderToggleEdit.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(79, 142, 247, 0.45);
+        }
+
         /* Bottom Bar (Tab 1: Order) */
         .bottom-bar {
             position: fixed;
@@ -2533,6 +2580,9 @@
                             <button class="settings-item" id="settingOrderDemand" onclick="toggleOrderDemandFromMenu()">
                                 <span class="settings-icon">⚡</span><span class="settings-label">Badge Demand Penjualan</span><span class="settings-state" id="settingOrderDemandState">Aktif</span>
                             </button>
+                            <button class="settings-item" id="settingOrderEditMode" onclick="toggleOrderEditButtonsFromMenu()">
+                                <span class="settings-icon">✏️</span><span class="settings-label">Tombol Edit Item (Pensil)</span><span class="settings-state" id="settingOrderEditModeState">Mati</span>
+                            </button>
                             <button class="settings-item" id="settingHideZero" onclick="toggleHideZeroFromMenu()">
                                 <span class="settings-icon">👁️</span><span class="settings-label">Sembunyikan 0 Laku</span><span class="settings-state" id="settingHideZeroState">Aktif</span>
                             </button>
@@ -2640,6 +2690,7 @@
                 <div class="chip" onclick="setOrderFilter('low', this)">⚠️ Menipis &amp; Habis</div>
                 <div class="chip" onclick="setOrderFilter('habis', this)">🔴 Habis</div>
                 <div class="chip" onclick="setOrderFilter('aman', this)">🟢 Aman</div>
+                <div class="chip" id="chipOrderToggleEdit" onclick="toggleOrderEditButtons(this)" title="Mode Edit Produk: Klik untuk tampilkan/sembunyikan tombol pensil edit item">✏️</div>
             </div>
 
             <div class="quick-select-row">
@@ -5078,6 +5129,7 @@ WHERE device_id IS NULL
             initOrderBadgeMode();
             initOrderDemandPill();
             initOrderCycleDays();
+            initOrderEditButtonsMode();
             initRestockOrders();
             initTabNavigation();
             if (typeof initMarginSearchEvents === 'function') initMarginSearchEvents();
@@ -5386,6 +5438,51 @@ WHERE device_id IS NULL
                 const btn = document.getElementById('btnCycle' + d);
                 if (btn) btn.classList.toggle('active', orderRestockCycleDays === d);
             });
+        }
+
+        // Tab 1: Mode Edit Produk (Tampilkan/Sembunyikan Tombol Pensil Edit Item)
+        let orderEditModeActive = false;
+
+        function initOrderEditButtonsMode() {
+            const saved = localStorage.getItem('kspcheck_order_edit_mode');
+            orderEditModeActive = (saved === 'true');
+            applyOrderEditButtonsUI();
+        }
+
+        function toggleOrderEditButtons(chipEl) {
+            orderEditModeActive = !orderEditModeActive;
+            try {
+                localStorage.setItem('kspcheck_order_edit_mode', String(orderEditModeActive));
+            } catch (e) {}
+            applyOrderEditButtonsUI();
+            if (orderEditModeActive) {
+                showToast('✏️ Mode Edit Produk aktif: Tombol pensil ditampilkan.');
+            } else {
+                showToast('🔒 Mode Edit Produk nonaktif: Tombol pensil disembunyikan.');
+            }
+        }
+
+        function toggleOrderEditButtonsFromMenu() {
+            toggleOrderEditButtons();
+            closeSettingsMenu();
+        }
+
+        function applyOrderEditButtonsUI() {
+            document.body.classList.toggle('show-order-edit-buttons', orderEditModeActive);
+            const container = document.getElementById('productList');
+            if (container) {
+                container.classList.toggle('show-edit-buttons', orderEditModeActive);
+            }
+            const chip = document.getElementById('chipOrderToggleEdit');
+            if (chip) {
+                chip.classList.toggle('active', orderEditModeActive);
+                chip.title = orderEditModeActive
+                    ? '✏️ Mode Edit Produk Aktif (Klik untuk sembunyikan tombol pensil)'
+                    : '✏️ Mode Edit Produk Nonaktif (Klik untuk tampilkan tombol pensil)';
+            }
+            if (typeof updateSettingsMenuUI === 'function') {
+                updateSettingsMenuUI();
+            }
         }
 
         // Helper Ekstraksi Masa Aktif Voucher dari Nama Produk (1H s/d 30H)
@@ -6675,7 +6772,7 @@ WHERE device_id IS NULL
                             <input type="number" class="qty-input" value="${savedQty}" min="0" oninput="onQtyInputChange(event, this)">
                             <button class="qty-btn" onclick="changeQty(event, this, 1)">+</button>
                         </div>
-                        <button type="button" onclick="event.stopPropagation(); openEditProductModal('${escapeHtml(String(prod.product_id || prod.id || 0))}', '${escapeHtml(String(prod.device_id || 'master'))}')" title="Edit Metadata &amp; Broadcast ke Cabang" style="background: rgba(79, 142, 247, 0.12); border: 1px solid rgba(79, 142, 247, 0.3); border-radius: 8px; color: var(--primary); padding: 5px 8px; font-size: 13px; cursor: pointer; margin-left: 6px; flex-shrink: 0; line-height: 1;">
+                        <button type="button" class="order-item-edit-btn" onclick="event.stopPropagation(); openEditProductModal('${escapeHtml(String(prod.product_id || prod.id || 0))}', '${escapeHtml(String(prod.device_id || 'master'))}')" title="Edit Metadata &amp; Broadcast ke Cabang">
                             ✏️
                         </button>
                     </div>`;
@@ -6686,6 +6783,11 @@ WHERE device_id IS NULL
             });
 
             container.innerHTML = html;
+            if (orderEditModeActive) {
+                container.classList.add('show-edit-buttons');
+            } else {
+                container.classList.remove('show-edit-buttons');
+            }
             filterOrderProducts();
             updateSelectedCount();
         }
@@ -6977,8 +7079,8 @@ WHERE device_id IS NULL
         }
 
         function setOrderFilter(type, chipEl) {
-            document.querySelectorAll('#tabContentOrder .filter-row .chip').forEach(c => c.classList.remove('active'));
-            if (chipEl) chipEl.classList.add('active');
+            document.querySelectorAll('#tabContentOrder .filter-row .chip:not(#chipOrderToggleEdit)').forEach(c => c.classList.remove('active'));
+            if (chipEl && chipEl.id !== 'chipOrderToggleEdit') chipEl.classList.add('active');
             currentOrderFilterType = type;
             filterOrderProducts();
         }
@@ -11494,6 +11596,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             updateSettingsState('settingOrderProfitState', orderProfitMode ? 'Aktif' : 'Mati', orderProfitMode ? 'warn' : '');
             updateSettingsState('settingOrderBadgeState', (orderBadgeMode === 'dynamic') ? 'Dinamis' : ((orderBadgeMode === 'simple') ? 'Sederhana' : 'Mati'), orderBadgeMode !== 'none' ? 'on' : '');
             updateSettingsState('settingOrderDemandState', orderShowDemand ? 'Aktif' : 'Mati', orderShowDemand ? 'on' : '');
+            updateSettingsState('settingOrderEditModeState', orderEditModeActive ? 'Aktif' : 'Mati', orderEditModeActive ? 'on' : '');
             updateSettingsState('settingProviderBadgeState', providerVisible ? 'Aktif' : 'Mati', providerVisible ? 'on' : '');
             updateSettingsState('settingHideZeroState', dailyHideZeroSell ? 'Aktif' : 'Mati', dailyHideZeroSell ? 'on' : '');
 
