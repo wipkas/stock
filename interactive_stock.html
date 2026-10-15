@@ -4830,13 +4830,17 @@
 
                 // Sumber 4: Coba baca tabel public.ksp_devices (memiliki policy publik)
                 try {
-                    const devResp = await fetch(baseUrl + '/rest/v1/ksp_devices?select=store_id,device_name&is_active=eq.true', {
+                    window.deviceToStoreMap = window.deviceToStoreMap || new Map();
+                    const devResp = await fetch(baseUrl + '/rest/v1/ksp_devices?select=device_id,store_id,device_name&is_active=eq.true', {
                         headers: { 'apikey': cfg.key, ...(String(cfg.key).indexOf('sb_') !== 0 ? { 'Authorization': 'Bearer ' + cfg.key } : {}) }
                     });
                     if (devResp.ok) {
                         const devs = await devResp.json();
                         if (Array.isArray(devs) && devs.length > 0) {
                             devs.forEach(d => {
+                                if (d && d.device_id && d.store_id) {
+                                    window.deviceToStoreMap.set(String(d.device_id), String(d.store_id));
+                                }
                                 if (d && d.store_id && !storesMap.has(d.store_id)) {
                                     storesMap.set(d.store_id, { id: d.store_id, name: d.device_name || d.store_id, source: 'cloud_devices' });
                                 }
@@ -4863,6 +4867,16 @@
             return officialStores;
         }
         window.fetchOfficialStores = fetchOfficialStores;
+
+        window.deviceToStoreMap = window.deviceToStoreMap || new Map();
+        function isDeviceMatchingStore(deviceId, targetStoreId) {
+            if (!deviceId || !targetStoreId) return false;
+            if (targetStoreId === 'all') return true;
+            if (String(deviceId) === String(targetStoreId)) return true;
+            if (window.deviceToStoreMap && window.deviceToStoreMap.get(String(deviceId)) === String(targetStoreId)) return true;
+            return false;
+        }
+        window.isDeviceMatchingStore = isDeviceMatchingStore;
 
         function getDiscoveredDevicesMap(includeDeleted = false) {
             const devices = new Map();
@@ -5228,7 +5242,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             const devVouchers = (selectedDevice === 'all')
                 ? allVouchers
-                : allVouchers.filter(v => v.device_id === selectedDevice);
+                : allVouchers.filter(v => isDeviceMatchingStore(v.device_id, selectedDevice));
             const archivedCount = devVouchers.filter(v => v.is_active === false).length;
 
             if (btn) {
@@ -5760,7 +5774,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                     officialStoreIds.add(st.id);
                     const opt = document.createElement('option');
                     opt.value = st.id;
-                    const prodCount = allVouchers.filter(v => v.device_id === st.id).length;
+                    const prodCount = allVouchers.filter(v => isDeviceMatchingStore(v.device_id, st.id)).length;
                     const countLabel = prodCount > 0 ? `(${prodCount} produk)` : `(Belum Inisialisasi)`;
                     opt.textContent = `🏢 ${st.name || st.id} ${countLabel}`;
                     grpStore.appendChild(opt);
@@ -5869,7 +5883,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                 officialStores.forEach(st => {
                     officialStoreIds.add(st.id);
                     const isActive = (currentVal === st.id);
-                    const count = allVouchers.filter(v => v.device_id === st.id).length;
+                    const count = allVouchers.filter(v => isDeviceMatchingStore(v.device_id, st.id)).length;
                     const hasData = count > 0;
                     html += `
                         <div class="device-modal-item ${isActive ? 'active' : ''}" style="cursor: pointer;" onclick="selectDeviceFromModal('${escapeHtml(st.id)}')">
@@ -6272,7 +6286,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             let filtered = (selectedDevice === 'all')
                 ? allVouchers
-                : allVouchers.filter(v => v.device_id === selectedDevice);
+                : allVouchers.filter(v => isDeviceMatchingStore(v.device_id, selectedDevice));
 
             // Sembunyikan produk nonaktif (soft disable / diarsipkan) kecuali jika toggle aktif
             if (!orderShowArchived) {
@@ -6660,7 +6674,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             const filtered = (selectedDevice === 'all')
                 ? allVouchers
-                : allVouchers.filter(v => v.device_id === selectedDevice);
+                : allVouchers.filter(v => isDeviceMatchingStore(v.device_id, selectedDevice));
 
             let kritis = 0, restok = 0, aman = 0;
             filtered.forEach(v => {
@@ -9419,8 +9433,17 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             let reportData = null;
 
-            if (selectedDevice !== 'all' && allDailyReports.has(selectedDevice)) {
-                reportData = allDailyReports.get(selectedDevice);
+            if (selectedDevice !== 'all') {
+                if (allDailyReports.has(selectedDevice)) {
+                    reportData = allDailyReports.get(selectedDevice);
+                } else {
+                    for (const [devId, rep] of allDailyReports.entries()) {
+                        if (isDeviceMatchingStore(devId, selectedDevice)) {
+                            reportData = rep;
+                            break;
+                        }
+                    }
+                }
             } else if (allDailyReports.size > 0) {
                 if (allDailyReports.size === 1) {
                     reportData = allDailyReports.values().next().value;
@@ -9550,7 +9573,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             const filtered = (selectedDevice === 'all')
                 ? allVouchers
-                : allVouchers.filter(v => v.device_id === selectedDevice);
+                : allVouchers.filter(v => isDeviceMatchingStore(v.device_id, selectedDevice));
 
             // Kumpulkan mutasi opname per product_id dari cachedOpnameSessions jika ada
             const opnameMutations = new Map();
@@ -11507,7 +11530,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             const filtered = (selectedDevice === 'all')
                 ? allVouchers
-                : allVouchers.filter(v => v.device_id === selectedDevice);
+                : allVouchers.filter(v => isDeviceMatchingStore(v.device_id, selectedDevice));
 
             // Group by provider_name preserving sort_order within each provider
             const provMap = new Map();
