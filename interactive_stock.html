@@ -15585,10 +15585,14 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 priority: priority
             });
 
-            const rowId = idVal || `${deviceId}_${rCode}`;
-            const devName = (deviceId === 'master' || deviceId === 'global') ? 'Master' : (getDeviceDisplayName(deviceId) || 'Cabang');
+            const existing = allFeeRules.find(r => (
+                (idVal && (r.id === idVal || `${r.device_id}_${r.rule_id}` === idVal)) ||
+                (r.device_id === deviceId && (r.rule_code === rCode || r._ruleCode === rCode)) ||
+                (r.device_id === deviceId && normalizeRuleCompositeKey(r.category, r.name, r.min_amount, r.max_amount, r.fixed_amount) === normalizeRuleCompositeKey(category, name, minAmount, maxAmount, fixedAmount))
+            ));
 
-            const existing = allFeeRules.find(r => (r.id === rowId || `${r.device_id}_${r.rule_id}` === rowId || (r.device_id === deviceId && (r.rule_code === rCode || r._ruleCode === rCode))));
+            const rowId = idVal || (existing ? existing.id : `${deviceId}_${rCode}`);
+            const devName = (deviceId === 'master' || deviceId === 'global') ? 'Master' : (getDeviceDisplayName(deviceId) || 'Cabang');
             const ruleId = (existing && existing.rule_id > 0) ? existing.rule_id : (hashString(rCode) % 1000000000 || 1);
 
             const rowData = {
