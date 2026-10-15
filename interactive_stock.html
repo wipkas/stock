@@ -3422,14 +3422,29 @@
                     <span style="font-size: 11px; font-weight: 700; color: #38BDF8; display: flex; align-items: center; gap: 4px;">
                         <span>📋</span> Script SQL Pembersihan Supabase:
                     </span>
-                    <button type="button" onclick="copyCurrentPreviewSql()" style="background: var(--primary); color: #fff; border: none; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
-                        Salin Ulang SQL
-                    </button>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button type="button" onclick="copyCurrentPreviewSql()" style="background: var(--primary); color: #fff; border: none; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                            Salin Ulang SQL
+                        </button>
+                        <button type="button" onclick="closeManageDeviceSqlBox()" title="Tutup preview" style="background: rgba(255, 255, 255, 0.08); color: var(--text-muted); border: none; border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer;">
+                            ✕
+                        </button>
+                    </div>
                 </div>
-                <textarea id="manageDeviceSqlText" readonly style="width: 100%; height: 95px; background: #090D16; color: #A5F3FC; border: 1px solid #1E293B; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 11px; padding: 6px 8px; box-sizing: border-box; resize: vertical; outline: none;"></textarea>
+                <textarea id="manageDeviceSqlText" readonly style="width: 100%; height: 130px; background: #090D16; color: #A5F3FC; border: 1px solid #1E293B; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 11px; padding: 6px 8px; box-sizing: border-box; resize: vertical; outline: none;"></textarea>
                 <div style="font-size: 10.5px; color: #94A3B8; margin-top: 4px;">
-                    ℹ️ Tempelkan script di menu <strong>SQL Editor</strong> dashboard Supabase Anda untuk menghapus baris tabel secara permanen.
+                    ℹ️ Tempelkan script di menu <strong>SQL Editor</strong> dashboard Supabase Anda untuk menghapus baris tabel secara permanen. Mencakup tabel voucher, barang, fee_rules, ksp_store_stock, saldo, &amp; laporan.
                 </div>
+            </div>
+
+            <!-- Toolbar Aksi Cepat Pembersihan -->
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; margin-bottom: 8px;">
+                <button type="button" onclick="promptCustomCleanupSql()" style="flex: 1; min-width: 140px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; color: #38BDF8; font-size: 11px; font-weight: 600; padding: 7px 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                    <span>🧹</span> Pembersihan Custom ID / Cabang
+                </button>
+                <button type="button" onclick="triggerOrphanCleanupSql()" style="flex: 1; min-width: 140px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; color: #F59E0B; font-size: 11px; font-weight: 600; padding: 7px 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                    <span>🗑️</span> SQL Bersihkan Data Yatim (Orphan)
+                </button>
             </div>
 
             <!-- List Perangkat -->
@@ -4915,6 +4930,13 @@
             if (Array.isArray(allRestockOrders)) {
                 allRestockOrders.forEach(o => checkAndAdd(o.device_id, o.device_name));
             }
+            if (Array.isArray(allFeeRules)) {
+                allFeeRules.forEach(r => {
+                    if (r.device_id && r.device_id !== 'global') {
+                        checkAndAdd(r.device_id, r.device_name || r.device_id);
+                    }
+                });
+            }
 
             return devices;
         }
@@ -4926,8 +4948,8 @@
 
             return `-- ========================================================
 -- SCRIPT PEMBERSIHAN DATA SUPABASE (KSP CHECK)
--- Perangkat : ${cleanName}
--- Device ID : ${cleanId}
+-- Target    : Perangkat / Cabang "${cleanName}"
+-- ID Target : ${cleanId}
 -- Waktu     : ${dateStr}
 -- Cara pakai:
 -- 1. Buka dashboard Supabase proyek Anda (https://supabase.com/dashboard)
@@ -4941,23 +4963,109 @@ DELETE FROM public.vouchers WHERE device_id = '${cleanId}';
 -- 2. Hapus data barang & stok retail
 DELETE FROM public.barang WHERE device_id = '${cleanId}';
 
--- 3. Hapus data laporan harian aktif
+-- 3. Hapus data aturan biaya admin (Fee Rules)
+DELETE FROM public.fee_rules WHERE device_id = '${cleanId}';
+
+-- 4. Hapus data stok portal kasir cabang (ksp_store_stock)
+DELETE FROM public.ksp_store_stock WHERE store_id = '${cleanId}';
+
+-- 5. Hapus data saldo kasir & e-wallet
+DELETE FROM public.app_balances WHERE device_id = '${cleanId}';
+
+-- 6. Hapus data laporan harian aktif
 DELETE FROM public.daily_reports WHERE device_id = '${cleanId}';
 
--- 4. Hapus data arsip laporan harian (jika ada)
+-- 7. Hapus data arsip laporan harian (jika ada)
 DELETE FROM public.daily_report_archives 
 WHERE device_id = '${cleanId}' 
    OR id LIKE '${cleanId}_%' 
    OR id LIKE '${cleanId}-%';
 
--- 5. Hapus data saldo kasir & e-wallet
-DELETE FROM public.app_balances WHERE device_id = '${cleanId}';
-
--- 6. Hapus riwayat restock order perangkat
+-- 8. Hapus riwayat restock order perangkat
 DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
 
+-- 9. Hapus riwayat penjualan harian produk (product_daily_sales)
+DELETE FROM public.product_daily_sales WHERE device_id = '${cleanId}';
+
+-- 10. Hapus pendaftaran perangkat (jika terdaftar di ksp_devices)
+DELETE FROM public.ksp_devices 
+WHERE device_id = '${cleanId}' 
+   OR store_id = '${cleanId}' 
+   OR id = '${cleanId}';
+
+-- 11. Hapus pendaftaran toko/cabang di ksp_stores (OPSIONAL - buang tanda komentar '--' jika toko/cabang ditutup permanen)
+-- DELETE FROM public.ksp_stores WHERE store_id = '${cleanId}' OR id = '${cleanId}';
+
+-- 12. Hapus riwayat transaksi kasir cabang (OPSIONAL - buang tanda komentar '--' jika ingin menghapus riwayat)
+-- DELETE FROM public.ksp_history_transactions WHERE store_id = '${cleanId}' OR device_id = '${cleanId}';
+
 -- ========================================================
--- SELESAI: Seluruh data perangkat '${cleanId}' telah dibersihkan.
+-- SELESAI: Seluruh data perangkat/cabang '${cleanId}' telah dibersihkan.
+-- ========================================================`;
+        }
+
+        function generateOrphanCleanupSql() {
+            const dateStr = new Date().toLocaleString('id-ID');
+            return `-- ========================================================
+-- SCRIPT PEMBERSIHAN DATA YATIM / TIDAK TERPAKAI (ORPHAN CLEANUP)
+-- Target    : Membersihkan tabel fee_rules, vouchers, barang, ksp_store_stock,
+--             laporan, dan saldo yang tidak valid atau bekas testing di Supabase.
+-- Waktu     : ${dateStr}
+-- Cara pakai:
+-- 1. Buka dashboard Supabase (https://supabase.com/dashboard) -> SQL Editor
+-- 2. New query, tempel script ini dan klik "Run"
+-- ========================================================
+
+-- 1. Hapus Aturan Fee Rules tanpa device_id valid / kosong / testing
+DELETE FROM public.fee_rules 
+WHERE device_id IS NULL 
+   OR device_id IN ('', 'undefined', 'null', 'test_dev') 
+   OR device_id LIKE 'test_%';
+
+-- 2. Hapus Stok Voucher tanpa device_id valid / testing
+DELETE FROM public.vouchers 
+WHERE device_id IS NULL 
+   OR device_id IN ('', 'undefined', 'null', 'test_dev') 
+   OR device_id LIKE 'test_%';
+
+-- 3. Hapus Data Barang retail tanpa device_id valid / testing
+DELETE FROM public.barang 
+WHERE device_id IS NULL 
+   OR device_id IN ('', 'undefined', 'null', 'test_dev') 
+   OR device_id LIKE 'test_%';
+
+-- 4. Hapus Stok Portal Cabang (ksp_store_stock) kosong / testing
+DELETE FROM public.ksp_store_stock 
+WHERE store_id IS NULL 
+   OR store_id IN ('', 'undefined', 'null', 'test_dev') 
+   OR store_id LIKE 'test_%';
+
+-- 5. Hapus Saldo Kasir (app_balances) kosong / testing
+DELETE FROM public.app_balances 
+WHERE device_id IS NULL 
+   OR device_id IN ('', 'undefined', 'null', 'test_dev') 
+   OR device_id LIKE 'test_%';
+
+-- 6. Hapus Laporan Harian (daily_reports) kosong / testing
+DELETE FROM public.daily_reports 
+WHERE device_id IS NULL 
+   OR device_id IN ('', 'undefined', 'null', 'test_dev') 
+   OR device_id LIKE 'test_%';
+
+-- 7. Hapus Penjualan Harian (product_daily_sales) kosong / testing
+DELETE FROM public.product_daily_sales 
+WHERE device_id IS NULL 
+   OR device_id IN ('', 'undefined', 'null', 'test_dev') 
+   OR device_id LIKE 'test_%';
+
+-- 8. Hapus Restock Orders kosong / testing
+DELETE FROM public.restock_orders 
+WHERE device_id IS NULL 
+   OR device_id IN ('', 'undefined', 'null', 'test_dev') 
+   OR device_id LIKE 'test_%';
+
+-- ========================================================
+-- SELESAI: Query pembersihan data orphan / invalid selesai.
 -- ========================================================`;
         }
 
@@ -6032,6 +6140,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                     const isActive = (currentVal === id);
                     const vCount = Array.isArray(allVouchers) ? allVouchers.filter(v => v.device_id === id).length : 0;
                     const bCount = Array.isArray(allBarang) ? allBarang.filter(b => b.device_id === id).length : 0;
+                    const rCount = Array.isArray(allFeeRules) ? allFeeRules.filter(r => r.device_id === id).length : 0;
                     const hasDaily = allDailyReports && allDailyReports.has(id);
                     const hasBalance = Array.isArray(allBalances) && allBalances.some(b => b.device_id === id);
                     const orderCount = Array.isArray(allRestockOrders) ? allRestockOrders.filter(o => o.device_id === id).length : 0;
@@ -6062,6 +6171,7 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                                 <span style="font-size: 10.5px; background: rgba(16, 185, 129, 0.12); color: #10B981; padding: 2px 7px; border-radius: 8px; font-weight: 600;">
                                     🛍️ ${bCount} Produk
                                 </span>
+                                ${rCount > 0 ? `<span style="font-size: 10.5px; background: rgba(168, 85, 247, 0.12); color: #A855F7; padding: 2px 7px; border-radius: 8px; font-weight: 600;">⚖️ ${rCount} Fee Rules</span>` : ''}
                                 ${hasDaily ? '<span style="font-size: 10.5px; background: rgba(245, 158, 11, 0.12); color: #F59E0B; padding: 2px 7px; border-radius: 8px; font-weight: 600;">📊 Laporan Harian</span>' : ''}
                                 ${hasBalance ? '<span style="font-size: 10.5px; background: rgba(139, 92, 246, 0.12); color: #8B5CF6; padding: 2px 7px; border-radius: 8px; font-weight: 600;">💳 Saldo</span>' : ''}
                                 ${orderCount > 0 ? `<span style="font-size: 10.5px; background: rgba(14, 165, 233, 0.12); color: #0EA5E9; padding: 2px 7px; border-radius: 8px; font-weight: 600;">📋 ${orderCount} Order</span>` : ''}
@@ -6180,6 +6290,9 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             if (Array.isArray(allBarang)) {
                 allBarang = allBarang.filter(b => b.device_id !== deviceId);
             }
+            if (Array.isArray(allFeeRules)) {
+                allFeeRules = allFeeRules.filter(r => r.device_id !== deviceId);
+            }
             if (allDailyReports && typeof allDailyReports.delete === 'function') {
                 allDailyReports.delete(deviceId);
             }
@@ -6195,10 +6308,14 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                 try {
                     supabaseClient.from('vouchers').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del vouchers:', e));
                     supabaseClient.from('barang').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del barang:', e));
+                    supabaseClient.from('fee_rules').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del fee_rules:', e));
+                    supabaseClient.from('ksp_store_stock').delete().eq('store_id', deviceId).then().catch(e => console.warn('Supabase del ksp_store_stock:', e));
+                    supabaseClient.from('product_daily_sales').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del product_daily_sales:', e));
                     supabaseClient.from('daily_reports').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del daily_reports:', e));
                     supabaseClient.from('daily_report_archives').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del archives:', e));
                     supabaseClient.from('app_balances').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del balances:', e));
                     supabaseClient.from('restock_orders').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del orders:', e));
+                    supabaseClient.from('ksp_devices').delete().or(`device_id.eq.${deviceId},store_id.eq.${deviceId},id.eq.${deviceId}`).then().catch(e => console.warn('Supabase del ksp_devices:', e));
                 } catch (e) {
                     console.warn('Error during client-side Supabase delete:', e);
                 }
@@ -6235,12 +6352,49 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             }
         }
 
+        function closeManageDeviceSqlBox() {
+            const sqlBox = document.getElementById('manageDeviceSqlBox');
+            if (sqlBox) sqlBox.style.display = 'none';
+        }
+
+        function promptCustomCleanupSql() {
+            const targetId = prompt("Masukkan ID Perangkat / ID Cabang yang ingin dibersihkan:\n(Contoh: store_cabang_a atau dev_xxxx)");
+            if (!targetId || !targetId.trim()) return;
+            const cleanId = targetId.trim();
+            const sql = generateDeviceCleanupSql(cleanId, cleanId);
+            copyToClipboard(sql, `📋 Script SQL pembersihan untuk "${cleanId}" telah disalin ke clipboard!`);
+            const sqlBox = document.getElementById('manageDeviceSqlBox');
+            const sqlText = document.getElementById('manageDeviceSqlText');
+            if (sqlBox && sqlText) {
+                sqlText.value = sql;
+                sqlBox.style.display = 'block';
+                sqlText.focus();
+                sqlText.select();
+            }
+        }
+
+        function triggerOrphanCleanupSql() {
+            const sql = generateOrphanCleanupSql();
+            copyToClipboard(sql, `📋 Script SQL pembersihan data orphan / invalid telah disalin ke clipboard!`);
+            const sqlBox = document.getElementById('manageDeviceSqlBox');
+            const sqlText = document.getElementById('manageDeviceSqlText');
+            if (sqlBox && sqlText) {
+                sqlText.value = sql;
+                sqlBox.style.display = 'block';
+                sqlText.focus();
+                sqlText.select();
+            }
+        }
+
         function restoreDeletedDevice(deviceId) {
             removeDeletedDeviceId(deviceId);
             showToast(`✅ Perangkat (${deviceId}) dipulihkan. Mengambil data ulang...`);
             renderManageDevicesList();
             updateSettingsMenuUI();
             fetchVouchersFromSupabase();
+            if (typeof fetchFeeRulesFromSupabase === 'function') {
+                fetchFeeRulesFromSupabase();
+            }
         }
 
         function updateOrderHeaderTitle() {
