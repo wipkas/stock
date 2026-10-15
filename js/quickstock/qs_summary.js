@@ -187,7 +187,11 @@
             }
             const msg = res && (res.message || res.error) ? (res.message || res.error) : 'Koneksi ditolak';
             alert('❌ Gagal menyimpan: ' + msg);
-            if (res && res.error === 'shift_already_closed') global.location.reload();
+            if (res && res.error === 'shift_already_closed') {
+                QS.Draft.clear(store.getMeta().storeId);   // shift sudah tutup: draft tidak berguna lagi
+                QS.Draft.lock();
+                global.location.reload();
+            }
         } catch (err) {
             console.error('[QS.Summary] submit gagal', err);
             alert('❌ Terjadi kesalahan jaringan saat menyimpan. Draft Anda tetap aman, coba lagi.');

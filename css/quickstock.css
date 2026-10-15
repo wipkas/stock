@@ -269,6 +269,8 @@ body {
 
 /* Dialog generik + tombol */
 #qsDialog { z-index: 10000; }
+#qsDialogFooter { flex-wrap: wrap; }
+#qsDialogFooter .qs-btn { flex: 1 1 auto; }
 .qs-btn { padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; border: 1px solid var(--card-border); background: transparent; color: var(--text-main); }
 .qs-btn-primary { background: var(--primary); border-color: var(--primary); color: #FFFFFF; }
 .qs-btn-danger { background: var(--danger); border-color: var(--danger); color: #FFFFFF; }

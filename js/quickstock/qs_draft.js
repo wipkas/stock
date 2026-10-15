@@ -88,19 +88,29 @@
     function apply(store, info) { store.importEntries(info.entries); }
     function clear(storeId) { try { localStorage.removeItem(keyOf(storeId)); } catch (e) { /* abaikan */ } }
     function arm() { armed = true; }
-    function lock() { locked = true; clearTimeout(timer); }   // setelah submit sukses: jangan simpan lagi
+    function lock() { locked = true; clearTimeout(timer); }   // setelah submit sukses / draft dibuang: jangan simpan lagi
+
+    /** Simpan sekarang juga (tanpa menunggu debounce). */
+    function flush(store) { clearTimeout(timer); saveNow(store); }
+
+    /** Ada hasil cek yang belum disimpan ke server dan masih layak dilindungi? */
+    function hasPending(store) {
+        if (locked) return false;
+        if (store.getMeta().closed) return false;
+        return Object.keys(store.exportEntries()).length > 0;
+    }
 
     /** Pasang auto-save ke store + flush saat tab disembunyikan/ditutup. */
     function bind(store) {
         store.subscribe(function (e) {
             if (e.type === 'entry' || e.type === 'entries') scheduleSave(store);
         });
-        const flush = function () { clearTimeout(timer); saveNow(store); };
-        global.addEventListener('pagehide', flush);
+        const onLeave = function () { flush(store); };
+        global.addEventListener('pagehide', onLeave);
         document.addEventListener('visibilitychange', function () {
-            if (document.visibilityState === 'hidden') flush();
+            if (document.visibilityState === 'hidden') onLeave();
         });
     }
 
-    QS.Draft = { peek: peek, apply: apply, clear: clear, arm: arm, lock: lock, bind: bind, _todayStr: todayStr };
+    QS.Draft = { peek: peek, apply: apply, clear: clear, arm: arm, lock: lock, flush: flush, hasPending: hasPending, bind: bind, _todayStr: todayStr };
 })(window);

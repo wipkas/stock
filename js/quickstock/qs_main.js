@@ -14,6 +14,7 @@
     let empName = '';
     let store = null;
     let batching = false;     // true: abaikan event store, render sekali di akhir
+    let leaving = false;      // true: pengguna sudah memilih keluar lewat dialog
     let searchTimer = null;
 
     function optKey(name) { return 'ksp_opt_' + name + '_' + storeId; }
@@ -226,6 +227,50 @@
         QS.Api.detectPlatformMode(storeId).then(QS.Summary.applyPlatformMode);
     }
 
+    // ---------- Guard keluar ----------
+    /**
+     * Melindungi hasil cek yang belum disimpan:
+     *  - tombol ←: dialog Tetap / Keluar (draft tersimpan) / Buang & keluar
+     *  - beforeunload: peringatan bawaan browser saat tab ditutup/di-refresh
+     * Tidak aktif jika belum ada yang dicek, shift terkunci, atau sudah submit.
+     */
+    function bindExitGuard() {
+        global.addEventListener('beforeunload', function (e) {
+            if (leaving || !QS.Draft.hasPending(store)) return;
+            e.preventDefault();
+            e.returnValue = '';
+        });
+
+        const back = $('btnBack');
+        if (!back) return;
+        back.addEventListener('click', async function (e) {
+            if (!QS.Draft.hasPending(store)) return;   // tidak ada yang dilindungi: navigasi normal
+            e.preventDefault();
+            const n = Object.keys(store.exportEntries()).length;
+            const choice = await UI.dialog({
+                title: '🚪 Keluar dari Cek Stok?',
+                html: '<div class="qs-dialog-text">Anda sudah mengecek <b>' + n + ' produk</b> dan belum menyimpan atau menutup shift.' +
+                    '<ul><li><b>Keluar</b>: draft tersimpan otomatis, bisa dilanjutkan nanti.</li>' +
+                    '<li><b>Buang &amp; keluar</b>: semua hasil cek dihapus.</li></ul></div>',
+                actions: [
+                    { label: 'Tetap di sini', kind: 'primary', value: 'stay' },
+                    { label: 'Buang & keluar', kind: 'danger', value: 'discard' },
+                    { label: 'Keluar (draft tersimpan)', kind: 'ghost', value: 'leave' }
+                ]
+            });
+            if (choice === 'leave') {
+                QS.Draft.flush(store);
+                leaving = true;
+                global.location.href = back.href;
+            } else if (choice === 'discard') {
+                QS.Draft.clear(storeId);
+                QS.Draft.lock();
+                leaving = true;
+                global.location.href = back.href;
+            }
+        });
+    }
+
     // ---------- Kontrol statis ----------
     function bindStaticControls() {
         $('chkSkipZeroStock').addEventListener('change', function (e) { store.setSetting('skipZero', e.target.checked); });
@@ -272,6 +317,7 @@
         QS.Draft.bind(store);
         store.subscribe(onStoreEvent);
         bindStaticControls();
+        bindExitGuard();
         QS.Render.applyModeUI();
 
         loadData();
