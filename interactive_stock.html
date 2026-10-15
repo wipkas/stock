@@ -5737,8 +5737,9 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
                 updateActiveOrderBadge();
                 if (typeof buildMarginFromVouchers === 'function') buildMarginFromVouchers();
                 if (typeof fetchBalancesFromSupabase === 'function') fetchBalancesFromSupabase();
-                // Lazy loading: Hanya muat barang jika pengguna sedang membuka Tab Produk
+                // Lazy loading: Muat barang / fee rules jika pengguna sedang membuka Tab Produk / Fee Rule
                 if (currentTab === 'produk' && typeof fetchBarangFromSupabase === 'function') fetchBarangFromSupabase();
+                if (currentTab === 'feerule' && typeof fetchFeeRulesFromSupabase === 'function') fetchFeeRulesFromSupabase();
                 showToast('✅ Data berhasil diperbarui!');
                 if (typeof checkPendingOpnameCount === 'function') {
                     checkPendingOpnameCount().catch(e => console.warn('checkPendingOpnameCount err:', e));
@@ -6275,7 +6276,10 @@ DELETE FROM public.restock_orders WHERE device_id = '${cleanId}';
             renderOrderHistoryList();
             if (typeof buildMarginFromVouchers === 'function') buildMarginFromVouchers();
             if (typeof renderBalanceTab === 'function') renderBalanceTab();
-            if (typeof renderProdukTab === 'function') renderProdukTab();
+            if (typeof renderProdukTab === 'function') {
+                if (typeof updateProdukBrandChips === 'function') updateProdukBrandChips();
+                renderProdukTab();
+            }
             if (typeof renderFeeRuleTabOnDeviceChange === 'function') renderFeeRuleTabOnDeviceChange();
         }
 
@@ -12224,7 +12228,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             let list = (selectedDevice === 'all')
                 ? allBalances
-                : allBalances.filter(item => item.device_id === selectedDevice);
+                : allBalances.filter(item => isDeviceMatchingStore(item.device_id, selectedDevice));
 
             // Pisahkan data store_cash agar tidak muncul di daftar kartu saldo provider digital
             list = list.filter(item => item.package_name !== 'store_cash');
@@ -13786,11 +13790,22 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
         }
 
         function updateProdukBrandChips() {
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const scopedBarang = (selectedDevice === 'all')
+                ? (allBarang || [])
+                : (allBarang || []).filter(b => isDeviceMatchingStore(b.device_id, selectedDevice));
+
             const brands = new Set();
-            (allBarang || []).forEach(b => {
+            scopedBarang.forEach(b => {
                 const br = (b.brand_name || 'Umum').trim();
                 if (br) brands.add(br);
             });
+
+            if (selectedProdukBrand !== 'all' && !brands.has(selectedProdukBrand)) {
+                selectedProdukBrand = 'all';
+                const labelEl = document.getElementById('produkFilterActiveLabel');
+                if (labelEl) labelEl.textContent = 'Semua Produk';
+            }
 
             const sortedBrands = Array.from(brands).sort((a, b) => a.localeCompare(b));
 
@@ -13798,12 +13813,12 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             if (dropdownContainer) {
                 let dHtml = `
                     <div class="produk-dropdown-item ${selectedProdukBrand === 'all' ? 'active' : ''}" data-brand="all" onclick="selectProdukBrandFromDropdown('all')">
-                        <span>🏷️ Semua Brand (${allBarang.length})</span>
+                        <span>🏷️ Semua Brand (${scopedBarang.length})</span>
                         <span class="pdd-check">✓</span>
                     </div>
                 `;
                 sortedBrands.forEach(br => {
-                    const count = allBarang.filter(b => (b.brand_name || 'Umum').trim() === br).length;
+                    const count = scopedBarang.filter(b => (b.brand_name || 'Umum').trim() === br).length;
                     const isActive = (selectedProdukBrand === br);
                     dHtml += `
                         <div class="produk-dropdown-item ${isActive ? 'active' : ''}" data-brand="${escapeHtml(br)}" onclick="selectProdukBrandFromDropdown('${escapeHtml(br)}')">
@@ -13817,9 +13832,9 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
             const container = document.getElementById('produkBrandChipsRow');
             if (container) {
-                let html = `<div class="chip ${selectedProdukBrand === 'all' ? 'active' : ''}" onclick="setProdukBrand('all', this)">Semua Brand (${allBarang.length})</div>`;
+                let html = `<div class="chip ${selectedProdukBrand === 'all' ? 'active' : ''}" onclick="setProdukBrand('all', this)">Semua Brand (${scopedBarang.length})</div>`;
                 sortedBrands.forEach(br => {
-                    const count = allBarang.filter(b => (b.brand_name || 'Umum').trim() === br).length;
+                    const count = scopedBarang.filter(b => (b.brand_name || 'Umum').trim() === br).length;
                     const isActive = (selectedProdukBrand === br);
                     html += `<div class="chip ${isActive ? 'active' : ''}" onclick="setProdukBrand('${escapeHtml(br)}', this)">${escapeHtml(br)} (${count})</div>`;
                 });
@@ -13984,7 +13999,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             // Filter berdasarkan perangkat kasir jika dipilih
             const baseList = (selectedDevice === 'all')
                 ? allBarang
-                : allBarang.filter(b => b.device_id === selectedDevice);
+                : allBarang.filter(b => isDeviceMatchingStore(b.device_id, selectedDevice));
 
             // Hitung statistik keseluruhan untuk baseList
             updateProdukStats(baseList);
@@ -14490,7 +14505,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             const baseList = (selectedDevice === 'all')
                 ? (allBarang || [])
-                : (allBarang || []).filter(b => b.device_id === selectedDevice);
+                : (allBarang || []).filter(b => isDeviceMatchingStore(b.device_id, selectedDevice));
 
             if (baseList.length === 0) {
                 showToast('⚠️ Belum ada data produk untuk disalin');
@@ -14632,7 +14647,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             const scopedRules = (selectedDevice === 'all')
                 ? allFeeRules
-                : allFeeRules.filter(r => r.device_id === selectedDevice || r.device_id === 'global');
+                : allFeeRules.filter(r => isDeviceMatchingStore(r.device_id, selectedDevice) || r.device_id === 'global');
 
             const counts = {};
             scopedRules.forEach(r => {
@@ -14680,7 +14695,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             let filtered = allFeeRules.filter(r => {
-                const matchDevice = (selectedDevice === 'all') || (r.device_id === selectedDevice) || (r.device_id === 'global');
+                const matchDevice = (selectedDevice === 'all') || isDeviceMatchingStore(r.device_id, selectedDevice) || (r.device_id === 'global');
                 const matchCat = (feeRuleSelectedCategory === 'ALL' || (r.category || 'Umum') === feeRuleSelectedCategory);
                 const matchQuery = !query ||
                     (r.name && r.name.toLowerCase().includes(query)) ||
@@ -14911,7 +14926,8 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
         function openAddFeeRuleModal() {
             document.getElementById('feeRuleModalTitle').textContent = 'Tambah Fee Rule Baru';
             document.getElementById('formFeeRuleId').value = '';
-            document.getElementById('formFeeRuleDeviceId').value = document.getElementById('navDeviceFilter')?.value || 'web_dashboard';
+            const curDev = document.getElementById('navDeviceFilter')?.value || 'global';
+            document.getElementById('formFeeRuleDeviceId').value = (curDev === 'all') ? 'global' : curDev;
             document.getElementById('feeRuleForm').reset();
             document.getElementById('formFeeRulePriority').value = '10';
             document.getElementById('formFeeRuleIsActive').checked = true;
@@ -15029,7 +15045,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
             const scopedRules = (selectedDevice === 'all')
                 ? allFeeRules
-                : allFeeRules.filter(r => r.device_id === selectedDevice || r.device_id === 'global');
+                : allFeeRules.filter(r => isDeviceMatchingStore(r.device_id, selectedDevice) || r.device_id === 'global');
 
             const exportData = scopedRules.map(r => ({
                 category: r.category || 'Umum',
