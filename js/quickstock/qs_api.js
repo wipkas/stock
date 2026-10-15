@@ -1,0 +1,108 @@
+/* ============================================================================
+ * QS.Api - akses data Cek Stok Cepat (Supabase via KspSync + fallback tabel vouchers).
+ * Tidak menyentuh DOM maupun state.
+ * ========================================================================== */
+(function (global) {
+    'use strict';
+    const QS = global.QS = global.QS || {};
+
+    const VOUCHER_SELECT = 'product_id,product_name,provider_name,category_name,stock,sell_price,cost_price,sort_order';
+
+    function restHeaders() {
+        const cfg = global.KSP_SYNC_CONFIG || {};
+        const headers = { 'apikey': cfg.key };
+        // Kunci format lama (JWT) wajib juga sebagai Bearer; kunci "sb_..." tidak.
+        if (String(cfg.key).indexOf('sb_') !== 0) headers['Authorization'] = 'Bearer ' + cfg.key;
+        return headers;
+    }
+    function baseUrl() { return String((global.KSP_SYNC_CONFIG || {}).url || '').replace(/\/+$/, ''); }
+
+    async function queryVouchers(deviceId) {
+        const url = baseUrl() + '/rest/v1/vouchers?device_id=eq.' + encodeURIComponent(deviceId)
+            + '&is_active=neq.false&select=' + VOUCHER_SELECT + '&order=sort_order.asc,product_name.asc';
+        const resp = await fetch(url, { headers: restHeaders() });
+        return resp.ok ? resp.json() : [];
+    }
+
+    /** Fallback: katalog cabang belum ada di ksp_store_stock -> coba tabel vouchers (variasi penulisan store id). */
+    async function fetchVouchersFallback(storeId) {
+        const cfg = global.KSP_SYNC_CONFIG || {};
+        if (!cfg.url || !storeId) return [];
+        try {
+            const candidates = [storeId];
+            if (storeId.indexOf('-') !== -1) candidates.push(storeId.replace(/-/g, ' '));
+            if (storeId.indexOf('-') !== -1 || storeId.indexOf(' ') !== -1) candidates.push(storeId.replace(/[-\s]/g, ''));
+            for (let i = 0; i < candidates.length; i++) {
+                const data = await queryVouchers(candidates[i]);
+                if (Array.isArray(data) && data.length > 0) {
+                    return data.map(function (v) {
+                        return {
+                            product_id: Number(v.product_id),
+                            product_name: v.product_name,
+                            provider_name: v.provider_name || 'VOUCHER',
+                            category_name: v.category_name || '',
+                            current_stock: Number(v.stock !== undefined ? v.stock : 0),
+                            sell_price: Number(v.sell_price || 0),
+                            cost_price: Number(v.cost_price || 0),
+                            sort_order: Number(v.sort_order || 0),
+                            is_active: true
+                        };
+                    });
+                }
+            }
+        } catch (err) {
+            console.warn('[QS.Api] fallback vouchers gagal:', err);
+        }
+        return [];
+    }
+
+    /** -> { ok, meta, products, usedFallback } | { ok:false, message, redirect } */
+    async function fetchStoreStock(cred, storeIdHint) {
+        if (!global.KspSync || !global.KspSync.enabled()) {
+            return { ok: false, message: 'Konfigurasi sinkronisasi cloud belum aktif.', redirect: false };
+        }
+        const res = await global.KspSync.empGetStoreStock(cred);
+        if (!res || !res.ok) {
+            return { ok: false, message: 'Gagal mengambil data stok toko: ' + ((res && res.error) || 'Koneksi ditolak'), redirect: true };
+        }
+        let products = Array.isArray(res.products) ? res.products : [];
+        let usedFallback = false;
+        if (products.length === 0) {
+            const fb = await fetchVouchersFallback(res.store_id || storeIdHint);
+            if (fb.length > 0) { products = fb; usedFallback = true; }
+        }
+        return {
+            ok: true,
+            usedFallback: usedFallback,
+            products: products,
+            meta: {
+                storeId: res.store_id || storeIdHint,
+                empName: res.emp_name || '',
+                shiftNum: res.shift_num || 1,
+                alreadyClosed: !!res.already_closed,
+                hasBaseline: res.has_baseline !== false
+            }
+        };
+    }
+
+    /** Apakah cabang memakai HP Android KSP Check? -> 'android' | 'web' | null (tidak diketahui). */
+    async function detectPlatformMode(storeId) {
+        try {
+            const cfg = global.KSP_SYNC_CONFIG || {};
+            if (!cfg.url || !cfg.key || !storeId) return null;
+            const url = baseUrl() + '/rest/v1/ksp_history_transactions?store_id=eq.' + encodeURIComponent(storeId)
+                + '&device_id=not.like.web*&select=id&limit=1';
+            const res = await fetch(url, { headers: restHeaders() });
+            if (!res.ok) return null;
+            const data = await res.json();
+            return Array.isArray(data) && data.length > 0 ? 'android' : 'web';
+        } catch (e) {
+            console.warn('[QS.Api] deteksi platform dilewati:', e);
+            return null;
+        }
+    }
+
+    function submitOpname(cred, payload) { return global.KspSync.empSubmitStockOpname(cred, payload); }
+
+    QS.Api = { fetchStoreStock: fetchStoreStock, detectPlatformMode: detectPlatformMode, submitOpname: submitOpname };
+})(window);
