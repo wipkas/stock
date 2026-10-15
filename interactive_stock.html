@@ -4897,15 +4897,16 @@
                 // Sumber 4: Coba baca tabel public.ksp_devices (memiliki policy publik)
                 try {
                     window.deviceToStoreMap = window.deviceToStoreMap || new Map();
-                    const devResp = await fetch(baseUrl + '/rest/v1/ksp_devices?select=device_id,store_id,device_name&is_active=eq.true', {
+                    const devResp = await fetch(baseUrl + '/rest/v1/ksp_devices?select=id,store_id,device_name&is_active=eq.true', {
                         headers: { 'apikey': cfg.key, ...(String(cfg.key).indexOf('sb_') !== 0 ? { 'Authorization': 'Bearer ' + cfg.key } : {}) }
                     });
                     if (devResp.ok) {
                         const devs = await devResp.json();
                         if (Array.isArray(devs) && devs.length > 0) {
                             devs.forEach(d => {
-                                if (d && d.device_id && d.store_id) {
-                                    window.deviceToStoreMap.set(String(d.device_id), String(d.store_id));
+                                const devId = d ? (d.id || d.device_id) : null;
+                                if (devId && d.store_id) {
+                                    window.deviceToStoreMap.set(String(devId), String(d.store_id));
                                 }
                                 if (d && d.store_id && !storesMap.has(d.store_id)) {
                                     storesMap.set(d.store_id, { id: d.store_id, name: d.device_name || d.store_id, source: 'cloud_devices' });
@@ -5040,9 +5041,8 @@ DELETE FROM public.product_daily_sales WHERE device_id = '${cleanId}';
 
 -- 10. Hapus pendaftaran perangkat (jika terdaftar di ksp_devices)
 DELETE FROM public.ksp_devices 
-WHERE device_id = '${cleanId}' 
-   OR store_id = '${cleanId}' 
-   OR id = '${cleanId}';
+WHERE id = '${cleanId}' 
+   OR store_id = '${cleanId}';
 
 -- 11. Hapus pendaftaran toko/cabang di ksp_stores (OPSIONAL - buang tanda komentar '--' jika toko/cabang ditutup permanen)
 -- DELETE FROM public.ksp_stores WHERE store_id = '${cleanId}' OR id = '${cleanId}';
@@ -5114,6 +5114,14 @@ DELETE FROM public.restock_orders
 WHERE device_id IS NULL 
    OR device_id IN ('', 'undefined', 'null', 'test_dev') 
    OR device_id LIKE 'test_%';
+
+-- 9. Hapus Pendaftaran Perangkat (ksp_devices) kosong / testing
+DELETE FROM public.ksp_devices 
+WHERE id IS NULL 
+   OR id IN ('', 'undefined', 'null', 'test_dev') 
+   OR id LIKE 'test_%'
+   OR store_id IS NULL 
+   OR store_id IN ('', 'undefined', 'null');
 
 -- ========================================================
 -- SELESAI: Query pembersihan data orphan / invalid selesai.
@@ -6412,7 +6420,7 @@ WHERE device_id IS NULL
                     supabaseClient.from('daily_report_archives').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del archives:', e));
                     supabaseClient.from('app_balances').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del balances:', e));
                     supabaseClient.from('restock_orders').delete().eq('device_id', deviceId).then().catch(e => console.warn('Supabase del orders:', e));
-                    supabaseClient.from('ksp_devices').delete().or(`device_id.eq.${deviceId},store_id.eq.${deviceId},id.eq.${deviceId}`).then().catch(e => console.warn('Supabase del ksp_devices:', e));
+                    supabaseClient.from('ksp_devices').delete().or(`id.eq.${deviceId},store_id.eq.${deviceId}`).then().catch(e => console.warn('Supabase del ksp_devices:', e));
                 } catch (e) {
                     console.warn('Error during client-side Supabase delete:', e);
                 }
