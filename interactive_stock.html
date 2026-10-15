@@ -14846,7 +14846,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
         let feeRuleSelectedCategory = 'ALL';
         let feeRuleViewMode = 'table'; // 'table' or 'grid'
 
-        function getEffectiveRuleCode(r, index = 1) {
+        function getEffectiveRuleCode(r) {
             if (r.rule_code && String(r.rule_code).trim()) {
                 return String(r.rule_code).trim();
             }
@@ -14856,8 +14856,10 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const cat = (r.category || 'RULE').trim().toUpperCase().replace(/[^A-Z0-9_]/g, '').substring(0, 10);
             const fixedAmt = Number(r.fixed_amount || r.fixedAmount || 0);
             const minAmt = Number(r.min_amount || r.minAmount || 0);
+            const maxAmt = Number(r.max_amount || r.maxAmount || 0);
             const name = r.name || '';
 
+            // 1. Game diamond / Fixed Amount override
             if (fixedAmt > 0 || name.toLowerCase().includes('diamond')) {
                 const digits = name.replace(/[^0-9]/g, '');
                 if (digits) {
@@ -14865,16 +14867,44 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 }
                 return `${cat}-${Math.round(fixedAmt)}`;
             }
+
+            // 2. Tier rules with minAmount / maxAmount
             if (minAmt > 0) {
-                return `${cat}-L${index}`;
+                const minStr = (minAmt % 1000 === 0) ? `${minAmt / 1000}K` : `${minAmt}`;
+                return `${cat}-${minStr}`;
             }
-            return `${cat}-R${index}`;
+
+            if (maxAmt > 0 && maxAmt < 9999999999) {
+                const maxStr = (maxAmt % 1000 === 0) ? `${maxAmt / 1000}K` : `${maxAmt}`;
+                return `${cat}-0-${maxStr}`;
+            }
+
+            // 3. Fallback name slug
+            if (name && name.trim()) {
+                const slug = name.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 8);
+                if (slug) return `${cat}-${slug}`;
+            }
+
+            return `${cat}-DEF`;
         }
 
         function normalizeRuleKey(category, name) {
             const c = (category || '').trim().toLowerCase();
             const n = (name || '').trim().toLowerCase();
             return `${c}::${n}`;
+        }
+
+        function normalizeRuleCompositeKey(category, name, min, max, fix) {
+            return `${normalizeRuleKey(category, name)}::${Math.round(min || 0)}::${Math.round(max || 0)}::${Math.round(fix || 0)}`;
+        }
+
+        function hashString(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                hash |= 0;
+            }
+            return Math.abs(hash);
         }
 
         function getDeviceDisplayName(devId) {
@@ -14891,9 +14921,9 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
 
             if (selectedDevice === 'all') {
-                return allFeeRules.map((r, i) => ({
+                return allFeeRules.map((r) => ({
                     ...r,
-                    _ruleCode: getEffectiveRuleCode(r, i + 1),
+                    _ruleCode: getEffectiveRuleCode(r),
                     _sourceType: (r.device_id === 'master' || r.device_id === 'global') ? 'master' : 'branch'
                 }));
             }
@@ -14901,9 +14931,9 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             if (selectedDevice === 'master' || selectedDevice === 'global') {
                 return allFeeRules
                     .filter(r => r.device_id === 'master' || r.device_id === 'global')
-                    .map((r, i) => ({
+                    .map((r) => ({
                         ...r,
-                        _ruleCode: getEffectiveRuleCode(r, i + 1),
+                        _ruleCode: getEffectiveRuleCode(r),
                         _sourceType: 'master'
                     }));
             }
@@ -14913,18 +14943,21 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const branchRules = allFeeRules.filter(r => isDeviceMatchingStore(r.device_id, selectedDevice));
 
             const masterByCode = new Map();
+            const masterByComp = new Map();
             const masterByKey = new Map();
 
-            masterRules.forEach((mr, idx) => {
-                const code = getEffectiveRuleCode(mr, idx + 1);
+            masterRules.forEach((mr) => {
+                const code = getEffectiveRuleCode(mr);
                 const key = normalizeRuleKey(mr.category, mr.name);
+                const comp = normalizeRuleCompositeKey(mr.category, mr.name, mr.min_amount || mr.minAmount, mr.max_amount || mr.maxAmount, mr.fixed_amount || mr.fixedAmount);
                 masterByCode.set(code, mr);
+                masterByComp.set(comp, mr);
                 masterByKey.set(key, mr);
             });
 
             const effectiveMap = new Map();
-            masterRules.forEach((mr, idx) => {
-                const code = getEffectiveRuleCode(mr, idx + 1);
+            masterRules.forEach((mr) => {
+                const code = getEffectiveRuleCode(mr);
                 effectiveMap.set(code, {
                     ...mr,
                     _ruleCode: code,
@@ -14933,13 +14966,18 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 });
             });
 
-            branchRules.forEach((br, bIdx) => {
-                const bCode = getEffectiveRuleCode(br, bIdx + 1);
+            branchRules.forEach((br) => {
+                const bCode = getEffectiveRuleCode(br);
                 const bKey = normalizeRuleKey(br.category, br.name);
+                const bComp = normalizeRuleCompositeKey(br.category, br.name, br.min_amount || br.minAmount, br.max_amount || br.maxAmount, br.fixed_amount || br.fixedAmount);
 
                 let targetCode = bCode;
-                if (!effectiveMap.has(targetCode) && masterByKey.has(bKey)) {
-                    targetCode = getEffectiveRuleCode(masterByKey.get(bKey));
+                if (!effectiveMap.has(targetCode)) {
+                    if (masterByComp.has(bComp)) {
+                        targetCode = getEffectiveRuleCode(masterByComp.get(bComp));
+                    } else if (masterByKey.has(bKey)) {
+                        targetCode = getEffectiveRuleCode(masterByKey.get(bKey));
+                    }
                 }
 
                 if (effectiveMap.has(targetCode)) {
@@ -15543,16 +15581,21 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 name: name,
                 fixed_amount: fixedAmount,
                 min_amount: minAmount,
+                max_amount: maxAmount,
                 priority: priority
             });
 
             const rowId = idVal || `${deviceId}_${rCode}`;
             const devName = (deviceId === 'master' || deviceId === 'global') ? 'Master' : (getDeviceDisplayName(deviceId) || 'Cabang');
 
+            const existing = allFeeRules.find(r => (r.id === rowId || `${r.device_id}_${r.rule_id}` === rowId || (r.device_id === deviceId && (r.rule_code === rCode || r._ruleCode === rCode))));
+            const ruleId = (existing && existing.rule_id > 0) ? existing.rule_id : (hashString(rCode) % 1000000000 || 1);
+
             const rowData = {
                 id: rowId,
                 device_id: deviceId,
                 device_name: devName,
+                rule_id: ruleId,
                 rule_code: rCode,
                 name: name,
                 category: category,
@@ -15568,7 +15611,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
             if (supabaseClient) {
                 try {
-                    const { error } = await supabaseClient.from('fee_rules').upsert(rowData);
+                    const { error } = await supabaseClient.from('fee_rules').upsert(rowData, { onConflict: 'id' });
                     if (error) throw error;
                     showToast(`✅ Rule "${name}" [${rCode}] berhasil disimpan ke cloud!`);
                     await fetchFeeRulesFromSupabase(false);
