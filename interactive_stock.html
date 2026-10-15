@@ -3245,6 +3245,10 @@
                     <div class="stat-num warning" id="statFeeRuleCategories">0</div>
                     <div class="stat-label">Kategori Layanan</div>
                 </div>
+                <div class="stat-box" id="statBoxFeeRuleOverrides" style="display: none;">
+                    <div class="stat-num warning" id="statFeeRuleOverrides" style="color: #f59e0b;">0</div>
+                    <div class="stat-label">Override Cabang</div>
+                </div>
             </div>
         </div>
 
@@ -3333,9 +3337,15 @@
                 <input type="hidden" id="formFeeRuleId">
                 <input type="hidden" id="formFeeRuleDeviceId">
 
-                <div style="margin-bottom: 14px;">
-                    <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Nama Rule</label>
-                    <input type="text" class="input-modern" id="formFeeRuleName" placeholder="Contoh: DANA 10k-50k atau 50 Diamond" required style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Nama Rule</label>
+                        <input type="text" class="input-modern" id="formFeeRuleName" placeholder="Contoh: DANA 10k-50k atau 50 Diamond" required style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Kode Rule (rule_code)</label>
+                        <input type="text" class="input-modern mono" id="formFeeRuleCode" placeholder="Otomatis jika kosong" style="width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 12px; color: var(--text-main); font-size: 13px; outline: none;">
+                    </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
@@ -14836,6 +14846,121 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
         let feeRuleSelectedCategory = 'ALL';
         let feeRuleViewMode = 'table'; // 'table' or 'grid'
 
+        function getEffectiveRuleCode(r, index = 1) {
+            if (r.rule_code && String(r.rule_code).trim()) {
+                return String(r.rule_code).trim();
+            }
+            if (r.ruleCode && String(r.ruleCode).trim()) {
+                return String(r.ruleCode).trim();
+            }
+            const cat = (r.category || 'RULE').trim().toUpperCase().replace(/[^A-Z0-9_]/g, '').substring(0, 10);
+            const fixedAmt = Number(r.fixed_amount || r.fixedAmount || 0);
+            const minAmt = Number(r.min_amount || r.minAmount || 0);
+            const name = r.name || '';
+
+            if (fixedAmt > 0 || name.toLowerCase().includes('diamond')) {
+                const digits = name.replace(/[^0-9]/g, '');
+                if (digits) {
+                    return `${cat}-${digits}D`;
+                }
+                return `${cat}-${Math.round(fixedAmt)}`;
+            }
+            if (minAmt > 0) {
+                return `${cat}-L${index}`;
+            }
+            return `${cat}-R${index}`;
+        }
+
+        function normalizeRuleKey(category, name) {
+            const c = (category || '').trim().toLowerCase();
+            const n = (name || '').trim().toLowerCase();
+            return `${c}::${n}`;
+        }
+
+        function getDeviceDisplayName(devId) {
+            if (!devId) return '';
+            if (devId === 'master' || devId === 'global') return 'Master';
+            if (typeof getDiscoveredDevicesMap === 'function') {
+                const devMap = getDiscoveredDevicesMap(true);
+                if (devMap && devMap.has(String(devId))) return devMap.get(String(devId));
+            }
+            return String(devId);
+        }
+
+        function getScopedFeeRules() {
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+
+            if (selectedDevice === 'all') {
+                return allFeeRules.map((r, i) => ({
+                    ...r,
+                    _ruleCode: getEffectiveRuleCode(r, i + 1),
+                    _sourceType: (r.device_id === 'master' || r.device_id === 'global') ? 'master' : 'branch'
+                }));
+            }
+
+            if (selectedDevice === 'master' || selectedDevice === 'global') {
+                return allFeeRules
+                    .filter(r => r.device_id === 'master' || r.device_id === 'global')
+                    .map((r, i) => ({
+                        ...r,
+                        _ruleCode: getEffectiveRuleCode(r, i + 1),
+                        _sourceType: 'master'
+                    }));
+            }
+
+            // Cabang Spesifik: Sparse Delta Hierarchy (Master + Override Cabang)
+            const masterRules = allFeeRules.filter(r => r.device_id === 'master' || r.device_id === 'global');
+            const branchRules = allFeeRules.filter(r => isDeviceMatchingStore(r.device_id, selectedDevice));
+
+            const masterByCode = new Map();
+            const masterByKey = new Map();
+
+            masterRules.forEach((mr, idx) => {
+                const code = getEffectiveRuleCode(mr, idx + 1);
+                const key = normalizeRuleKey(mr.category, mr.name);
+                masterByCode.set(code, mr);
+                masterByKey.set(key, mr);
+            });
+
+            const effectiveMap = new Map();
+            masterRules.forEach((mr, idx) => {
+                const code = getEffectiveRuleCode(mr, idx + 1);
+                effectiveMap.set(code, {
+                    ...mr,
+                    _ruleCode: code,
+                    _sourceType: 'master',
+                    _originalMaster: mr
+                });
+            });
+
+            branchRules.forEach((br, bIdx) => {
+                const bCode = getEffectiveRuleCode(br, bIdx + 1);
+                const bKey = normalizeRuleKey(br.category, br.name);
+
+                let targetCode = bCode;
+                if (!effectiveMap.has(targetCode) && masterByKey.has(bKey)) {
+                    targetCode = getEffectiveRuleCode(masterByKey.get(bKey));
+                }
+
+                if (effectiveMap.has(targetCode)) {
+                    effectiveMap.set(targetCode, {
+                        ...br,
+                        _ruleCode: targetCode,
+                        _sourceType: 'override',
+                        _originalMaster: effectiveMap.get(targetCode)._originalMaster || masterByCode.get(targetCode)
+                    });
+                } else {
+                    effectiveMap.set(bCode, {
+                        ...br,
+                        _ruleCode: bCode,
+                        _sourceType: 'branch_new'
+                    });
+                }
+            });
+
+            return Array.from(effectiveMap.values());
+        }
+
         async function initFeeRuleTab() {
             if (!allFeeRules || allFeeRules.length === 0) {
                 await fetchFeeRulesFromSupabase();
@@ -14897,7 +15022,14 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 if (sub) {
                     const now = new Date();
                     const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-                    sub.textContent = `Tersinkron cloud (${allFeeRules.length} aturan • ${timeStr} WIB)`;
+                    const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+                    if (selectedDevice !== 'all' && selectedDevice !== 'master' && selectedDevice !== 'global') {
+                        const scoped = getScopedFeeRules();
+                        const overrides = scoped.filter(r => r._sourceType === 'override').length;
+                        sub.textContent = `Tersinkron cloud (${scoped.length} aturan aktif • ${overrides} override cabang • ${timeStr} WIB)`;
+                    } else {
+                        sub.textContent = `Tersinkron cloud (${allFeeRules.length} aturan terdaftar • ${timeStr} WIB)`;
+                    }
                 }
 
                 if (forceNotify) showToast(`✅ Sukses memuat ${allFeeRules.length} fee rules dari cloud!`);
@@ -14912,10 +15044,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const container = document.getElementById('feeRuleCategoryChips');
             if (!container) return;
 
-            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
-            const scopedRules = (selectedDevice === 'all')
-                ? allFeeRules
-                : allFeeRules.filter(r => isDeviceMatchingStore(r.device_id, selectedDevice) || r.device_id === 'global');
+            const scopedRules = getScopedFeeRules();
 
             const counts = {};
             scopedRules.forEach(r => {
@@ -14984,21 +15113,22 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const btnClear = document.getElementById('btnFeeRuleClearSearch');
             if (btnClear) btnClear.style.display = query ? 'block' : 'none';
 
-            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
-            let filtered = allFeeRules.filter(r => {
-                const matchDevice = (selectedDevice === 'all') || isDeviceMatchingStore(r.device_id, selectedDevice) || (r.device_id === 'global');
+            const scopedRules = getScopedFeeRules();
+            let filtered = scopedRules.filter(r => {
                 const matchCat = (feeRuleSelectedCategory === 'ALL' || (r.category || 'Umum') === feeRuleSelectedCategory);
+                const rCode = (r._ruleCode || '').toLowerCase();
                 const matchQuery = !query ||
                     (r.name && r.name.toLowerCase().includes(query)) ||
-                    (r.category && r.category.toLowerCase().includes(query));
-                return matchDevice && matchCat && matchQuery;
+                    (r.category && r.category.toLowerCase().includes(query)) ||
+                    rCode.includes(query);
+                return matchCat && matchQuery;
             });
 
             filtered.sort(compareFeeRules);
 
             renderFeeRuleTable(filtered);
             renderFeeRuleGrid(filtered);
-            updateFeeRuleStats(filtered);
+            updateFeeRuleStats(scopedRules);
 
             const emptyState = document.getElementById('feeRuleEmptyState');
             const tableContainer = document.getElementById('feeRuleTableContainer');
@@ -15029,6 +15159,9 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const tbody = document.getElementById('feeRuleTableBody');
             if (!tbody) return;
 
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const isBranchView = (selectedDevice !== 'all' && selectedDevice !== 'master' && selectedDevice !== 'global');
+
             tbody.innerHTML = rules.map((r) => {
                 const fixedAmt = Number(r.fixed_amount || r.fixedAmount || 0);
                 const minAmt = Number(r.min_amount || r.minAmount || 0);
@@ -15037,7 +15170,8 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 const feePct = Number(r.fee_percent || r.feePercent || 0);
                 const isActive = (r.is_active !== undefined) ? !!r.is_active : (r.isActive !== undefined ? !!r.isActive : true);
                 const priority = (r.priority !== undefined && r.priority !== null) ? r.priority : 10;
-                const rowId = r.id || `${r.device_id}_${r.rule_id}`;
+                const rowId = r.id || `${r.device_id}_${r.rule_id || r._ruleCode}`;
+                const rCode = r._ruleCode || getEffectiveRuleCode(r);
 
                 let rangeText = '-';
                 if (fixedAmt > 0) {
@@ -15059,14 +15193,46 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     feeBadge = `<span style="color: var(--text-muted); font-size: 11px;">Gratis / Rp 0</span>`;
                 }
 
+                // Source Badge
+                let sourceBadge = '';
+                if (r._sourceType === 'master') {
+                    sourceBadge = `<span style="font-size: 10px; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); padding: 1px 6px; border-radius: 10px; font-weight: 600;" title="Aturan standar Master pusat">🏛️ Master</span>`;
+                } else if (r._sourceType === 'override') {
+                    sourceBadge = `<span style="font-size: 10px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); padding: 1px 6px; border-radius: 10px; font-weight: 600;" title="Biaya di-override khusus cabang ini">⚡ Override Cabang</span>`;
+                } else if (r._sourceType === 'branch_new') {
+                    sourceBadge = `<span style="font-size: 10px; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 1px 6px; border-radius: 10px; font-weight: 600;" title="Rule baru khusus cabang ini">✨ Khusus Cabang</span>`;
+                }
+
+                // Action Buttons
+                let actionButtons = '';
+                if (isBranchView && r._sourceType === 'override') {
+                    actionButtons = `
+                        <button type="button" class="btn-table-action" onclick="openEditFeeRuleModal('${escapeHtml(rowId)}')" title="Edit Override">✏️ Edit</button>
+                        <button type="button" class="btn-table-action" onclick="resetFeeRuleToMaster('${escapeHtml(rowId)}')" title="Kembalikan ke aturan Master">↺ Reset</button>
+                    `;
+                } else if (isBranchView && r._sourceType === 'master') {
+                    actionButtons = `
+                        <button type="button" class="btn-table-action" onclick="openEditFeeRuleModal('${escapeHtml(rowId)}')" title="Ubah aturan khusus cabang ini (Override)">⚡ Override</button>
+                    `;
+                } else {
+                    actionButtons = `
+                        <button type="button" class="btn-table-action" onclick="openEditFeeRuleModal('${escapeHtml(rowId)}')">✏️ Edit</button>
+                        <button type="button" class="btn-table-action danger" onclick="deleteFeeRuleWeb('${escapeHtml(rowId)}')">🗑️</button>
+                    `;
+                }
+
                 return `
                     <tr>
                         <td style="text-align: center; color: var(--text-muted); font-family: monospace; font-size: 11px;">
                             ${priority}
                         </td>
                         <td>
-                            <div style="font-weight: 700;">${escapeHtml(r.name || 'Rule')}</div>
-                            ${r.device_name ? `<div style="font-size: 10px; color: var(--text-muted);">📱 ${escapeHtml(r.device_name)}</div>` : ''}
+                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                <span style="font-weight: 700;">${escapeHtml(r.name || 'Rule')}</span>
+                                <span class="mono" style="font-size: 10px; background: rgba(255, 255, 255, 0.08); padding: 1px 5px; border-radius: 4px; color: var(--text-muted);" title="Kode Unik Rule">${escapeHtml(rCode)}</span>
+                                ${sourceBadge}
+                            </div>
+                            ${r.device_name ? `<div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">📱 ${escapeHtml(r.device_name)}</div>` : ''}
                         </td>
                         <td>
                             <span class="cat-badge ${getFeeRuleCategoryBadgeClass(r.category)}">${escapeHtml(r.category || 'Umum')}</span>
@@ -15075,13 +15241,12 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         <td>${feeBadge}</td>
                         <td style="text-align: center;">
                             <label class="fee-switch">
-                                <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleFeeRuleActiveWeb('${rowId}', this.checked)">
+                                <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleFeeRuleActiveWeb('${escapeHtml(rowId)}', this.checked)">
                                 <span class="fee-slider"></span>
                             </label>
                         </td>
                         <td style="text-align: right; white-space: nowrap;">
-                            <button type="button" class="btn-table-action" onclick="openEditFeeRuleModal('${rowId}')">✏️ Edit</button>
-                            <button type="button" class="btn-table-action danger" onclick="deleteFeeRuleWeb('${rowId}')">🗑️</button>
+                            ${actionButtons}
                         </td>
                     </tr>
                 `;
@@ -15092,6 +15257,9 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const container = document.getElementById('feeRuleGridBody');
             if (!container) return;
 
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const isBranchView = (selectedDevice !== 'all' && selectedDevice !== 'master' && selectedDevice !== 'global');
+
             container.innerHTML = rules.map(r => {
                 const fixedAmt = Number(r.fixed_amount || r.fixedAmount || 0);
                 const minAmt = Number(r.min_amount || r.minAmount || 0);
@@ -15099,7 +15267,8 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 const feeAmt = Number(r.fee_amount || r.feeAmount || 0);
                 const feePct = Number(r.fee_percent || r.feePercent || 0);
                 const isActive = (r.is_active !== undefined) ? !!r.is_active : (r.isActive !== undefined ? !!r.isActive : true);
-                const rowId = r.id || `${r.device_id}_${r.rule_id}`;
+                const rowId = r.id || `${r.device_id}_${r.rule_id || r._ruleCode}`;
+                const rCode = r._ruleCode || getEffectiveRuleCode(r);
 
                 let feeDesc = '';
                 if (fixedAmt > 0) {
@@ -15108,17 +15277,49 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     feeDesc = `<span class="badge-fee">${formatRupiah(feeAmt)}</span> ${feePct > 0 ? '<span class="badge-fee-percent">+' + feePct + '%</span>' : ''}`;
                 }
 
+                let sourceBadge = '';
+                if (r._sourceType === 'master') {
+                    sourceBadge = `<span style="font-size: 10px; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); padding: 1px 6px; border-radius: 10px; font-weight: 600;">🏛️ Master</span>`;
+                } else if (r._sourceType === 'override') {
+                    sourceBadge = `<span style="font-size: 10px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); padding: 1px 6px; border-radius: 10px; font-weight: 600;">⚡ Override Cabang</span>`;
+                } else if (r._sourceType === 'branch_new') {
+                    sourceBadge = `<span style="font-size: 10px; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 1px 6px; border-radius: 10px; font-weight: 600;">✨ Khusus Cabang</span>`;
+                }
+
+                let actionButtons = '';
+                if (isBranchView && r._sourceType === 'override') {
+                    actionButtons = `
+                        <button type="button" class="btn-table-action" onclick="openEditFeeRuleModal('${escapeHtml(rowId)}')" title="Edit Override">✏️</button>
+                        <button type="button" class="btn-table-action" onclick="resetFeeRuleToMaster('${escapeHtml(rowId)}')" title="Kembalikan ke Master">↺</button>
+                    `;
+                } else if (isBranchView && r._sourceType === 'master') {
+                    actionButtons = `
+                        <button type="button" class="btn-table-action" onclick="openEditFeeRuleModal('${escapeHtml(rowId)}')" title="Override Cabang">⚡ Override</button>
+                    `;
+                } else {
+                    actionButtons = `
+                        <button type="button" class="btn-table-action" onclick="openEditFeeRuleModal('${escapeHtml(rowId)}')">✏️</button>
+                        <button type="button" class="btn-table-action danger" onclick="deleteFeeRuleWeb('${escapeHtml(rowId)}')">🗑️</button>
+                    `;
+                }
+
                 return `
                     <div class="fee-rule-card">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                                <span class="cat-badge ${getFeeRuleCategoryBadgeClass(r.category)}">${escapeHtml(r.category || 'Umum')}</span>
+                                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                    <span class="cat-badge ${getFeeRuleCategoryBadgeClass(r.category)}">${escapeHtml(r.category || 'Umum')}</span>
+                                    ${sourceBadge}
+                                </div>
                                 <label class="fee-switch">
-                                    <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleFeeRuleActiveWeb('${rowId}', this.checked)">
+                                    <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleFeeRuleActiveWeb('${escapeHtml(rowId)}', this.checked)">
                                     <span class="fee-slider"></span>
                                 </label>
                             </div>
-                            <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px;">${escapeHtml(r.name || 'Rule')}</div>
+                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                <div style="font-weight: 800; font-size: 14px;">${escapeHtml(r.name || 'Rule')}</div>
+                                <span class="mono" style="font-size: 9.5px; background: rgba(255, 255, 255, 0.08); padding: 1px 5px; border-radius: 4px; color: var(--text-muted);">${escapeHtml(rCode)}</span>
+                            </div>
                             <div style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 10px;">
                                 ${fixedAmt > 0 ? 'Mode Override Harga Langsung' : formatRupiah(minAmt) + ' - ' + (maxAmt >= 99999999 ? '∞' : formatRupiah(maxAmt))}
                             </div>
@@ -15126,8 +15327,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--card-border); padding-top: 10px; margin-top: 6px;">
                             <div>${feeDesc}</div>
                             <div style="display: flex; gap: 6px;">
-                                <button type="button" class="btn-table-action" onclick="openEditFeeRuleModal('${rowId}')">✏️</button>
-                                <button type="button" class="btn-table-action danger" onclick="deleteFeeRuleWeb('${rowId}')">🗑️</button>
+                                ${actionButtons}
                             </div>
                         </div>
                     </div>
@@ -15137,27 +15337,83 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
         function updateFeeRuleStats(scopedRules) {
             let active = 0;
+            let overrides = 0;
             const cats = new Set();
             scopedRules.forEach(r => {
                 const isAct = (r.is_active !== undefined) ? !!r.is_active : (r.isActive !== undefined ? !!r.isActive : true);
                 if (isAct) active++;
                 if (r.category) cats.add(r.category);
+                if (r._sourceType === 'override') overrides++;
             });
 
             const statTotal = document.getElementById('statFeeRuleTotal');
             const statActive = document.getElementById('statFeeRuleActive');
             const statInactive = document.getElementById('statFeeRuleInactive');
             const statCats = document.getElementById('statFeeRuleCategories');
+            const statBoxOverrides = document.getElementById('statBoxFeeRuleOverrides');
+            const statOverrides = document.getElementById('statFeeRuleOverrides');
 
             if (statTotal) statTotal.textContent = scopedRules.length;
             if (statActive) statActive.textContent = active;
             if (statInactive) statInactive.textContent = scopedRules.length - active;
             if (statCats) statCats.textContent = cats.size;
+
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const isBranchView = (selectedDevice !== 'all' && selectedDevice !== 'master' && selectedDevice !== 'global');
+
+            if (statBoxOverrides && statOverrides) {
+                if (isBranchView) {
+                    statBoxOverrides.style.display = 'block';
+                    statOverrides.textContent = overrides;
+                } else {
+                    statBoxOverrides.style.display = 'none';
+                }
+            }
         }
 
         async function toggleFeeRuleActiveWeb(id, isActive) {
-            const rule = allFeeRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id));
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const isBranchView = (selectedDevice !== 'all' && selectedDevice !== 'master' && selectedDevice !== 'global');
+            const scopedRules = getScopedFeeRules();
+            const rule = scopedRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id || r._ruleCode === id))
+                || allFeeRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id));
+
             if (!rule) return;
+
+            const rCode = rule._ruleCode || getEffectiveRuleCode(rule);
+
+            if (isBranchView && rule._sourceType === 'master') {
+                // Buat override untuk cabang ini agar tidak mengubah Master pusat
+                const rowId = `${selectedDevice}_${rCode}`;
+                const rowData = {
+                    id: rowId,
+                    device_id: selectedDevice,
+                    device_name: getDeviceDisplayName(selectedDevice) || selectedDevice,
+                    rule_code: rCode,
+                    name: rule.name || 'Rule',
+                    category: rule.category || 'Umum',
+                    priority: (rule.priority !== undefined && rule.priority !== null) ? Number(rule.priority) : 10,
+                    min_amount: Number(rule.min_amount || rule.minAmount || 0),
+                    max_amount: Number(rule.max_amount || rule.maxAmount || 0),
+                    fee_amount: Number(rule.fee_amount || rule.feeAmount || 0),
+                    fee_percent: Number(rule.fee_percent || rule.feePercent || 0),
+                    fixed_amount: Number(rule.fixed_amount || rule.fixedAmount || 0),
+                    is_active: isActive,
+                    updated_at: new Date().toISOString()
+                };
+
+                if (supabaseClient) {
+                    try {
+                        const { error } = await supabaseClient.from('fee_rules').upsert(rowData);
+                        if (error) throw error;
+                        showToast(`⚡ Override cabang dibuat: "${rule.name}" sekarang ${isActive ? 'AKTIF' : 'NONAKTIF'}`);
+                        await fetchFeeRulesFromSupabase(false);
+                    } catch (e) {
+                        showToast('❌ Gagal simpan override status: ' + e.message);
+                    }
+                }
+                return;
+            }
 
             rule.is_active = isActive;
             rule.isActive = isActive;
@@ -15165,7 +15421,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
             if (supabaseClient) {
                 try {
-                    const rowId = rule.id || `${rule.device_id}_${rule.rule_id}`;
+                    const rowId = rule.id || `${rule.device_id}_${rule.rule_id || rCode}`;
                     const { error } = await supabaseClient
                         .from('fee_rules')
                         .update({ is_active: isActive, updated_at: new Date().toISOString() })
@@ -15207,23 +15463,48 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
         }
 
         function openAddFeeRuleModal() {
-            document.getElementById('feeRuleModalTitle').textContent = 'Tambah Fee Rule Baru';
+            const curDev = document.getElementById('navDeviceFilter')?.value || 'master';
+            const targetDev = (curDev === 'all') ? 'master' : curDev;
+            const isMaster = (targetDev === 'master' || targetDev === 'global');
+
+            document.getElementById('feeRuleModalTitle').textContent = isMaster
+                ? 'Tambah Master Fee Rule Baru'
+                : `Tambah Fee Rule Khusus Cabang (${getDeviceDisplayName(targetDev)})`;
             document.getElementById('formFeeRuleId').value = '';
-            const curDev = document.getElementById('navDeviceFilter')?.value || 'global';
-            document.getElementById('formFeeRuleDeviceId').value = (curDev === 'all') ? 'global' : curDev;
+            document.getElementById('formFeeRuleDeviceId').value = targetDev;
             document.getElementById('feeRuleForm').reset();
+            document.getElementById('formFeeRuleCode').value = '';
             document.getElementById('formFeeRulePriority').value = '10';
             document.getElementById('formFeeRuleIsActive').checked = true;
             document.getElementById('feeRuleModal').style.display = 'flex';
         }
 
         function openEditFeeRuleModal(id) {
-            const rule = allFeeRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id));
+            const scopedRules = getScopedFeeRules();
+            const rule = scopedRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id || r._ruleCode === id))
+                || allFeeRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id));
+
             if (!rule) return;
 
-            document.getElementById('feeRuleModalTitle').textContent = 'Edit Fee Rule';
-            document.getElementById('formFeeRuleId').value = rule.id || `${rule.device_id}_${rule.rule_id}`;
-            document.getElementById('formFeeRuleDeviceId').value = rule.device_id || 'web_dashboard';
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const isBranchView = (selectedDevice !== 'all' && selectedDevice !== 'master' && selectedDevice !== 'global');
+            const rCode = rule._ruleCode || getEffectiveRuleCode(rule);
+
+            if (isBranchView && rule._sourceType === 'master') {
+                document.getElementById('feeRuleModalTitle').textContent = `⚡ Override Rule Cabang (${getDeviceDisplayName(selectedDevice)})`;
+                document.getElementById('formFeeRuleId').value = '';
+                document.getElementById('formFeeRuleDeviceId').value = selectedDevice;
+            } else if (isBranchView && rule._sourceType === 'override') {
+                document.getElementById('feeRuleModalTitle').textContent = `Edit Override Cabang (${getDeviceDisplayName(selectedDevice)})`;
+                document.getElementById('formFeeRuleId').value = rule.id || `${rule.device_id}_${rule.rule_id || rCode}`;
+                document.getElementById('formFeeRuleDeviceId').value = rule.device_id;
+            } else {
+                document.getElementById('feeRuleModalTitle').textContent = 'Edit Fee Rule';
+                document.getElementById('formFeeRuleId').value = rule.id || `${rule.device_id}_${rule.rule_id || rCode}`;
+                document.getElementById('formFeeRuleDeviceId').value = rule.device_id || 'master';
+            }
+
+            document.getElementById('formFeeRuleCode').value = rCode;
             document.getElementById('formFeeRuleName').value = rule.name || '';
             document.getElementById('formFeeRuleCategory').value = rule.category || 'Umum';
             document.getElementById('formFeeRulePriority').value = (rule.priority !== undefined && rule.priority !== null) ? rule.priority : 10;
@@ -15245,8 +15526,9 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
         async function handleSaveFeeRule(event) {
             event.preventDefault();
             const idVal = document.getElementById('formFeeRuleId').value;
-            const deviceId = document.getElementById('formFeeRuleDeviceId').value || 'web_dashboard';
+            const deviceId = document.getElementById('formFeeRuleDeviceId').value || 'master';
             const name = document.getElementById('formFeeRuleName').value.trim();
+            const inputCode = document.getElementById('formFeeRuleCode')?.value.trim() || '';
             const category = document.getElementById('formFeeRuleCategory').value.trim() || 'Umum';
             const priority = parseInt(document.getElementById('formFeeRulePriority').value) || 10;
             const minAmount = parseFloat(document.getElementById('formFeeRuleMinAmount').value) || 0;
@@ -15256,11 +15538,22 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             const fixedAmount = parseFloat(document.getElementById('formFeeRuleFixedAmount').value) || 0;
             const isActive = document.getElementById('formFeeRuleIsActive').checked;
 
-            const rowId = idVal || `${deviceId}_${Date.now()}`;
+            const rCode = inputCode || getEffectiveRuleCode({
+                category: category,
+                name: name,
+                fixed_amount: fixedAmount,
+                min_amount: minAmount,
+                priority: priority
+            });
+
+            const rowId = idVal || `${deviceId}_${rCode}`;
+            const devName = (deviceId === 'master' || deviceId === 'global') ? 'Master' : (getDeviceDisplayName(deviceId) || 'Cabang');
+
             const rowData = {
                 id: rowId,
                 device_id: deviceId,
-                device_name: 'Web Dashboard',
+                device_name: devName,
+                rule_code: rCode,
                 name: name,
                 category: category,
                 priority: priority,
@@ -15277,7 +15570,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 try {
                     const { error } = await supabaseClient.from('fee_rules').upsert(rowData);
                     if (error) throw error;
-                    showToast(`✅ Rule "${name}" berhasil disimpan ke cloud!`);
+                    showToast(`✅ Rule "${name}" [${rCode}] berhasil disimpan ke cloud!`);
                     await fetchFeeRulesFromSupabase(false);
                 } catch (e) {
                     console.error('Error saving fee rule to Supabase:', e);
@@ -15292,15 +15585,56 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 }
                 renderFeeRuleCategoryChips();
                 filterFeeRules();
-                showToast(`Rule "${name}" disimpan secara lokal.`);
+                showToast(`Rule "${name}" [${rCode}] disimpan secara lokal.`);
             }
 
             closeFeeRuleModal();
         }
 
-        async function deleteFeeRuleWeb(id) {
-            const rule = allFeeRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id));
+        async function resetFeeRuleToMaster(id) {
+            const rule = allFeeRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id || r._ruleCode === id));
             if (!rule) return;
+
+            if (!confirm(`Kembalikan aturan "${rule.name}" (${rule.category}) ke setelan Master?\n\nData override cabang ini akan dihapus dari Cloud sehingga cabang otomatis mewarisi nilai Master.`)) {
+                return;
+            }
+
+            if (supabaseClient) {
+                try {
+                    const rowId = rule.id || `${rule.device_id}_${rule.rule_id || rule.rule_code}`;
+                    const { error } = await supabaseClient.from('fee_rules').delete().eq('id', rowId);
+                    if (error) throw error;
+                    showToast(`↺ Aturan "${rule.name}" berhasil di-reset ke Master!`);
+                    await fetchFeeRulesFromSupabase(false);
+                } catch (e) {
+                    showToast('❌ Gagal reset override: ' + e.message);
+                }
+            } else {
+                allFeeRules = allFeeRules.filter(r => (r.id !== id && `${r.device_id}_${r.rule_id}` !== id));
+                renderFeeRuleCategoryChips();
+                filterFeeRules();
+                showToast(`Rule "${rule.name}" di-reset.`);
+            }
+        }
+
+        async function deleteFeeRuleWeb(id) {
+            const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
+            const isBranchView = (selectedDevice !== 'all' && selectedDevice !== 'master' && selectedDevice !== 'global');
+            const scopedRules = getScopedFeeRules();
+            const rule = scopedRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id || r._ruleCode === id))
+                || allFeeRules.find(r => (r.id === id || `${r.device_id}_${r.rule_id}` === id));
+
+            if (!rule) return;
+
+            if (isBranchView && rule._sourceType === 'master') {
+                alert('Aturan ini milik Master pusat dan tidak bisa dihapus dari tampilan cabang. Anda bisa menonaktifkannya atau mengubah biayanya (Override).');
+                return;
+            }
+
+            if (isBranchView && rule._sourceType === 'override') {
+                resetFeeRuleToMaster(rule.id || `${rule.device_id}_${rule.rule_id || rule._ruleCode}`);
+                return;
+            }
 
             if (!confirm(`Hapus aturan "${rule.name}" (${rule.category}) dari Supabase Cloud?`)) {
                 return;
@@ -15308,7 +15642,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
             if (supabaseClient) {
                 try {
-                    const rowId = rule.id || `${rule.device_id}_${rule.rule_id}`;
+                    const rowId = rule.id || `${rule.device_id}_${rule.rule_id || rule._ruleCode}`;
                     const { error } = await supabaseClient.from('fee_rules').delete().eq('id', rowId);
                     if (error) throw error;
                     showToast(`🗑️ Rule "${rule.name}" berhasil dihapus dari cloud!`);
@@ -15326,13 +15660,26 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
         function exportFeeRulesJson() {
             const selectedDevice = document.getElementById('navDeviceFilter')?.value || 'all';
-            const scopedRules = (selectedDevice === 'all')
-                ? allFeeRules
-                : allFeeRules.filter(r => isDeviceMatchingStore(r.device_id, selectedDevice) || r.device_id === 'global');
+            const allEffective = getScopedFeeRules();
+            let rulesToExport = allEffective;
 
-            const sortedScopedRules = [...scopedRules].sort(compareFeeRules);
+            if (selectedDevice !== 'all' && selectedDevice !== 'master' && selectedDevice !== 'global') {
+                const overrides = allEffective.filter(r => r._sourceType === 'override' || r._sourceType === 'branch_new');
+                if (overrides.length > 0) {
+                    const wantDelta = confirm(
+                        `Cabang ini memiliki ${overrides.length} aturan override/kustom dari total ${allEffective.length} aturan aktif.\n\n` +
+                        `• Klik [OK] untuk ekspor HANYA selisih cabang (${overrides.length} delta override).\n` +
+                        `• Klik [Batal] untuk ekspor SEMUA aturan aktif (${allEffective.length} aturan lengkap).`
+                    );
+                    if (wantDelta) {
+                        rulesToExport = overrides;
+                    }
+                }
+            }
 
-            const exportData = sortedScopedRules.map(r => ({
+            const sorted = [...rulesToExport].sort(compareFeeRules);
+            const exportData = sorted.map((r, i) => ({
+                rule_code: r._ruleCode || getEffectiveRuleCode(r, i + 1),
                 category: r.category || 'Umum',
                 name: r.name || 'Rule',
                 minAmount: Number(r.min_amount || r.minAmount || 0),
@@ -15346,15 +15693,15 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
             const jsonStr = JSON.stringify(exportData, null, 2);
             navigator.clipboard.writeText(jsonStr).then(() => {
-                showToast('📋 JSON ' + exportData.length + ' rules disalin ke Clipboard!');
+                showToast(`📋 JSON ${exportData.length} rules disalin ke Clipboard!`);
             }).catch(() => {
                 const blob = new Blob([jsonStr], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'fee_rules_export.json';
+                a.download = `fee_rules_${selectedDevice}.json`;
                 a.click();
-                showToast('💾 Berkas fee_rules_export.json berhasil diunduh!');
+                showToast(`💾 Berkas fee_rules_${selectedDevice}.json berhasil diunduh!`);
             });
         }
 
