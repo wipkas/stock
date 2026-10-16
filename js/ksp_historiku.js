@@ -5557,11 +5557,14 @@ async function syncBetweenMasterAndBranch(storeId, startDate, endDate) {
     return { ok: false, message: 'Client Master atau Cabang belum siap' };
   }
 
+  // Set flag agar realtime listener tidak mentrigger reload berulang-ulang selama sync berlangsung
+  window._isSyncingMasterBranch = true;
+
   try {
     let pendingEmpCount = 0;
     let masterMirroredCount = 0;
 
-    // 1. Ambil semua perubahan transaksi karyawan dari Project B yang belum masuk ke Master
+    // 1. Ambil semua perubahan transaksi karyawan/HP dari Project B yang belum masuk ke Master
     const { data: pendingRows, error: pendingErr } = await branchClient
       .from('ksp_history_transactions')
       .select('*')
@@ -5570,40 +5573,52 @@ async function syncBetweenMasterAndBranch(storeId, startDate, endDate) {
 
     if (!pendingErr && Array.isArray(pendingRows) && pendingRows.length > 0) {
       pendingEmpCount = pendingRows.length;
-      console.log(`[KspHistoriku Sync] Mengirim ${pendingEmpCount} perubahan transaksi karyawan ke Master A...`);
+      console.log(`[KspHistoriku Sync] Mengirim ${pendingEmpCount} perubahan transaksi ke Master A (Batch Mode)...`);
 
-      for (const row of pendingRows) {
-        const rowToMaster = {
-          ...row,
+      // PROSES DALAM BATCH CHUNK (100 BARIS PER REQUEST) - BUKAN ROW BY ROW!
+      const CHUNK_SIZE = 100;
+      for (let i = 0; i < pendingRows.length; i += CHUNK_SIZE) {
+        const chunk = pendingRows.slice(i, i + CHUNK_SIZE);
+        const rowsToMaster = chunk.map(r => ({
+          ...r,
           is_synced_to_master: true
-        };
-        let upRes = await masterClient.from('ksp_history_transactions').upsert([rowToMaster], { onConflict: 'id' });
+        }));
+
+        let upRes = await masterClient.from('ksp_history_transactions').upsert(rowsToMaster, { onConflict: 'id' });
         
         // Fallback: Jika Master Project A belum memiliki kolom is_synced_to_master/last_modified_by,
         // simpan ke extra_data (JSONB) dan kirim hanya kolom standar Master
         if (upRes.error) {
-          const safeMasterRow = { ...rowToMaster };
-          const extra = Object.assign({}, safeMasterRow.extra_data || {}, {
-            is_synced_to_master: true,
-            last_modified_by: safeMasterRow.last_modified_by || 'Karyawan',
-            modified_source: safeMasterRow.modified_source || 'employee_web'
+          const safeChunk = rowsToMaster.map(r => {
+            const safeMasterRow = { ...r };
+            const extra = Object.assign({}, safeMasterRow.extra_data || {}, {
+              is_synced_to_master: true,
+              last_modified_by: safeMasterRow.last_modified_by || 'Karyawan',
+              modified_source: safeMasterRow.modified_source || 'employee_web'
+            });
+            delete safeMasterRow.is_synced_to_master;
+            delete safeMasterRow.last_modified_by;
+            delete safeMasterRow.modified_source;
+            delete safeMasterRow.synced_at;
+            safeMasterRow.extra_data = extra;
+            return safeMasterRow;
           });
-          delete safeMasterRow.is_synced_to_master;
-          delete safeMasterRow.last_modified_by;
-          delete safeMasterRow.modified_source;
-          delete safeMasterRow.synced_at;
-          safeMasterRow.extra_data = extra;
-
-          upRes = await masterClient.from('ksp_history_transactions').upsert([safeMasterRow], { onConflict: 'id' });
+          upRes = await masterClient.from('ksp_history_transactions').upsert(safeChunk, { onConflict: 'id' });
         }
 
         if (!upRes.error) {
-          await branchClient.from('ksp_history_transactions').update({
+          // BATCH UPDATE STATUS SYNC DI PROJECT B SEKALIGUS (.in('id', chunkIds))
+          const chunkIds = chunk.map(r => r.id);
+          const updateRes = await branchClient.from('ksp_history_transactions').update({
             is_synced_to_master: true,
             synced_at: new Date().toISOString()
-          }).eq('id', row.id);
+          }).in('id', chunkIds);
+
+          if (updateRes.error) {
+            console.warn('[KspHistoriku Sync] Warning batch update status sync di Branch:', updateRes.error);
+          }
         } else {
-          console.warn('[KspHistoriku Sync] Gagal sync row ke Master:', upRes.error);
+          console.warn('[KspHistoriku Sync] Gagal batch upsert ke Master:', upRes.error);
         }
       }
     }
@@ -5632,24 +5647,28 @@ async function syncBetweenMasterAndBranch(storeId, startDate, endDate) {
       }));
 
       if (rowsToMirror.length > 0) {
-        let mirrorRes = await branchClient.from('ksp_history_transactions').upsert(rowsToMirror, { onConflict: 'id' });
-        if (mirrorRes.error) {
-          // Fallback jika Project B belum menjalankan patch kolom pelacak
-          const safeMirror = rowsToMirror.map(r => {
-            const copy = { ...r };
-            delete copy.is_synced_to_master;
-            delete copy.last_modified_by;
-            delete copy.modified_source;
-            delete copy.synced_at;
-            return copy;
-          });
-          mirrorRes = await branchClient.from('ksp_history_transactions').upsert(safeMirror, { onConflict: 'id' });
-        }
+        const CHUNK_SIZE = 100;
+        for (let i = 0; i < rowsToMirror.length; i += CHUNK_SIZE) {
+          const chunk = rowsToMirror.slice(i, i + CHUNK_SIZE);
+          let mirrorRes = await branchClient.from('ksp_history_transactions').upsert(chunk, { onConflict: 'id' });
+          if (mirrorRes.error) {
+            // Fallback jika Project B belum menjalankan patch kolom pelacak
+            const safeMirror = chunk.map(r => {
+              const copy = { ...r };
+              delete copy.is_synced_to_master;
+              delete copy.last_modified_by;
+              delete copy.modified_source;
+              delete copy.synced_at;
+              return copy;
+            });
+            mirrorRes = await branchClient.from('ksp_history_transactions').upsert(safeMirror, { onConflict: 'id' });
+          }
 
-        if (!mirrorRes.error) {
-          masterMirroredCount = rowsToMirror.length;
-        } else {
-          console.warn('[KspHistoriku Sync] Gagal mirror ke Project B:', mirrorRes.error);
+          if (!mirrorRes.error) {
+            masterMirroredCount += chunk.length;
+          } else {
+            console.warn('[KspHistoriku Sync] Gagal batch mirror ke Project B:', mirrorRes.error);
+          }
         }
       }
     }
@@ -5662,16 +5681,22 @@ async function syncBetweenMasterAndBranch(storeId, startDate, endDate) {
   } catch (err) {
     console.warn('[KspHistoriku Sync] Exception dual-sync:', err);
     return { ok: false, error: err };
+  } finally {
+    // Jeda 1.2 detik agar sisa websocket event selama proses sync tidak memicu reload liar
+    setTimeout(() => {
+      window._isSyncingMasterBranch = false;
+    }, 1200);
   }
 }
 
-function fetchSupabaseHistory(storeId, startDate, endDate) {
+async function fetchSupabaseHistory(storeId, startDate, endDate) {
   const cfg = window.KSP_SYNC_CONFIG || {};
-  if (!storeId) return Promise.resolve(null);
+  if (!storeId) return null;
 
   const isEmployee = (window.CURRENT_AUTH_ROLE === 'employee');
   const masterClient = !isEmployee ? getMasterSupabaseClient() : null;
-  const client = masterClient || getSupabaseClient();
+  const branchClient = getSupabaseClient();
+  const client = masterClient || branchClient;
 
   if (client) {
     try {
@@ -5685,20 +5710,65 @@ function fetchSupabaseHistory(storeId, startDate, endDate) {
         query = query.gte('trx_date', startDate).lte('trx_date', endDate);
       }
 
-      return query
+      const res = await query
         .order('trx_date', { ascending: true })
         .order('trx_time', { ascending: true })
-        .order('created_at', { ascending: true })
-        .then(res => {
-          if (res.error) throw res.error;
-          return res.data;
-        })
-        .catch(err => {
-          console.warn('[KspHistoriku] Supabase client query error, fallback direct fetch:', err);
-          return fallbackDirectFetchHistory(storeId, startDate, endDate);
-        });
+        .order('created_at', { ascending: true });
+
+      if (res.error) throw res.error;
+      let data = res.data || [];
+
+      // SMART FALLBACK & INSTANT MERGE:
+      // Jika login sebagai Admin (masterClient aktif), periksa apakah di Project B (Cabang)
+      // sudah ada data baru (misal user baru push 200 item dari HP) yang belum sempat tersalin ke Master A.
+      if (!isEmployee && masterClient && branchClient) {
+        try {
+          let bQuery = branchClient.from('ksp_history_transactions')
+            .select('*')
+            .eq('store_id', storeId);
+
+          if (startDate === endDate) {
+            bQuery = bQuery.eq('trx_date', startDate);
+          } else {
+            bQuery = bQuery.gte('trx_date', startDate).lte('trx_date', endDate);
+          }
+
+          const bRes = await bQuery
+            .order('trx_date', { ascending: true })
+            .order('trx_time', { ascending: true })
+            .order('created_at', { ascending: true });
+
+          if (!bRes.error && Array.isArray(bRes.data) && bRes.data.length > 0) {
+            if (data.length === 0) {
+              // Master A masih kosong -> gunakan data dari Branch B secara instan!
+              data = bRes.data;
+            } else if (bRes.data.length > data.length) {
+              // Branch B memiliki item yang lebih lengkap -> gabungkan berdasarkan id
+              const idMap = new Map();
+              data.forEach(item => idMap.set(item.id, item));
+              bRes.data.forEach(item => {
+                if (!idMap.has(item.id)) {
+                  idMap.set(item.id, item);
+                }
+              });
+              data = Array.from(idMap.values());
+              // Urutkan kembali sesuai tanggal dan waktu
+              data.sort((a, b) => {
+                const da = (a.trx_date || '') + ' ' + (a.trx_time || '');
+                const db = (b.trx_date || '') + ' ' + (b.trx_time || '');
+                return da.localeCompare(db);
+              });
+            }
+          }
+        } catch (errBranch) {
+          console.warn('[KspHistoriku] Branch check fallback warning:', errBranch);
+        }
+      }
+
+      return data;
     } catch (e) {
-      console.warn('[KspHistoriku] Supabase client error:', e);
+      console.warn('[KspHistoriku] Supabase client query error, fallback direct fetch:', e);
+      return fallbackDirectFetchHistory(storeId, startDate, endDate);
     }
   }
 
@@ -5899,14 +5969,32 @@ function initSupabaseRealtime(storeId) {
   }
 }
 
+let _realtimeDebounceTimer = null;
+let _realtimeBatchedCount = 0;
+
 function handleRealtimeTransactionEvent(payload) {
-  if (window._isSavingWebEdits) {
-    // Abaikan event realtime yang dipicu oleh aktivitas simpan dari browser ini sendiri
+  if (window._isSavingWebEdits || window._isSyncingMasterBranch) {
+    // Abaikan event realtime yang dipicu oleh aktivitas simpan dari browser ini sendiri atau sync master-cabang
     return;
   }
   const ev = payload.eventType;
   const row = payload.new || payload.old;
   if (!row) return;
+
+  // Abaikan update jika HANYA merupakan pembaruan metadata sinkronisasi internal (is_synced_to_master / synced_at)
+  if (ev === 'UPDATE' && payload.old && payload.new) {
+    const o = payload.old;
+    const n = payload.new;
+    if (o.amount === n.amount &&
+        o.category === n.category &&
+        o.is_deleted_by_web === n.is_deleted_by_web &&
+        o.is_edited === n.is_edited &&
+        o.item_name === n.item_name &&
+        o.trx_time === n.trx_time &&
+        o.shift === n.shift) {
+      return;
+    }
+  }
 
   const rowDate = row.trx_date;
   const isMulti = window.ACTIVE_PERIOD_MODE === 'multiday';
@@ -5919,21 +6007,30 @@ function handleRealtimeTransactionEvent(payload) {
   }
 
   if (isRelevant) {
-    const sId = window.ACTIVE_STORE_ID;
-    const sName = window.ACTIVE_STORE_NAME;
-    if (isMulti) {
-      loadMultiDayForStore(sId, sName, window.REPORT_DATA.startDate, window.REPORT_DATA.endDate);
-    } else {
-      window.KspHistoriku.loadForStore(sId, sName, window.REPORT_DATA.dateDb);
-    }
+    _realtimeBatchedCount++;
+    if (_realtimeDebounceTimer) clearTimeout(_realtimeDebounceTimer);
+    _realtimeDebounceTimer = setTimeout(() => {
+      const count = _realtimeBatchedCount;
+      _realtimeBatchedCount = 0;
+      const sId = window.ACTIVE_STORE_ID;
+      const sName = window.ACTIVE_STORE_NAME;
 
-    if (ev === 'INSERT') {
-      showToast('⚡ Transaksi Baru: ' + (row.app_name || row.module_type) + ' Rp ' + (Number(row.amount) || 0).toLocaleString('id-ID'));
-    } else if (ev === 'UPDATE') {
-      showToast('✏️ Transaksi Diperbarui: ' + (row.app_name || row.module_type));
-    } else if (ev === 'DELETE') {
-      showToast('🗑️ Transaksi Dihapus / Dibatalkan');
-    }
+      if (isMulti) {
+        loadMultiDayForStore(sId, sName, window.REPORT_DATA.startDate, window.REPORT_DATA.endDate);
+      } else {
+        window.KspHistoriku.loadForStore(sId, sName, window.REPORT_DATA.dateDb);
+      }
+
+      if (count > 1) {
+        showToast(`⚡ ${count} Pembaruan Transaksi Termuat`);
+      } else if (ev === 'INSERT') {
+        showToast('⚡ Transaksi Baru: ' + (row.app_name || row.module_type) + ' Rp ' + (Number(row.amount) || 0).toLocaleString('id-ID'));
+      } else if (ev === 'UPDATE') {
+        showToast('✏️ Transaksi Diperbarui: ' + (row.app_name || row.module_type));
+      } else if (ev === 'DELETE') {
+        showToast('🗑️ Transaksi Dihapus / Dibatalkan');
+      }
+    }, 350);
   }
 }
 
