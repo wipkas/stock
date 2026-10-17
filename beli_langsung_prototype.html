@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>KSP Check - Beli Langsung (Prototype)</title>
+    <meta name="theme-color" content="#0F1117">
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="css/beli_langsung.css?v=20261016">
+</head>
+<body data-tab="voucher">
+
+    <div class="app">
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="top-left">
+                <a href="karyawan.html" class="icon-btn" title="Kembali ke Portal Karyawan">←</a>
+                <div>
+                    <div class="top-title"><span>🛍️</span> Beli Langsung</div>
+                    <div class="top-sub">Cabang Demo • Kasir Budi</div>
+                </div>
+            </div>
+            <div class="top-right">
+                <span id="badgeShift" class="badge-shift">☀️ Shift 1 (Pagi)</span>
+                <button type="button" id="btnScenario" class="icon-btn" title="Skenario prototype">🧪</button>
+                <button type="button" id="themeToggleBtn" class="icon-btn" title="Ubah tema">🌙</button>
+            </div>
+        </header>
+
+        <div class="proto-banner">🧪 <b>PROTOTYPE UI</b> — memakai data contoh, belum terhubung ke Supabase. Atur kondisi uji lewat tombol 🧪.</div>
+
+        <!-- TAB -->
+        <nav class="tabs" role="tablist" aria-label="Jenis item">
+            <button type="button" class="tab active" id="tabVoucher" data-tab="voucher" role="tab" aria-selected="true">
+                <span>🎫 Voucher</span><span class="tab-badge" id="tabBadgeVoucher" hidden>0</span>
+            </button>
+            <button type="button" class="tab" id="tabBarang" data-tab="barang" role="tab" aria-selected="false">
+                <span>📦 Barang</span><span class="tab-badge" id="tabBadgeBarang" hidden>0</span>
+            </button>
+        </nav>
+
+        <!-- ============ PANEL VOUCHER (ProductsActivity) ============ -->
+        <section class="panel" id="panelVoucher">
+            <div class="chips-bar">
+                <div class="chips" id="voucherChips" aria-label="Provider"></div>
+                <button type="button" id="btnVoucherRefresh" class="icon-btn small" title="Muat ulang">🔄</button>
+            </div>
+            <div id="voucherBody"></div>
+        </section>
+
+        <!-- ============ PANEL BARANG (BeliBarangActivity) ============ -->
+        <section class="panel" id="panelBarang" hidden>
+            <div class="b-head">
+                <div class="search">
+                    <span class="s-ico">🔍</span>
+                    <input type="text" id="barangSearch" placeholder="Cari barang / scan barcode" autocomplete="off">
+                    <button type="button" id="btnBarcode" class="icon-btn small" title="Scan / input barcode">▦</button>
+                </div>
+                <button type="button" id="btnManageStock" class="text-btn">⚙️ Kelola Stok</button>
+            </div>
+            <div class="chips" id="barangChips" aria-label="Brand"></div>
+            <div class="b-info"><span id="barangCount">Katalog Barang</span><span id="barangShift">Shift: ☀️ Shift 1 (Pagi)</span></div>
+            <div id="barangBody"></div>
+        </section>
+    </div>
+
+    <!-- BAR KERANJANG VOUCHER (mengambang) -->
+    <div class="cart-float" id="voucherCartBar" hidden>
+        <div class="inner">
+            <div class="cart-ico"><span>🛒</span><span class="cart-badge" id="vBarBadge">0</span></div>
+            <div class="cart-info"><div class="cart-sub" id="vBarCount">0 item</div><div class="cart-total" id="vBarTotal">Rp 0</div></div>
+            <button type="button" id="btnOpenVCart" class="btn-white">Keranjang</button>
+        </div>
+    </div>
+
+    <!-- BAR KERANJANG BARANG (menempel) -->
+    <div class="cart-bar" id="barangCartBar" hidden>
+        <div class="inner">
+            <div class="cart-ico green"><span>🛒</span><span class="cart-badge" id="bBarBadge">0</span></div>
+            <div class="cart-info"><div class="cart-total green" id="bBarTotal">Rp 0</div><div class="cart-sub" id="bBarText">0 pcs barang dipilih</div></div>
+            <button type="button" id="btnOpenCheckout" class="btn-green">Bayar / Kasir ➔</button>
+        </div>
+    </div>
+
+    <!-- ============ LAYAR KERANJANG VOUCHER (CartActivity) ============ -->
+    <div class="screen" id="vCartScreen" hidden>
+        <div class="screen-bar">
+            <button type="button" id="btnVCartBack" class="icon-btn" title="Kembali">←</button>
+            <div class="screen-title">Keranjang Products</div>
+        </div>
+        <div class="screen-body">
+            <div class="screen-inner">
+                <div id="vCartList"></div>
+                <div class="state" id="vCartEmpty" hidden>
+                    <div class="state-ico big">🛒</div>
+                    <div class="state-text">Keranjang kosong</div>
+                    <div class="state-sub">Tambahkan produk dari halaman Products</div>
+                </div>
+            </div>
+        </div>
+        <div class="summary" id="vCartSummary">
+            <div class="screen-inner">
+                <div class="sum-row"><span class="sum-ico">📅</span><div class="sum-col"><small>Tanggal Transaksi</small><b id="vCartDate">-</b></div></div>
+                <div class="sum-row"><span class="sum-ico" id="vCartShiftEmoji">☀️</span><div class="sum-col"><small>Shift Transaksi</small><b id="vCartShift">Shift 1 (Pagi)</b></div></div>
+                <div class="sum-line"><span>Total Item</span><b id="vCartItems">0 pcs</b></div>
+                <hr>
+                <div class="sum-line total"><span>Total Harga</span><b id="vCartTotal">Rp 0</b></div>
+                <button type="button" id="btnVSave" class="btn-block">💾 Simpan Transaksi</button>
+                <button type="button" id="btnVClear" class="btn-text-danger">Kosongkan Keranjang</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ BOTTOM SHEET CHECKOUT BARANG ============ -->
+    <div class="sheet-backdrop" id="checkoutBackdrop" hidden>
+        <div class="sheet" id="checkoutSheet" role="dialog" aria-label="Kasir Pembayaran">
+            <div class="sheet-pill"></div>
+            <div class="sheet-head"><h3>🛒 Kasir Pembayaran</h3><span class="badge-shift" id="shShift">☀️ Shift 1 (Pagi)</span></div>
+            <div class="sheet-label">Daftar Belanjaan:</div>
+            <div id="shItems" class="sh-items"></div>
+            <hr>
+            <div class="total-card">
+                <div><div class="tc-sub" id="shCount">Total (0 Barang)</div><div class="tc-total" id="shTotal">Rp 0</div></div>
+                <button type="button" id="shClear" class="btn-text-danger small">Kosongkan</button>
+            </div>
+            <div class="sheet-label mt">Metode Pembayaran:</div>
+            <div class="pay-chips" id="shPay">
+                <button type="button" class="pay-chip active" data-pay="TUNAI">💵 Tunai</button>
+                <button type="button" class="pay-chip" data-pay="QRIS">📱 QRIS</button>
+                <button type="button" class="pay-chip" data-pay="TRANSFER">🏦 Transfer</button>
+                <button type="button" class="pay-chip" data-pay="PIUTANG">📝 Piutang (Hutang)</button>
+            </div>
+            <div class="cash-box" id="shCashBox">
+                <label class="sheet-label" for="shCashInput">Uang Tunai Diterima (Rp) *</label>
+                <input type="text" id="shCashInput" class="cash-input" inputmode="numeric" placeholder="0" autocomplete="off">
+                <div class="quick-row" id="shQuick"></div>
+                <div class="change-row"><span>Kembalian:</span><b class="change zero" id="shChange">Rp 0</b></div>
+            </div>
+            <button type="button" id="shSubmit" class="btn-green block">Selesaikan Pembayaran</button>
+        </div>
+    </div>
+
+    <!-- ============ DIALOG STRUK ============ -->
+    <div class="modal-backdrop" id="receiptModal">
+        <div class="modal-card receipt-card">
+            <div class="modal-body center">
+                <div class="ok-ico">✅</div>
+                <h3 class="receipt-title">Transaksi Berhasil!</h3>
+                <pre class="receipt" id="receiptContent"></pre>
+                <button type="button" id="btnPrint" class="btn-blue block">🖨️ Cetak Struk (Bluetooth)</button>
+                <button type="button" id="btnReceiptDone" class="btn-outline block">Transaksi Baru</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ MODAL GENERIK, TOAST, LOADING ============ -->
+    <div class="modal-backdrop" id="blModal">
+        <div class="modal-card">
+            <div class="modal-header"><h3 id="blModalTitle"></h3></div>
+            <div class="modal-body" id="blModalBody"></div>
+            <div class="modal-footer" id="blModalFooter"></div>
+        </div>
+    </div>
+    <div class="toast" id="blToast" role="status" aria-live="polite"></div>
+    <div class="loading-overlay" id="blLoading" hidden><div class="spinner"></div></div>
+
+    <!-- Tema bersama situs -->
+    <script src="js/ksp_theme.js?v=20261005"></script>
+    <!-- Modul Beli Langsung (urutan penting) -->
+    <script src="js/belilangsung/bl_format.js?v=20261016"></script>
+    <script src="js/belilangsung/bl_logic.js?v=20261016"></script>
+    <script src="js/belilangsung/bl_ui.js?v=20261016"></script>
+    <script src="js/belilangsung/bl_data_mock.js?v=20261016"></script>
+    <script src="js/belilangsung/bl_store.js?v=20261016"></script>
+    <script src="js/belilangsung/bl_shift.js?v=20261016"></script>
+    <script src="js/belilangsung/bl_voucher.js?v=20261016"></script>
+    <script src="js/belilangsung/bl_barang.js?v=20261016"></script>
+    <script src="js/belilangsung/bl_checkout.js?v=20261016"></script>
+    <script src="js/belilangsung/bl_main.js?v=20261016"></script>
+</body>
+</html>
