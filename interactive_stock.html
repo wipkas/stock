@@ -4734,7 +4734,7 @@
         // ============================================================================
         // Set ke 'false' untuk MENONAKTIFKAN kunci PIN (halaman langsung terbuka).
         // Set ke 'true' untuk MENGAKTIFKAN kembali kunci PIN (proteksi password toko).
-        const REQUIRE_PIN = false;
+        const REQUIRE_PIN = true;
 
         // Opsi A: Jika REQUIRE_PIN = false dan menggunakan file config.enc terenkripsi,
         // isi PIN toko Anda di bawah ini agar didekripsi otomatis tanpa modal popup:
@@ -5780,7 +5780,7 @@ WHERE id IS NULL
             const btn = document.getElementById('btnUnlock');
             const errBox = document.getElementById('pinError');
             if (btn) {
-                btn.innerHTML = '<span>Membuka...</span>';
+                btn.innerHTML = '<span>Memeriksa PIN...</span>';
                 btn.disabled = true;
             }
             if (errBox) errBox.style.display = 'none';
@@ -5788,7 +5788,7 @@ WHERE id IS NULL
             if (!pin) {
                 document.getElementById('pinModal').style.display = 'flex';
                 if (!REQUIRE_PIN && errBox) {
-                    errBox.innerText = 'Kunci PIN dinonaktifkan di kode, tetapi file config.enc memerlukan PIN untuk didekripsi pertama kali. Masukkan PIN toko Anda (akan diingat otomatis):';
+                    errBox.innerText = 'Kunci PIN dinonaktifkan di kode, tetapi file config.enc memerlukan PIN untuk didekripsi pertama kali. Masukkan PIN toko Anda:';
                     errBox.style.display = 'block';
                 }
                 if (btn) {
@@ -5799,44 +5799,79 @@ WHERE id IS NULL
             }
 
             try {
-                // Prioritas: Hubungkan ke Project B jika window.KSP_SYNC_CONFIG tersedia
-                if (window.KSP_SYNC_CONFIG && window.KSP_SYNC_CONFIG.url && window.KSP_SYNC_CONFIG.key) {
-                    if (pin) localStorage.setItem('kspcheck_viewer_pin', pin);
-                    supabaseClient = supabase.createClient(window.KSP_SYNC_CONFIG.url, window.KSP_SYNC_CONFIG.key);
-                    document.getElementById('pinModal').style.display = 'none';
-                    fetchVouchersFromSupabase();
-                    return;
+                let isVerified = false;
+                let activeUrl = (window.KSP_SYNC_CONFIG && window.KSP_SYNC_CONFIG.url) || DIRECT_SUPABASE_URL || '';
+                let activeKey = (window.KSP_SYNC_CONFIG && window.KSP_SYNC_CONFIG.key) || DIRECT_SUPABASE_ANON_KEY || '';
+
+                // 1. Coba verifikasi dengan dekripsi config.enc (jika file config.enc tersedia)
+                try {
+                    const res = await fetch('./config.enc?t=' + Date.now());
+                    if (res.ok) {
+                        const base64Encrypted = await res.text();
+                        const combined = CryptoJS.enc.Base64.parse(base64Encrypted.trim());
+                        const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4), 16);
+                        const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4), combined.sigBytes - 16);
+                        const cipherParams = CryptoJS.lib.CipherParams.create({ ciphertext: ciphertext });
+
+                        const key = CryptoJS.SHA256(pin);
+                        const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
+                            iv: iv,
+                            mode: CryptoJS.mode.CBC,
+                            padding: CryptoJS.pad.Pkcs7
+                        });
+
+                        const decryptedJson = decrypted.toString(CryptoJS.enc.Utf8);
+                        if (decryptedJson) {
+                            const config = JSON.parse(decryptedJson);
+                            if (config && (config.supabase_url || config.url)) {
+                                activeUrl = config.supabase_url || config.url;
+                                activeKey = config.supabase_anon_key || config.key || config.anon_key;
+                                isVerified = true;
+                            }
+                        }
+                    }
+                } catch (eEnc) {
+                    // Abaikan kegagalan config.enc, lanjut ke verifikasi RPC
                 }
 
-                // Fallback ke config.enc (Project A / Backup)
-                const res = await fetch('./config.enc?t=' + Date.now());
-                if (!res.ok) throw new Error('File config.enc tidak ditemukan.');
-                const base64Encrypted = await res.text();
+                // 2. Jika belum terverifikasi oleh config.enc, verifikasi PIN via RPC Supabase (ksp_admin_get_stores)
+                if (!isVerified && activeUrl && activeKey) {
+                    try {
+                        const baseUrl = activeUrl.replace(/\/+$/, '');
+                        const rpcResp = await fetch(baseUrl + '/rest/v1/rpc/ksp_admin_get_stores', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'apikey': activeKey,
+                                'Authorization': 'Bearer ' + activeKey
+                            },
+                            body: JSON.stringify({ p_pin: pin })
+                        });
+                        if (rpcResp.ok) {
+                            const rpcData = await rpcResp.json();
+                            if (rpcData && (rpcData.ok === true || Array.isArray(rpcData.stores) || Array.isArray(rpcData))) {
+                                isVerified = true;
+                            }
+                        }
+                    } catch (eRpc) {
+                        console.warn('Verifikasi RPC gagal:', eRpc);
+                    }
+                }
 
-                const combined = CryptoJS.enc.Base64.parse(base64Encrypted.trim());
-                const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4), 16);
-                const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4), combined.sigBytes - 16);
-                const cipherParams = CryptoJS.lib.CipherParams.create({ ciphertext: ciphertext });
+                // 3. Jika PIN tidak lolos verifikasi manapun, tolak akses!
+                if (!isVerified) {
+                    localStorage.removeItem('kspcheck_viewer_pin');
+                    throw new Error('❌ PIN salah atau tidak memiliki izin akses!');
+                }
 
-                const key = CryptoJS.SHA256(pin);
-                const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
-                    iv: iv,
-                    mode: CryptoJS.mode.CBC,
-                    padding: CryptoJS.pad.Pkcs7
-                });
-
-                const decryptedJson = decrypted.toString(CryptoJS.enc.Utf8);
-                if (!decryptedJson) throw new Error('PIN Salah!');
-
-                const config = JSON.parse(decryptedJson);
-                if (!config.supabase_url || !config.supabase_anon_key) throw new Error('Format config tidak valid.');
-
-                // Selalu simpan PIN agar sesi berikutnya langsung jalan tanpa perlu modal
+                // PIN Valid! Simpan ke localStorage agar sesi tersimpan
                 localStorage.setItem('kspcheck_viewer_pin', pin);
 
-                supabaseClient = supabase.createClient(config.supabase_url, config.supabase_anon_key);
-                document.getElementById('pinModal').style.display = 'none';
+                if (activeUrl && activeKey) {
+                    supabaseClient = supabase.createClient(activeUrl, activeKey);
+                }
 
+                document.getElementById('pinModal').style.display = 'none';
                 fetchVouchersFromSupabase();
 
             } catch (err) {
@@ -5872,10 +5907,23 @@ WHERE id IS NULL
             try {
                 // Fetch vouchers, daily_reports, and restock_orders in parallel
                 const [vouchersRes, reportsRes, ordersRes] = await Promise.all([
-                    supabaseClient
-                        .from('vouchers')
-                        .select('*')
-                        .order('sort_order', { ascending: true }),
+                    (async () => {
+                        const pin = localStorage.getItem('kspcheck_viewer_pin') || '';
+                        if (pin) {
+                            try {
+                                const { data: rpcRes, error: rpcErr } = await supabaseClient.rpc('ksp_admin_get_vouchers', { p_pin: pin });
+                                if (!rpcErr && rpcRes && rpcRes.ok && Array.isArray(rpcRes.vouchers)) {
+                                    return { data: rpcRes.vouchers, error: null };
+                                }
+                            } catch (eRpc) {
+                                console.warn('RPC vouchers fallback:', eRpc);
+                            }
+                        }
+                        return supabaseClient
+                            .from('vouchers')
+                            .select('*')
+                            .order('sort_order', { ascending: true });
+                    })(),
                     supabaseClient
                         .from('daily_reports')
                         .select('*'),
@@ -5887,7 +5935,7 @@ WHERE id IS NULL
                         .catch(e => ({ data: null, error: e }))
                 ]);
 
-                if (vouchersRes.error) throw vouchersRes.error;
+                if (vouchersRes.error && !vouchersRes.data) throw vouchersRes.error;
 
                 allVouchers = (vouchersRes.data || []).filter(v => !isDeviceDeleted(v.device_id));
                 // Sort by sort_order to match KSP Check exactly
@@ -15028,14 +15076,33 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     sub.textContent = 'Mengambil aturan biaya admin dari Supabase cloud...';
                 }
 
-                const { data, error } = await supabaseClient
-                    .from('fee_rules')
-                    .select('*')
-                    .order('priority', { ascending: true })
-                    .order('category', { ascending: true })
-                    .order('min_amount', { ascending: true })
-                    .order('fixed_amount', { ascending: true })
-                    .order('name', { ascending: true });
+                let data = null;
+                let error = null;
+                const pin = localStorage.getItem('kspcheck_viewer_pin') || '';
+
+                if (pin) {
+                    try {
+                        const { data: rpcRes, error: rpcErr } = await supabaseClient.rpc('ksp_admin_get_fee_rules', { p_pin: pin });
+                        if (!rpcErr && rpcRes && rpcRes.ok && Array.isArray(rpcRes.rules)) {
+                            data = rpcRes.rules;
+                        }
+                    } catch (eRpc) {
+                        console.warn('RPC fee rules fallback:', eRpc);
+                    }
+                }
+
+                if (!data) {
+                    const resDirect = await supabaseClient
+                        .from('fee_rules')
+                        .select('*')
+                        .order('priority', { ascending: true })
+                        .order('category', { ascending: true })
+                        .order('min_amount', { ascending: true })
+                        .order('fixed_amount', { ascending: true })
+                        .order('name', { ascending: true });
+                    data = resDirect.data;
+                    error = resDirect.error;
+                }
 
                 if (error) {
                     console.warn('Supabase fetch fee_rules error:', error);
@@ -15621,8 +15688,22 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
             if (supabaseClient) {
                 try {
-                    const { error } = await supabaseClient.from('fee_rules').upsert(rowData, { onConflict: 'id' });
-                    if (error) throw error;
+                    let saveSuccess = false;
+                    const pin = localStorage.getItem('kspcheck_viewer_pin') || '';
+                    if (pin) {
+                        try {
+                            const { data: rpcRes, error: rpcErr } = await supabaseClient.rpc('ksp_admin_save_fee_rule', { p_pin: pin, p_rule: rowData });
+                            if (!rpcErr && rpcRes && rpcRes.ok) {
+                                saveSuccess = true;
+                            }
+                        } catch (eRpc) {}
+                    }
+
+                    if (!saveSuccess) {
+                        const { error } = await supabaseClient.from('fee_rules').upsert(rowData, { onConflict: 'id' });
+                        if (error) throw error;
+                    }
+
                     showToast(`✅ Rule "${name}" [${rCode}] berhasil disimpan ke cloud!`);
                     await fetchFeeRulesFromSupabase(false);
                 } catch (e) {
@@ -15696,8 +15777,20 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             if (supabaseClient) {
                 try {
                     const rowId = rule.id || `${rule.device_id}_${rule.rule_id || rule._ruleCode}`;
-                    const { error } = await supabaseClient.from('fee_rules').delete().eq('id', rowId);
-                    if (error) throw error;
+                    let delSuccess = false;
+                    const pin = localStorage.getItem('kspcheck_viewer_pin') || '';
+                    if (pin) {
+                        try {
+                            const { data: rpcRes, error: rpcErr } = await supabaseClient.rpc('ksp_admin_delete_fee_rule', { p_pin: pin, p_id: rowId });
+                            if (!rpcErr && rpcRes && rpcRes.ok) delSuccess = true;
+                        } catch (eRpc) {}
+                    }
+
+                    if (!delSuccess) {
+                        const { error } = await supabaseClient.from('fee_rules').delete().eq('id', rowId);
+                        if (error) throw error;
+                    }
+
                     showToast(`🗑️ Rule "${rule.name}" berhasil dihapus dari cloud!`);
                     await fetchFeeRulesFromSupabase(false);
                 } catch (e) {
