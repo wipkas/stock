@@ -2674,11 +2674,21 @@
                 <button class="btn-nav-action" id="btnTopCopyDailyTx" onclick="openCopyDailyTxModal()" title="Salin Riwayat Transaksi Harian Semua Cabang" aria-label="Salin Riwayat Transaksi Harian Semua Cabang" style="font-size: 16px;">
                     📋
                 </button>
+                <button class="btn-nav-action" id="btnTopShareWhatsApp" onclick="openShareWhatsAppModal()" title="Upload &amp; Bagikan Foto ke WhatsApp" aria-label="Upload dan Bagikan Foto ke WhatsApp" style="font-size: 16px; color: #25D366;">
+                    📤
+                </button>
                 <div class="top-menu-wrapper" id="topMenuWrapper">
                     <button class="btn-nav-action" id="btnTopMenu" onclick="toggleTopMenu(event)" title="Menu &amp; Pengaturan" aria-label="Menu dan Pengaturan" aria-expanded="false" style="font-size: 16px;">
                         ⚙️
                     </button>
                     <div class="top-menu-dropdown" id="topMenuDropdown" role="menu">
+                        <div class="top-menu-item" role="menuitem" tabindex="0" onclick="closeTopMenu(); openShareWhatsAppModal();">
+                            <span class="top-menu-icon">📤</span>
+                            <div style="flex: 1;">
+                                <div class="top-menu-label">Upload &amp; Bagikan WhatsApp</div>
+                                <div class="top-menu-sub">Upload foto, buat link aman &amp; shortcut WA</div>
+                            </div>
+                        </div>
                         <div class="top-menu-item" role="menuitem" tabindex="0" onclick="closeTopMenu(); openCopyDailyTxModal();">
                             <span class="top-menu-icon">📋</span>
                             <div style="flex: 1;">
@@ -4779,6 +4789,143 @@
                         <span>📋</span> Salin ke Clipboard
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DIALOG: UPLOAD & BAGIKAN FOTO KE WHATSAPP DENGAN PASSWORD -->
+    <div id="shareWhatsAppModal" class="modal-backdrop" onclick="handleBackdropClose(event, 'shareWhatsAppModal')">
+        <div class="modal-card" style="max-width: 640px; max-height: 94vh; max-height: 94dvh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                        <span>📤</span> Upload &amp; Bagikan ke WhatsApp
+                    </h3>
+                    <p class="modal-subtitle">Upload foto, buat link aman ber-password &amp; pasang shortcut ke WhatsApp</p>
+                </div>
+                <button type="button" class="modal-close-btn" aria-label="Tutup dialog" onclick="closeModal('shareWhatsAppModal')">&times;</button>
+            </div>
+
+            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px;">
+                <!-- Tab Menu (Upload Baru vs Riwayat Link) -->
+                <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                    <button type="button" id="tabBtnShareUpload" class="target-mode-pill-btn active" onclick="switchShareWhatsAppTab('upload')">
+                        📤 Upload Foto Baru
+                    </button>
+                    <button type="button" id="tabBtnShareHistory" class="target-mode-pill-btn" onclick="switchShareWhatsAppTab('history')">
+                        📜 Riwayat Link Share (<span id="shareHistoryCount">0</span>)
+                    </button>
+                </div>
+
+                <!-- TAB 1: UPLOAD FOTO -->
+                <div id="tabContentShareUpload" style="display: flex; flex-direction: column; gap: 12px;">
+                    <!-- Dropzone / File Picker -->
+                    <div id="shareDropzone" style="border: 2px dashed rgba(79, 142, 247, 0.4); border-radius: 14px; padding: 22px 14px; text-align: center; background: rgba(79, 142, 247, 0.04); cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('shareFileInput').click()">
+                        <input type="file" id="shareFileInput" multiple accept="image/*" style="display: none;" onchange="handleShareFileSelect(event)">
+                        <div style="font-size: 32px; margin-bottom: 6px;">📷</div>
+                        <div style="font-size: 13.5px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">
+                            Pilih atau Seret Foto ke Sini
+                        </div>
+                        <div style="font-size: 11.5px; color: var(--text-muted);">
+                            Bisa upload berapapun foto (JPG, PNG, WebP) &bull; Otomatis dikonversi ke Base64
+                        </div>
+                    </div>
+
+                    <!-- Thumbnail List of Selected Images -->
+                    <div id="shareThumbnailsContainer" style="display: none; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; font-weight: 700; color: var(--text-muted);">
+                            <span>FOTO TERPILIH (<span id="shareThumbCount">0</span> FOTO):</span>
+                            <button type="button" class="btn-text-danger" style="background:none; border:none; color:var(--danger); font-size:11px; cursor:pointer;" onclick="clearShareFiles()">Hapus Semua</button>
+                        </div>
+                        <div id="shareThumbsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; max-height: 220px; overflow-y: auto; padding: 4px;">
+                            <!-- Diisi dinamis via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Pengaturan Link & Password -->
+                    <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+                        <div>
+                            <label style="font-size: 11px; font-weight: 750; color: var(--text-muted); display: block; margin-bottom: 4px;">
+                                JUDUL / KETERANGAN LAMPIRAN:
+                            </label>
+                            <input type="text" id="shareTitleInput" class="form-input" placeholder="Contoh: Bukti Stok Opname Cabang Gading" style="width: 100%; font-size: 12px; padding: 8px 10px; border-radius: 8px; background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                        </div>
+
+                        <div>
+                            <label style="font-size: 11px; font-weight: 750; color: var(--text-muted); display: block; margin-bottom: 4px;">
+                                PASSWORD / KODE AKSES ACAK:
+                            </label>
+                            <div style="display: flex; gap: 6px;">
+                                <input type="text" id="sharePasswordInput" class="form-input" style="flex: 1; font-size: 14px; font-weight: 800; font-family: monospace; letter-spacing: 1.5px; text-transform: uppercase; padding: 8px 10px; border-radius: 8px; background: var(--card-bg); border: 1px solid var(--card-border); color: #93C5FD; text-align: center;" placeholder="XXXXXXX" maxlength="16">
+                                <button type="button" class="btn-secondary" style="padding: 8px 12px; font-size: 12px; white-space: nowrap;" onclick="generateNewSharePassword()" title="Generate Kode Acak Baru">
+                                    🎲 Acak
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Opsi Kompresi Otomatis -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                            <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
+                                <input type="checkbox" id="shareAutoCompress" checked>
+                                <span>Kompresi otomatis (rekomendasi: hemat kuota &amp; upload cepat)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Upload & Generate Link -->
+                    <button type="button" id="btnExecuteShareUpload" class="btn-primary" style="padding: 12px; font-size: 13.5px; font-weight: 800; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="uploadAndGenerateShareLink()">
+                        <span>🚀</span>
+                        <span id="btnExecuteShareUploadText">Upload ke Cloud &amp; Generate Link</span>
+                    </button>
+
+                    <!-- HASIL GENERATE LINK & QR CODE (Tampil setelah upload sukses) -->
+                    <div id="shareResultBox" style="display: none; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 14px; flex-direction: column; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 6px; color: #10B981; font-weight: 800; font-size: 12.5px;">
+                            <span>✅</span> Link Berhasil Dibuat &amp; Tersimpan di Cloud Supabase!
+                        </div>
+
+                        <div>
+                            <div style="font-size: 11px; font-weight: 750; color: var(--text-muted); margin-bottom: 4px;">TAUTAN SHARE WHATSAPP:</div>
+                            <div style="display: flex; gap: 6px;">
+                                <input type="text" id="shareResultUrlInput" class="form-input" readonly style="flex: 1; font-size: 12px; font-family: monospace; padding: 8px 10px; border-radius: 8px; background: var(--card-bg); border: 1px solid var(--card-border); color: #86EFAC;">
+                                <button type="button" class="btn-primary" style="padding: 8px 14px; font-size: 12px; font-weight: 700; white-space: nowrap;" onclick="copyShareResultUrl()">
+                                    📋 Salin
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- QR Code & Quick Action Buttons -->
+                        <div style="display: flex; gap: 14px; align-items: center; background: var(--card-bg); padding: 10px; border-radius: 10px; border: 1px solid var(--card-border);">
+                            <div id="shareQrCodeContainer" style="background: #FFF; padding: 6px; border-radius: 8px; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"></div>
+                            <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
+                                <div style="font-size: 11.5px; color: var(--text-muted);">
+                                    Scan QR code ini dari HP atau buka link langsung untuk memasang shortcut ke Layar Utama.
+                                </div>
+                                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                    <button type="button" class="btn-secondary" style="padding: 6px 10px; font-size: 11px;" onclick="openShareResultUrl()">
+                                        🔗 Buka Link
+                                    </button>
+                                    <button type="button" class="btn-whatsapp-share" style="padding: 6px 10px; font-size: 11px;" onclick="sendShareLinkViaWhatsApp()">
+                                        💬 Kirim Link via WA
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: RIWAYAT LINK TERSIMPAN -->
+                <div id="tabContentShareHistory" style="display: none; flex-direction: column; gap: 10px;">
+                    <div id="shareHistoryList" style="display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto;">
+                        <!-- Diisi dinamis via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="padding: 10px 16px; display: flex; justify-content: flex-end;">
+                <button type="button" class="btn-secondary" onclick="closeModal('shareWhatsAppModal')" style="padding: 8px 16px; font-size: 12px;">
+                    Tutup
+                </button>
             </div>
         </div>
     </div>
@@ -12193,6 +12340,507 @@ ${portalUrl}
             }
             const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
             window.open(waUrl, '_blank');
+        }
+
+        /* ==========================================================================
+         * UPLOAD & SHARE WHATSAPP MODAL LOGIC (STORE MANAGER)
+         * ========================================================================== */
+        let shareSelectedFiles = []; // Array of { name, dataUrl, size, sizeFormatted }
+        let currentGeneratedShareUrl = '';
+        let currentShareCode = '';
+        const LS_WA_SHARES = 'kspcheck_whatsapp_shares';
+
+        function openShareWhatsAppModal() {
+            shareSelectedFiles = [];
+            currentGeneratedShareUrl = '';
+            currentShareCode = '';
+            const resBox = document.getElementById('shareResultBox');
+            if (resBox) resBox.style.display = 'none';
+            const thumbsCont = document.getElementById('shareThumbnailsContainer');
+            if (thumbsCont) thumbsCont.style.display = 'none';
+            const thumbsList = document.getElementById('shareThumbsList');
+            if (thumbsList) thumbsList.innerHTML = '';
+            const titleInp = document.getElementById('shareTitleInput');
+            if (titleInp) titleInp.value = '';
+            
+            generateNewSharePassword();
+            switchShareWhatsAppTab('upload');
+            loadShareWhatsAppHistory();
+            openModal('shareWhatsAppModal');
+        }
+
+        function switchShareWhatsAppTab(tab) {
+            const btnUpload = document.getElementById('tabBtnShareUpload');
+            const btnHistory = document.getElementById('tabBtnShareHistory');
+            const contentUpload = document.getElementById('tabContentShareUpload');
+            const contentHistory = document.getElementById('tabContentShareHistory');
+
+            if (!btnUpload || !btnHistory || !contentUpload || !contentHistory) return;
+
+            if (tab === 'upload') {
+                btnUpload.classList.add('active');
+                btnHistory.classList.remove('active');
+                contentUpload.style.display = 'flex';
+                contentHistory.style.display = 'none';
+            } else {
+                btnHistory.classList.add('active');
+                btnUpload.classList.remove('active');
+                contentUpload.style.display = 'none';
+                contentHistory.style.display = 'flex';
+                renderShareWhatsAppHistory();
+            }
+        }
+
+        function generateNewSharePassword() {
+            const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+            let pwd = '';
+            for (let i = 0; i < 7; i++) {
+                pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            const el = document.getElementById('sharePasswordInput');
+            if (el) el.value = pwd;
+            return pwd;
+        }
+
+        async function handleShareFileSelect(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            const autoCompressEl = document.getElementById('shareAutoCompress');
+            const autoCompress = autoCompressEl ? autoCompressEl.checked : true;
+            const btnUpload = document.getElementById('btnExecuteShareUpload');
+            const btnText = document.getElementById('btnExecuteShareUploadText');
+            const origText = btnText ? btnText.textContent : 'Upload ke Cloud & Generate Link';
+            
+            if (btnUpload) btnUpload.disabled = true;
+            if (btnText) btnText.textContent = 'Memproses foto...';
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!file.type.startsWith('image/')) continue;
+
+                try {
+                    const dataUrl = await readFileAsBase64(file, autoCompress);
+                    const approxBytes = Math.round((dataUrl.length * 3) / 4);
+                    shareSelectedFiles.push({
+                        name: file.name,
+                        dataUrl: dataUrl,
+                        size: approxBytes,
+                        sizeFormatted: formatBytesShare(approxBytes)
+                    });
+                } catch (e) {
+                    console.error('Gagal membaca foto:', file.name, e);
+                }
+            }
+
+            event.target.value = ''; // reset file input
+            if (btnUpload) btnUpload.disabled = false;
+            if (btnText) btnText.textContent = origText;
+
+            renderShareThumbnails();
+        }
+
+        function readFileAsBase64(file, autoCompress) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const originalDataUrl = e.target.result;
+                    if (!autoCompress) {
+                        resolve(originalDataUrl);
+                        return;
+                    }
+
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const maxDim = 1280;
+                        let w = img.width;
+                        let h = img.height;
+
+                        if (w > maxDim || h > maxDim) {
+                            if (w > h) {
+                                h = Math.round((h * maxDim) / w);
+                                w = maxDim;
+                            } else {
+                                w = Math.round((w * maxDim) / h);
+                                h = maxDim;
+                            }
+                        }
+
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+
+                        try {
+                            const webpData = canvas.toDataURL('image/webp', 0.82);
+                            if (webpData.startsWith('data:image/webp')) {
+                                resolve(webpData);
+                                return;
+                            }
+                        } catch (err) {}
+
+                        const jpegData = canvas.toDataURL('image/jpeg', 0.82);
+                        resolve(jpegData);
+                    };
+                    img.onerror = () => resolve(originalDataUrl);
+                    img.src = originalDataUrl;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function renderShareThumbnails() {
+            const container = document.getElementById('shareThumbnailsContainer');
+            const list = document.getElementById('shareThumbsList');
+            const countEl = document.getElementById('shareThumbCount');
+            if (!container || !list || !countEl) return;
+
+            if (shareSelectedFiles.length === 0) {
+                container.style.display = 'none';
+                list.innerHTML = '';
+                countEl.textContent = '0';
+                return;
+            }
+
+            container.style.display = 'flex';
+            countEl.textContent = String(shareSelectedFiles.length);
+            list.innerHTML = '';
+
+            shareSelectedFiles.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'position:relative; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; padding:4px;';
+                div.innerHTML = `
+                    <div style="width:100%; height:75px; background:#0B0D13; border-radius:4px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                        <img src="${item.dataUrl}" style="max-width:100%; max-height:100%; object-fit:contain;">
+                    </div>
+                    <div style="font-size:10px; font-weight:600; color:var(--text-main); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtmlShare(item.name)}">
+                        ${escapeHtmlShare(item.name)}
+                    </div>
+                    <div style="font-size:9.5px; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center;">
+                        <span>${item.sizeFormatted}</span>
+                        <button type="button" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:11px;" onclick="removeShareFile(${idx})" title="Hapus foto">&times;</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function removeShareFile(idx) {
+            shareSelectedFiles.splice(idx, 1);
+            renderShareThumbnails();
+        }
+
+        function clearShareFiles() {
+            shareSelectedFiles = [];
+            renderShareThumbnails();
+        }
+
+        async function uploadAndGenerateShareLink() {
+            if (shareSelectedFiles.length === 0) {
+                showToast('⚠️ Silakan pilih minimal 1 foto terlebih dahulu!', '⚠️');
+                return;
+            }
+
+            const pwdInput = document.getElementById('sharePasswordInput');
+            let code = (pwdInput?.value || '').trim().toUpperCase();
+            if (!code) {
+                code = generateNewSharePassword();
+            }
+
+            const titleInput = document.getElementById('shareTitleInput');
+            const title = (titleInput?.value || '').trim() || 'Lampiran Foto KSP Check';
+
+            const btn = document.getElementById('btnExecuteShareUpload');
+            const btnText = document.getElementById('btnExecuteShareUploadText');
+            if (btn) btn.disabled = true;
+            if (btnText) btnText.textContent = '⏳ Mengunggah ke Cloud Supabase...';
+
+            const CFG = window.KSP_SYNC_CONFIG || {
+                url: "https://nigvcwpxswvwzqtteanj.supabase.co",
+                key: "sb_publishable_TVMTb_JhsDbcbz5hLjIHWQ_kthdNAJF"
+            };
+
+            const payloadData = {
+                code: code,
+                password: code,
+                title: title,
+                created_at: new Date().toISOString(),
+                images: shareSelectedFiles
+            };
+
+            const headers = {
+                'apikey': CFG.key,
+                'Authorization': 'Bearer ' + CFG.key,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+            };
+
+            let saveSuccess = false;
+
+            // 1. Coba simpan ke tabel ksp_shared_images terlebih dahulu
+            try {
+                const resDedicated = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/ksp_shared_images`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({
+                        id: 'share_' + code,
+                        code: code,
+                        password: code,
+                        title: title,
+                        images: shareSelectedFiles
+                    })
+                });
+                if (resDedicated.ok) {
+                    saveSuccess = true;
+                }
+            } catch (ex) {
+                // lanjut ke fallback
+            }
+
+            // 2. Fallback: Simpan ke tabel app_balances (package_name = 'share_whatsapp')
+            if (!saveSuccess) {
+                try {
+                    const fallbackBody = {
+                        id: 'share_' + code,
+                        device_id: 'web_admin',
+                        device_name: title,
+                        package_name: 'share_whatsapp',
+                        app_name: 'Share WhatsApp',
+                        balance_value: shareSelectedFiles.length,
+                        formatted_balance: `${shareSelectedFiles.length} Foto`,
+                        calculation_mode: 'SHARED_IMAGES',
+                        raw_snippet: code,
+                        raw_json: payloadData
+                    };
+
+                    const resFallback = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/app_balances`, {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify(fallbackBody)
+                    });
+
+                    if (resFallback.ok || resFallback.status === 201) {
+                        saveSuccess = true;
+                    } else {
+                        // Jika 409 conflict, coba lakukan PATCH (update)
+                        const resPatch = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/app_balances?id=eq.share_${encodeURIComponent(code)}`, {
+                            method: 'PATCH',
+                            headers: headers,
+                            body: JSON.stringify(fallbackBody)
+                        });
+                        if (resPatch.ok) {
+                            saveSuccess = true;
+                        } else {
+                            throw new Error('HTTP ' + resFallback.status);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Upload Supabase fallback error:', err);
+                }
+            }
+
+            if (btn) btn.disabled = false;
+            if (btnText) btnText.textContent = 'Upload ke Cloud & Generate Link';
+
+            if (!saveSuccess) {
+                showToast('❌ Gagal mengunggah foto ke Cloud Supabase. Periksa koneksi internet.', '❌');
+                return;
+            }
+
+            // Bangun URL Share WhatsApp
+            const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+            const shareUrl = `${baseUrl}share_whatsapp.html?${encodeURIComponent(code)}`;
+
+            currentGeneratedShareUrl = shareUrl;
+            currentShareCode = code;
+
+            // Simpan ke Riwayat Lokal
+            saveShareHistoryItem({
+                code: code,
+                title: title,
+                count: shareSelectedFiles.length,
+                url: shareUrl,
+                created_at: new Date().toISOString()
+            });
+
+            // Tampilkan Hasil di Modal
+            const resultBox = document.getElementById('shareResultBox');
+            if (resultBox) resultBox.style.display = 'flex';
+            const urlInp = document.getElementById('shareResultUrlInput');
+            if (urlInp) urlInp.value = shareUrl;
+
+            // Render QR Code
+            renderShareQrCode(shareUrl);
+
+            showToast('✅ Foto berhasil diunggah! Link siap dibagikan.', '✅');
+            if (resultBox) resultBox.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function renderShareQrCode(url) {
+            const container = document.getElementById('shareQrCodeContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            if (typeof QRCode === 'function') {
+                new QRCode(container, {
+                    text: url,
+                    width: 78,
+                    height: 78,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: (typeof QRCode.CorrectLevel !== 'undefined') ? QRCode.CorrectLevel.M : 2
+                });
+            } else {
+                container.innerHTML = `<a href="${url}" target="_blank" style="font-size:10px;text-align:center;color:#000;">Buka Link</a>`;
+            }
+        }
+
+        function copyShareResultUrl() {
+            if (!currentGeneratedShareUrl) return;
+            navigator.clipboard.writeText(currentGeneratedShareUrl).then(() => {
+                showToast('📋 Link berhasil disalin ke clipboard!', '✅');
+            }).catch(() => {
+                prompt('Salin link berikut:', currentGeneratedShareUrl);
+            });
+        }
+
+        function openShareResultUrl() {
+            if (!currentGeneratedShareUrl) return;
+            window.open(currentGeneratedShareUrl, '_blank');
+        }
+
+        function sendShareLinkViaWhatsApp() {
+            if (!currentGeneratedShareUrl) return;
+            const text = `Halo, berikut foto lampiran dari KSP Check (Kode: ${currentShareCode}):\n\n${currentGeneratedShareUrl}\n\nBuka link di atas melalui browser HP dan tambahkan sebagai shortcut untuk langsung membagikan foto ke WhatsApp.`;
+            const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
+            window.open(waUrl, '_blank');
+        }
+
+        function loadShareWhatsAppHistory() {
+            let list = [];
+            try {
+                list = JSON.parse(localStorage.getItem(LS_WA_SHARES) || '[]');
+            } catch (e) { list = []; }
+            const countEl = document.getElementById('shareHistoryCount');
+            if (countEl) countEl.textContent = String(list.length);
+            return list;
+        }
+
+        function saveShareHistoryItem(item) {
+            const list = loadShareWhatsAppHistory();
+            const idx = list.findIndex(x => x.code === item.code);
+            if (idx >= 0) {
+                list[idx] = item;
+            } else {
+                list.unshift(item);
+            }
+            try {
+                localStorage.setItem(LS_WA_SHARES, JSON.stringify(list));
+            } catch (e) {}
+            loadShareWhatsAppHistory();
+        }
+
+        function renderShareWhatsAppHistory() {
+            const list = loadShareWhatsAppHistory();
+            const container = document.getElementById('shareHistoryList');
+            if (!container) return;
+
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 30px 10px; color: var(--text-muted); font-size: 12.5px;">
+                        Belum ada riwayat link share. Upload foto pada tab "Upload Foto Baru" untuk membuat link pertama Anda.
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            list.forEach(item => {
+                const dateStr = item.created_at ? new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-';
+                const div = document.createElement('div');
+                div.style.cssText = 'background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;';
+                div.innerHTML = `
+                    <div style="flex: 1; overflow: hidden;">
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                            <span style="font-family: monospace; font-size: 12px; font-weight: 800; color: #93C5FD; background: rgba(79, 142, 247, 0.15); padding: 2px 6px; border-radius: 4px;">${escapeHtmlShare(item.code)}</span>
+                            <span style="font-size: 11px; font-weight: 700; color: #86EFAC;">${item.count} Foto</span>
+                        </div>
+                        <div style="font-size: 12px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtmlShare(item.title)}">
+                            ${escapeHtmlShare(item.title)}
+                        </div>
+                        <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">
+                            ${dateStr}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                        <button type="button" class="btn-secondary" style="padding: 6px 10px; font-size: 11px;" onclick="copyHistoryShareUrl('${escapeHtmlShare(item.url)}')">
+                            📋 Salin
+                        </button>
+                        <button type="button" class="btn-secondary" style="padding: 6px 10px; font-size: 11px;" onclick="window.open('${escapeHtmlShare(item.url)}', '_blank')">
+                            🔗 Buka
+                        </button>
+                        <button type="button" class="btn-secondary" style="padding: 6px 8px; font-size: 11px; color: var(--danger);" onclick="deleteShareHistoryItem('${escapeHtmlShare(item.code)}')" title="Hapus dari riwayat">
+                            🗑️
+                        </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function copyHistoryShareUrl(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('📋 Link share berhasil disalin ke clipboard!', '✅');
+            }).catch(() => {
+                prompt('Salin link:', url);
+            });
+        }
+
+        async function deleteShareHistoryItem(code) {
+            if (!confirm(`Hapus link share dengan kode "${code}"?`)) return;
+
+            const list = loadShareWhatsAppHistory().filter(x => x.code !== code);
+            try {
+                localStorage.setItem(LS_WA_SHARES, JSON.stringify(list));
+            } catch (e) {}
+
+            const CFG = window.KSP_SYNC_CONFIG || {
+                url: "https://nigvcwpxswvwzqtteanj.supabase.co",
+                key: "sb_publishable_TVMTb_JhsDbcbz5hLjIHWQ_kthdNAJF"
+            };
+            const headers = {
+                'apikey': CFG.key,
+                'Authorization': 'Bearer ' + CFG.key
+            };
+            try {
+                fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/app_balances?id=eq.share_${encodeURIComponent(code)}`, {
+                    method: 'DELETE',
+                    headers: headers
+                });
+                fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/ksp_shared_images?code=eq.${encodeURIComponent(code)}`, {
+                    method: 'DELETE',
+                    headers: headers
+                });
+            } catch (e) {}
+
+            loadShareWhatsAppHistory();
+            renderShareWhatsAppHistory();
+            showToast('🗑️ Link share berhasil dihapus.', 'ℹ️');
+        }
+
+        function formatBytesShare(bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            const k = 1024;
+            const dm = 1;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        function escapeHtmlShare(str) {
+            return (str || '').replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+            });
         }
     </script>
 </body>
