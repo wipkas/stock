@@ -3550,12 +3550,12 @@
                 <label style="display: block; font-size: 11.5px; font-weight: 750; color: var(--primary); margin-bottom: 6px;">Sumber Database Cloud:</label>
                 <div style="display: flex; gap: 14px; font-size: 11.5px; flex-wrap: wrap;">
                     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                        <input type="radio" name="radPromoteDbSource" id="radPromoteSourceProjectA" value="project_a" checked onchange="onPromoteDbSourceChange()" style="accent-color: var(--primary);">
-                        <span>🅰️ <b>Project A</b> (Data Lama / Perangkat Sebelumnya)</span>
+                        <input type="radio" name="radPromoteDbSource" id="radPromoteSourceProjectB" value="project_b" checked onchange="onPromoteDbSourceChange()" style="accent-color: var(--primary);">
+                        <span>🅱️ <b>Project B</b> (Database Utama KSP Check)</span>
                     </label>
                     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                        <input type="radio" name="radPromoteDbSource" id="radPromoteSourceProjectB" value="project_b" onchange="onPromoteDbSourceChange()" style="accent-color: var(--primary);">
-                        <span>🅱️ <b>Project B</b> (Database Baru Saat Ini)</span>
+                        <input type="radio" name="radPromoteDbSource" id="radPromoteSourceProjectA" value="project_a" onchange="onPromoteDbSourceChange()" style="accent-color: var(--primary);">
+                        <span>🅰️ <b>Project A</b> (Data Backup / Perangkat Lama)</span>
                     </label>
                 </div>
                 <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 5px; line-height: 1.35;">
@@ -4747,6 +4747,8 @@
         // ============================================================================
 
         let supabaseClient = null;
+        let projectAClient = null;
+        let cachedProjectAData = null;
         let allVouchers = [];
         let allDailyReports = new Map(); // device_id -> report_data
         let allBarang = []; // Produk retail / aksesoris
@@ -5800,10 +5802,11 @@ WHERE id IS NULL
 
             try {
                 let isVerified = false;
-                let activeUrl = (window.KSP_SYNC_CONFIG && window.KSP_SYNC_CONFIG.url) || DIRECT_SUPABASE_URL || '';
-                let activeKey = (window.KSP_SYNC_CONFIG && window.KSP_SYNC_CONFIG.key) || DIRECT_SUPABASE_ANON_KEY || '';
+                const projectBUrl = (window.KSP_SYNC_CONFIG && window.KSP_SYNC_CONFIG.url) || DIRECT_SUPABASE_URL || '';
+                const projectBKey = (window.KSP_SYNC_CONFIG && window.KSP_SYNC_CONFIG.key) || DIRECT_SUPABASE_ANON_KEY || '';
 
                 // 1. Coba verifikasi dengan dekripsi config.enc (jika file config.enc tersedia)
+                // Kredensial dari config.enc (Project A) HANYA dipakai untuk inisialisasi koneksi backup
                 try {
                     const res = await fetch('./config.enc?t=' + Date.now());
                     if (res.ok) {
@@ -5823,10 +5826,17 @@ WHERE id IS NULL
                         const decryptedJson = decrypted.toString(CryptoJS.enc.Utf8);
                         if (decryptedJson) {
                             const config = JSON.parse(decryptedJson);
-                            if (config && (config.supabase_url || config.url)) {
-                                activeUrl = config.supabase_url || config.url;
-                                activeKey = config.supabase_anon_key || config.key || config.anon_key;
+                            const projAUrl = config.supabase_url || config.url;
+                            const projAKey = config.supabase_anon_key || config.key || config.anon_key;
+                            if (projAUrl && projAKey) {
                                 isVerified = true;
+                                try {
+                                    projectAClient = supabase.createClient(projAUrl, projAKey);
+                                    window.projectAClient = projectAClient;
+                                    console.log('✅ Kredensial Project A berhasil dibuka untuk jalur backup.');
+                                } catch (eInitA) {
+                                    console.warn('Gagal inisialisasi backup Project A:', eInitA);
+                                }
                             }
                         }
                     }
@@ -5834,16 +5844,16 @@ WHERE id IS NULL
                     // Abaikan kegagalan config.enc, lanjut ke verifikasi RPC
                 }
 
-                // 2. Jika belum terverifikasi oleh config.enc, verifikasi PIN via RPC Supabase (ksp_admin_get_stores)
-                if (!isVerified && activeUrl && activeKey) {
+                // 2. Jika belum terverifikasi oleh config.enc, verifikasi PIN via RPC Supabase Project B (ksp_admin_get_stores)
+                if (!isVerified && projectBUrl && projectBKey) {
                     try {
-                        const baseUrl = activeUrl.replace(/\/+$/, '');
+                        const baseUrl = projectBUrl.replace(/\/+$/, '');
                         const rpcResp = await fetch(baseUrl + '/rest/v1/rpc/ksp_admin_get_stores', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'apikey': activeKey,
-                                'Authorization': 'Bearer ' + activeKey
+                                'apikey': projectBKey,
+                                'Authorization': 'Bearer ' + projectBKey
                             },
                             body: JSON.stringify({ p_pin: pin })
                         });
@@ -5867,8 +5877,13 @@ WHERE id IS NULL
                 // PIN Valid! Simpan ke localStorage agar sesi tersimpan
                 localStorage.setItem('kspcheck_viewer_pin', pin);
 
-                if (activeUrl && activeKey) {
-                    supabaseClient = supabase.createClient(activeUrl, activeKey);
+                // KONEKSI UTAMA 100% MENGGUNAKAN PROJECT B!
+                if (projectBUrl && projectBKey) {
+                    supabaseClient = supabase.createClient(projectBUrl, projectBKey);
+                    window.supabaseClient = supabaseClient;
+                    console.log('✅ KSP Check terhubung 100% ke Project B:', projectBUrl);
+                } else {
+                    throw new Error('Konfigurasi Project B (window.KSP_SYNC_CONFIG) tidak ditemukan!');
                 }
 
                 document.getElementById('pinModal').style.display = 'none';
@@ -8785,6 +8800,8 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 supabaseClient.from('restock_orders').upsert([payload]).then(res => {
                     if (res.error) console.warn('Supabase restock_orders upsert:', res.error);
                 }).catch(err => console.warn('Supabase restock_orders err:', err));
+                // Backup ke Project A
+                backupToProjectA('restock_orders', [payload], 'id');
             }
 
             historySelectedDateStr = getLocalDateString(new Date());
@@ -9591,6 +9608,8 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         const payload = allRestockOrders.map(cleanOrderForSupabase);
                         const { error } = await supabaseClient.from('restock_orders').upsert(payload);
                         if (error) console.warn('Supabase restock_orders upsert:', error);
+                        // Backup ke Project A
+                        backupToProjectA('restock_orders', payload, 'id');
                     } catch (eSync) {
                         console.warn('Supabase restock_orders sync error:', eSync);
                     }
@@ -9633,11 +9652,19 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
 
             saveRestockOrdersToStorage();
             if (supabaseClient) {
-                supabaseClient.from('restock_orders').update({
+                const updateData = {
                     actual_cost: order.actual_cost,
                     notes: order.manual_actual_cost ? `Manual cost: Rp ${order.manual_actual_cost}` : (order.notes || ''),
                     updated_at: new Date().toISOString()
-                }).eq('id', order.id).then();
+                };
+                supabaseClient.from('restock_orders').update(updateData).eq('id', order.id).then();
+                // Backup update ke Project A
+                (async () => {
+                    try {
+                        const clientA = await getProjectAClient(false);
+                        if (clientA) await clientA.from('restock_orders').update(updateData).eq('id', order.id);
+                    } catch (eBak) {}
+                })();
             }
 
             reconcileAllOrders();
@@ -9653,10 +9680,18 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 order.status = 'completed';
                 saveRestockOrdersToStorage();
                 if (supabaseClient) {
-                    supabaseClient.from('restock_orders').update({
+                    const updateData = {
                         status: 'completed',
                         updated_at: new Date().toISOString()
-                    }).eq('id', order.id).then();
+                    };
+                    supabaseClient.from('restock_orders').update(updateData).eq('id', order.id).then();
+                    // Backup update ke Project A
+                    (async () => {
+                        try {
+                            const clientA = await getProjectAClient(false);
+                            if (clientA) await clientA.from('restock_orders').update(updateData).eq('id', order.id);
+                        } catch (eBak) {}
+                    })();
                 }
                 reconcileAllOrders();
                 renderOrderHistoryList();
@@ -9674,6 +9709,8 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                 saveRestockOrdersToStorage();
                 if (supabaseClient) {
                     supabaseClient.from('restock_orders').delete().eq('id', orderId).then();
+                    // Backup delete ke Project A
+                    deleteFromProjectABackup('restock_orders', { id: orderId });
                 }
                 reconcileAllOrders();
                 renderOrderHistoryList();
@@ -13458,6 +13495,9 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     allBalances.push(rowData);
                 }
                 updateStoreCashBannerUI(rowData);
+
+                // Backup app_balances ke Project A
+                backupToProjectA('app_balances', [rowData], 'device_id,package_name');
             } catch (err) {
                 console.error('Upsert store_cash exception:', err);
                 showToast('❌ Error: ' + err.message);
@@ -15511,6 +15551,8 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     try {
                         const { error } = await supabaseClient.from('fee_rules').upsert(rowData);
                         if (error) throw error;
+                        // Backup override fee rule ke Project A
+                        backupToProjectA('fee_rules', [rowData], 'id');
                         showToast(`⚡ Override cabang dibuat: "${rule.name}" sekarang ${isActive ? 'AKTIF' : 'NONAKTIF'}`);
                         await fetchFeeRulesFromSupabase(false);
                     } catch (e) {
@@ -15536,6 +15578,13 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         console.warn('Supabase toggle error:', error);
                         showToast('❌ Gagal update status di cloud: ' + error.message);
                     } else {
+                        // Backup status ke Project A
+                        (async () => {
+                            try {
+                                const clientA = await getProjectAClient(false);
+                                if (clientA) await clientA.from('fee_rules').update({ is_active: isActive, updated_at: new Date().toISOString() }).eq('id', rowId);
+                            } catch (eBak) {}
+                        })();
                         showToast(`Rule "${rule.name}" sekarang ${isActive ? 'AKTIF' : 'NONAKTIF'}`);
                     }
                 } catch (e) {
@@ -15704,6 +15753,9 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         if (error) throw error;
                     }
 
+                    // Backup fee rule ke Project A
+                    backupToProjectA('fee_rules', [rowData], 'id');
+
                     showToast(`✅ Rule "${name}" [${rCode}] berhasil disimpan ke cloud!`);
                     await fetchFeeRulesFromSupabase(false);
                 } catch (e) {
@@ -15738,6 +15790,10 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     const rowId = rule.id || `${rule.device_id}_${rule.rule_id || rule.rule_code}`;
                     const { error } = await supabaseClient.from('fee_rules').delete().eq('id', rowId);
                     if (error) throw error;
+
+                    // Backup delete override dari Project A
+                    deleteFromProjectABackup('fee_rules', { id: rowId });
+
                     showToast(`↺ Aturan "${rule.name}" berhasil di-reset ke Master!`);
                     await fetchFeeRulesFromSupabase(false);
                 } catch (e) {
@@ -15790,6 +15846,9 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         const { error } = await supabaseClient.from('fee_rules').delete().eq('id', rowId);
                         if (error) throw error;
                     }
+
+                    // Backup delete dari Project A
+                    deleteFromProjectABackup('fee_rules', { id: rowId });
 
                     showToast(`🗑️ Rule "${rule.name}" berhasil dihapus dari cloud!`);
                     await fetchFeeRulesFromSupabase(false);
@@ -16383,6 +16442,10 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         const { error } = await query;
                         if (error) throw new Error(`[${tableName}] ${error.message || JSON.stringify(error)}`);
                     }
+                    // Backup ke Project A juga jika bukan tabel lokal portal kasir (ksp_stores / ksp_store_stock)
+                    if (tableName !== 'ksp_stores' && tableName !== 'ksp_store_stock') {
+                        backupToProjectA(tableName, rows, onConflict);
+                    }
                 }
 
                 let syncedStoresCount = 0;
@@ -16762,6 +16825,19 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                         } catch (errSs) {
                             console.warn('[ksp_store_stock] Broadcast update warning:', errSs);
                         }
+
+                        // Backup update ke Project A
+                        (async () => {
+                            try {
+                                const clientA = await getProjectAClient(false);
+                                if (clientA) {
+                                    await clientA.from('vouchers').update(updatePayload).eq('product_id', pId);
+                                    console.log('[Backup Project A] Broadcast voucher update');
+                                }
+                            } catch (eBak) {
+                                console.warn('[Backup Project A] Gagal update vouchers:', eBak);
+                            }
+                        })();
                     }
 
                     // Update memory cache lokal (allVouchers)
@@ -16832,6 +16908,19 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                                 console.warn('[ksp_store_stock] Single update warning:', errSs);
                             }
                         }
+
+                        // Backup update ke Project A
+                        (async () => {
+                            try {
+                                const clientA = await getProjectAClient(false);
+                                if (clientA) {
+                                    await clientA.from('vouchers').update(updatePayload).eq('product_id', pId).eq('device_id', targetDeviceId);
+                                    console.log('[Backup Project A] Single voucher update');
+                                }
+                            } catch (eBak) {
+                                console.warn('[Backup Project A] Gagal update vouchers:', eBak);
+                            }
+                        })();
                     }
 
                     (allVouchers || []).forEach(v => {
@@ -17002,6 +17091,17 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     try {
                         await supabaseClient.from('ksp_store_stock').update({ is_active: false, updated_at: nowIso }).eq('product_id', pId);
                     } catch (eSs) {}
+
+                    // Backup arsip ke Project A
+                    (async () => {
+                        try {
+                            const clientA = await getProjectAClient(false);
+                            if (clientA) {
+                                await clientA.from('vouchers').update({ is_active: false, updated_at: nowIso }).eq('product_id', pId);
+                                console.log('[Backup Project A] Voucher archive synced');
+                            }
+                        } catch (eBak) {}
+                    })();
                 }
 
                 (allVouchers || []).forEach(v => {
@@ -17053,6 +17153,9 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     try {
                         await supabaseClient.from('ksp_store_stock').delete().eq('product_id', pId);
                     } catch (eSs) {}
+
+                    // Backup delete ke Project A
+                    deleteFromProjectABackup('vouchers', { product_id: pId });
                 }
 
                 allVouchers = (allVouchers || []).filter(v => Number(v.product_id) !== pId);
@@ -17074,9 +17177,10 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
         window.executeForceDeleteProduct = executeForceDeleteProduct;
         // FITUR: TETAPKAN DATA MASTER DARI PERANGKAT (PRODUK & VOUCHER MASTER)
         // ============================================================================
-        let projectAClient = null;
-        let cachedProjectAData = null;
-
+        // JALUR KONEKSI & BACKUP PROJECT A (config.enc)
+        // Catatan: KSP Check terhubung 100% ke Project B. Project A hanya dipakai
+        // sebagai database pencadangan (backup / dual-write) data dari Project B.
+        // ============================================================================
         async function getProjectAClient(promptIfMissing = true) {
             if (projectAClient) return projectAClient;
 
@@ -17088,38 +17192,99 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
                     localStorage.setItem('kspcheck_viewer_pin', pin);
                 }
             }
-            if (!pin) throw new Error('PIN Admin diperlukan untuk membuka database Project A (config.enc).');
-
-            const res = await fetch('./config.enc?t=' + Date.now());
-            if (!res.ok) throw new Error('File config.enc tidak ditemukan di server.');
-            const base64Encrypted = await res.text();
-
-            const combined = CryptoJS.enc.Base64.parse(base64Encrypted.trim());
-            const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4), 16);
-            const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4), combined.sigBytes - 16);
-            const cipherParams = CryptoJS.lib.CipherParams.create({ ciphertext: ciphertext });
-
-            const key = CryptoJS.SHA256(pin);
-            const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
-                iv: iv,
-                mode: CryptoJS.mode.CBC,
-                padding: CryptoJS.pad.Pkcs7
-            });
-
-            const decryptedJson = decrypted.toString(CryptoJS.enc.Utf8);
-            if (!decryptedJson) {
-                localStorage.removeItem('kspcheck_viewer_pin');
-                throw new Error('PIN salah untuk membuka Project A (config.enc)!');
+            if (!pin) {
+                if (promptIfMissing) throw new Error('PIN Admin diperlukan untuk membuka database Project A (config.enc).');
+                return null;
             }
 
-            const config = JSON.parse(decryptedJson);
-            if (!config.supabase_url || !config.supabase_anon_key) {
-                throw new Error('Format kredensial Project A pada config.enc tidak valid.');
-            }
+            try {
+                const res = await fetch('./config.enc?t=' + Date.now());
+                if (!res.ok) {
+                    if (promptIfMissing) throw new Error('File config.enc tidak ditemukan di server.');
+                    return null;
+                }
+                const base64Encrypted = await res.text();
 
-            projectAClient = supabase.createClient(config.supabase_url, config.supabase_anon_key);
-            return projectAClient;
+                const combined = CryptoJS.enc.Base64.parse(base64Encrypted.trim());
+                const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4), 16);
+                const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4), combined.sigBytes - 16);
+                const cipherParams = CryptoJS.lib.CipherParams.create({ ciphertext: ciphertext });
+
+                const key = CryptoJS.SHA256(pin);
+                const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
+                    iv: iv,
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+
+                const decryptedJson = decrypted.toString(CryptoJS.enc.Utf8);
+                if (!decryptedJson) {
+                    if (promptIfMissing) {
+                        localStorage.removeItem('kspcheck_viewer_pin');
+                        throw new Error('PIN salah untuk membuka Project A (config.enc)!');
+                    }
+                    return null;
+                }
+
+                const config = JSON.parse(decryptedJson);
+                const aUrl = config.supabase_url || config.url;
+                const aKey = config.supabase_anon_key || config.key || config.anon_key;
+                if (!aUrl || !aKey) {
+                    if (promptIfMissing) throw new Error('Format kredensial Project A pada config.enc tidak valid.');
+                    return null;
+                }
+
+                projectAClient = supabase.createClient(aUrl, aKey);
+                window.projectAClient = projectAClient;
+                return projectAClient;
+            } catch (e) {
+                if (promptIfMissing) throw e;
+                console.warn('getProjectAClient silent backup warning:', e.message || e);
+                return null;
+            }
         }
+        window.getProjectAClient = getProjectAClient;
+
+        // Helper sinkronisasi backup non-blocking ke Project A
+        async function backupToProjectA(tableName, rows, onConflict = null) {
+            if (!rows || (Array.isArray(rows) && rows.length === 0)) return;
+            try {
+                const clientA = await getProjectAClient(false);
+                if (!clientA) return;
+                const rowList = Array.isArray(rows) ? rows : [rows];
+                for (let i = 0; i < rowList.length; i += 100) {
+                    const chunk = rowList.slice(i, i + 100);
+                    let query = clientA.from(tableName).upsert(chunk);
+                    if (onConflict) {
+                        query = clientA.from(tableName).upsert(chunk, { onConflict: onConflict });
+                    }
+                    const { error } = await query;
+                    if (error) console.warn(`[Backup Project A] Gagal upsert ke ${tableName}:`, error);
+                }
+                console.log(`[Backup Project A] Sukses cadangkan ${rowList.length} baris ke tabel ${tableName}.`);
+            } catch (e) {
+                console.warn(`[Backup Project A] Error saat cadangkan ke ${tableName}:`, e);
+            }
+        }
+        window.backupToProjectA = backupToProjectA;
+
+        async function deleteFromProjectABackup(tableName, matchCriteria) {
+            if (!matchCriteria) return;
+            try {
+                const clientA = await getProjectAClient(false);
+                if (!clientA) return;
+                let query = clientA.from(tableName).delete();
+                for (const [key, val] of Object.entries(matchCriteria)) {
+                    query = query.eq(key, val);
+                }
+                const { error } = await query;
+                if (error) console.warn(`[Backup Project A] Gagal delete dari ${tableName}:`, error);
+                else console.log(`[Backup Project A] Sukses hapus dari ${tableName}:`, matchCriteria);
+            } catch (e) {
+                console.warn(`[Backup Project A] Error saat delete dari ${tableName}:`, e);
+            }
+        }
+        window.deleteFromProjectABackup = deleteFromProjectABackup;
 
         async function fetchProjectAData() {
             if (cachedProjectAData) return cachedProjectAData;
@@ -17186,7 +17351,7 @@ Kirimkan prompt ini ke AI dan minta: "Buatkan format template margin voucher [Pe
             if (targetDevId && getDiscoveredDevicesMap().has(targetDevId)) {
                 if (radB) radB.checked = true;
             } else if (!radA?.checked && !radB?.checked) {
-                if (radA) radA.checked = true;
+                if (radB) radB.checked = true;
             }
 
             onPromoteDbSourceChange(targetDevId);
@@ -18070,7 +18235,7 @@ END $$;`;
             }
 
             if (!supabaseClient) {
-                alert('Supabase Project A belum terhubung! Masukkan PIN Admin terlebih dahulu.');
+                alert('Koneksi Supabase Project B belum terhubung! Masukkan PIN Admin terlebih dahulu.');
                 return;
             }
 
@@ -18085,16 +18250,17 @@ END $$;`;
             const changedItems = details.filter(it => it.delta !== 0);
 
             const confirmMsg = isRestock
-                ? `Setujui dan sinkronkan Tambah Stok Nota ini ke Stok Master Project A?\n\n• Cabang: ${session.store_name}\n• Kasir: ${session.emp_name}\n• Total Produk: ${changedItems.length}\n• Total Stok Masuk: +${session.total_restock || 0} pcs\n• Total Biaya Modal: Rp ${Number(session.total_cost || 0).toLocaleString('id-ID')}\n\nStok master voucher dan harga modal (cost_price) di Project A akan disesuaikan, serta dicatat pada Laporan Restok.`
-                : `Sinkronkan hasil opname ini ke Stok Master Project A?\n\n• Cabang: ${session.store_name} (Shift ${session.shift_num})\n• Kasir: ${session.emp_name}\n• Total Produk: ${details.length}\n\nStok master di Project A akan disesuaikan dengan stok fisik hasil opname kasir.`;
+                ? `Setujui dan sinkronkan Tambah Stok Nota ini ke Stok Master (Project B)?\n\n• Cabang: ${session.store_name}\n• Kasir: ${session.emp_name}\n• Total Produk: ${changedItems.length}\n• Total Stok Masuk: +${session.total_restock || 0} pcs\n• Total Biaya Modal: Rp ${Number(session.total_cost || 0).toLocaleString('id-ID')}\n\nStok master voucher dan harga modal (cost_price) di Project B akan disesuaikan, dicatat pada Laporan Restok, dan otomatis dicadangkan ke Project A.`
+                : `Sinkronkan hasil opname ini ke Stok Master (Project B)?\n\n• Cabang: ${session.store_name} (Shift ${session.shift_num})\n• Kasir: ${session.emp_name}\n• Total Produk: ${details.length}\n\nStok master di Project B akan disesuaikan dengan stok fisik hasil opname kasir dan otomatis dicadangkan ke Project A.`;
 
             if (!confirm(confirmMsg)) return;
 
             window._syncingOpnameSessions.add(sessionId);
-            showToast('⏳ Menyelaraskan stok ke Project A...');
+            showToast('⏳ Menyelaraskan stok ke Project B & mencadangkan ke Project A...');
 
             try {
                 let updatedCount = 0;
+                const backupVouchers = [];
 
                 if (changedItems.length > 0) {
                     for (const it of changedItems) {
@@ -18121,6 +18287,7 @@ END $$;`;
                             updatePayload.cost_price = itemCost;
                         }
 
+                        // 1. Update tabel vouchers di Project B (Primary)
                         const { error } = await supabaseClient
                             .from('vouchers')
                             .update(updatePayload)
@@ -18132,12 +18299,33 @@ END $$;`;
                             if (curVoucher) {
                                 curVoucher.stock = finalStock;
                                 if (isRestock && itemCost > 0) curVoucher.cost_price = itemCost;
+                                backupVouchers.push({ ...curVoucher, ...updatePayload });
+                            }
+
+                            // 2. Update tabel ksp_store_stock di Project B agar kasir langsung melihat stok terbaru
+                            try {
+                                await supabaseClient
+                                    .from('ksp_store_stock')
+                                    .update({
+                                        current_stock: finalStock,
+                                        ...(isRestock && itemCost > 0 ? { cost_price: itemCost } : {}),
+                                        updated_at: new Date().toISOString()
+                                    })
+                                    .eq('store_id', session.store_id)
+                                    .eq('product_id', it.product_id);
+                            } catch (eSs) {
+                                console.warn('Gagal update ksp_store_stock:', eSs);
                             }
                         }
                     }
                 }
 
-                // Jika restok nota, catat faktur belanja supplier ke tabel restock_orders di Project A
+                // 3. Cadangkan update vouchers ke Project A (Backup)
+                if (backupVouchers.length > 0) {
+                    backupToProjectA('vouchers', backupVouchers, 'device_id,product_id');
+                }
+
+                // 4. Jika restok nota, catat faktur belanja supplier ke tabel restock_orders di Project B & cadangkan ke Project A
                 if (isRestock) {
                     try {
                         const restockOrderRow = {
@@ -18182,43 +18370,47 @@ END $$;`;
                         }
 
                         if (typeof cleanOrderForSupabase === 'function') {
+                            const cleanPayload = cleanOrderForSupabase(restockOrderRow);
                             await supabaseClient
                                 .from('restock_orders')
-                                .upsert([cleanOrderForSupabase(restockOrderRow)]);
+                                .upsert([cleanPayload]);
+                            // Backup restock order ke Project A
+                            backupToProjectA('restock_orders', [cleanPayload], 'id');
                         }
                     } catch (errOrder) {
-                        console.warn('Pencatatan restock_orders Project A dilewati:', errOrder);
+                        console.warn('Pencatatan restock_orders dilewati:', errOrder);
                     }
                 }
 
-                // Perbarui tabel daily_reports di Supabase Project A agar Tab Laporan otomatis terisi
+                // 5. Perbarui tabel daily_reports di Supabase Project B & Project A agar Tab Laporan otomatis terisi
                 try {
                     await updateBranchDailyReportFromOpname(session);
                 } catch (eRep) {
                     console.warn('Pembaruan daily_reports cabang dilewati:', eRep);
                 }
 
-                // Tandai sesi sebagai synced di Project B
+                // 6. Tandai sesi sebagai synced di Project B
                 const markRes = await window.KspSync.adminMarkOpnameSynced(sessionId, 'Admin');
                 if (!markRes || !markRes.ok) {
                     console.warn('Mark opname synced warning:', markRes);
                 }
 
-                showToast(`✅ Berhasil! ${updatedCount} stok voucher di Project A disinkronkan.`);
+                showToast(`✅ Berhasil! ${updatedCount} stok voucher di Project B diperbarui & di-backup ke Project A.`);
 
-                // Refresh data vouchers Project A agar UI admin langsung terupdate
+                // Refresh data vouchers Project B agar UI admin langsung terupdate
                 await fetchVouchersFromSupabase();
                 // Reload daftar sesi opname
                 await loadOpnameSessionsFromCloud();
 
             } catch (err) {
-                console.error('Gagal sinkron opname ke Project A:', err);
+                console.error('Gagal sinkron opname ke Project B:', err);
                 alert(`❌ Gagal sinkronisasi: ${err.message || 'Terjadi kesalahan sistem'}`);
             } finally {
                 window._syncingOpnameSessions.delete(sessionId);
             }
         }
         window.syncOpnameSessionToProjectA = syncOpnameSessionToProjectA;
+        window.syncOpnameSession = syncOpnameSessionToProjectA;
 
         async function updateBranchDailyReportFromOpname(session) {
             if (!supabaseClient || !session || !session.store_id) return;
@@ -18408,26 +18600,31 @@ END $$;`;
                     .upsert([upsertRow], { onConflict: 'device_id' });
 
                 if (repErr) {
-                    console.warn('Gagal upsert daily_reports:', repErr);
+                    console.warn('Gagal upsert daily_reports ke Project B:', repErr);
                 } else {
                     allDailyReports.set(storeId, reportData);
+                    // Backup daily_reports ke Project A
+                    backupToProjectA('daily_reports', [upsertRow], 'device_id');
                 }
 
-                // Arsipkan ke daily_report_archives
+                // Arsipkan ke daily_report_archives di Project B
                 const archiveId = `${storeId}_${ymd}`;
+                const archiveRow = {
+                    id: archiveId,
+                    device_id: storeId,
+                    device_name: storeName,
+                    report_date: ymd,
+                    total_sold_qty: totalSoldQty,
+                    total_omset: totalOmset,
+                    total_profit: totalProfit,
+                    report_data: reportData
+                };
                 await supabaseClient
                     .from('daily_report_archives')
-                    .upsert([{
-                        id: archiveId,
-                        device_id: storeId,
-                        device_name: storeName,
-                        report_date: ymd,
-                        total_sold_qty: totalSoldQty,
-                        total_omset: totalOmset,
-                        total_profit: totalProfit,
-                        report_data: reportData
-                    }], { onConflict: 'id' })
+                    .upsert([archiveRow], { onConflict: 'id' })
                     .catch(e => console.warn('Archive daily report warning:', e));
+                // Backup archive ke Project A
+                backupToProjectA('daily_report_archives', [archiveRow], 'id');
 
             } catch (e) {
                 console.error('Error in updateBranchDailyReportFromOpname:', e);
