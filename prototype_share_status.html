@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>KSP Check - Prototype Status WA & Verifikasi Lokasi</title>
+  <meta name="theme-color" content="#0F1117">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/icon-store.svg">
+
+  <style>
+    :root {
+      --bg: #0A0C10;
+      --card-bg: #141824;
+      --card-border: #23293D;
+      --primary: #25D366;
+      --primary-hover: #1EBE5D;
+      --text: #FFFFFF;
+      --text-muted: #8E98B0;
+      --accent: #4F8EF7;
+      --danger: #EF4444;
+      --warning: #F59E0B;
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background-image: radial-gradient(circle at 50% 10%, rgba(37, 211, 102, 0.08) 0%, transparent 60%);
+    }
+
+    /* Testing Simulator Bar */
+    .sim-bar {
+      width: 100%;
+      max-width: 440px;
+      background: rgba(35, 41, 61, 0.6);
+      border: 1px dashed rgba(79, 142, 247, 0.4);
+      border-radius: 12px;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.75rem;
+    }
+
+    .sim-buttons {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .btn-sim {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
+      color: var(--text-muted);
+      transition: all 0.15s;
+    }
+
+    .btn-sim.active {
+      background: var(--accent);
+      color: #FFF;
+      border-color: var(--accent);
+    }
+
+    /* MAIN FOCUS DIALOG */
+    .dialog-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Dialog Header */
+    .dialog-header {
+      padding: 16px 18px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(37, 211, 102, 0.15);
+      border: 1px solid rgba(37, 211, 102, 0.3);
+      color: #25D366;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .header-titles h1 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #FFF;
+      line-height: 1.25;
+    }
+
+    .header-titles p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Dialog Body */
+    .dialog-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Location Check Panel */
+    .location-panel {
+      background: #0B0E17;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.25s ease;
+    }
+
+    .location-panel.valid {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.04);
+    }
+
+    .location-panel.invalid {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.04);
+    }
+
+    .location-panel.pending {
+      border-color: rgba(245, 158, 11, 0.4);
+      background: rgba(245, 158, 11, 0.04);
+    }
+
+    .loc-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .store-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .store-label {
+      font-size: 0.7rem;
+      font-weight: 750;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .store-name {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Refresh Button */
+    .btn-refresh-loc {
+      background: #181D2B;
+      border: 1px solid var(--card-border);
+      color: #93C5FD;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s;
+    }
+
+    .btn-refresh-loc:hover {
+      background: #20273A;
+      border-color: var(--accent);
+      color: #FFF;
+    }
+
+    .btn-refresh-loc.spinning svg {
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Status Badge & Distance Display */
+    .status-meter-box {
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .status-badge.valid {
+      background: rgba(16, 185, 129, 0.16);
+      color: #10B981;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .status-badge.invalid {
+      background: rgba(239, 68, 68, 0.16);
+      color: #EF4444;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .status-badge.pending {
+      background: rgba(245, 158, 11, 0.16);
+      color: #F59E0B;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .distance-val {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #FFF;
+      text-align: right;
+    }
+
+    .distance-limit {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    /* Accuracy row */
+    .accuracy-row {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 2px;
+    }
+
+    /* Photo Preview Section */
+    .photo-preview-box {
+      background: #0B0E17;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .thumb-strip {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      max-width: 140px;
+    }
+
+    .thumb-item {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid var(--card-border);
+      flex-shrink: 0;
+      background: #181C27;
+    }
+
+    .photo-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .photo-count-title {
+      font-size: 0.82rem;
+      font-weight: 750;
+      color: #FFF;
+    }
+
+    .photo-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    /* ACTION BUTTON (Disabled vs Active) */
+    .btn-action-status {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 850;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border: none;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Active State (Inside 50m) */
+    .btn-action-status.active {
+      background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+      color: #FFFFFF;
+      box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+      cursor: pointer;
+      animation: pulseActive 2s infinite;
+    }
+
+    .btn-action-status.active:active {
+      transform: scale(0.98);
+    }
+
+    @keyframes pulseActive {
+      0% { box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35); }
+      50% { box-shadow: 0 8px 24px rgba(37, 211, 102, 0.65); }
+      100% { box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35); }
+    }
+
+    /* Disabled State (Outside 50m / GPS Off) */
+    .btn-action-status.disabled {
+      background: #1B202E;
+      color: #64748B;
+      border: 1px solid #283046;
+      box-shadow: none;
+      cursor: not-allowed;
+      filter: grayscale(0.5);
+    }
+
+    /* Helper Alert Box */
+    .helper-box {
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.75rem;
+      line-height: 1.45;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .helper-box.warning {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #FCA5A5;
+    }
+
+    .helper-box.success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #86EFAC;
+    }
+
+    .pin-tip {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.4;
+      padding: 0 4px;
+    }
+
+    .pin-tip b {
+      color: #CBD5E1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SIMULATOR TESTING BAR (Untuk Uji Coba Cepat di Browser / HP) -->
+  <div class="sim-bar">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-weight:750; color:#93C5FD;">🧪 SIMULATOR PENGUJIAN:</span>
+      <span style="color:var(--text-muted); font-size:0.7rem;">Coba kondisi di bawah:</span>
+    </div>
+    <div class="sim-buttons">
+      <button class="btn-sim active" onclick="setSimScenario('inside')">🟢 Di Toko (18m)</button>
+      <button class="btn-sim" onclick="setSimScenario('outside')">🔴 Luar Toko (120m)</button>
+      <button class="btn-sim" onclick="setSimScenario('gps_off')">⚠️ GPS Mati</button>
+      <button class="btn-sim" onclick="setSimScenario('real_gps')">🛰️ Gunakan GPS Asli HP</button>
+    </div>
+  </div>
+
+  <!-- DIALOG FOKUS UTAMA -->
+  <div class="dialog-card">
+    
+    <!-- Header Dialog -->
+    <div class="dialog-header">
+      <div class="header-left">
+        <div class="header-icon">📍</div>
+        <div class="header-titles">
+          <h1>Verifikasi Lokasi &amp; Status WA</h1>
+          <p>KSP Check &bull; Absensi Otomatis Kasir</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body Dialog -->
+    <div class="dialog-body">
+
+      <!-- Panel Pengecekan Lokasi GPS Real-Time -->
+      <div id="locationPanel" class="location-panel valid">
+        <div class="loc-top-row">
+          <div class="store-info">
+            <span class="store-label">CABANG TOKO TUJUAN:</span>
+            <div id="storeNameText" class="store-name">
+              <span>🏢</span>
+              <span>Cabang Utama KSP Check</span>
+            </div>
+          </div>
+          <button type="button" id="btnRefreshLoc" class="btn-refresh-loc" onclick="refreshLocationCheck()">
+            <svg id="refreshIcon" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+            <span id="btnRefreshLocText">Cek Ulang GPS</span>
+          </button>
+        </div>
+
+        <!-- Meter Box (Status & Jarak) -->
+        <div class="status-meter-box">
+          <div id="statusBadge" class="status-badge valid">
+            <span id="statusBadgeDot">●</span>
+            <span id="statusBadgeText">Terverifikasi di Toko</span>
+          </div>
+          <div>
+            <div id="distanceValueText" class="distance-val">18 meter</div>
+            <div class="distance-limit">Radius max: 50 meter</div>
+          </div>
+        </div>
+
+        <div class="accuracy-row">
+          <span id="accuracyText">Akurasi GPS: ±6m</span>
+          <span id="lastCheckTimeText">Diperiksa: Baru saja</span>
+        </div>
+      </div>
+
+      <!-- Pratinjau Foto Lampiran Status -->
+      <div class="photo-preview-box">
+        <div class="thumb-strip">
+          <img src="assets/icons/icon-store-192.png" alt="Thumb 1" class="thumb-item">
+          <img src="assets/icons/icon-192.png" alt="Thumb 2" class="thumb-item">
+        </div>
+        <div class="photo-info">
+          <div class="photo-count-title">2 Foto Lampiran Siap Dibagikan</div>
+          <div class="photo-sub">Foto opname stok &amp; promo yang diupload admin hari ini.</div>
+        </div>
+      </div>
+
+      <!-- KOTAK PESAN BANTUAN DINAMIS -->
+      <div id="helperBox" class="helper-box success">
+        <span id="helperIcon">✅</span>
+        <span id="helperText">
+          <b>Lokasi Terverifikasi!</b> Anda berada di dalam radius 50m toko. Tombol bagikan di bawah aktif dan siap digunakan.
+        </span>
+      </div>
+
+      <!-- TOMBOL AKSI UTAMA (AKTIF HANYA JIKA < 50m) -->
+      <button id="btnActionStatus" class="btn-action-status active" onclick="handleActionClick()">
+        <svg id="btnIcon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.04 14.69 2 12.04 2ZM12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.05 3.68C14.25 3.68 16.32 4.54 17.88 6.1C19.44 7.66 20.3 9.73 20.3 11.93C20.3 16.47 16.59 20.15 12.04 20.15Z"/>
+        </svg>
+        <span id="btnActionText">📲 Pasang Foto ke Status WhatsApp</span>
+      </button>
+
+      <!-- Tips Pin WhatsApp -->
+      <div class="pin-tip">
+        📌 <b>Tips Cepat:</b> Saat menu bagikan terbuka, <i>tekan &amp; tahan</i> ikon WhatsApp lalu pilih <b>Sematkan / Pin</b> agar selalu di urutan pertama tanpa perlu pencet titik tiga lagi!
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // State data prototype
+    const STORE_COORDS = { lat: -6.2088, lng: 106.8456 }; // Titik koordinat toko contoh
+    const MAX_ALLOWED_DISTANCE_METERS = 50; // Batas toleransi jarak 50 meter
+
+    let currentDistance = 18;
+    let isGpsActive = true;
+    let currentScenario = 'inside'; // 'inside' | 'outside' | 'gps_off' | 'real_gps'
+
+    function updateUIState() {
+      const panel = document.getElementById('locationPanel');
+      const badge = document.getElementById('statusBadge');
+      const badgeDot = document.getElementById('statusBadgeDot');
+      const badgeText = document.getElementById('statusBadgeText');
+      const distVal = document.getElementById('distanceValueText');
+      const helper = document.getElementById('helperBox');
+      const helperIcon = document.getElementById('helperIcon');
+      const helperText = document.getElementById('helperText');
+      const btn = document.getElementById('btnActionStatus');
+      const btnText = document.getElementById('btnActionText');
+
+      // Waktu periksa
+      const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      document.getElementById('lastCheckTimeText').textContent = 'Diperiksa: ' + now + ' WIB';
+
+      // 1. KONDISI: GPS MATI / DITOLAK
+      if (!isGpsActive) {
+        panel.className = 'location-panel pending';
+        badge.className = 'status-badge pending';
+        badgeDot.textContent = '⚠️';
+        badgeText.textContent = 'GPS Belum Aktif';
+        distVal.textContent = 'Tidak Terdeteksi';
+
+        helper.className = 'helper-box warning';
+        helperIcon.textContent = '⚠️';
+        helperText.innerHTML = '<b>GPS Belum Aktif / Ditolak.</b> Silakan aktifkan layanan lokasi (GPS) di HP Anda lalu ketuk tombol <b>Cek Ulang GPS</b>.';
+
+        btn.className = 'btn-action-status disabled';
+        btn.disabled = true;
+        btnText.textContent = '🔒 Tombol Terkunci (Aktifkan GPS)';
+        return;
+      }
+
+      // 2. KONDISI: DI LUAR RADIUS 50 METER
+      if (currentDistance > MAX_ALLOWED_DISTANCE_METERS) {
+        panel.className = 'location-panel invalid';
+        badge.className = 'status-badge invalid';
+        badgeDot.textContent = '🔴';
+        badgeText.textContent = 'Di Luar Area Toko';
+        distVal.textContent = `${currentDistance} meter`;
+
+        helper.className = 'helper-box warning';
+        helperIcon.textContent = '🚫';
+        helperText.innerHTML = `<b>Anda berada di luar area toko (${currentDistance}m).</b> Maksimal jarak adalah <b>${MAX_ALLOWED_DISTANCE_METERS} meter</b> dari titik toko untuk dapat membagikan status WhatsApp.`;
+
+        btn.className = 'btn-action-status disabled';
+        btn.disabled = true;
+        btnText.textContent = `🔒 Terkunci (Jarak: ${currentDistance}m > 50m)`;
+        return;
+      }
+
+      // 3. KONDISI: BERHASIL DI AREA TOKO (<= 50 METER)
+      panel.className = 'location-panel valid';
+      badge.className = 'status-badge valid';
+      badgeDot.textContent = '🟢';
+      badgeText.textContent = 'Terverifikasi di Toko';
+      distVal.textContent = `${currentDistance} meter`;
+
+      helper.className = 'helper-box success';
+      helperIcon.textContent = '✅';
+      helperText.innerHTML = `<b>Lokasi Terverifikasi!</b> Anda berada di dalam radius toko (${currentDistance}m &le; 50m). Absensi masuk otomatis tercatat &amp; tombol siap digunakan.`;
+
+      btn.className = 'btn-action-status active';
+      btn.disabled = false;
+      btnText.textContent = '📲 Pasang Foto ke Status WhatsApp';
+    }
+
+    // Tombol Cek Ulang GPS (Refresh)
+    function refreshLocationCheck() {
+      const btnRefresh = document.getElementById('btnRefreshLoc');
+      const btnRefreshText = document.getElementById('btnRefreshLocText');
+      btnRefresh.classList.add('spinning');
+      btnRefreshText.textContent = 'Mengunci...';
+
+      setTimeout(() => {
+        btnRefresh.classList.remove('spinning');
+        btnRefreshText.textContent = 'Cek Ulang GPS';
+
+        if (currentScenario === 'real_gps') {
+          useRealPhoneGps();
+        } else {
+          // Re-evaluate simulator
+          if (currentScenario === 'inside') {
+            currentDistance = Math.floor(Math.random() * 25) + 10; // 10-35 meter
+          } else if (currentScenario === 'outside') {
+            currentDistance = Math.floor(Math.random() * 80) + 75; // 75-155 meter
+          }
+          updateUIState();
+        }
+      }, 700);
+    }
+
+    // Alur Klik Tombol Utama
+    function handleActionClick() {
+      const btn = document.getElementById('btnActionStatus');
+      if (btn.disabled) return;
+
+      alert(`✅ Berhasil Terverifikasi!\n\nJarak ke Toko: ${currentDistance} meter.\nAbsensi otomatis dicatat ke Cloud.\n\nMembuka dialog WhatsApp... Pilih "Status saya" di urutan paling atas!`);
+
+      // Panggil Web Share jika didukung
+      if (navigator.share) {
+        navigator.share({
+          title: 'KSP Check - Status Toko',
+          text: `Halo, berikut foto update dari toko KSP Check (Terverifikasi di lokasi toko: ${currentDistance}m).`
+        }).catch(err => {
+          if (err.name !== 'AbortError') console.warn(err);
+        });
+      }
+    }
+
+    // Simulator Handler
+    function setSimScenario(mode) {
+      currentScenario = mode;
+      document.querySelectorAll('.btn-sim').forEach(b => b.classList.remove('active'));
+      const activeBtn = Array.from(document.querySelectorAll('.btn-sim')).find(b => b.getAttribute('onclick').includes(mode));
+      if (activeBtn) activeBtn.classList.add('active');
+
+      if (mode === 'inside') {
+        isGpsActive = true;
+        currentDistance = 18;
+        document.getElementById('accuracyText').textContent = 'Akurasi GPS: ±6m';
+        updateUIState();
+      } else if (mode === 'outside') {
+        isGpsActive = true;
+        currentDistance = 120;
+        document.getElementById('accuracyText').textContent = 'Akurasi GPS: ±12m';
+        updateUIState();
+      } else if (mode === 'gps_off') {
+        isGpsActive = false;
+        currentDistance = 9999;
+        document.getElementById('accuracyText').textContent = 'Akurasi GPS: -';
+        updateUIState();
+      } else if (mode === 'real_gps') {
+        useRealPhoneGps();
+      }
+    }
+
+    // Deteksi GPS Asli HP
+    function useRealPhoneGps() {
+      if (!navigator.geolocation) {
+        alert('Browser ini tidak mendukung GPS!');
+        setSimScenario('gps_off');
+        return;
+      }
+
+      const accText = document.getElementById('accuracyText');
+      accText.textContent = 'Mencari sinyal GPS HP...';
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          isGpsActive = true;
+          const userLat = pos.coords.latitude;
+          const userLng = pos.coords.longitude;
+          const accuracy = Math.round(pos.coords.accuracy || 0);
+
+          accText.textContent = `Akurasi GPS: ±${accuracy}m`;
+
+          // Hitung jarak ke STORE_COORDS menggunakan Haversine formula
+          const R = 6371e3; // meter
+          const φ1 = userLat * Math.PI / 180;
+          const φ2 = STORE_COORDS.lat * Math.PI / 180;
+          const Δφ = (STORE_COORDS.lat - userLat) * Math.PI / 180;
+          const Δλ = (STORE_COORDS.lng - userLng) * Math.PI / 180;
+          const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          const dist = Math.round(R * c);
+
+          currentDistance = dist;
+          updateUIState();
+        },
+        (err) => {
+          isGpsActive = false;
+          accText.textContent = 'Izin lokasi ditolak';
+          updateUIState();
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
+    // Inisialisasi awal
+    window.addEventListener('DOMContentLoaded', () => {
+      updateUIState();
+    });
+  </script>
+</body>
+</html>

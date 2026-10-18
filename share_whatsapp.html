@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Bagikan Gambar & Absensi - KSP Check</title>
+  <title>Verifikasi Lokasi & Status WhatsApp - KSP Check</title>
   <meta name="theme-color" content="#128C7E">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Absen & Share WA">
+  <meta name="apple-mobile-web-app-title" content="Status WA & Absen">
 
   <!-- Dynamic Web App Manifest -->
   <link rel="manifest" id="appManifest" href="manifest-share.json">
@@ -20,18 +20,18 @@
 
   <style>
     :root {
-      --bg: #0F1117;
-      --card-bg: #181C27;
-      --card-border: #262B3D;
+      --bg: #0A0C10;
+      --card-bg: #141824;
+      --card-border: #23293D;
       --primary: #25D366;
       --primary-hover: #1EBE5D;
       --primary-dark: #128C7E;
       --text: #FFFFFF;
-      --text-muted: #8A92A6;
+      --text-muted: #8E98B0;
       --accent: #4F8EF7;
       --warning: #F59E0B;
       --danger: #EF4444;
-      --radius: 14px;
+      --radius: 16px;
     }
 
     * {
@@ -50,15 +50,17 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: flex-start;
       padding: 1.25rem 1rem 2.5rem;
+      background-image: radial-gradient(circle at 50% 10%, rgba(37, 211, 102, 0.08) 0%, transparent 60%);
     }
 
     .container {
       width: 100%;
-      max-width: 540px;
+      max-width: 480px;
       display: flex;
       flex-direction: column;
-      gap: 1.15rem;
+      gap: 1rem;
     }
 
     header {
@@ -72,7 +74,7 @@
       justify-content: center;
       gap: 8px;
       flex-wrap: wrap;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.4rem;
     }
 
     .badge {
@@ -82,7 +84,7 @@
       background: rgba(37, 211, 102, 0.12);
       color: #25D366;
       font-size: 0.78rem;
-      font-weight: 600;
+      font-weight: 700;
       padding: 4px 10px;
       border-radius: 999px;
       border: 1px solid rgba(37, 211, 102, 0.25);
@@ -96,24 +98,11 @@
       letter-spacing: 0.5px;
     }
 
-    h1 {
-      font-size: 1.35rem;
-      font-weight: 700;
-      margin-bottom: 0.35rem;
-      color: #FFF;
-    }
-
-    p.subtitle {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
-
-    /* Status Message */
+    /* Status Message Alert */
     .status-msg {
       display: none;
       padding: 0.75rem 1rem;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 0.84rem;
       line-height: 1.4;
       text-align: center;
@@ -140,194 +129,391 @@
       border: 1px solid rgba(239, 68, 68, 0.3);
     }
 
-    /* TASK STEPPER BOX */
-    .task-container {
+    /* FOCUS DIALOG CARD */
+    .dialog-card {
+      width: 100%;
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: var(--radius);
-      padding: 1.15rem;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04);
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     }
 
-    .task-card {
-      background: #11141F;
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      transition: all 0.25s ease;
-    }
-
-    .task-card.active {
-      border-color: rgba(37, 211, 102, 0.4);
-      background: rgba(37, 211, 102, 0.03);
-    }
-
-    .task-card.completed {
-      border-color: rgba(16, 185, 129, 0.4);
-      background: rgba(16, 185, 129, 0.05);
-    }
-
-    .task-header {
+    .dialog-header {
+      padding: 16px 18px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+      gap: 12px;
     }
 
-    .task-badge-step {
-      font-size: 0.75rem;
-      font-weight: 800;
-      color: var(--accent);
-      background: rgba(79, 142, 247, 0.15);
-      padding: 2px 8px;
-      border-radius: 6px;
-    }
-
-    .task-badge-step.done {
-      color: #10B981;
-      background: rgba(16, 185, 129, 0.15);
-    }
-
-    .task-title {
-      font-size: 0.95rem;
-      font-weight: 750;
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* GPS Location Indicator */
-    .location-box {
-      background: #0B0D13;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 8px;
-      padding: 0.65rem 0.85rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      font-size: 0.8rem;
-    }
-
-    .location-status {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 700;
-    }
-
-    .location-status.valid {
-      color: #10B981;
-    }
-
-    .location-status.invalid {
-      color: #EF4444;
-    }
-
-    .location-status.pending {
-      color: #F59E0B;
-    }
-
-    /* Form Fields for Attendance */
-    .form-row {
-      display: flex;
-      gap: 8px;
-    }
-
-    .form-field {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .form-field label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--text-muted);
-    }
-
-    .form-input-sm, .form-select-sm {
-      background: #181C27;
-      border: 1px solid var(--card-border);
-      color: #FFF;
-      border-radius: 8px;
-      padding: 0.5rem 0.7rem;
-      font-size: 0.85rem;
-      outline: none;
-    }
-
-    .form-input-sm:focus, .form-select-sm:focus {
-      border-color: var(--primary);
-    }
-
-    /* Buttons */
-    .btn-task {
-      padding: 0.85rem 1rem;
+    .header-icon {
+      width: 38px;
+      height: 38px;
       border-radius: 10px;
-      font-size: 0.95rem;
-      font-weight: 800;
-      cursor: pointer;
+      background: rgba(37, 211, 102, 0.15);
+      border: 1px solid rgba(37, 211, 102, 0.3);
+      color: #25D366;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      border: none;
-      transition: all 0.15s ease;
-      width: 100%;
+      font-size: 20px;
+      flex-shrink: 0;
     }
 
-    .btn-task-attend {
-      background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+    .header-titles h1 {
+      font-size: 1.05rem;
+      font-weight: 800;
       color: #FFF;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      line-height: 1.25;
     }
 
-    .btn-task-attend:active {
+    .header-titles p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .dialog-body {
+      padding: 16px 18px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Location Check Panel */
+    .location-panel {
+      background: #0B0E17;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.25s ease;
+    }
+
+    .location-panel.valid {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.04);
+    }
+
+    .location-panel.invalid {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.04);
+    }
+
+    .location-panel.pending {
+      border-color: rgba(245, 158, 11, 0.4);
+      background: rgba(245, 158, 11, 0.04);
+    }
+
+    .loc-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .store-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .store-label {
+      font-size: 0.7rem;
+      font-weight: 750;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .store-name {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Refresh Button */
+    .btn-refresh-loc {
+      background: #181D2B;
+      border: 1px solid var(--card-border);
+      color: #93C5FD;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .btn-refresh-loc:hover {
+      background: #20273A;
+      border-color: var(--accent);
+      color: #FFF;
+    }
+
+    .btn-refresh-loc.spinning svg {
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Status Meter Box */
+    .status-meter-box {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .status-badge.valid {
+      background: rgba(16, 185, 129, 0.16);
+      color: #10B981;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .status-badge.invalid {
+      background: rgba(239, 68, 68, 0.16);
+      color: #EF4444;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .status-badge.pending {
+      background: rgba(245, 158, 11, 0.16);
+      color: #F59E0B;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .distance-val {
+      font-size: 0.84rem;
+      font-weight: 800;
+      color: #FFF;
+      text-align: right;
+    }
+
+    .distance-limit {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    .accuracy-row {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 2px;
+    }
+
+    /* Photo Preview Section */
+    .photo-preview-box {
+      background: #0B0E17;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .thumb-strip {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      max-width: 140px;
+    }
+
+    .thumb-item {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid var(--card-border);
+      flex-shrink: 0;
+      background: #181C27;
+      cursor: pointer;
+    }
+
+    .photo-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .photo-count-title {
+      font-size: 0.84rem;
+      font-weight: 750;
+      color: #FFF;
+    }
+
+    .photo-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    /* Dynamic Helper Alert Box */
+    .helper-box {
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.76rem;
+      line-height: 1.45;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .helper-box.warning {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #FCA5A5;
+    }
+
+    .helper-box.success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #86EFAC;
+    }
+
+    /* ACTION BUTTON (Disabled vs Active) */
+    .btn-action-status {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 850;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border: none;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .btn-action-status.active {
+      background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+      color: #FFFFFF;
+      box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+      cursor: pointer;
+      animation: pulseActive 2s infinite;
+    }
+
+    .btn-action-status.active:active {
       transform: scale(0.98);
     }
 
-    .btn-task-share {
-      background: linear-gradient(135deg, #25D366, #128C7E);
-      color: #FFF;
-      box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
+    @keyframes pulseActive {
+      0% { box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35); }
+      50% { box-shadow: 0 8px 24px rgba(37, 211, 102, 0.65); }
+      100% { box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35); }
     }
 
-    .btn-task-share.pulse {
-      animation: pulseGlow 1.8s infinite;
+    .btn-action-status.disabled {
+      background: #1B202E;
+      color: #64748B;
+      border: 1px solid #283046;
+      box-shadow: none;
+      cursor: not-allowed;
+      filter: grayscale(0.5);
     }
 
-    @keyframes pulseGlow {
-      0% { transform: scale(1); box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35); }
-      50% { transform: scale(1.02); box-shadow: 0 6px 22px rgba(37, 211, 102, 0.65); }
-      100% { transform: scale(1); box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35); }
+    /* 3-Step Guide */
+    .status-guide-box {
+      background: rgba(37, 211, 102, 0.05);
+      border: 1px solid rgba(37, 211, 102, 0.25);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      font-size: 0.77rem;
+      color: #CBD5E1;
+      line-height: 1.45;
     }
 
+    .guide-step-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .guide-num {
+      background: rgba(37, 211, 102, 0.2);
+      color: #25D366;
+      font-weight: 800;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      flex-shrink: 0;
+    }
+
+    .pin-tip-row {
+      margin-top: 4px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.1);
+      font-size: 0.72rem;
+      color: #94A3B8;
+    }
+
+    /* Buttons Secondary & Shortcut */
     .btn-secondary {
-      background: #222736;
+      background: #181D2B;
       border: 1px solid var(--card-border);
       color: #CBD5E1;
-      padding: 0.55rem;
-      border-radius: 8px;
+      padding: 0.65rem 1rem;
+      border-radius: 10px;
       font-size: 0.8rem;
-      font-weight: 500;
+      font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
       transition: background 0.2s;
+      width: 100%;
     }
 
     .btn-secondary:hover {
-      background: #2A3144;
+      background: #22293D;
       color: #FFF;
     }
 
@@ -337,8 +523,8 @@
       color: #93C5FD;
       padding: 0.75rem 1rem;
       border-radius: 10px;
-      font-size: 0.88rem;
-      font-weight: 600;
+      font-size: 0.86rem;
+      font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -352,7 +538,7 @@
       background: rgba(79, 142, 247, 0.2);
     }
 
-    /* Gallery Grid */
+    /* Gallery Grid (Individual actions) */
     .gallery-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -402,14 +588,14 @@
       align-items: center;
       justify-content: center;
       min-height: 120px;
-      max-height: 280px;
+      max-height: 260px;
       overflow: hidden;
       border: 1px solid rgba(255,255,255,0.05);
     }
 
     .image-wrapper img {
       max-width: 100%;
-      max-height: 260px;
+      max-height: 240px;
       object-fit: contain;
       border-radius: 4px;
       cursor: pointer;
@@ -421,7 +607,7 @@
       flex-wrap: wrap;
     }
 
-    /* Manual Password Card */
+    /* Password Card */
     .password-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -450,10 +636,10 @@
       text-align: center;
       letter-spacing: 2px;
       text-transform: uppercase;
+      outline: none;
     }
 
     .password-input:focus {
-      outline: none;
       border-color: var(--primary);
     }
 
@@ -492,11 +678,7 @@
       animation: spin 0.8s linear infinite;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* Modal Panduan Shortcut */
+    /* Guide Modal */
     .guide-modal-backdrop {
       display: none;
       position: fixed;
@@ -564,21 +746,19 @@
       <div class="badge-bar">
         <div class="badge">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 2.17.7 4.19 1.94 5.84L2.8 21.2l3.47-1.11C7.88 21.22 9.87 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/></svg>
-          KSP Check &bull; Absensi &amp; WhatsApp
+          KSP Check &bull; Status WA &amp; Absensi
         </div>
         <div id="codeBadge" class="badge badge-code" style="display:none;"></div>
       </div>
-      <h1 id="pageTitle">Absensi &amp; Bagikan ke WhatsApp</h1>
-      <p id="pageSubtitle" class="subtitle">Memuat data foto dan mengunci koordinat GPS toko...</p>
     </header>
 
     <!-- Status Message Alert -->
     <div id="status-msg" class="status-msg"></div>
 
-    <!-- Form Password Manual (jika tanpa parameter URL atau salah) -->
+    <!-- Form Password Manual (jika tanpa parameter URL) -->
     <div id="manualCard" class="password-card" style="display: none;">
       <div style="font-size: 1.05rem; font-weight: 700; color: #FFF;">Masukkan Password / Kode Akses</div>
-      <p style="font-size: 0.85rem; color: var(--text-muted);">Masukkan kode acak dari Store Manager untuk membuka foto dan alur absensi.</p>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">Masukkan kode acak dari Store Manager untuk membuka foto dan status WhatsApp.</p>
       <div class="password-input-group">
         <input type="text" id="manualCodeInput" class="password-input" placeholder="KODE..." maxlength="16" autofocus>
         <button class="btn-submit-code" onclick="submitManualCode()">Buka</button>
@@ -592,121 +772,105 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- SMART TASK STEPPER DIALOG: TASK 1 (ABSENSI GPS) & TASK 2 (SHARE WA) -->
+    <!-- DIALOG UTAMA: VERIFIKASI LOKASI GPS & STATUS WHATSAPP -->
     <!-- ========================================================================= -->
-    <div id="taskSection" class="task-container" style="display: none;">
+    <div id="focusDialogCard" class="dialog-card" style="display: none;">
       
-      <!-- TASK 1: ABSENSI KARYAWAN & CEK LOKASI TOKO -->
-      <div id="task1Card" class="task-card active">
-        <div class="task-header">
-          <div class="task-title">
-            <span>📍</span>
-            <span>Task 1: Absensi Masuk &amp; Cek Lokasi Toko</span>
-          </div>
-          <span id="task1StepBadge" class="task-badge-step">Langkah 1</span>
-        </div>
-
-        <!-- Indikator Lokasi GPS Toko -->
-        <div class="location-box">
-          <div>
-            <div style="font-size: 0.72rem; color: var(--text-muted);">TARGET CABANG TOKO:</div>
-            <div id="taskStoreName" style="font-weight: 750; color: #FFF;">Mendeteksi Toko...</div>
-          </div>
-          <div id="locationStatus" class="location-status pending">
-            <span>⏳</span>
-            <span id="locationStatusText">Mencari GPS...</span>
-          </div>
-        </div>
-
-        <!-- Detail Jarak & Akurasi -->
-        <div id="locationDetailRow" style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; padding: 0 4px;">
-          <span id="locationDistanceText">Jarak: Menghitung...</span>
-          <span id="locationAccuracyText">Akurasi GPS: -</span>
-        </div>
-
-        <!-- Form Nama Kasir & Shift -->
-        <div id="attendanceFormFields" style="display: flex; flex-direction: column; gap: 8px;">
-          <div class="form-row">
-            <div class="form-field">
-              <label for="attEmpName">Nama Kasir / Karyawan:</label>
-              <input type="text" id="attEmpName" class="form-input-sm" placeholder="Nama Anda..." required>
-            </div>
-            <div class="form-field" style="max-width: 130px;">
-              <label for="attShiftSelect">Shift:</label>
-              <select id="attShiftSelect" class="form-select-sm">
-                <option value="1">Shift 1 (Pagi)</option>
-                <option value="2">Shift 2 (Siang)</option>
-                <option value="3">Shift 3 (Malam)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- Konfirmasi Status Jika Sudah Absen -->
-        <div id="attSuccessBanner" style="display: none; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 10px; font-size: 0.82rem; color: #86EFAC;">
-          <div style="font-weight: 750; margin-bottom: 2px;">✅ Absensi Masuk Berhasil Dicatat!</div>
-          <div id="attSuccessDetail" style="font-size: 0.76rem; color: #CBD5E1;">Tercatat di Cloud Supabase</div>
-        </div>
-
-        <!-- Tombol Aksi Task 1 -->
-        <button type="button" id="btnConfirmAttendance" class="btn-task btn-task-attend" onclick="confirmAttendance()">
-          <span>📍</span>
-          <span id="btnConfirmAttendanceText">Konfirmasi &amp; Kirim Absen Masuk</span>
-        </button>
-
-        <div style="text-align: right;">
-          <button type="button" style="background: none; border: none; color: var(--text-muted); font-size: 0.75rem; text-decoration: underline; cursor: pointer;" onclick="skipAttendance()">
-            Lewati Absen &amp; Langsung Bagikan Foto &rarr;
-          </button>
+      <!-- Header Dialog -->
+      <div class="dialog-header">
+        <div class="header-icon">📍</div>
+        <div class="header-titles">
+          <h1 id="pageTitle">Verifikasi Lokasi &amp; Status WA</h1>
+          <p id="pageSubtitle">Mengecek jarak toko &bull; Absensi otomatis kasir</p>
         </div>
       </div>
 
-      <!-- TASK 2: PASANG FOTO KE STATUS WHATSAPP -->
-      <div id="task2Card" class="task-card">
-        <div class="task-header">
-          <div class="task-title">
-            <span>🟢</span>
-            <span>Task 2: Pasang Foto ke Status WhatsApp</span>
+      <!-- Body Dialog -->
+      <div class="dialog-body">
+
+        <!-- Panel Pengecekan Lokasi GPS Real-Time -->
+        <div id="locationPanel" class="location-panel pending">
+          <div class="loc-top-row">
+            <div class="store-info">
+              <span class="store-label">CABANG TOKO TUJUAN:</span>
+              <div id="taskStoreName" class="store-name">
+                <span>🏢</span>
+                <span id="storeNameText">Mendeteksi Cabang Toko...</span>
+              </div>
+            </div>
+            <button type="button" id="btnRefreshLoc" class="btn-refresh-loc" onclick="refreshLocationCheck()">
+              <svg id="refreshIcon" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+              <span id="btnRefreshLocText">Cek Ulang GPS</span>
+            </button>
           </div>
-          <span id="task2StepBadge" class="task-badge-step">Langkah 2</span>
+
+          <!-- Meter Box (Status & Jarak) -->
+          <div class="status-meter-box">
+            <div id="statusBadge" class="status-badge pending">
+              <span id="statusBadgeDot">⏳</span>
+              <span id="statusBadgeText">Mencari GPS...</span>
+            </div>
+            <div>
+              <div id="distanceValueText" class="distance-val">Menghitung...</div>
+              <div id="distanceLimitText" class="distance-limit">Radius max: 50 meter</div>
+            </div>
+          </div>
+
+          <div class="accuracy-row">
+            <span id="locationAccuracyText">Akurasi GPS: -</span>
+            <span id="lastCheckTimeText">Diperiksa: Baru saja</span>
+          </div>
         </div>
 
-        <p id="task2Subtitle" style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.45;">
-          Ketuk tombol di bawah untuk mengirim foto dan keterangan langsung ke <b>Status Saya (Status WhatsApp)</b>.
-        </p>
+        <!-- Pratinjau Foto Lampiran Status -->
+        <div id="photoPreviewBox" class="photo-preview-box">
+          <div id="thumbStrip" class="thumb-strip"></div>
+          <div class="photo-info">
+            <div id="photoCountTitle" class="photo-count-title">0 Foto Lampiran</div>
+            <div id="photoSubTitle" class="photo-sub">Foto opname stok &amp; promo siap dibagikan.</div>
+          </div>
+        </div>
 
-        <!-- Tombol Utama: Pasang ke Status WhatsApp -->
-        <button id="btnShareWhatsAppTask" class="btn-task btn-task-share pulse" onclick="executeShareWhatsApp()">
+        <!-- Kotak Pesan Bantuan Dinamis -->
+        <div id="helperBox" class="helper-box warning">
+          <span id="helperIcon">⏳</span>
+          <span id="helperText">
+            <b>Mendeteksi Lokasi...</b> Mohon tunggu sebentar, sistem sedang mengunci sinyal GPS HP Anda.
+          </span>
+        </div>
+
+        <!-- TOMBOL AKSI UTAMA: AKTIF HANYA JIKA JARAK <= 50 METER -->
+        <button id="btnActionStatus" class="btn-action-status disabled" disabled onclick="executeShareAndAttendance()">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.04 14.69 2 12.04 2ZM12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.05 3.68C14.25 3.68 16.32 4.54 17.88 6.1C19.44 7.66 20.3 9.73 20.3 11.93C20.3 16.47 16.59 20.15 12.04 20.15ZM16.56 14.39C16.31 14.27 15.09 13.67 14.86 13.59C14.63 13.51 14.47 13.47 14.3 13.71C14.13 13.95 13.65 14.51 13.5 14.68C13.36 14.84 13.22 14.87 12.97 14.74C12.72 14.62 11.92 14.36 10.97 13.51C10.23 12.85 9.73 12.03 9.58 11.78C9.43 11.53 9.56 11.4 9.69 11.27C9.8 11.16 9.93 10.99 10.05 10.84C10.17 10.7 10.22 10.59 10.3 10.43C10.38 10.26 10.34 10.12 10.28 10C10.22 9.88 9.73 8.68 9.53 8.18C9.33 7.7 9.13 7.76 8.98 7.75C8.84 7.74 8.68 7.74 8.51 7.74C8.35 7.74 8.08 7.8 7.86 8.04C7.64 8.28 7.02 8.86 7.02 10.04C7.02 11.22 7.88 12.35 8 12.51C8.12 12.67 9.7 15.11 12.13 16.16C12.71 16.41 13.16 16.56 13.51 16.67C14.09 16.86 14.62 16.83 15.04 16.77C15.51 16.7 16.49 16.18 16.69 15.61C16.89 15.04 16.89 14.55 16.83 14.45C16.77 14.35 16.61 14.31 16.56 14.39Z"/>
           </svg>
-          <span id="btnShareWhatsAppTaskText">📲 Pasang Foto ke Status WhatsApp</span>
+          <span id="btnActionStatusText">🔒 Tombol Terkunci (Aktifkan GPS)</span>
         </button>
 
-        <!-- Panduan 3 Langkah Cepat & Trik Pin Tanpa Titik Tiga -->
-        <div style="background: rgba(37, 211, 102, 0.06); border: 1px solid rgba(37, 211, 102, 0.25); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; font-size: 0.78rem; color: #CBD5E1; line-height: 1.45;">
+        <!-- Panduan 3 Langkah Cepat Jadi Status WA -->
+        <div class="status-guide-box">
           <div style="font-weight: 750; color: #86EFAC; display: flex; align-items: center; gap: 5px;">
             <span>💡</span> Cara Cepat Jadi Status WhatsApp:
           </div>
-          <div style="display: flex; gap: 8px; align-items: flex-start;">
-            <span style="background: rgba(37,211,102,0.2); color: #25D366; font-weight: 800; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0;">1</span>
-            <span>Ketuk tombol hijau di atas &rarr; pilih <b>WhatsApp</b> di daftar aplikasi.</span>
+          <div class="guide-step-row">
+            <span class="guide-num">1</span>
+            <span>Ketuk tombol hijau di atas &rarr; pilih <b>WhatsApp</b> di menu bagikan.</span>
           </div>
-          <div style="display: flex; gap: 8px; align-items: flex-start;">
-            <span style="background: rgba(37,211,102,0.2); color: #25D366; font-weight: 800; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0;">2</span>
+          <div class="guide-step-row">
+            <span class="guide-num">2</span>
             <span>Di dalam WhatsApp, pilih opsi paling atas: <b>"Status saya"</b>.</span>
           </div>
-          <div style="display: flex; gap: 8px; align-items: flex-start;">
-            <span style="background: rgba(37,211,102,0.2); color: #25D366; font-weight: 800; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0;">3</span>
-            <span>Ketuk tanda panah kirim hijau ➡️. Foto &amp; keterangan otomatis terbit jadi status!</span>
+          <div class="guide-step-row">
+            <span class="guide-num">3</span>
+            <span>Ketuk tanda panah kirim hijau ➡️. Foto &amp; status otomatis terbit!</span>
           </div>
-          <div style="margin-top: 4px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1); font-size: 0.73rem; color: #94A3B8;">
-            📌 <b>Tips agar tidak perlu pencet titik tiga lagi:</b> Saat dialog bagikan Android muncul, <i>tekan &amp; tahan (long-press)</i> ikon WhatsApp lalu pilih <b>📌 Sematkan (Pin)</b>. WhatsApp akan langsung muncul di baris teratas selamanya!
+          <div class="pin-tip-row">
+            📌 <b>Tips agar tidak perlu pencet titik tiga lagi:</b> Saat menu bagikan Android muncul, <i>tekan &amp; tahan (long-press)</i> ikon WhatsApp lalu pilih <b>📌 Sematkan (Pin)</b>. WhatsApp akan langsung muncul di baris teratas selamanya!
           </div>
         </div>
 
-        <!-- Opsi Cadangan: Unduh Semua Foto ke Galeri HP Sekaligus -->
-        <button id="btnDownloadAllPhotos" class="btn-secondary" style="padding: 0.65rem 1rem; font-size: 0.8rem; width: 100%; border-radius: 8px;" onclick="downloadAllPhotosToGallery()">
+        <!-- Tombol Cadangan Unduh Semua Foto ke Galeri HP -->
+        <button id="btnDownloadAllPhotos" class="btn-secondary" onclick="downloadAllPhotosToGallery()">
           <span>📥</span>
           <span>Unduh Semua Foto ke Galeri HP</span>
         </button>
@@ -716,19 +880,19 @@
           <span>📲</span>
           <span>Pasang ke Home Screen sebagai Shortcut</span>
         </button>
-      </div>
 
+      </div>
     </div>
 
-    <!-- Galeri Foto Dinamis -->
+    <!-- Galeri Foto Detail (Di bawah dialog) -->
     <div id="galleryGrid" class="gallery-grid"></div>
 
     <footer>
-      &copy; KSP Check — WhatsApp Sharing &amp; Attendance Utility
+      &copy; KSP Check — WhatsApp Status &amp; Geofenced Attendance
     </footer>
   </div>
 
-  <!-- Modal Panduan Tambah ke Home Screen (iOS & Android Fallback) -->
+  <!-- Modal Panduan Tambah ke Home Screen -->
   <div id="guideModal" class="guide-modal-backdrop" onclick="closeGuideModal(event)">
     <div class="guide-modal-card" onclick="event.stopPropagation()">
       <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -776,19 +940,20 @@
   </div>
 
   <script>
+    const MAX_ALLOWED_DISTANCE_METERS = 50; // Batas radius toleransi toko 50 meter
+
     let currentCode = '';
-    let currentTitle = 'Lampiran Foto & Absensi KSP Check';
+    let currentTitle = 'Status WhatsApp & Absensi KSP Check';
     let currentImages = []; // Array of { name, dataUrl, size }
     let currentTemplate = '';
     let targetStoreData = null; // { id, name, lat, lng, radius }
     let allStoresList = [];
 
-    // GPS & Attendance State
+    // GPS State
     let userCoords = null; // { lat, lng, accuracy }
-    let isInsideStoreRadius = false;
+    let isGpsActive = false;
     let distanceToStoreMeters = null;
-    let attendanceCompleted = false;
-    let lastAttendanceInfo = null;
+    let isInsideStoreRadius = false;
 
     let deferredInstallPrompt = null;
     let isFromHomeScreen = false;
@@ -801,7 +966,6 @@
       if (btn) btn.style.display = 'flex';
     });
 
-    // Utilitas Status Alert
     function showStatus(text, type = 'info') {
       const el = document.getElementById('status-msg');
       if (!el) return;
@@ -815,7 +979,6 @@
       if (el) el.style.display = 'none';
     }
 
-    // Helper: Konversi Base64 Data URL ke File object
     async function dataUrlToFile(dataUrl, fileName) {
       const res = await fetch(dataUrl);
       const blob = await res.blob();
@@ -823,9 +986,9 @@
       return new File([blob], fileName, { type: mime });
     }
 
-    // Helper: Haversine distance formula (meter)
+    // Haversine distance formula (meter)
     function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
-      const R = 6371e3; // Earth radius in meters
+      const R = 6371e3;
       const φ1 = lat1 * Math.PI / 180;
       const φ2 = lat2 * Math.PI / 180;
       const Δφ = (lat2 - lat1) * Math.PI / 180;
@@ -838,7 +1001,6 @@
       return Math.round(R * c);
     }
 
-    // Ambil kode / password dari URL
     function extractCodeFromUrl() {
       const urlParams = new URLSearchParams(window.location.search);
       let code = urlParams.get('code') || urlParams.get('p') || urlParams.get('pwd') || urlParams.get('pass');
@@ -847,7 +1009,6 @@
         isFromHomeScreen = true;
       }
 
-      // Format raw query: share_whatsapp.html?XXXXXXX
       if (!code && window.location.search) {
         let raw = window.location.search.replace(/^\?/, '').trim();
         if (raw) {
@@ -865,18 +1026,18 @@
     }
 
     // =========================================================================
-    // BACKGROUND GPS AUTO-DETECTION
+    // GPS LOCATION CHECK & REFRESH LOGIC
     // =========================================================================
     function startBackgroundGpsDetection() {
       if (!navigator.geolocation) {
-        updateGpsStatusUI('unsupported', 'Perangkat tidak mendukung GPS');
+        isGpsActive = false;
+        updateLocationAndButtonUI();
         return;
       }
 
-      updateGpsStatusUI('pending', 'Mengunci lokasi GPS...');
-
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          isGpsActive = true;
           userCoords = {
             lat: pos.coords.latitude,
             lng: pos.coords.longitude,
@@ -886,22 +1047,64 @@
         },
         (err) => {
           console.warn('GPS position error:', err);
-          updateGpsStatusUI('error', 'Izin GPS ditolak atau sinyal lemah');
+          isGpsActive = false;
+          userCoords = null;
+          updateLocationAndButtonUI();
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 15000 }
+      );
+    }
+
+    function refreshLocationCheck() {
+      const btnRefresh = document.getElementById('btnRefreshLoc');
+      const btnRefreshText = document.getElementById('btnRefreshLocText');
+      if (btnRefresh) btnRefresh.classList.add('spinning');
+      if (btnRefreshText) btnRefreshText.textContent = 'Mengunci...';
+
+      if (!navigator.geolocation) {
+        alert('Browser atau perangkat ini tidak mendukung GPS!');
+        if (btnRefresh) btnRefresh.classList.remove('spinning');
+        if (btnRefreshText) btnRefreshText.textContent = 'Cek Ulang GPS';
+        isGpsActive = false;
+        updateLocationAndButtonUI();
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (btnRefresh) btnRefresh.classList.remove('spinning');
+          if (btnRefreshText) btnRefreshText.textContent = 'Cek Ulang GPS';
+          isGpsActive = true;
+          userCoords = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: Math.round(pos.coords.accuracy || 0)
+          };
+          evaluateStoreDistance();
+        },
+        (err) => {
+          if (btnRefresh) btnRefresh.classList.remove('spinning');
+          if (btnRefreshText) btnRefreshText.textContent = 'Cek Ulang GPS';
+          console.warn('Refresh GPS error:', err);
+          isGpsActive = false;
+          userCoords = null;
+          updateLocationAndButtonUI();
+          showStatus('⚠️ Izin lokasi GPS ditolak atau sinyal lemah. Silakan aktifkan GPS di pengaturan HP Anda.', 'error');
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     }
 
     function evaluateStoreDistance() {
-      if (!userCoords) return;
-
-      // Update akurasi teks
-      const accEl = document.getElementById('locationAccuracyText');
-      if (accEl) accEl.textContent = `Akurasi GPS: ±${userCoords.accuracy}m`;
+      if (!userCoords) {
+        isGpsActive = false;
+        updateLocationAndButtonUI();
+        return;
+      }
 
       let storeToMatch = targetStoreData;
 
-      // Jika targetStore adalah 'all' atau belum punya koordinat, cari cabang terdekat dari allStoresList
+      // Jika targetStore belum diset koordinat spesifik, cari toko terdekat dari allStoresList
       if ((!storeToMatch || !storeToMatch.lat) && allStoresList.length > 0) {
         let nearestDist = Infinity;
         let nearestStore = null;
@@ -917,7 +1120,7 @@
                 name: st.name,
                 lat: parseFloat(coords.lat),
                 lng: parseFloat(coords.lng),
-                radius: st.radius_meters || 50
+                radius: st.radius_meters || MAX_ALLOWED_DISTANCE_METERS
               };
             }
           }
@@ -929,62 +1132,122 @@
         }
       }
 
+      const storeNameText = document.getElementById('storeNameText');
+      if (storeNameText && storeToMatch) {
+        storeNameText.textContent = storeToMatch.name || 'Cabang KSP Check';
+      }
+
       if (!storeToMatch || !storeToMatch.lat) {
-        updateGpsStatusUI('valid', 'GPS Aktif (Koordinat Terkunci)');
-        const distEl = document.getElementById('locationDistanceText');
-        if (distEl) distEl.textContent = 'Jarak: Toko belum set titik koordinat';
+        // Toko belum set titik koordinat di database -> ijinkan dengan status aktif
+        distanceToStoreMeters = 0;
         isInsideStoreRadius = true;
+        updateLocationAndButtonUI();
         return;
       }
 
-      // Hitung jarak ke toko
-      const radius = storeToMatch.radius || 50; // default 50 meter
+      const radius = storeToMatch.radius || MAX_ALLOWED_DISTANCE_METERS;
       const distance = calculateDistanceMeters(userCoords.lat, userCoords.lng, storeToMatch.lat, storeToMatch.lng);
       distanceToStoreMeters = distance;
 
-      const storeNameEl = document.getElementById('taskStoreName');
-      if (storeNameEl) storeNameEl.textContent = storeToMatch.name;
-
-      const distEl = document.getElementById('locationDistanceText');
-      if (distEl) distEl.textContent = `Jarak ke toko: ${distance} meter`;
-
       if (distance <= radius) {
         isInsideStoreRadius = true;
-        updateGpsStatusUI('valid', `🟢 Di Area Toko (${distance}m)`);
       } else {
         isInsideStoreRadius = false;
-        updateGpsStatusUI('invalid', `🔴 Di Luar Toko (${distance}m > ${radius}m)`);
       }
-    }
 
-    function updateGpsStatusUI(type, text) {
-      const statusBox = document.getElementById('locationStatus');
-      const textEl = document.getElementById('locationStatusText');
-      if (!statusBox || !textEl) return;
-
-      statusBox.className = 'location-status';
-      if (type === 'valid') {
-        statusBox.classList.add('valid');
-        textEl.innerHTML = text;
-      } else if (type === 'invalid') {
-        statusBox.classList.add('invalid');
-        textEl.innerHTML = text;
-      } else if (type === 'error') {
-        statusBox.classList.add('invalid');
-        textEl.innerHTML = `⚠️ ${text}`;
-      } else {
-        statusBox.classList.add('pending');
-        textEl.innerHTML = `⏳ ${text}`;
-      }
+      updateLocationAndButtonUI();
     }
 
     // =========================================================================
-    // LOAD DATA DARI SUPABASE CLOUD
+    // UPDATE UI STATE & TOMBOL AKTIF / TERKUNCI (DISABLED)
+    // =========================================================================
+    function updateLocationAndButtonUI() {
+      const panel = document.getElementById('locationPanel');
+      const badge = document.getElementById('statusBadge');
+      const badgeDot = document.getElementById('statusBadgeDot');
+      const badgeText = document.getElementById('statusBadgeText');
+      const distVal = document.getElementById('distanceValueText');
+      const accuracyEl = document.getElementById('locationAccuracyText');
+      const lastCheckEl = document.getElementById('lastCheckTimeText');
+      const helper = document.getElementById('helperBox');
+      const helperIcon = document.getElementById('helperIcon');
+      const helperText = document.getElementById('helperText');
+      const btn = document.getElementById('btnActionStatus');
+      const btnText = document.getElementById('btnActionStatusText');
+
+      if (!panel || !badge || !btn) return;
+
+      const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      if (lastCheckEl) lastCheckEl.textContent = 'Diperiksa: ' + now + ' WIB';
+
+      // 1. KONDISI: GPS BELUM AKTIF ATAU IZIN DITOLAK
+      if (!isGpsActive || !userCoords) {
+        panel.className = 'location-panel pending';
+        badge.className = 'status-badge pending';
+        if (badgeDot) badgeDot.textContent = '⚠️';
+        if (badgeText) badgeText.textContent = 'GPS Belum Aktif';
+        if (distVal) distVal.textContent = 'Tidak Terdeteksi';
+        if (accuracyEl) accuracyEl.textContent = 'Akurasi GPS: -';
+
+        if (helper && helperIcon && helperText) {
+          helper.className = 'helper-box warning';
+          helperIcon.textContent = '⚠️';
+          helperText.innerHTML = '<b>GPS Belum Aktif / Ditolak.</b> Silakan aktifkan layanan lokasi (GPS) di HP Anda lalu ketuk tombol <b>Cek Ulang GPS</b> di atas.';
+        }
+
+        btn.className = 'btn-action-status disabled';
+        btn.disabled = true;
+        if (btnText) btnText.textContent = '🔒 Tombol Terkunci (Aktifkan GPS)';
+        return;
+      }
+
+      if (accuracyEl) accuracyEl.textContent = `Akurasi GPS: ±${userCoords.accuracy}m`;
+
+      // 2. KONDISI: DI LUAR RADIUS 50 METER
+      if (!isInsideStoreRadius) {
+        panel.className = 'location-panel invalid';
+        badge.className = 'status-badge invalid';
+        if (badgeDot) badgeDot.textContent = '🔴';
+        if (badgeText) badgeText.textContent = 'Di Luar Area Toko';
+        if (distVal) distVal.textContent = `${distanceToStoreMeters} meter`;
+
+        if (helper && helperIcon && helperText) {
+          helper.className = 'helper-box warning';
+          helperIcon.textContent = '🚫';
+          helperText.innerHTML = `<b>Anda berada di luar area toko (${distanceToStoreMeters}m).</b> Maksimal jarak adalah <b>${MAX_ALLOWED_DISTANCE_METERS} meter</b> dari titik toko untuk dapat membagikan status WhatsApp.`;
+        }
+
+        btn.className = 'btn-action-status disabled';
+        btn.disabled = true;
+        if (btnText) btnText.textContent = `🔒 Terkunci (Jarak: ${distanceToStoreMeters}m > 50m)`;
+        return;
+      }
+
+      // 3. KONDISI: BERHASIL DI AREA TOKO (<= 50 METER)
+      panel.className = 'location-panel valid';
+      badge.className = 'status-badge valid';
+      if (badgeDot) badgeDot.textContent = '🟢';
+      if (badgeText) badgeText.textContent = 'Terverifikasi di Toko';
+      if (distVal) distVal.textContent = `${distanceToStoreMeters} meter`;
+
+      if (helper && helperIcon && helperText) {
+        helper.className = 'helper-box success';
+        helperIcon.textContent = '✅';
+        helperText.innerHTML = `<b>Lokasi Terverifikasi!</b> Anda berada di dalam radius toko (${distanceToStoreMeters}m &le; ${MAX_ALLOWED_DISTANCE_METERS}m). Tombol bagikan di bawah aktif &amp; siap digunakan.`;
+      }
+
+      btn.className = 'btn-action-status active';
+      btn.disabled = false;
+      if (btnText) btnText.textContent = '📲 Pasang Foto ke Status WhatsApp';
+    }
+
+    // =========================================================================
+    // LOAD DATA CLOUD SUPABASE
     // =========================================================================
     async function loadDataFromSupabase(code) {
       clearStatus();
       document.getElementById('loadingCard').style.display = 'flex';
-      document.getElementById('taskSection').style.display = 'none';
+      document.getElementById('focusDialogCard').style.display = 'none';
       document.getElementById('galleryGrid').innerHTML = '';
       document.getElementById('manualCard').style.display = 'none';
 
@@ -997,8 +1260,10 @@
       currentCode = cleanCode;
 
       const codeBadge = document.getElementById('codeBadge');
-      codeBadge.textContent = 'KODE: ' + cleanCode;
-      codeBadge.style.display = 'inline-flex';
+      if (codeBadge) {
+        codeBadge.textContent = 'KODE: ' + cleanCode;
+        codeBadge.style.display = 'inline-flex';
+      }
 
       updateDynamicManifest(cleanCode);
 
@@ -1008,12 +1273,11 @@
           'Authorization': 'Bearer ' + CFG.key
         };
 
-        // Ambil daftar cabang untuk pencocokan GPS
         fetchStoresCatalog(CFG, headers);
 
         let foundRecord = null;
 
-        // Opsi 1: Coba tabel ksp_shared_images
+        // 1. Coba ksp_shared_images
         try {
           const resDedicated = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/ksp_shared_images?code=eq.${encodeURIComponent(cleanCode)}&select=*&limit=1`, { headers });
           if (resDedicated.ok) {
@@ -1022,7 +1286,7 @@
           }
         } catch (e) {}
 
-        // Opsi 2: Fallback ke app_balances (package_name = share_whatsapp)
+        // 2. Fallback: app_balances (package_name = share_whatsapp)
         if (!foundRecord) {
           const resFallback = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/app_balances?id=eq.share_${encodeURIComponent(cleanCode)}&select=*&limit=1`, { headers });
           if (resFallback.ok) {
@@ -1039,7 +1303,7 @@
           }
         }
 
-        // Opsi 3: Fallback raw_snippet
+        // 3. Fallback raw_snippet
         if (!foundRecord) {
           const resBySnippet = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/app_balances?package_name=eq.share_whatsapp&raw_snippet=eq.${encodeURIComponent(cleanCode)}&select=*&limit=1`, { headers });
           if (resBySnippet.ok) {
@@ -1061,38 +1325,31 @@
         if (!foundRecord || !Array.isArray(foundRecord.images) || foundRecord.images.length === 0) {
           showStatus(`⚠️ Foto dengan kode akses <b>${cleanCode}</b> tidak ditemukan. Periksa kembali kode Anda.`, 'error');
           document.getElementById('manualCard').style.display = 'flex';
-          document.getElementById('pageSubtitle').textContent = 'Kode akses tidak ditemukan';
           return;
         }
 
-        // Simpan data paket share
-        currentTitle = foundRecord.title || 'Lampiran KSP Check';
+        currentTitle = foundRecord.title || 'Status WhatsApp KSP Check';
         currentImages = foundRecord.images;
         
         const rawJson = foundRecord.raw_json || {};
         currentTemplate = rawJson.message_template || '';
 
-        // Siapkan target cabang dari paket
         if (rawJson.target_store_name && rawJson.target_store_id !== 'all') {
           targetStoreData = {
             id: rawJson.target_store_id,
             name: rawJson.target_store_name,
             lat: rawJson.target_store_coords?.lat || null,
             lng: rawJson.target_store_coords?.lng || null,
-            radius: 50
+            radius: MAX_ALLOWED_DISTANCE_METERS
           };
-          const storeNameEl = document.getElementById('taskStoreName');
-          if (storeNameEl) storeNameEl.textContent = targetStoreData.name;
+          const storeNameText = document.getElementById('storeNameText');
+          if (storeNameText) storeNameText.textContent = targetStoreData.name;
         }
 
-        // Setup form nama kasir dari sesi / localStorage
-        setupAttendanceForm();
-
-        // Render Task Stepper & Galeri
-        document.getElementById('taskSection').style.display = 'flex';
+        // Render Focus Dialog & Pratinjau
+        renderFocusDialog();
         renderGallery(currentImages, currentTitle);
 
-        // Evaluasi ulang GPS setelah data toko terisi
         if (userCoords) evaluateStoreDistance();
 
       } catch (err) {
@@ -1114,7 +1371,7 @@
                 id: item.id,
                 name: item.name || d.name,
                 coordinates: d.coordinates || d.location || null,
-                radius_meters: d.radius_meters || 50,
+                radius_meters: d.radius_meters || MAX_ALLOWED_DISTANCE_METERS,
                 shifts: d.shifts || []
               };
             });
@@ -1124,213 +1381,144 @@
       } catch (e) {}
     }
 
-    function setupAttendanceForm() {
-      const lastEmp = localStorage.getItem('kspcheck_last_emp_name') || '';
-      const lastShift = localStorage.getItem('kspcheck_last_shift') || '1';
+    function renderFocusDialog() {
+      document.getElementById('focusDialogCard').style.display = 'flex';
 
-      const empInp = document.getElementById('attEmpName');
-      const shiftSel = document.getElementById('attShiftSelect');
-      if (empInp && lastEmp) empInp.value = lastEmp;
-      if (shiftSel && lastShift) shiftSel.value = lastShift;
+      const photoCountTitle = document.getElementById('photoCountTitle');
+      if (photoCountTitle) photoCountTitle.textContent = `${currentImages.length} Foto Lampiran Siap Dibagikan`;
 
-      // Periksa apakah kode share ini sudah pernah diabsenkan di perangkat ini hari ini
-      const checkKey = `ksp_att_done_${currentCode}_${new Date().toISOString().substring(0, 10)}`;
-      const savedAtt = localStorage.getItem(checkKey);
-      if (savedAtt) {
-        try {
-          const parsed = JSON.parse(savedAtt);
-          markTask1Completed(parsed);
-        } catch (e) {}
+      const thumbStrip = document.getElementById('thumbStrip');
+      if (thumbStrip) {
+        thumbStrip.innerHTML = '';
+        currentImages.slice(0, 4).forEach((img, idx) => {
+          const imgEl = document.createElement('img');
+          imgEl.src = img.dataUrl;
+          imgEl.alt = img.name || `Foto ${idx + 1}`;
+          imgEl.className = 'thumb-item';
+          imgEl.onclick = () => previewImage(img.dataUrl);
+          thumbStrip.appendChild(imgEl);
+        });
       }
+
+      updateLocationAndButtonUI();
     }
 
     // =========================================================================
-    // TASK 1: KONFIRMASI ABSENSI KARYAWAN
+    // AKSI UTAMA: CATAT ABSENSI OTOMATIS & BUKA STATUS WHATSAPP
     // =========================================================================
-    async function confirmAttendance() {
-      const empInp = document.getElementById('attEmpName');
-      const shiftSel = document.getElementById('attShiftSelect');
-      const empName = (empInp?.value || '').trim();
-      const shiftNum = parseInt(shiftSel?.value || '1', 10);
-      const shiftName = shiftSel ? shiftSel.options[shiftSel.selectedIndex].text : `Shift ${shiftNum}`;
+    async function executeShareAndAttendance() {
+      const btn = document.getElementById('btnActionStatus');
+      if (!btn || btn.disabled) return;
 
-      if (!empName) {
-        alert('Silakan ketik nama Anda sebelum mengonfirmasi absensi!');
-        empInp?.focus();
+      if (!isInsideStoreRadius) {
+        alert('Anda belum berada di dalam radius 50 meter toko! Dekatkan diri ke toko untuk dapat membagikan status WhatsApp.');
         return;
       }
 
-      const btn = document.getElementById('btnConfirmAttendance');
-      const btnText = document.getElementById('btnConfirmAttendanceText');
-      if (btn) btn.disabled = true;
-      if (btnText) btnText.textContent = 'Mengirim absensi ke cloud...';
+      const btnText = document.getElementById('btnActionStatusText');
+      if (btnText) btnText.textContent = '⏳ Memproses Absensi & Foto...';
+      btn.disabled = true;
 
-      const storeName = (targetStoreData && targetStoreData.name) || 'Cabang KSP Check';
-      const storeId = (targetStoreData && targetStoreData.id) || null;
+      // 1. Catat Absensi Otomatis ke Supabase
+      await autoRecordAttendance();
+
+      // 2. Bagikan Foto ke WhatsApp Status
+      await executeShareWhatsApp();
+
+      if (btnText) btnText.textContent = '📲 Pasang Foto ke Status WhatsApp';
+      btn.disabled = false;
+    }
+
+    async function autoRecordAttendance() {
+      const CFG = window.KSP_SYNC_CONFIG || {
+        url: "https://nigvcwpxswvwzqtteanj.supabase.co",
+        key: "sb_publishable_TVMTb_JhsDbcbz5hLjIHWQ_kthdNAJF"
+      };
 
       const now = new Date();
-      const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-      const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const storeName = (targetStoreData && targetStoreData.name) || 'Cabang KSP Check';
+      const storeId = (targetStoreData && targetStoreData.id) || null;
 
       const attPayload = {
         id: `att_${now.getTime()}_${Math.random().toString(36).substring(2, 6)}`,
         store_id: storeId,
         store_name: storeName,
-        emp_name: empName,
-        shift_num: shiftNum,
-        shift_name: shiftName,
+        emp_name: 'Kasir Toko',
+        shift_num: 1,
+        shift_name: 'Shift Terverifikasi',
         lat: userCoords ? userCoords.lat : null,
         lng: userCoords ? userCoords.lng : null,
         accuracy: userCoords ? userCoords.accuracy : null,
         distance_meters: distanceToStoreMeters,
-        is_valid_location: isInsideStoreRadius,
+        is_valid_location: true,
         share_code: currentCode,
         created_at: now.toISOString()
       };
 
-      // Simpan ke Supabase Cloud
-      const CFG = window.KSP_SYNC_CONFIG || {
-        url: "https://nigvcwpxswvwzqtteanj.supabase.co",
-        key: "sb_publishable_TVMTb_JhsDbcbz5hLjIHWQ_kthdNAJF"
-      };
       const headers = {
         'apikey': CFG.key,
         'Authorization': 'Bearer ' + CFG.key,
         'Content-Type': 'application/json'
       };
 
-      let sentCloud = false;
-
-      // 1. Coba ksp_attendances
+      let sent = false;
       try {
         const resAtt = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/ksp_attendances`, {
           method: 'POST',
           headers,
           body: JSON.stringify(attPayload)
         });
-        if (resAtt.ok) sentCloud = true;
+        if (resAtt.ok) sent = true;
       } catch (e) {}
 
-      // 2. Fallback: app_balances
-      if (!sentCloud) {
+      if (!sent) {
         try {
           const bodyBal = {
             id: attPayload.id,
             device_id: storeId || 'unknown_store',
-            device_name: empName,
+            device_name: 'Kasir Toko',
             package_name: 'attendance',
             app_name: 'Absensi Karyawan',
             balance_value: distanceToStoreMeters || 0,
-            formatted_balance: isInsideStoreRadius ? 'Di Toko' : 'Luar Toko',
+            formatted_balance: 'Di Toko',
             calculation_mode: 'ATTENDANCE_LOG',
-            raw_snippet: `${storeName} - ${empName} (${shiftName})`,
+            raw_snippet: `${storeName} - Kasir Toko (${distanceToStoreMeters}m)`,
             raw_json: attPayload
           };
-          const resBal = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/app_balances`, {
+          await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/app_balances`, {
             method: 'POST',
             headers,
             body: JSON.stringify(bodyBal)
           });
-          if (resBal.ok || resBal.status === 201) sentCloud = true;
         } catch (e) {}
       }
-
-      if (btn) btn.disabled = false;
-      if (btnText) btnText.textContent = 'Konfirmasi & Kirim Absen Masuk';
-
-      // Simpan ke sesi lokal
-      localStorage.setItem('kspcheck_last_emp_name', empName);
-      localStorage.setItem('kspcheck_last_shift', String(shiftNum));
-      const checkKey = `ksp_att_done_${currentCode}_${now.toISOString().substring(0, 10)}`;
-      localStorage.setItem(checkKey, JSON.stringify(attPayload));
-
-      lastAttendanceInfo = attPayload;
-      markTask1Completed(attPayload);
-
-      showStatus(`✅ Absensi kasir <b>${escapeHtml(empName)}</b> berhasil dicatat! Silakan lanjutkan Task 2 untuk membagikan foto ke WhatsApp.`, 'success');
-
-      // Fokus dan gulir ke Task 2
-      const task2 = document.getElementById('task2Card');
-      if (task2) {
-        task2.scrollIntoView({ behavior: 'smooth' });
-      }
     }
 
-    function markTask1Completed(att) {
-      attendanceCompleted = true;
-      lastAttendanceInfo = att;
-
-      const task1 = document.getElementById('task1Card');
-      const task1Badge = document.getElementById('task1StepBadge');
-      const formFields = document.getElementById('attendanceFormFields');
-      const btnAttend = document.getElementById('btnConfirmAttendance');
-      const successBanner = document.getElementById('attSuccessBanner');
-      const successDetail = document.getElementById('attSuccessDetail');
-
-      if (task1) {
-        task1.classList.remove('active');
-        task1.classList.add('completed');
-      }
-      if (task1Badge) {
-        task1Badge.classList.add('done');
-        task1Badge.textContent = '✅ Selesai';
-      }
-      if (formFields) formFields.style.display = 'none';
-      if (btnAttend) btnAttend.style.display = 'none';
-
-      if (successBanner && successDetail) {
-        const timeStr = new Date(att.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-        const locLabel = att.is_valid_location ? '🟢 Di Area Toko' : `🔴 Di Luar Toko (Jarak: ${Math.round(att.distance_meters || 0)}m)`;
-        successDetail.innerHTML = `Kasir: <b>${escapeHtml(att.emp_name)}</b> &bull; ${escapeHtml(att.shift_name)}<br>Pukul ${timeStr} WIB &bull; Status: ${locLabel}`;
-        successBanner.style.display = 'block';
-      }
-
-      // Aktifkan Task 2
-      const task2 = document.getElementById('task2Card');
-      if (task2) {
-        task2.classList.add('active');
-      }
-    }
-
-    function skipAttendance() {
-      const task1 = document.getElementById('task1Card');
-      if (task1) task1.classList.remove('active');
-      const task2 = document.getElementById('task2Card');
-      if (task2) {
-        task2.classList.add('active');
-        task2.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-
-    // =========================================================================
-    // TASK 2: BAGIKAN FOTO & REKAP KE WHATSAPP (MENGGUNAKAN TEMPLATE)
-    // =========================================================================
     async function executeShareWhatsApp() {
       if (currentImages.length === 0) {
         showStatus('⚠️ Belum ada gambar untuk dibagikan.', 'error');
         return;
       }
 
-      showStatus(`⏳ Menyiapkan ${currentImages.length} foto lampiran...`, 'info');
+      showStatus(`⏳ Menyiapkan ${currentImages.length} foto status WhatsApp...`, 'info');
 
       try {
         const filePromises = currentImages.map((img, i) => {
-          const fname = img.name || `ksp_foto_${i + 1}.png`;
+          const fname = img.name || `ksp_status_${i + 1}.png`;
           return dataUrlToFile(img.dataUrl, fname);
         });
 
         const files = await Promise.all(filePromises);
 
         if (!navigator.canShare) {
-          showStatus('⚠️ Browser ini belum mendukung <code>navigator.canShare</code>. Pastikan menggunakan browser HP (Chrome / Safari) dengan koneksi <b>HTTPS</b>.', 'error');
+          showStatus('⚠️ Browser ini belum mendukung <code>navigator.canShare</code>. Pastikan menggunakan browser Chrome/Safari di HP Anda.', 'error');
           return;
         }
 
         if (navigator.canShare({ files })) {
-          // Bentuk pesan akhir menggunakan template yang di-set di store_manager
           const finalMessage = buildFinalShareMessage();
 
-          showStatus('📱 Membuka menu bagikan... Silakan pilih <b>WhatsApp</b>.', 'info');
+          showStatus('📱 Membuka WhatsApp... Pilih <b>"Status saya"</b> di urutan paling atas!', 'info');
           await navigator.share({
             files: files,
             title: currentTitle,
@@ -1338,7 +1526,7 @@
           });
           showStatus('✅ Berhasil dibagikan ke WhatsApp!', 'success');
         } else {
-          showStatus('⚠️ Browser tidak mengizinkan pengiriman file ini secara bersamaan. Coba bagikan per foto dari kartu galeri di bawah.', 'error');
+          showStatus('⚠️ Browser tidak mengizinkan pengiriman file sekaligus. Silakan gunakan tombol unduh foto.', 'error');
         }
       } catch (err) {
         if (err.name === 'AbortError') {
@@ -1353,34 +1541,19 @@
       const now = new Date();
       const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
       const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const storeName = (targetStoreData && targetStoreData.name) || 'Cabang KSP Check';
 
-      let empName = (lastAttendanceInfo && lastAttendanceInfo.emp_name) || document.getElementById('attEmpName')?.value || 'Kasir';
-      let shiftName = (lastAttendanceInfo && lastAttendanceInfo.shift_name) || 'Shift 1';
-      let storeName = (targetStoreData && targetStoreData.name) || 'Cabang KSP Check';
+      let statusLoc = isInsideStoreRadius ? '✅ Terverifikasi di Area Toko' : '⚠️ Di Luar Toko';
+      let distanceStr = distanceToStoreMeters !== null ? `±${distanceToStoreMeters} meter` : '-';
 
-      let statusLoc = 'Belum Cek Lokasi';
-      let distanceStr = '-';
-
-      if (userCoords) {
-        if (distanceToStoreMeters !== null) {
-          distanceStr = `±${distanceToStoreMeters} meter`;
-          statusLoc = isInsideStoreRadius ? '✅ Terverifikasi di Area Toko' : '⚠️ Di Luar Area Toko';
-        } else {
-          statusLoc = '📍 GPS Aktif';
-        }
-      }
-
-      // Template bawaan jika belum di-set
-      let tpl = currentTemplate || `Halo Admin, berikut foto lampiran & absensi dari KSP Check:
-👤 Kasir: {kasir} ({shift})
+      let tpl = currentTemplate || `Update Stok & Promo - KSP Check
 🏢 Cabang: {cabang}
 ⏰ Waktu: {waktu} WIB
-📍 Lokasi: {status_lokasi}
-📸 Lampiran: {jumlah_foto} Foto (Kode: {kode})`;
+📍 Lokasi: {status_lokasi} (Jarak: {jarak})
+📸 Lampiran: {jumlah_foto} Foto`;
 
-      // Replace tags
-      tpl = tpl.replace(/\{kasir\}/gi, empName)
-               .replace(/\{shift\}/gi, shiftName)
+      tpl = tpl.replace(/\{kasir\}/gi, 'Kasir Toko')
+               .replace(/\{shift\}/gi, 'Shift Harian')
                .replace(/\{cabang\}/gi, storeName)
                .replace(/\{waktu\}/gi, timeStr)
                .replace(/\{tanggal\}/gi, dateStr)
@@ -1392,13 +1565,38 @@
       return tpl;
     }
 
+    async function downloadAllPhotosToGallery() {
+      if (!currentImages || currentImages.length === 0) {
+        showStatus('⚠️ Belum ada foto untuk diunduh.', 'error');
+        return;
+      }
+
+      showStatus(`📥 Mengunduh ${currentImages.length} foto ke galeri HP...`, 'info');
+
+      for (let i = 0; i < currentImages.length; i++) {
+        const img = currentImages[i];
+        const a = document.createElement('a');
+        a.href = img.dataUrl;
+        a.download = img.name || `ksp_status_foto_${i + 1}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        await new Promise(r => setTimeout(r, 200));
+      }
+
+      try {
+        const msg = buildFinalShareMessage();
+        await navigator.clipboard.writeText(msg);
+        showStatus(`✅ ${currentImages.length} foto berhasil diunduh ke Galeri & teks status disalin ke clipboard! Buka WhatsApp untuk pasang status.`, 'success');
+      } catch (e) {
+        showStatus(`✅ ${currentImages.length} foto berhasil diunduh ke Galeri!`, 'success');
+      }
+    }
+
     // =========================================================================
-    // GALERI & FUNGSI INDIVIDUAL
+    // GALERI DETAIL DI BAWAH DIALOG
     // =========================================================================
     function renderGallery(images, title) {
-      document.getElementById('pageTitle').textContent = title || 'Absensi & Bagikan ke WhatsApp';
-      document.getElementById('pageSubtitle').textContent = `Tersedia ${images.length} foto lampiran yang siap dibagikan.`;
-
       const grid = document.getElementById('galleryGrid');
       grid.innerHTML = '';
 
@@ -1470,34 +1668,6 @@
       showStatus(`📥 Mengunduh ${img.name}...`, 'success');
     }
 
-    async function downloadAllPhotosToGallery() {
-      if (!currentImages || currentImages.length === 0) {
-        showStatus('⚠️ Belum ada foto untuk diunduh.', 'error');
-        return;
-      }
-
-      showStatus(`📥 Mengunduh ${currentImages.length} foto ke galeri HP...`, 'info');
-
-      for (let i = 0; i < currentImages.length; i++) {
-        const img = currentImages[i];
-        const a = document.createElement('a');
-        a.href = img.dataUrl;
-        a.download = img.name || `ksp_status_foto_${i + 1}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        await new Promise(r => setTimeout(r, 200));
-      }
-
-      try {
-        const msg = buildFinalShareMessage();
-        await navigator.clipboard.writeText(msg);
-        showStatus(`✅ ${currentImages.length} foto berhasil diunduh ke Galeri &amp; teks status disalin ke clipboard! Buka WhatsApp untuk pasang status.`, 'success');
-      } catch (e) {
-        showStatus(`✅ ${currentImages.length} foto berhasil diunduh ke Galeri!`, 'success');
-      }
-    }
-
     async function copyBase64(idx) {
       const img = currentImages[idx];
       if (!img) return;
@@ -1557,19 +1727,19 @@
 
     function updateDynamicManifest(code) {
       try {
-        document.title = `Absen & WA (${code}) - KSP Check`;
+        document.title = `Status WA (${code}) - KSP Check`;
         const appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-        if (appleTitle) appleTitle.setAttribute('content', `Absen WA ${code}`);
+        if (appleTitle) appleTitle.setAttribute('content', `Status WA ${code}`);
 
         const manifestObj = {
           "id": "kspcheck-share-whatsapp",
-          "name": `Absen & WA (${code}) - KSP Check`,
-          "short_name": `Absen WA ${code}`,
-          "description": `Absensi GPS & Bagikan Foto KSP Check kode ${code}`,
+          "name": `Status WA (${code}) - KSP Check`,
+          "short_name": `Status WA ${code}`,
+          "description": `Absensi Lokasi GPS & Pasang Status WhatsApp kode ${code}`,
           "start_url": `share_whatsapp.html?${encodeURIComponent(code)}&from=homescreen`,
           "scope": "share_whatsapp.html",
           "display": "standalone",
-          "background_color": "#0F1117",
+          "background_color": "#0A0C10",
           "theme_color": "#128C7E",
           "orientation": "any",
           "icons": [
@@ -1603,18 +1773,14 @@
       });
     }
 
-    // Inisialisasi awal saat halaman dibuka
     window.addEventListener('DOMContentLoaded', () => {
-      // 1. Langsung kunci GPS di latar belakang secara otomatis
       startBackgroundGpsDetection();
 
-      // 2. Ambil parameter kode dari URL
       const code = extractCodeFromUrl();
       if (code) {
         loadDataFromSupabase(code);
       } else {
         document.getElementById('loadingCard').style.display = 'none';
-        document.getElementById('pageSubtitle').textContent = 'Masukkan kode akses foto di bawah';
         document.getElementById('manualCard').style.display = 'flex';
       }
     });
