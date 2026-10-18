@@ -1,9 +1,10 @@
 {
+  "id": "kspcheck-interactive-stock",
   "name": "KSP Check - Voucher & Stok",
   "short_name": "KSP Check",
   "description": "Interactive Stock, Restock Order & Laporan Harian KSP Check",
   "start_url": "interactive_stock.html",
-  "scope": "./",
+  "scope": "./interactive_stock.html",
   "display": "standalone",
   "background_color": "#0F1117",
   "theme_color": "#0F1117",

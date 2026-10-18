@@ -4,7 +4,7 @@
   "short_name": "Bagikan WA",
   "description": "Bagikan foto lampiran KSP Check langsung ke WhatsApp",
   "start_url": "../../share_whatsapp.html?from=homescreen",
-  "scope": "../../",
+  "scope": "../../share_whatsapp.html",
   "display": "standalone",
   "background_color": "#0F1117",
   "theme_color": "#128C7E",

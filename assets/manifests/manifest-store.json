@@ -4,7 +4,7 @@
   "short_name": "Store Manager",
   "description": "Kelola Cabang Toko, Shift Kasir & Rekap Transaksi",
   "start_url": "../../store_manager.html",
-  "scope": "../../",
+  "scope": "../../store_manager.html",
   "display": "standalone",
   "background_color": "#0F1117",
   "theme_color": "#0F1117",

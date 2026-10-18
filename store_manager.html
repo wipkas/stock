@@ -4807,13 +4807,16 @@
             </div>
 
             <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px;">
-                <!-- Tab Menu (Upload Baru vs Riwayat Link) -->
-                <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                <!-- Tab Menu (Upload Baru vs Riwayat Link vs Rekap Absensi) -->
+                <div style="display: flex; gap: 6px; border-bottom: 1px solid var(--card-border); padding-bottom: 8px; flex-wrap: wrap;">
                     <button type="button" id="tabBtnShareUpload" class="target-mode-pill-btn active" onclick="switchShareWhatsAppTab('upload')">
                         📤 Upload Foto Baru
                     </button>
                     <button type="button" id="tabBtnShareHistory" class="target-mode-pill-btn" onclick="switchShareWhatsAppTab('history')">
-                        📜 Riwayat Link Share (<span id="shareHistoryCount">0</span>)
+                        📜 Riwayat Link (<span id="shareHistoryCount">0</span>)
+                    </button>
+                    <button type="button" id="tabBtnShareAttendance" class="target-mode-pill-btn" onclick="switchShareWhatsAppTab('attendance')" style="color: #10B981;">
+                        📍 Rekap Absensi (<span id="shareAttendanceCount">0</span>)
                     </button>
                 </div>
 
@@ -4842,15 +4845,27 @@
                         </div>
                     </div>
 
-                    <!-- Pengaturan Link & Password -->
+                    <!-- Pengaturan Link, Password, Cabang & Template Pesan -->
                     <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
                         <div>
                             <label style="font-size: 11px; font-weight: 750; color: var(--text-muted); display: block; margin-bottom: 4px;">
                                 JUDUL / KETERANGAN LAMPIRAN:
                             </label>
-                            <input type="text" id="shareTitleInput" class="form-input" placeholder="Contoh: Bukti Stok Opname Cabang Gading" style="width: 100%; font-size: 12px; padding: 8px 10px; border-radius: 8px; background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                            <input type="text" id="shareTitleInput" class="form-input" placeholder="Contoh: Bukti Stok Opname &amp; Absensi Shift Pagi" style="width: 100%; font-size: 12px; padding: 8px 10px; border-radius: 8px; background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-main);">
                         </div>
 
+                        <!-- Pilih Target Cabang untuk Verifikasi Lokasi GPS -->
+                        <div>
+                            <label style="font-size: 11px; font-weight: 750; color: var(--text-muted); display: block; margin-bottom: 4px;">
+                                🏢 TARGET CABANG (UNTUK CEK LOKASI ABSENSI GPS):
+                            </label>
+                            <select id="shareTargetStoreSelect" class="form-select" style="width: 100%; font-size: 12px; padding: 8px 10px; border-radius: 8px; background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                                <option value="all">🌐 Semua Cabang (Deteksi Otomatis Cabang Terdekat)</option>
+                                <!-- Diisi dinamis dari storesData -->
+                            </select>
+                        </div>
+
+                        <!-- Password / Kode Akses Acak -->
                         <div>
                             <label style="font-size: 11px; font-weight: 750; color: var(--text-muted); display: block; margin-bottom: 4px;">
                                 PASSWORD / KODE AKSES ACAK:
@@ -4860,6 +4875,33 @@
                                 <button type="button" class="btn-secondary" style="padding: 8px 12px; font-size: 12px; white-space: nowrap;" onclick="generateNewSharePassword()" title="Generate Kode Acak Baru">
                                     🎲 Acak
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- Nomor WhatsApp Admin / Tujuan (Opsional) -->
+                        <div>
+                            <label style="font-size: 11px; font-weight: 750; color: var(--text-muted); display: block; margin-bottom: 4px;">
+                                📱 NOMOR WHATSAPP ADMIN / TUJUAN (OPSIONAL):
+                            </label>
+                            <input type="tel" id="shareTargetPhoneInput" class="form-input" placeholder="Misal: 08123456789 atau 628123456789 (Kosongkan jika bebas)" style="width: 100%; font-size: 12px; padding: 8px 10px; border-radius: 8px; background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                            <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">
+                                💡 Jika diisi, kasir dapat langsung membuka chat WA ke nomor ini dengan 1-klik tanpa perlu mencari kontak.
+                            </div>
+                        </div>
+
+                        <!-- Template Pesan WhatsApp yang Bisa Di-set -->
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <label style="font-size: 11px; font-weight: 750; color: var(--text-muted);">
+                                    💬 TEMPLATE PESAN WHATSAPP:
+                                </label>
+                                <button type="button" style="background: none; border: none; color: var(--primary); font-size: 10.5px; font-weight: 700; cursor: pointer;" onclick="resetDefaultShareTemplate()">
+                                    ↺ Reset Default
+                                </button>
+                            </div>
+                            <textarea id="shareMessageTemplateInput" class="form-input" rows="6" style="width: 100%; font-size: 11.5px; font-family: monospace; line-height: 1.45; padding: 8px 10px; border-radius: 8px; background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-main); resize: vertical;"></textarea>
+                            <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
+                                💡 Tag otomatis: <code>{kasir}</code>, <code>{shift}</code>, <code>{cabang}</code>, <code>{waktu}</code>, <code>{status_lokasi}</code>, <code>{jarak}</code>, <code>{jumlah_foto}</code>, <code>{kode}</code>
                             </div>
                         </div>
 
@@ -4899,7 +4941,7 @@
                             <div id="shareQrCodeContainer" style="background: #FFF; padding: 6px; border-radius: 8px; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"></div>
                             <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
                                 <div style="font-size: 11.5px; color: var(--text-muted);">
-                                    Scan QR code ini dari HP atau buka link langsung untuk memasang shortcut ke Layar Utama.
+                                    Scan QR code ini dari HP kasir atau buka link langsung untuk memasang shortcut ke Layar Utama.
                                 </div>
                                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                                     <button type="button" class="btn-secondary" style="padding: 6px 10px; font-size: 11px;" onclick="openShareResultUrl()">
@@ -4917,6 +4959,19 @@
                 <!-- TAB 2: RIWAYAT LINK TERSIMPAN -->
                 <div id="tabContentShareHistory" style="display: none; flex-direction: column; gap: 10px;">
                     <div id="shareHistoryList" style="display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto;">
+                        <!-- Diisi dinamis via JS -->
+                    </div>
+                </div>
+
+                <!-- TAB 3: REKAP ABSENSI KARYAWAN -->
+                <div id="tabContentShareAttendance" style="display: none; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 2px;">
+                        <span style="font-size: 12px; font-weight: 750; color: var(--text-muted);">DAFTAR ABSENSI DARI SHORTCUT:</span>
+                        <button type="button" class="btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="fetchAndRenderAttendances(true)">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                    <div id="shareAttendanceList" style="display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto;">
                         <!-- Diisi dinamis via JS -->
                     </div>
                 </div>
@@ -12350,6 +12405,13 @@ ${portalUrl}
         let currentShareCode = '';
         const LS_WA_SHARES = 'kspcheck_whatsapp_shares';
 
+        const DEFAULT_SHARE_MESSAGE_TEMPLATE = `Halo Admin, berikut foto lampiran & absensi dari KSP Check:
+👤 Kasir: {kasir} ({shift})
+🏢 Cabang: {cabang}
+⏰ Waktu: {waktu} WIB
+📍 Lokasi: {status_lokasi}
+📸 Lampiran: {jumlah_foto} Foto (Kode: {kode})`;
+
         function openShareWhatsAppModal() {
             shareSelectedFiles = [];
             currentGeneratedShareUrl = '';
@@ -12362,32 +12424,75 @@ ${portalUrl}
             if (thumbsList) thumbsList.innerHTML = '';
             const titleInp = document.getElementById('shareTitleInput');
             if (titleInp) titleInp.value = '';
+
+            // Render opsi target cabang
+            populateShareTargetStores();
+
+            // Set template pesan default jika belum ada
+            const tplInp = document.getElementById('shareMessageTemplateInput');
+            if (tplInp && !tplInp.value.trim()) {
+                tplInp.value = DEFAULT_SHARE_MESSAGE_TEMPLATE;
+            }
             
             generateNewSharePassword();
             switchShareWhatsAppTab('upload');
             loadShareWhatsAppHistory();
+            fetchAndRenderAttendances(false);
             openModal('shareWhatsAppModal');
+        }
+
+        function populateShareTargetStores() {
+            const sel = document.getElementById('shareTargetStoreSelect');
+            if (!sel) return;
+            sel.innerHTML = '<option value="all">🌐 Semua Cabang (Deteksi Otomatis Cabang Terdekat)</option>';
+            if (Array.isArray(storesData)) {
+                storesData.forEach(st => {
+                    const opt = document.createElement('option');
+                    opt.value = st.id;
+                    const coords = st.coordinates || st.location;
+                    const coordInfo = (coords && coords.lat) ? ' [GPS Aktif]' : '';
+                    opt.textContent = `${st.name}${coordInfo}`;
+                    sel.appendChild(opt);
+                });
+            }
+        }
+
+        function resetDefaultShareTemplate() {
+            const tplInp = document.getElementById('shareMessageTemplateInput');
+            if (tplInp) {
+                tplInp.value = DEFAULT_SHARE_MESSAGE_TEMPLATE;
+                showToast('Template pesan direset ke format default.', 'ℹ️');
+            }
         }
 
         function switchShareWhatsAppTab(tab) {
             const btnUpload = document.getElementById('tabBtnShareUpload');
             const btnHistory = document.getElementById('tabBtnShareHistory');
+            const btnAtt = document.getElementById('tabBtnShareAttendance');
             const contentUpload = document.getElementById('tabContentShareUpload');
             const contentHistory = document.getElementById('tabContentShareHistory');
+            const contentAtt = document.getElementById('tabContentShareAttendance');
 
-            if (!btnUpload || !btnHistory || !contentUpload || !contentHistory) return;
+            if (!btnUpload || !btnHistory || !btnAtt || !contentUpload || !contentHistory || !contentAtt) return;
+
+            btnUpload.classList.remove('active');
+            btnHistory.classList.remove('active');
+            btnAtt.classList.remove('active');
+            contentUpload.style.display = 'none';
+            contentHistory.style.display = 'none';
+            contentAtt.style.display = 'none';
 
             if (tab === 'upload') {
                 btnUpload.classList.add('active');
-                btnHistory.classList.remove('active');
                 contentUpload.style.display = 'flex';
-                contentHistory.style.display = 'none';
-            } else {
+            } else if (tab === 'history') {
                 btnHistory.classList.add('active');
-                btnUpload.classList.remove('active');
-                contentUpload.style.display = 'none';
                 contentHistory.style.display = 'flex';
                 renderShareWhatsAppHistory();
+            } else if (tab === 'attendance') {
+                btnAtt.classList.add('active');
+                contentAtt.style.display = 'flex';
+                fetchAndRenderAttendances(true);
             }
         }
 
@@ -12550,7 +12655,26 @@ ${portalUrl}
             }
 
             const titleInput = document.getElementById('shareTitleInput');
-            const title = (titleInput?.value || '').trim() || 'Lampiran Foto KSP Check';
+            const title = (titleInput?.value || '').trim() || 'Lampiran Foto & Absensi KSP Check';
+
+            const targetStoreSelect = document.getElementById('shareTargetStoreSelect');
+            const targetStoreId = targetStoreSelect?.value || 'all';
+            let targetStoreName = 'Semua Cabang';
+            let targetCoords = null;
+            if (targetStoreId !== 'all' && Array.isArray(storesData)) {
+                const foundSt = storesData.find(s => s.id === targetStoreId);
+                if (foundSt) {
+                    targetStoreName = foundSt.name;
+                    targetCoords = foundSt.coordinates || foundSt.location || null;
+                }
+            }
+
+            const tplInput = document.getElementById('shareMessageTemplateInput');
+            const messageTemplate = (tplInput?.value || '').trim() || DEFAULT_SHARE_MESSAGE_TEMPLATE;
+
+            const phoneInput = document.getElementById('shareTargetPhoneInput');
+            let targetWaPhone = (phoneInput?.value || '').trim().replace(/\D/g, '');
+            if (targetWaPhone.startsWith('0')) targetWaPhone = '62' + targetWaPhone.substring(1);
 
             const btn = document.getElementById('btnExecuteShareUpload');
             const btnText = document.getElementById('btnExecuteShareUploadText');
@@ -12566,6 +12690,11 @@ ${portalUrl}
                 code: code,
                 password: code,
                 title: title,
+                target_store_id: targetStoreId,
+                target_store_name: targetStoreName,
+                target_store_coords: targetCoords,
+                target_wa_phone: targetWaPhone,
+                message_template: messageTemplate,
                 created_at: new Date().toISOString(),
                 images: shareSelectedFiles
             };
@@ -12589,7 +12718,8 @@ ${portalUrl}
                         code: code,
                         password: code,
                         title: title,
-                        images: shareSelectedFiles
+                        images: shareSelectedFiles,
+                        raw_json: payloadData
                     })
                 });
                 if (resDedicated.ok) {
@@ -12604,10 +12734,10 @@ ${portalUrl}
                 try {
                     const fallbackBody = {
                         id: 'share_' + code,
-                        device_id: 'web_admin',
-                        device_name: title,
+                        device_id: targetStoreId !== 'all' ? targetStoreId : 'web_admin',
+                        device_name: `${title} (${targetStoreName})`,
                         package_name: 'share_whatsapp',
-                        app_name: 'Share WhatsApp',
+                        app_name: 'Share WhatsApp & Absensi',
                         balance_value: shareSelectedFiles.length,
                         formatted_balance: `${shareSelectedFiles.length} Foto`,
                         calculation_mode: 'SHARED_IMAGES',
@@ -12624,7 +12754,6 @@ ${portalUrl}
                     if (resFallback.ok || resFallback.status === 201) {
                         saveSuccess = true;
                     } else {
-                        // Jika 409 conflict, coba lakukan PATCH (update)
                         const resPatch = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/app_balances?id=eq.share_${encodeURIComponent(code)}`, {
                             method: 'PATCH',
                             headers: headers,
@@ -12660,6 +12789,7 @@ ${portalUrl}
             saveShareHistoryItem({
                 code: code,
                 title: title,
+                target_store_name: targetStoreName,
                 count: shareSelectedFiles.length,
                 url: shareUrl,
                 created_at: new Date().toISOString()
@@ -12712,11 +12842,12 @@ ${portalUrl}
 
         function sendShareLinkViaWhatsApp() {
             if (!currentGeneratedShareUrl) return;
-            const text = `Halo, berikut foto lampiran dari KSP Check (Kode: ${currentShareCode}):\n\n${currentGeneratedShareUrl}\n\nBuka link di atas melalui browser HP dan tambahkan sebagai shortcut untuk langsung membagikan foto ke WhatsApp.`;
+            const text = `Halo, berikut foto lampiran dan tautan absensi KSP Check (Kode: ${currentShareCode}):\n\n${currentGeneratedShareUrl}\n\nBuka link di atas via browser HP lalu pasang sebagai shortcut untuk absen & membagikan foto ke WhatsApp.`;
             const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
             window.open(waUrl, '_blank');
         }
 
+        // ---------- RIWAYAT SHARE TERSIMPAN ----------
         function loadShareWhatsAppHistory() {
             let list = [];
             try {
@@ -12764,6 +12895,7 @@ ${portalUrl}
                         <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
                             <span style="font-family: monospace; font-size: 12px; font-weight: 800; color: #93C5FD; background: rgba(79, 142, 247, 0.15); padding: 2px 6px; border-radius: 4px;">${escapeHtmlShare(item.code)}</span>
                             <span style="font-size: 11px; font-weight: 700; color: #86EFAC;">${item.count} Foto</span>
+                            ${item.target_store_name ? `<span style="font-size: 10.5px; color: var(--text-muted);">${escapeHtmlShare(item.target_store_name)}</span>` : ''}
                         </div>
                         <div style="font-size: 12px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtmlShare(item.title)}">
                             ${escapeHtmlShare(item.title)}
@@ -12826,6 +12958,136 @@ ${portalUrl}
             loadShareWhatsAppHistory();
             renderShareWhatsAppHistory();
             showToast('🗑️ Link share berhasil dihapus.', 'ℹ️');
+        }
+
+        // ---------- TAB 3: REKAP ABSENSI KARYAWAN ----------
+        async function fetchAndRenderAttendances(isManual = false) {
+            const listEl = document.getElementById('shareAttendanceList');
+            const countEl = document.getElementById('shareAttendanceCount');
+            if (isManual && listEl) {
+                listEl.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);"><div class="spinner" style="width:20px;height:20px;border:2px solid rgba(255,255,255,0.2);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 8px;"></div>Memuat data absensi...</div>';
+            }
+
+            const CFG = window.KSP_SYNC_CONFIG || {
+                url: "https://nigvcwpxswvwzqtteanj.supabase.co",
+                key: "sb_publishable_TVMTb_JhsDbcbz5hLjIHWQ_kthdNAJF"
+            };
+            const headers = {
+                'apikey': CFG.key,
+                'Authorization': 'Bearer ' + CFG.key
+            };
+
+            let records = [];
+
+            // 1. Coba ksp_attendances
+            try {
+                const resAtt = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/ksp_attendances?select=*&order=created_at.desc&limit=50`, {
+                    headers: headers
+                });
+                if (resAtt.ok) {
+                    const data = await resAtt.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        records = data;
+                    }
+                }
+            } catch (e) {}
+
+            // 2. Fallback: app_balances (package_name = 'attendance')
+            if (records.length === 0) {
+                try {
+                    const resBal = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/app_balances?package_name=eq.attendance&select=*&order=created_at.desc&limit=50`, {
+                        headers: headers
+                    });
+                    if (resBal.ok) {
+                        const data = await resBal.json();
+                        if (Array.isArray(data)) {
+                            records = data.map(r => {
+                                const j = r.raw_json || {};
+                                return {
+                                    id: r.id,
+                                    store_name: j.store_name || r.raw_snippet || 'Cabang',
+                                    emp_name: j.emp_name || r.device_name || 'Kasir',
+                                    shift_name: j.shift_name || (j.shift_num ? `Shift ${j.shift_num}` : 'Shift 1'),
+                                    distance_meters: j.distance_meters !== undefined ? j.distance_meters : r.balance_value,
+                                    is_valid_location: j.is_valid_location !== undefined ? j.is_valid_location : (r.formatted_balance === 'Di Toko'),
+                                    lat: j.lat,
+                                    lng: j.lng,
+                                    accuracy: j.accuracy,
+                                    share_code: j.share_code,
+                                    created_at: j.created_at || r.created_at || r.updated_at
+                                };
+                            });
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            if (countEl) countEl.textContent = String(records.length);
+            if (!listEl) return;
+
+            if (records.length === 0) {
+                listEl.innerHTML = `
+                    <div style="text-align: center; padding: 30px 10px; color: var(--text-muted); font-size: 12.5px;">
+                        Belum ada data absensi yang masuk dari shortcut kasir.
+                    </div>`;
+                return;
+            }
+
+            listEl.innerHTML = '';
+            records.forEach(att => {
+                const dateStr = att.created_at ? new Date(att.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-';
+                const isValid = att.is_valid_location !== false;
+                const statusBadge = isValid 
+                    ? `<span style="background:rgba(16,185,129,0.15); color:#10B981; border:1px solid rgba(16,185,129,0.3); padding:2px 7px; border-radius:6px; font-size:10.5px; font-weight:750;">🟢 Di Toko (${Math.round(att.distance_meters || 0)}m)</span>`
+                    : `<span style="background:rgba(239,68,68,0.15); color:#EF4444; border:1px solid rgba(239,68,68,0.3); padding:2px 7px; border-radius:6px; font-size:10.5px; font-weight:750;">🔴 Luar Area (${Math.round(att.distance_meters || 0)}m)</span>`;
+
+                const mapLink = (att.lat && att.lng)
+                    ? `<a href="https://www.google.com/maps?q=${att.lat},${att.lng}" target="_blank" rel="noopener noreferrer" style="color:var(--primary); font-size:11px; text-decoration:none; font-weight:700;">🗺️ Maps</a>`
+                    : '';
+
+                const div = document.createElement('div');
+                div.style.cssText = 'background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;';
+                div.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-weight: 800; font-size: 13px; color: var(--text-main);">${escapeHtmlShare(att.emp_name)}</span>
+                            <span style="font-size: 11px; color: var(--text-muted); background: var(--card-bg); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--card-border);">${escapeHtmlShare(att.shift_name || 'Shift')}</span>
+                        </div>
+                        <div>${statusBadge}</div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+                        <span>🏢 ${escapeHtmlShare(att.store_name)} &bull; ${dateStr} WIB</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            ${att.share_code ? `<span style="font-family: monospace; font-size: 10.5px; color: #93C5FD;">#${escapeHtmlShare(att.share_code)}</span>` : ''}
+                            ${mapLink}
+                            <button type="button" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:12px;" onclick="deleteAttendanceRecord('${escapeHtmlShare(att.id)}')" title="Hapus catatan absensi">&times;</button>
+                        </div>
+                    </div>
+                `;
+                listEl.appendChild(div);
+            });
+
+            if (isManual) {
+                showToast(`Data absensi berhasil diperbarui (${records.length} catatan)`, '✅');
+            }
+        }
+
+        async function deleteAttendanceRecord(id) {
+            if (!confirm('Hapus catatan absensi ini?')) return;
+            const CFG = window.KSP_SYNC_CONFIG || {
+                url: "https://nigvcwpxswvwzqtteanj.supabase.co",
+                key: "sb_publishable_TVMTb_JhsDbcbz5hLjIHWQ_kthdNAJF"
+            };
+            const headers = {
+                'apikey': CFG.key,
+                'Authorization': 'Bearer ' + CFG.key
+            };
+            try {
+                fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/app_balances?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', headers });
+                fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/ksp_attendances?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', headers });
+            } catch (e) {}
+            setTimeout(() => fetchAndRenderAttendances(false), 300);
+            showToast('Catatan absensi dihapus.', 'ℹ️');
         }
 
         function formatBytesShare(bytes) {

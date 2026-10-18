@@ -1,0 +1,30 @@
+{
+  "id": "kspcheck-share-whatsapp",
+  "name": "Absensi & Bagikan WA - KSP Check",
+  "short_name": "Absen & WA",
+  "description": "Absensi GPS & Bagikan Foto KSP Check langsung ke WhatsApp",
+  "start_url": "share_whatsapp.html?from=homescreen",
+  "scope": "share_whatsapp.html",
+  "display": "standalone",
+  "background_color": "#0F1117",
+  "theme_color": "#128C7E",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "assets/icons/icon-store.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-store-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icons/icon-store-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

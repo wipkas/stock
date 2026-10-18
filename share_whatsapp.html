@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Bagikan Gambar ke WhatsApp - KSP Check</title>
+  <title>Bagikan Gambar & Absensi - KSP Check</title>
   <meta name="theme-color" content="#128C7E">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Bagikan WA">
+  <meta name="apple-mobile-web-app-title" content="Absen & Share WA">
 
   <!-- Dynamic Web App Manifest -->
-  <link rel="manifest" id="appManifest" href="assets/manifests/manifest-share.json">
+  <link rel="manifest" id="appManifest" href="manifest-share.json">
   <link rel="icon" type="image/svg+xml" href="assets/icons/icon-store.svg">
   <link rel="apple-touch-icon" href="assets/icons/icon-store-192.png">
 
   <!-- Supabase & KSP Sync Config -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/ksp_sync_config.js?v=20261018"></script>
+  <script src="js/ksp_sync_config.js?v=20261018_v2"></script>
 
   <style>
     :root {
@@ -109,97 +109,6 @@
       line-height: 1.4;
     }
 
-    /* One-tap Shortcut Trigger Banner */
-    .one-tap-banner {
-      display: none;
-      background: linear-gradient(135deg, #25D366, #128C7E);
-      color: #FFFFFF;
-      border-radius: 12px;
-      padding: 14px 16px;
-      font-size: 1rem;
-      font-weight: 800;
-      text-align: center;
-      cursor: pointer;
-      box-shadow: 0 4px 18px rgba(37, 211, 102, 0.45);
-      animation: pulseGlow 1.8s infinite;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-    }
-
-    @keyframes pulseGlow {
-      0% { transform: scale(1); box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35); }
-      50% { transform: scale(1.015); box-shadow: 0 6px 24px rgba(37, 211, 102, 0.65); }
-      100% { transform: scale(1); box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35); }
-    }
-
-    /* Action Panel */
-    .action-panel {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius);
-      padding: 1.15rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.85rem;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    }
-
-    .btn-whatsapp {
-      background: linear-gradient(135deg, #25D366, #128C7E);
-      color: #FFFFFF;
-      border: none;
-      padding: 0.95rem 1.25rem;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
-      transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
-      width: 100%;
-    }
-
-    .btn-whatsapp:active {
-      transform: scale(0.98);
-    }
-
-    .btn-shortcut {
-      background: rgba(79, 142, 247, 0.12);
-      border: 1px solid rgba(79, 142, 247, 0.35);
-      color: #93C5FD;
-      padding: 0.75rem 1rem;
-      border-radius: 10px;
-      font-size: 0.88rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: background 0.15s;
-      width: 100%;
-    }
-
-    .btn-shortcut:hover {
-      background: rgba(79, 142, 247, 0.2);
-    }
-
-    .info-box {
-      background: rgba(79, 142, 247, 0.08);
-      border-left: 3px solid var(--accent);
-      padding: 0.75rem 0.9rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      line-height: 1.45;
-      color: #CBD5E1;
-    }
-
-    .info-box strong {
-      color: #93C5FD;
-    }
-
     /* Status Message */
     .status-msg {
       display: none;
@@ -229,6 +138,218 @@
       background: rgba(239, 68, 68, 0.15);
       color: #FCA5A5;
       border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    /* TASK STEPPER BOX */
+    .task-container {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .task-card {
+      background: #11141F;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: all 0.25s ease;
+    }
+
+    .task-card.active {
+      border-color: rgba(37, 211, 102, 0.4);
+      background: rgba(37, 211, 102, 0.03);
+    }
+
+    .task-card.completed {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .task-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .task-badge-step {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--accent);
+      background: rgba(79, 142, 247, 0.15);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .task-badge-step.done {
+      color: #10B981;
+      background: rgba(16, 185, 129, 0.15);
+    }
+
+    .task-title {
+      font-size: 0.95rem;
+      font-weight: 750;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* GPS Location Indicator */
+    .location-box {
+      background: #0B0D13;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.8rem;
+    }
+
+    .location-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+    }
+
+    .location-status.valid {
+      color: #10B981;
+    }
+
+    .location-status.invalid {
+      color: #EF4444;
+    }
+
+    .location-status.pending {
+      color: #F59E0B;
+    }
+
+    /* Form Fields for Attendance */
+    .form-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .form-field {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .form-field label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .form-input-sm, .form-select-sm {
+      background: #181C27;
+      border: 1px solid var(--card-border);
+      color: #FFF;
+      border-radius: 8px;
+      padding: 0.5rem 0.7rem;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .form-input-sm:focus, .form-select-sm:focus {
+      border-color: var(--primary);
+    }
+
+    /* Buttons */
+    .btn-task {
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      transition: all 0.15s ease;
+      width: 100%;
+    }
+
+    .btn-task-attend {
+      background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+      color: #FFF;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-task-attend:active {
+      transform: scale(0.98);
+    }
+
+    .btn-task-share {
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      color: #FFF;
+      box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
+    }
+
+    .btn-task-share.pulse {
+      animation: pulseGlow 1.8s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0% { transform: scale(1); box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35); }
+      50% { transform: scale(1.02); box-shadow: 0 6px 22px rgba(37, 211, 102, 0.65); }
+      100% { transform: scale(1); box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35); }
+    }
+
+    .btn-secondary {
+      background: #222736;
+      border: 1px solid var(--card-border);
+      color: #CBD5E1;
+      padding: 0.55rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: #2A3144;
+      color: #FFF;
+    }
+
+    .btn-shortcut {
+      background: rgba(79, 142, 247, 0.12);
+      border: 1px solid rgba(79, 142, 247, 0.35);
+      color: #93C5FD;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s;
+      width: 100%;
+    }
+
+    .btn-shortcut:hover {
+      background: rgba(79, 142, 247, 0.2);
     }
 
     /* Gallery Grid */
@@ -300,29 +421,6 @@
       flex-wrap: wrap;
     }
 
-    .btn-secondary {
-      flex: 1;
-      min-width: 100px;
-      background: #222736;
-      border: 1px solid var(--card-border);
-      color: #CBD5E1;
-      padding: 0.55rem;
-      border-radius: 8px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: background 0.2s;
-    }
-
-    .btn-secondary:hover {
-      background: #2A3144;
-      color: #FFF;
-    }
-
     /* Manual Password Card */
     .password-card {
       background: var(--card-bg);
@@ -374,7 +472,7 @@
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: var(--radius);
-      padding: 1rem;
+      padding: 1.5rem 1rem;
       height: 180px;
       display: flex;
       flex-direction: column;
@@ -466,18 +564,13 @@
       <div class="badge-bar">
         <div class="badge">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 2.17.7 4.19 1.94 5.84L2.8 21.2l3.47-1.11C7.88 21.22 9.87 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/></svg>
-          Web Share API Level 2
+          KSP Check &bull; Absensi &amp; WhatsApp
         </div>
         <div id="codeBadge" class="badge badge-code" style="display:none;"></div>
       </div>
-      <h1 id="pageTitle">Bagikan Gambar ke WhatsApp</h1>
-      <p id="pageSubtitle" class="subtitle">Memuat data foto lampiran dari Supabase Cloud...</p>
+      <h1 id="pageTitle">Absensi &amp; Bagikan ke WhatsApp</h1>
+      <p id="pageSubtitle" class="subtitle">Memuat data foto dan mengunci koordinat GPS toko...</p>
     </header>
-
-    <!-- 1-Tap Banner (Aktif jika dibuka dari Shortcut Layar Utama) -->
-    <div id="oneTapBanner" class="one-tap-banner" onclick="shareAllImages()">
-      ⚡ Sentuh di Sini untuk Langsung Kirim ke WhatsApp 💬
-    </div>
 
     <!-- Status Message Alert -->
     <div id="status-msg" class="status-msg"></div>
@@ -485,7 +578,7 @@
     <!-- Form Password Manual (jika tanpa parameter URL atau salah) -->
     <div id="manualCard" class="password-card" style="display: none;">
       <div style="font-size: 1.05rem; font-weight: 700; color: #FFF;">Masukkan Password / Kode Akses</div>
-      <p style="font-size: 0.85rem; color: var(--text-muted);">Masukkan kode acak yang diberikan oleh Admin Store Manager untuk membuka foto lampiran.</p>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">Masukkan kode acak dari Store Manager untuk membuka foto dan alur absensi.</p>
       <div class="password-input-group">
         <input type="text" id="manualCodeInput" class="password-input" placeholder="KODE..." maxlength="16" autofocus>
         <button class="btn-submit-code" onclick="submitManualCode()">Buka</button>
@@ -495,34 +588,143 @@
     <!-- Skeleton Loading -->
     <div id="loadingCard" class="skeleton-card">
       <div class="spinner"></div>
-      <div>Menghubungkan ke Supabase Cloud...</div>
+      <div id="loadingText">Menghubungkan ke Cloud &amp; Mendeteksi GPS...</div>
     </div>
 
-    <!-- Action Panel Utama -->
-    <div id="actionPanel" class="action-panel" style="display: none;">
-      <button id="btnShareAll" class="btn-whatsapp" onclick="shareAllImages()">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.04 14.69 2 12.04 2ZM12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.05 3.68C14.25 3.68 16.32 4.54 17.88 6.1C19.44 7.66 20.3 9.73 20.3 11.93C20.3 16.47 16.59 20.15 12.04 20.15ZM16.56 14.39C16.31 14.27 15.09 13.67 14.86 13.59C14.63 13.51 14.47 13.47 14.3 13.71C14.13 13.95 13.65 14.51 13.5 14.68C13.36 14.84 13.22 14.87 12.97 14.74C12.72 14.62 11.92 14.36 10.97 13.51C10.23 12.85 9.73 12.03 9.58 11.78C9.43 11.53 9.56 11.4 9.69 11.27C9.8 11.16 9.93 10.99 10.05 10.84C10.17 10.7 10.22 10.59 10.3 10.43C10.38 10.26 10.34 10.12 10.28 10C10.22 9.88 9.73 8.68 9.53 8.18C9.33 7.7 9.13 7.76 8.98 7.75C8.84 7.74 8.68 7.74 8.51 7.74C8.35 7.74 8.08 7.8 7.86 8.04C7.64 8.28 7.02 8.86 7.02 10.04C7.02 11.22 7.88 12.35 8 12.51C8.12 12.67 9.7 15.11 12.13 16.16C12.71 16.41 13.16 16.56 13.51 16.67C14.09 16.86 14.62 16.83 15.04 16.77C15.51 16.7 16.49 16.18 16.69 15.61C16.89 15.04 16.89 14.55 16.83 14.45C16.77 14.35 16.61 14.31 16.56 14.39Z"/>
-        </svg>
-        <span id="btnShareAllText">Bagikan Semua Foto ke WhatsApp</span>
-      </button>
+    <!-- ========================================================================= -->
+    <!-- SMART TASK STEPPER DIALOG: TASK 1 (ABSENSI GPS) & TASK 2 (SHARE WA) -->
+    <!-- ========================================================================= -->
+    <div id="taskSection" class="task-container" style="display: none;">
+      
+      <!-- TASK 1: ABSENSI KARYAWAN & CEK LOKASI TOKO -->
+      <div id="task1Card" class="task-card active">
+        <div class="task-header">
+          <div class="task-title">
+            <span>📍</span>
+            <span>Task 1: Absensi Masuk &amp; Cek Lokasi Toko</span>
+          </div>
+          <span id="task1StepBadge" class="task-badge-step">Langkah 1</span>
+        </div>
 
-      <!-- Tombol Pasang Shortcut ke Home Screen -->
-      <button id="btnShortcut" class="btn-shortcut" onclick="handleShortcutInstall()">
-        <span>📲</span>
-        <span>Pasang ke Home Screen sebagai Shortcut</span>
-      </button>
+        <!-- Indikator Lokasi GPS Toko -->
+        <div class="location-box">
+          <div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">TARGET CABANG TOKO:</div>
+            <div id="taskStoreName" style="font-weight: 750; color: #FFF;">Mendeteksi Toko...</div>
+          </div>
+          <div id="locationStatus" class="location-status pending">
+            <span>⏳</span>
+            <span id="locationStatusText">Mencari GPS...</span>
+          </div>
+        </div>
 
-      <div class="info-box">
-        💡 <strong>Tips:</strong> Pasang halaman ini sebagai shortcut di Layar Utama HP Anda. Saat shortcut dibuka di kemudian hari, Anda cukup menyentuh 1 kali untuk langsung membagikan foto ke WhatsApp.
+        <!-- Detail Jarak & Akurasi -->
+        <div id="locationDetailRow" style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; padding: 0 4px;">
+          <span id="locationDistanceText">Jarak: Menghitung...</span>
+          <span id="locationAccuracyText">Akurasi GPS: -</span>
+        </div>
+
+        <!-- Form Nama Kasir & Shift -->
+        <div id="attendanceFormFields" style="display: flex; flex-direction: column; gap: 8px;">
+          <div class="form-row">
+            <div class="form-field">
+              <label for="attEmpName">Nama Kasir / Karyawan:</label>
+              <input type="text" id="attEmpName" class="form-input-sm" placeholder="Nama Anda..." required>
+            </div>
+            <div class="form-field" style="max-width: 130px;">
+              <label for="attShiftSelect">Shift:</label>
+              <select id="attShiftSelect" class="form-select-sm">
+                <option value="1">Shift 1 (Pagi)</option>
+                <option value="2">Shift 2 (Siang)</option>
+                <option value="3">Shift 3 (Malam)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Konfirmasi Status Jika Sudah Absen -->
+        <div id="attSuccessBanner" style="display: none; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 10px; font-size: 0.82rem; color: #86EFAC;">
+          <div style="font-weight: 750; margin-bottom: 2px;">✅ Absensi Masuk Berhasil Dicatat!</div>
+          <div id="attSuccessDetail" style="font-size: 0.76rem; color: #CBD5E1;">Tercatat di Cloud Supabase</div>
+        </div>
+
+        <!-- Tombol Aksi Task 1 -->
+        <button type="button" id="btnConfirmAttendance" class="btn-task btn-task-attend" onclick="confirmAttendance()">
+          <span>📍</span>
+          <span id="btnConfirmAttendanceText">Konfirmasi &amp; Kirim Absen Masuk</span>
+        </button>
+
+        <div style="text-align: right;">
+          <button type="button" style="background: none; border: none; color: var(--text-muted); font-size: 0.75rem; text-decoration: underline; cursor: pointer;" onclick="skipAttendance()">
+            Lewati Absen &amp; Langsung Bagikan Foto &rarr;
+          </button>
+        </div>
       </div>
+
+      <!-- TASK 2: PASANG FOTO KE STATUS WHATSAPP -->
+      <div id="task2Card" class="task-card">
+        <div class="task-header">
+          <div class="task-title">
+            <span>🟢</span>
+            <span>Task 2: Pasang Foto ke Status WhatsApp</span>
+          </div>
+          <span id="task2StepBadge" class="task-badge-step">Langkah 2</span>
+        </div>
+
+        <p id="task2Subtitle" style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.45;">
+          Ketuk tombol di bawah untuk mengirim foto dan keterangan langsung ke <b>Status Saya (Status WhatsApp)</b>.
+        </p>
+
+        <!-- Tombol Utama: Pasang ke Status WhatsApp -->
+        <button id="btnShareWhatsAppTask" class="btn-task btn-task-share pulse" onclick="executeShareWhatsApp()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.04 14.69 2 12.04 2ZM12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.05 3.68C14.25 3.68 16.32 4.54 17.88 6.1C19.44 7.66 20.3 9.73 20.3 11.93C20.3 16.47 16.59 20.15 12.04 20.15ZM16.56 14.39C16.31 14.27 15.09 13.67 14.86 13.59C14.63 13.51 14.47 13.47 14.3 13.71C14.13 13.95 13.65 14.51 13.5 14.68C13.36 14.84 13.22 14.87 12.97 14.74C12.72 14.62 11.92 14.36 10.97 13.51C10.23 12.85 9.73 12.03 9.58 11.78C9.43 11.53 9.56 11.4 9.69 11.27C9.8 11.16 9.93 10.99 10.05 10.84C10.17 10.7 10.22 10.59 10.3 10.43C10.38 10.26 10.34 10.12 10.28 10C10.22 9.88 9.73 8.68 9.53 8.18C9.33 7.7 9.13 7.76 8.98 7.75C8.84 7.74 8.68 7.74 8.51 7.74C8.35 7.74 8.08 7.8 7.86 8.04C7.64 8.28 7.02 8.86 7.02 10.04C7.02 11.22 7.88 12.35 8 12.51C8.12 12.67 9.7 15.11 12.13 16.16C12.71 16.41 13.16 16.56 13.51 16.67C14.09 16.86 14.62 16.83 15.04 16.77C15.51 16.7 16.49 16.18 16.69 15.61C16.89 15.04 16.89 14.55 16.83 14.45C16.77 14.35 16.61 14.31 16.56 14.39Z"/>
+          </svg>
+          <span id="btnShareWhatsAppTaskText">📲 Pasang Foto ke Status WhatsApp</span>
+        </button>
+
+        <!-- Panduan 3 Langkah Cepat & Trik Pin Tanpa Titik Tiga -->
+        <div style="background: rgba(37, 211, 102, 0.06); border: 1px solid rgba(37, 211, 102, 0.25); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; font-size: 0.78rem; color: #CBD5E1; line-height: 1.45;">
+          <div style="font-weight: 750; color: #86EFAC; display: flex; align-items: center; gap: 5px;">
+            <span>💡</span> Cara Cepat Jadi Status WhatsApp:
+          </div>
+          <div style="display: flex; gap: 8px; align-items: flex-start;">
+            <span style="background: rgba(37,211,102,0.2); color: #25D366; font-weight: 800; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0;">1</span>
+            <span>Ketuk tombol hijau di atas &rarr; pilih <b>WhatsApp</b> di daftar aplikasi.</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: flex-start;">
+            <span style="background: rgba(37,211,102,0.2); color: #25D366; font-weight: 800; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0;">2</span>
+            <span>Di dalam WhatsApp, pilih opsi paling atas: <b>"Status saya"</b>.</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: flex-start;">
+            <span style="background: rgba(37,211,102,0.2); color: #25D366; font-weight: 800; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0;">3</span>
+            <span>Ketuk tanda panah kirim hijau ➡️. Foto &amp; keterangan otomatis terbit jadi status!</span>
+          </div>
+          <div style="margin-top: 4px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1); font-size: 0.73rem; color: #94A3B8;">
+            📌 <b>Tips agar tidak perlu pencet titik tiga lagi:</b> Saat dialog bagikan Android muncul, <i>tekan &amp; tahan (long-press)</i> ikon WhatsApp lalu pilih <b>📌 Sematkan (Pin)</b>. WhatsApp akan langsung muncul di baris teratas selamanya!
+          </div>
+        </div>
+
+        <!-- Opsi Cadangan: Unduh Semua Foto ke Galeri HP Sekaligus -->
+        <button id="btnDownloadAllPhotos" class="btn-secondary" style="padding: 0.65rem 1rem; font-size: 0.8rem; width: 100%; border-radius: 8px;" onclick="downloadAllPhotosToGallery()">
+          <span>📥</span>
+          <span>Unduh Semua Foto ke Galeri HP</span>
+        </button>
+
+        <!-- Tombol Tambah Shortcut ke Layar Utama -->
+        <button id="btnShortcut" class="btn-shortcut" onclick="handleShortcutInstall()">
+          <span>📲</span>
+          <span>Pasang ke Home Screen sebagai Shortcut</span>
+        </button>
+      </div>
+
     </div>
 
     <!-- Galeri Foto Dinamis -->
     <div id="galleryGrid" class="gallery-grid"></div>
 
     <footer>
-      &copy; KSP Check — WhatsApp Sharing Utility
+      &copy; KSP Check — WhatsApp Sharing &amp; Attendance Utility
     </footer>
   </div>
 
@@ -534,7 +736,7 @@
         <button style="background: none; border: none; color: #8A92A6; font-size: 1.4rem; cursor: pointer;" onclick="closeGuideModal()">&times;</button>
       </div>
       <p style="font-size: 0.85rem; color: var(--text-muted);">
-        Ikuti petunjuk di bawah untuk menambahkan pintasan langsung ke Layar Utama HP Anda:
+        Ikuti petunjuk di bawah untuk menambahkan pintasan absensi langsung ke Layar Utama HP Anda:
       </p>
 
       <div style="background: #11141F; border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
@@ -575,8 +777,19 @@
 
   <script>
     let currentCode = '';
-    let currentTitle = 'Lampiran Foto KSP Check';
+    let currentTitle = 'Lampiran Foto & Absensi KSP Check';
     let currentImages = []; // Array of { name, dataUrl, size }
+    let currentTemplate = '';
+    let targetStoreData = null; // { id, name, lat, lng, radius }
+    let allStoresList = [];
+
+    // GPS & Attendance State
+    let userCoords = null; // { lat, lng, accuracy }
+    let isInsideStoreRadius = false;
+    let distanceToStoreMeters = null;
+    let attendanceCompleted = false;
+    let lastAttendanceInfo = null;
+
     let deferredInstallPrompt = null;
     let isFromHomeScreen = false;
 
@@ -585,12 +798,10 @@
       e.preventDefault();
       deferredInstallPrompt = e;
       const btn = document.getElementById('btnShortcut');
-      if (btn) {
-        btn.style.display = 'flex';
-      }
+      if (btn) btn.style.display = 'flex';
     });
 
-    // Utilitas Status
+    // Utilitas Status Alert
     function showStatus(text, type = 'info') {
       const el = document.getElementById('status-msg');
       if (!el) return;
@@ -612,17 +823,31 @@
       return new File([blob], fileName, { type: mime });
     }
 
+    // Helper: Haversine distance formula (meter)
+    function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // Earth radius in meters
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return Math.round(R * c);
+    }
+
     // Ambil kode / password dari URL
     function extractCodeFromUrl() {
       const urlParams = new URLSearchParams(window.location.search);
       let code = urlParams.get('code') || urlParams.get('p') || urlParams.get('pwd') || urlParams.get('pass');
 
-      // Cek apakah mode shortcut dari homescreen
       if (urlParams.get('from') === 'homescreen' || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
         isFromHomeScreen = true;
       }
 
-      // Jika format raw: share_whatsapp.html?XXXXXXX
+      // Format raw query: share_whatsapp.html?XXXXXXX
       if (!code && window.location.search) {
         let raw = window.location.search.replace(/^\?/, '').trim();
         if (raw) {
@@ -639,11 +864,127 @@
       return (code || '').trim();
     }
 
-    // Ambil data foto dari Supabase Cloud
+    // =========================================================================
+    // BACKGROUND GPS AUTO-DETECTION
+    // =========================================================================
+    function startBackgroundGpsDetection() {
+      if (!navigator.geolocation) {
+        updateGpsStatusUI('unsupported', 'Perangkat tidak mendukung GPS');
+        return;
+      }
+
+      updateGpsStatusUI('pending', 'Mengunci lokasi GPS...');
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userCoords = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: Math.round(pos.coords.accuracy || 0)
+          };
+          evaluateStoreDistance();
+        },
+        (err) => {
+          console.warn('GPS position error:', err);
+          updateGpsStatusUI('error', 'Izin GPS ditolak atau sinyal lemah');
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+      );
+    }
+
+    function evaluateStoreDistance() {
+      if (!userCoords) return;
+
+      // Update akurasi teks
+      const accEl = document.getElementById('locationAccuracyText');
+      if (accEl) accEl.textContent = `Akurasi GPS: ±${userCoords.accuracy}m`;
+
+      let storeToMatch = targetStoreData;
+
+      // Jika targetStore adalah 'all' atau belum punya koordinat, cari cabang terdekat dari allStoresList
+      if ((!storeToMatch || !storeToMatch.lat) && allStoresList.length > 0) {
+        let nearestDist = Infinity;
+        let nearestStore = null;
+
+        allStoresList.forEach(st => {
+          const coords = st.coordinates || st.location;
+          if (coords && coords.lat && coords.lng) {
+            const dist = calculateDistanceMeters(userCoords.lat, userCoords.lng, parseFloat(coords.lat), parseFloat(coords.lng));
+            if (dist < nearestDist) {
+              nearestDist = dist;
+              nearestStore = {
+                id: st.id,
+                name: st.name,
+                lat: parseFloat(coords.lat),
+                lng: parseFloat(coords.lng),
+                radius: st.radius_meters || 50
+              };
+            }
+          }
+        });
+
+        if (nearestStore) {
+          storeToMatch = nearestStore;
+          targetStoreData = nearestStore;
+        }
+      }
+
+      if (!storeToMatch || !storeToMatch.lat) {
+        updateGpsStatusUI('valid', 'GPS Aktif (Koordinat Terkunci)');
+        const distEl = document.getElementById('locationDistanceText');
+        if (distEl) distEl.textContent = 'Jarak: Toko belum set titik koordinat';
+        isInsideStoreRadius = true;
+        return;
+      }
+
+      // Hitung jarak ke toko
+      const radius = storeToMatch.radius || 50; // default 50 meter
+      const distance = calculateDistanceMeters(userCoords.lat, userCoords.lng, storeToMatch.lat, storeToMatch.lng);
+      distanceToStoreMeters = distance;
+
+      const storeNameEl = document.getElementById('taskStoreName');
+      if (storeNameEl) storeNameEl.textContent = storeToMatch.name;
+
+      const distEl = document.getElementById('locationDistanceText');
+      if (distEl) distEl.textContent = `Jarak ke toko: ${distance} meter`;
+
+      if (distance <= radius) {
+        isInsideStoreRadius = true;
+        updateGpsStatusUI('valid', `🟢 Di Area Toko (${distance}m)`);
+      } else {
+        isInsideStoreRadius = false;
+        updateGpsStatusUI('invalid', `🔴 Di Luar Toko (${distance}m > ${radius}m)`);
+      }
+    }
+
+    function updateGpsStatusUI(type, text) {
+      const statusBox = document.getElementById('locationStatus');
+      const textEl = document.getElementById('locationStatusText');
+      if (!statusBox || !textEl) return;
+
+      statusBox.className = 'location-status';
+      if (type === 'valid') {
+        statusBox.classList.add('valid');
+        textEl.innerHTML = text;
+      } else if (type === 'invalid') {
+        statusBox.classList.add('invalid');
+        textEl.innerHTML = text;
+      } else if (type === 'error') {
+        statusBox.classList.add('invalid');
+        textEl.innerHTML = `⚠️ ${text}`;
+      } else {
+        statusBox.classList.add('pending');
+        textEl.innerHTML = `⏳ ${text}`;
+      }
+    }
+
+    // =========================================================================
+    // LOAD DATA DARI SUPABASE CLOUD
+    // =========================================================================
     async function loadDataFromSupabase(code) {
       clearStatus();
       document.getElementById('loadingCard').style.display = 'flex';
-      document.getElementById('actionPanel').style.display = 'none';
+      document.getElementById('taskSection').style.display = 'none';
       document.getElementById('galleryGrid').innerHTML = '';
       document.getElementById('manualCard').style.display = 'none';
 
@@ -655,12 +996,10 @@
       const cleanCode = code.trim().toUpperCase();
       currentCode = cleanCode;
 
-      // Update UI Header
       const codeBadge = document.getElementById('codeBadge');
       codeBadge.textContent = 'KODE: ' + cleanCode;
       codeBadge.style.display = 'inline-flex';
 
-      // Update PWA Dynamic Manifest Start URL
       updateDynamicManifest(cleanCode);
 
       try {
@@ -669,28 +1008,23 @@
           'Authorization': 'Bearer ' + CFG.key
         };
 
+        // Ambil daftar cabang untuk pencocokan GPS
+        fetchStoresCatalog(CFG, headers);
+
         let foundRecord = null;
 
-        // Opsi 1: Coba tabel terdedikasi ksp_shared_images
+        // Opsi 1: Coba tabel ksp_shared_images
         try {
-          const resDedicated = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/ksp_shared_images?code=eq.${encodeURIComponent(cleanCode)}&select=*&limit=1`, {
-            headers: headers
-          });
+          const resDedicated = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/ksp_shared_images?code=eq.${encodeURIComponent(cleanCode)}&select=*&limit=1`, { headers });
           if (resDedicated.ok) {
             const list = await resDedicated.json();
-            if (Array.isArray(list) && list.length > 0) {
-              foundRecord = list[0];
-            }
+            if (Array.isArray(list) && list.length > 0) foundRecord = list[0];
           }
-        } catch (e) {
-          // ignore, lanjut ke fallback
-        }
+        } catch (e) {}
 
-        // Opsi 2: Fallback ke tabel app_balances (package_name = share_whatsapp)
+        // Opsi 2: Fallback ke app_balances (package_name = share_whatsapp)
         if (!foundRecord) {
-          const resFallback = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/app_balances?id=eq.share_${encodeURIComponent(cleanCode)}&select=*&limit=1`, {
-            headers: headers
-          });
+          const resFallback = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/app_balances?id=eq.share_${encodeURIComponent(cleanCode)}&select=*&limit=1`, { headers });
           if (resFallback.ok) {
             const list = await resFallback.json();
             if (Array.isArray(list) && list.length > 0) {
@@ -698,17 +1032,16 @@
               foundRecord = {
                 code: cleanCode,
                 title: (row.raw_json && row.raw_json.title) || row.device_name || 'Lampiran KSP Check',
-                images: (row.raw_json && row.raw_json.images) || []
+                images: (row.raw_json && row.raw_json.images) || [],
+                raw_json: row.raw_json || {}
               };
             }
           }
         }
 
-        // Opsi 3: Fallback pencarian berdasarkan raw_snippet jika id berbeda
+        // Opsi 3: Fallback raw_snippet
         if (!foundRecord) {
-          const resBySnippet = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/app_balances?package_name=eq.share_whatsapp&raw_snippet=eq.${encodeURIComponent(cleanCode)}&select=*&limit=1`, {
-            headers: headers
-          });
+          const resBySnippet = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/app_balances?package_name=eq.share_whatsapp&raw_snippet=eq.${encodeURIComponent(cleanCode)}&select=*&limit=1`, { headers });
           if (resBySnippet.ok) {
             const list = await resBySnippet.json();
             if (Array.isArray(list) && list.length > 0) {
@@ -716,7 +1049,8 @@
               foundRecord = {
                 code: cleanCode,
                 title: (row.raw_json && row.raw_json.title) || row.device_name || 'Lampiran KSP Check',
-                images: (row.raw_json && row.raw_json.images) || []
+                images: (row.raw_json && row.raw_json.images) || [],
+                raw_json: row.raw_json || {}
               };
             }
           }
@@ -725,44 +1059,345 @@
         document.getElementById('loadingCard').style.display = 'none';
 
         if (!foundRecord || !Array.isArray(foundRecord.images) || foundRecord.images.length === 0) {
-          showStatus(`⚠️ Foto dengan kode akses <b>${cleanCode}</b> tidak ditemukan atau sudah kadaluarsa. Silakan periksa kembali kode Anda.`, 'error');
+          showStatus(`⚠️ Foto dengan kode akses <b>${cleanCode}</b> tidak ditemukan. Periksa kembali kode Anda.`, 'error');
           document.getElementById('manualCard').style.display = 'flex';
           document.getElementById('pageSubtitle').textContent = 'Kode akses tidak ditemukan';
           return;
         }
 
-        // Sukses memuat data
+        // Simpan data paket share
         currentTitle = foundRecord.title || 'Lampiran KSP Check';
         currentImages = foundRecord.images;
+        
+        const rawJson = foundRecord.raw_json || {};
+        currentTemplate = rawJson.message_template || '';
 
+        // Siapkan target cabang dari paket
+        if (rawJson.target_store_name && rawJson.target_store_id !== 'all') {
+          targetStoreData = {
+            id: rawJson.target_store_id,
+            name: rawJson.target_store_name,
+            lat: rawJson.target_store_coords?.lat || null,
+            lng: rawJson.target_store_coords?.lng || null,
+            radius: 50
+          };
+          const storeNameEl = document.getElementById('taskStoreName');
+          if (storeNameEl) storeNameEl.textContent = targetStoreData.name;
+        }
+
+        // Setup form nama kasir dari sesi / localStorage
+        setupAttendanceForm();
+
+        // Render Task Stepper & Galeri
+        document.getElementById('taskSection').style.display = 'flex';
         renderGallery(currentImages, currentTitle);
 
-        // Jika dibuka dari shortcut layar utama, tampilkan One-Tap banner
-        if (isFromHomeScreen) {
-          const oneTap = document.getElementById('oneTapBanner');
-          if (oneTap) {
-            oneTap.style.display = 'block';
-            oneTap.scrollIntoView({ behavior: 'smooth' });
-          }
-        }
+        // Evaluasi ulang GPS setelah data toko terisi
+        if (userCoords) evaluateStoreDistance();
 
       } catch (err) {
         document.getElementById('loadingCard').style.display = 'none';
-        showStatus('❌ Terjadi kesalahan jaringan saat mengambil foto: ' + err.message, 'error');
+        showStatus('❌ Gagal memuat data: ' + err.message, 'error');
         document.getElementById('manualCard').style.display = 'flex';
       }
     }
 
-    // Render Galeri Foto
-    function renderGallery(images, title) {
-      document.getElementById('pageTitle').textContent = title || 'Bagikan Gambar ke WhatsApp';
-      document.getElementById('pageSubtitle').textContent = `Tersedia ${images.length} foto siap dibagikan ke WhatsApp.`;
-      
-      const btnShareText = document.getElementById('btnShareAllText');
-      if (btnShareText) {
-        btnShareText.textContent = `Bagikan ${images.length} Foto ke WhatsApp`;
+    async function fetchStoresCatalog(CFG, headers) {
+      try {
+        const res = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/ksp_stores?select=id,name,data`, { headers });
+        if (res.ok) {
+          const list = await res.json();
+          if (Array.isArray(list)) {
+            allStoresList = list.map(item => {
+              const d = item.data || {};
+              return {
+                id: item.id,
+                name: item.name || d.name,
+                coordinates: d.coordinates || d.location || null,
+                radius_meters: d.radius_meters || 50,
+                shifts: d.shifts || []
+              };
+            });
+            if (userCoords) evaluateStoreDistance();
+          }
+        }
+      } catch (e) {}
+    }
+
+    function setupAttendanceForm() {
+      const lastEmp = localStorage.getItem('kspcheck_last_emp_name') || '';
+      const lastShift = localStorage.getItem('kspcheck_last_shift') || '1';
+
+      const empInp = document.getElementById('attEmpName');
+      const shiftSel = document.getElementById('attShiftSelect');
+      if (empInp && lastEmp) empInp.value = lastEmp;
+      if (shiftSel && lastShift) shiftSel.value = lastShift;
+
+      // Periksa apakah kode share ini sudah pernah diabsenkan di perangkat ini hari ini
+      const checkKey = `ksp_att_done_${currentCode}_${new Date().toISOString().substring(0, 10)}`;
+      const savedAtt = localStorage.getItem(checkKey);
+      if (savedAtt) {
+        try {
+          const parsed = JSON.parse(savedAtt);
+          markTask1Completed(parsed);
+        } catch (e) {}
       }
-      document.getElementById('actionPanel').style.display = 'flex';
+    }
+
+    // =========================================================================
+    // TASK 1: KONFIRMASI ABSENSI KARYAWAN
+    // =========================================================================
+    async function confirmAttendance() {
+      const empInp = document.getElementById('attEmpName');
+      const shiftSel = document.getElementById('attShiftSelect');
+      const empName = (empInp?.value || '').trim();
+      const shiftNum = parseInt(shiftSel?.value || '1', 10);
+      const shiftName = shiftSel ? shiftSel.options[shiftSel.selectedIndex].text : `Shift ${shiftNum}`;
+
+      if (!empName) {
+        alert('Silakan ketik nama Anda sebelum mengonfirmasi absensi!');
+        empInp?.focus();
+        return;
+      }
+
+      const btn = document.getElementById('btnConfirmAttendance');
+      const btnText = document.getElementById('btnConfirmAttendanceText');
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.textContent = 'Mengirim absensi ke cloud...';
+
+      const storeName = (targetStoreData && targetStoreData.name) || 'Cabang KSP Check';
+      const storeId = (targetStoreData && targetStoreData.id) || null;
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+      const attPayload = {
+        id: `att_${now.getTime()}_${Math.random().toString(36).substring(2, 6)}`,
+        store_id: storeId,
+        store_name: storeName,
+        emp_name: empName,
+        shift_num: shiftNum,
+        shift_name: shiftName,
+        lat: userCoords ? userCoords.lat : null,
+        lng: userCoords ? userCoords.lng : null,
+        accuracy: userCoords ? userCoords.accuracy : null,
+        distance_meters: distanceToStoreMeters,
+        is_valid_location: isInsideStoreRadius,
+        share_code: currentCode,
+        created_at: now.toISOString()
+      };
+
+      // Simpan ke Supabase Cloud
+      const CFG = window.KSP_SYNC_CONFIG || {
+        url: "https://nigvcwpxswvwzqtteanj.supabase.co",
+        key: "sb_publishable_TVMTb_JhsDbcbz5hLjIHWQ_kthdNAJF"
+      };
+      const headers = {
+        'apikey': CFG.key,
+        'Authorization': 'Bearer ' + CFG.key,
+        'Content-Type': 'application/json'
+      };
+
+      let sentCloud = false;
+
+      // 1. Coba ksp_attendances
+      try {
+        const resAtt = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/ksp_attendances`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(attPayload)
+        });
+        if (resAtt.ok) sentCloud = true;
+      } catch (e) {}
+
+      // 2. Fallback: app_balances
+      if (!sentCloud) {
+        try {
+          const bodyBal = {
+            id: attPayload.id,
+            device_id: storeId || 'unknown_store',
+            device_name: empName,
+            package_name: 'attendance',
+            app_name: 'Absensi Karyawan',
+            balance_value: distanceToStoreMeters || 0,
+            formatted_balance: isInsideStoreRadius ? 'Di Toko' : 'Luar Toko',
+            calculation_mode: 'ATTENDANCE_LOG',
+            raw_snippet: `${storeName} - ${empName} (${shiftName})`,
+            raw_json: attPayload
+          };
+          const resBal = await fetch(`${CFG.url.replace(/\/+$/, '')}/rest/v1/app_balances`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(bodyBal)
+          });
+          if (resBal.ok || resBal.status === 201) sentCloud = true;
+        } catch (e) {}
+      }
+
+      if (btn) btn.disabled = false;
+      if (btnText) btnText.textContent = 'Konfirmasi & Kirim Absen Masuk';
+
+      // Simpan ke sesi lokal
+      localStorage.setItem('kspcheck_last_emp_name', empName);
+      localStorage.setItem('kspcheck_last_shift', String(shiftNum));
+      const checkKey = `ksp_att_done_${currentCode}_${now.toISOString().substring(0, 10)}`;
+      localStorage.setItem(checkKey, JSON.stringify(attPayload));
+
+      lastAttendanceInfo = attPayload;
+      markTask1Completed(attPayload);
+
+      showStatus(`✅ Absensi kasir <b>${escapeHtml(empName)}</b> berhasil dicatat! Silakan lanjutkan Task 2 untuk membagikan foto ke WhatsApp.`, 'success');
+
+      // Fokus dan gulir ke Task 2
+      const task2 = document.getElementById('task2Card');
+      if (task2) {
+        task2.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function markTask1Completed(att) {
+      attendanceCompleted = true;
+      lastAttendanceInfo = att;
+
+      const task1 = document.getElementById('task1Card');
+      const task1Badge = document.getElementById('task1StepBadge');
+      const formFields = document.getElementById('attendanceFormFields');
+      const btnAttend = document.getElementById('btnConfirmAttendance');
+      const successBanner = document.getElementById('attSuccessBanner');
+      const successDetail = document.getElementById('attSuccessDetail');
+
+      if (task1) {
+        task1.classList.remove('active');
+        task1.classList.add('completed');
+      }
+      if (task1Badge) {
+        task1Badge.classList.add('done');
+        task1Badge.textContent = '✅ Selesai';
+      }
+      if (formFields) formFields.style.display = 'none';
+      if (btnAttend) btnAttend.style.display = 'none';
+
+      if (successBanner && successDetail) {
+        const timeStr = new Date(att.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        const locLabel = att.is_valid_location ? '🟢 Di Area Toko' : `🔴 Di Luar Toko (Jarak: ${Math.round(att.distance_meters || 0)}m)`;
+        successDetail.innerHTML = `Kasir: <b>${escapeHtml(att.emp_name)}</b> &bull; ${escapeHtml(att.shift_name)}<br>Pukul ${timeStr} WIB &bull; Status: ${locLabel}`;
+        successBanner.style.display = 'block';
+      }
+
+      // Aktifkan Task 2
+      const task2 = document.getElementById('task2Card');
+      if (task2) {
+        task2.classList.add('active');
+      }
+    }
+
+    function skipAttendance() {
+      const task1 = document.getElementById('task1Card');
+      if (task1) task1.classList.remove('active');
+      const task2 = document.getElementById('task2Card');
+      if (task2) {
+        task2.classList.add('active');
+        task2.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    // =========================================================================
+    // TASK 2: BAGIKAN FOTO & REKAP KE WHATSAPP (MENGGUNAKAN TEMPLATE)
+    // =========================================================================
+    async function executeShareWhatsApp() {
+      if (currentImages.length === 0) {
+        showStatus('⚠️ Belum ada gambar untuk dibagikan.', 'error');
+        return;
+      }
+
+      showStatus(`⏳ Menyiapkan ${currentImages.length} foto lampiran...`, 'info');
+
+      try {
+        const filePromises = currentImages.map((img, i) => {
+          const fname = img.name || `ksp_foto_${i + 1}.png`;
+          return dataUrlToFile(img.dataUrl, fname);
+        });
+
+        const files = await Promise.all(filePromises);
+
+        if (!navigator.canShare) {
+          showStatus('⚠️ Browser ini belum mendukung <code>navigator.canShare</code>. Pastikan menggunakan browser HP (Chrome / Safari) dengan koneksi <b>HTTPS</b>.', 'error');
+          return;
+        }
+
+        if (navigator.canShare({ files })) {
+          // Bentuk pesan akhir menggunakan template yang di-set di store_manager
+          const finalMessage = buildFinalShareMessage();
+
+          showStatus('📱 Membuka menu bagikan... Silakan pilih <b>WhatsApp</b>.', 'info');
+          await navigator.share({
+            files: files,
+            title: currentTitle,
+            text: finalMessage
+          });
+          showStatus('✅ Berhasil dibagikan ke WhatsApp!', 'success');
+        } else {
+          showStatus('⚠️ Browser tidak mengizinkan pengiriman file ini secara bersamaan. Coba bagikan per foto dari kartu galeri di bawah.', 'error');
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          showStatus('ℹ️ Berbagi dibatalkan oleh pengguna.', 'info');
+        } else {
+          showStatus('❌ Gagal membagikan: ' + err.message, 'error');
+        }
+      }
+    }
+
+    function buildFinalShareMessage() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+      let empName = (lastAttendanceInfo && lastAttendanceInfo.emp_name) || document.getElementById('attEmpName')?.value || 'Kasir';
+      let shiftName = (lastAttendanceInfo && lastAttendanceInfo.shift_name) || 'Shift 1';
+      let storeName = (targetStoreData && targetStoreData.name) || 'Cabang KSP Check';
+
+      let statusLoc = 'Belum Cek Lokasi';
+      let distanceStr = '-';
+
+      if (userCoords) {
+        if (distanceToStoreMeters !== null) {
+          distanceStr = `±${distanceToStoreMeters} meter`;
+          statusLoc = isInsideStoreRadius ? '✅ Terverifikasi di Area Toko' : '⚠️ Di Luar Area Toko';
+        } else {
+          statusLoc = '📍 GPS Aktif';
+        }
+      }
+
+      // Template bawaan jika belum di-set
+      let tpl = currentTemplate || `Halo Admin, berikut foto lampiran & absensi dari KSP Check:
+👤 Kasir: {kasir} ({shift})
+🏢 Cabang: {cabang}
+⏰ Waktu: {waktu} WIB
+📍 Lokasi: {status_lokasi}
+📸 Lampiran: {jumlah_foto} Foto (Kode: {kode})`;
+
+      // Replace tags
+      tpl = tpl.replace(/\{kasir\}/gi, empName)
+               .replace(/\{shift\}/gi, shiftName)
+               .replace(/\{cabang\}/gi, storeName)
+               .replace(/\{waktu\}/gi, timeStr)
+               .replace(/\{tanggal\}/gi, dateStr)
+               .replace(/\{status_lokasi\}/gi, statusLoc)
+               .replace(/\{jarak\}/gi, distanceStr)
+               .replace(/\{jumlah_foto\}/gi, String(currentImages.length))
+               .replace(/\{kode\}/gi, currentCode);
+
+      return tpl;
+    }
+
+    // =========================================================================
+    // GALERI & FUNGSI INDIVIDUAL
+    // =========================================================================
+    function renderGallery(images, title) {
+      document.getElementById('pageTitle').textContent = title || 'Absensi & Bagikan ke WhatsApp';
+      document.getElementById('pageSubtitle').textContent = `Tersedia ${images.length} foto lampiran yang siap dibagikan.`;
 
       const grid = document.getElementById('galleryGrid');
       grid.innerHTML = '';
@@ -801,81 +1436,28 @@
       });
     }
 
-    // Bagikan Seluruh Gambar Sekaligus ke WhatsApp
-    async function shareAllImages() {
-      if (currentImages.length === 0) {
-        showStatus('⚠️ Belum ada gambar yang dimuat.', 'error');
-        return;
-      }
-
-      showStatus(`⏳ Menyiapkan ${currentImages.length} gambar...`, 'info');
-
-      try {
-        const filePromises = currentImages.map((img, i) => {
-          const fname = img.name || `ksp_check_foto_${i + 1}.png`;
-          return dataUrlToFile(img.dataUrl, fname);
-        });
-
-        const files = await Promise.all(filePromises);
-
-        // Validasi dukungan Web Share API
-        if (!navigator.canShare) {
-          showStatus('⚠️ Browser ini belum mendukung <code>navigator.canShare</code>. Pastikan menggunakan browser HP (Chrome / Safari) dengan koneksi <b>HTTPS</b>.', 'error');
-          return;
-        }
-
-        if (navigator.canShare({ files })) {
-          showStatus('📱 Membuka menu bagikan... Silakan pilih <b>WhatsApp</b>.', 'info');
-          await navigator.share({
-            files: files,
-            title: currentTitle,
-            text: `Berikut ${currentImages.length} foto lampiran dari KSP Check (${currentCode}).`
-          });
-          showStatus('✅ Berhasil membagikan gambar!', 'success');
-        } else {
-          showStatus('⚠️ Browser tidak mengizinkan pengiriman file ini secara bersamaan. Coba gunakan tombol "Bagikan Ini" per gambar.', 'error');
-        }
-      } catch (err) {
-        if (err.name === 'AbortError') {
-          showStatus('ℹ️ Berbagi dibatalkan oleh pengguna.', 'info');
-        } else {
-          showStatus('❌ Gagal membagikan: ' + err.message, 'error');
-        }
-      }
-    }
-
-    // Bagikan 1 Gambar Satuan
     async function shareSingleImage(idx) {
       const img = currentImages[idx];
       if (!img) return;
-
       showStatus(`⏳ Menyiapkan foto ${idx + 1}...`, 'info');
       try {
         const filename = img.name || `ksp_foto_${idx + 1}.png`;
         const file = await dataUrlToFile(img.dataUrl, filename);
-        const files = [file];
-
-        if (navigator.canShare && navigator.canShare({ files })) {
-          showStatus('📱 Membuka menu bagikan... Pilih <b>WhatsApp</b>.', 'info');
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
-            files: files,
+            files: [file],
             title: `${currentTitle} - Foto ${idx + 1}`,
-            text: `Berikut lampiran foto ${idx + 1}`
+            text: buildFinalShareMessage()
           });
           showStatus('✅ Berhasil dibagikan!', 'success');
         } else {
-          showStatus('⚠️ Browser tidak mendukung Web Share untuk file.', 'error');
+          showStatus('⚠️ Browser tidak mendukung Web Share untuk file ini.', 'error');
         }
       } catch (err) {
-        if (err.name === 'AbortError') {
-          showStatus('ℹ️ Berbagi dibatalkan.', 'info');
-        } else {
-          showStatus('❌ Gagal: ' + err.message, 'error');
-        }
+        if (err.name !== 'AbortError') showStatus('❌ Gagal: ' + err.message, 'error');
       }
     }
 
-    // Unduh gambar satuan
     function downloadImage(idx) {
       const img = currentImages[idx];
       if (!img) return;
@@ -888,19 +1470,45 @@
       showStatus(`📥 Mengunduh ${img.name}...`, 'success');
     }
 
-    // Salin Base64 ke Clipboard
+    async function downloadAllPhotosToGallery() {
+      if (!currentImages || currentImages.length === 0) {
+        showStatus('⚠️ Belum ada foto untuk diunduh.', 'error');
+        return;
+      }
+
+      showStatus(`📥 Mengunduh ${currentImages.length} foto ke galeri HP...`, 'info');
+
+      for (let i = 0; i < currentImages.length; i++) {
+        const img = currentImages[i];
+        const a = document.createElement('a');
+        a.href = img.dataUrl;
+        a.download = img.name || `ksp_status_foto_${i + 1}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        await new Promise(r => setTimeout(r, 200));
+      }
+
+      try {
+        const msg = buildFinalShareMessage();
+        await navigator.clipboard.writeText(msg);
+        showStatus(`✅ ${currentImages.length} foto berhasil diunduh ke Galeri &amp; teks status disalin ke clipboard! Buka WhatsApp untuk pasang status.`, 'success');
+      } catch (e) {
+        showStatus(`✅ ${currentImages.length} foto berhasil diunduh ke Galeri!`, 'success');
+      }
+    }
+
     async function copyBase64(idx) {
       const img = currentImages[idx];
       if (!img) return;
       try {
         await navigator.clipboard.writeText(img.dataUrl);
-        showStatus(`📋 Base64 foto ${idx + 1} berhasil disalin ke clipboard!`, 'success');
+        showStatus(`📋 Base64 foto ${idx + 1} disalin ke clipboard!`, 'success');
       } catch (e) {
         showStatus('Gagal menyalin: ' + e.message, 'error');
       }
     }
 
-    // Pratinjau gambar layar penuh
     function previewImage(dataUrl) {
       const win = window.open();
       if (win) {
@@ -908,20 +1516,17 @@
       }
     }
 
-    // Input Kode Manual
     function submitManualCode() {
       const val = document.getElementById('manualCodeInput').value.trim();
       if (!val) {
         alert('Masukkan kode akses terlebih dahulu!');
         return;
       }
-      // Perbarui query URL tanpa reload penuh
       const newUrl = window.location.pathname + '?' + encodeURIComponent(val);
       window.history.pushState({ code: val }, '', newUrl);
       loadDataFromSupabase(val);
     }
 
-    // Pasang Shortcut ke Home Screen
     async function handleShortcutInstall() {
       if (deferredInstallPrompt) {
         try {
@@ -936,7 +1541,6 @@
           console.warn('Install prompt error:', e);
         }
       }
-      // Tampilkan panduan modal jika browser tidak mendukung install prompt langsung
       openGuideModal();
     }
 
@@ -951,46 +1555,34 @@
       if (m) m.classList.remove('open');
     }
 
-    // Update link manifest dinamis dengan code & from=homescreen
     function updateDynamicManifest(code) {
       try {
+        document.title = `Absen & WA (${code}) - KSP Check`;
+        const appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+        if (appleTitle) appleTitle.setAttribute('content', `Absen WA ${code}`);
+
         const manifestObj = {
-          "id": `kspcheck-share-${code.toLowerCase()}`,
-          "name": `Bagikan WA (${code}) - KSP Check`,
-          "short_name": `WA ${code}`,
-          "description": `Bagikan foto lampiran KSP Check kode ${code} ke WhatsApp`,
+          "id": "kspcheck-share-whatsapp",
+          "name": `Absen & WA (${code}) - KSP Check`,
+          "short_name": `Absen WA ${code}`,
+          "description": `Absensi GPS & Bagikan Foto KSP Check kode ${code}`,
           "start_url": `share_whatsapp.html?${encodeURIComponent(code)}&from=homescreen`,
-          "scope": "./",
+          "scope": "share_whatsapp.html",
           "display": "standalone",
           "background_color": "#0F1117",
           "theme_color": "#128C7E",
           "orientation": "any",
           "icons": [
-            {
-              "src": "assets/icons/icon-store.svg",
-              "sizes": "any",
-              "type": "image/svg+xml",
-              "purpose": "any maskable"
-            },
-            {
-              "src": "assets/icons/icon-store-192.png",
-              "sizes": "192x192",
-              "type": "image/png"
-            },
-            {
-              "src": "assets/icons/icon-store-512.png",
-              "sizes": "512x512",
-              "type": "image/png"
-            }
+            { "src": "assets/icons/icon-store.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
+            { "src": "assets/icons/icon-store-192.png", "sizes": "192x192", "type": "image/png" },
+            { "src": "assets/icons/icon-store-512.png", "sizes": "512x512", "type": "image/png" }
           ]
         };
 
         const blob = new Blob([JSON.stringify(manifestObj)], { type: 'application/manifest+json' });
         const blobUrl = URL.createObjectURL(blob);
         const linkEl = document.getElementById('appManifest');
-        if (linkEl) {
-          linkEl.href = blobUrl;
-        }
+        if (linkEl) linkEl.href = blobUrl;
       } catch (ex) {
         console.warn('Failed to update dynamic manifest:', ex);
       }
@@ -1013,6 +1605,10 @@
 
     // Inisialisasi awal saat halaman dibuka
     window.addEventListener('DOMContentLoaded', () => {
+      // 1. Langsung kunci GPS di latar belakang secara otomatis
+      startBackgroundGpsDetection();
+
+      // 2. Ambil parameter kode dari URL
       const code = extractCodeFromUrl();
       if (code) {
         loadDataFromSupabase(code);
