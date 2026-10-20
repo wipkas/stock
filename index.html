@@ -267,6 +267,7 @@
         .card-store { --card-accent: #059669; --icon-bg: rgba(5, 150, 105, 0.14); --icon-border: rgba(5, 150, 105, 0.35); }
         .card-karyawan { --card-accent: #6366F1; --icon-bg: rgba(99, 102, 241, 0.14); --icon-border: rgba(99, 102, 241, 0.35); }
         .card-print { --card-accent: #0284C7; --icon-bg: rgba(2, 132, 199, 0.14); --icon-border: rgba(2, 132, 199, 0.35); }
+        .card-receipt { --card-accent: #10B981; --icon-bg: rgba(16, 185, 129, 0.14); --icon-border: rgba(16, 185, 129, 0.35); }
 
         /* Modal Dialog */
         .modal-backdrop {
@@ -629,6 +630,11 @@
                     <button type="submit" id="btnUnlock" class="btn-pin-submit">
                         <span>MASUK</span> ➜
                     </button>
+                    <div style="margin-top: 16px; text-align: center;">
+                        <a href="cek_struk.html" style="color: var(--primary); font-size: 13px; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                            <span>🧾</span> Pelanggan: Cek Struk &amp; Token Mandiri &rarr;
+                        </a>
+                    </div>
                 </form>
             </div>
         </div>
@@ -711,6 +717,12 @@
             <a href="stock_print.html" class="menu-card card-print" title="Cetak Daftar Harga & Display Katalog">
                 <div class="menu-card-icon">🖨️</div>
                 <div class="menu-card-title">Cetak &amp; Display</div>
+            </a>
+
+            <!-- 10. CEK STRUK WEB -->
+            <a href="cek_struk.html" class="menu-card card-receipt" title="Cek Struk & Bukti Transaksi Mandiri (Tanpa Password)">
+                <div class="menu-card-icon">🧾</div>
+                <div class="menu-card-title">Cek Struk Web</div>
             </a>
 
         </main>

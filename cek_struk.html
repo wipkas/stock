@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Cek Struk &amp; Bukti Transaksi Mandiri - KSP Check</title>
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-karyawan.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Supabase Project Config -->
+    <script src="js/ksp_sync_config.js"></script>
+
+    <style>
+        :root {
+            --bg-page: #0B1120;
+            --bg-card: #1E293B;
+            --bg-card-hover: #243248;
+            --bg-subtle: #0F172A;
+            --border: #334155;
+            --border-subtle: #1E293B;
+            --text-main: #F8FAFC;
+            --text-sub: #94A3B8;
+            --text-muted: #64748B;
+            --accent: #38BDF8;
+            --accent-gradient: linear-gradient(135deg, #38BDF8 0%, #2563EB 100%);
+            --accent-hover: #0284C7;
+            --success: #10B981;
+            --success-bg: rgba(16, 185, 129, 0.15);
+            --warning: #F59E0B;
+            --warning-bg: rgba(245, 158, 11, 0.15);
+            --danger: #EF4444;
+            --danger-bg: rgba(239, 68, 68, 0.15);
+            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
+
+        body.light-theme {
+            --bg-page: #F1F5F9;
+            --bg-card: #FFFFFF;
+            --bg-card-hover: #F8FAFC;
+            --bg-subtle: #E2E8F0;
+            --border: #CBD5E1;
+            --border-subtle: #E2E8F0;
+            --text-main: #0F172A;
+            --text-sub: #475569;
+            --text-muted: #94A3B8;
+            --accent: #0284C7;
+            --accent-gradient: linear-gradient(135deg, #0284C7 0%, #1D4ED8 100%);
+            --accent-hover: #0369A1;
+            --card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px 16px 64px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 680px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* HEADER */
+        .app-header {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--card-shadow);
+            gap: 16px;
+        }
+
+        .header-title-box {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-icon {
+            width: 46px;
+            height: 46px;
+            background: var(--accent-gradient);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+            flex-shrink: 0;
+        }
+
+        .header-title {
+            font-size: 19px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.25;
+        }
+
+        .header-subtitle {
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-top: 3px;
+        }
+
+        .theme-toggle-btn {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .theme-toggle-btn:hover {
+            border-color: var(--accent);
+        }
+
+        /* SEARCH CARD */
+        .search-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 22px 20px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .search-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 44px 14px 16px;
+            border-radius: var(--radius-md);
+            border: 1.5px solid var(--border);
+            background: var(--bg-subtle);
+            color: var(--text-main);
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+        }
+
+        .clear-btn {
+            position: absolute;
+            right: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 6px;
+            display: none;
+            line-height: 1;
+        }
+        .clear-btn:hover {
+            color: var(--text-main);
+        }
+
+        .btn-search {
+            background: var(--accent-gradient);
+            color: #FFFFFF;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: opacity 0.2s, transform 0.1s;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+        }
+        .btn-search:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+        .btn-search:active {
+            transform: translateY(0);
+        }
+        .btn-search:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .search-hints {
+            font-size: 12px;
+            color: var(--text-sub);
+            line-height: 1.5;
+            display: flex;
+            gap: 6px;
+        }
+
+        /* STATUS BADGE */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .status-success {
+            background: var(--success-bg);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* RESULTS AREA */
+        .results-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* RECEIPT CARD */
+        .receipt-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .receipt-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-subtle);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .receipt-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .receipt-time {
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-top: 2px;
+        }
+
+        .receipt-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* TOKEN PLN BOX (PROMINENT HIGHLIGHT) */
+        .token-box {
+            background: rgba(56, 189, 248, 0.08);
+            border: 2px dashed var(--accent);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 10px;
+        }
+
+        .token-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .token-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: 0.1em;
+            word-break: break-all;
+            background: var(--bg-subtle);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+
+        .btn-copy-token {
+            background: var(--accent);
+            color: #0F172A;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 9px 18px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+        .btn-copy-token:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+
+        /* DETAILS SUMMARY TABLE */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 14px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            font-size: 13px;
+        }
+        @media (max-width: 480px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .detail-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .detail-val {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            word-break: break-word;
+        }
+
+        /* THERMAL RECEIPT DISPLAY CARD */
+        .thermal-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #E2E8F0;
+            border-radius: var(--radius-md);
+            padding: 18px 12px;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .receipt-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+            background: #FFFFFF;
+        }
+
+        /* ACTION BUTTONS */
+        .receipt-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            flex: 1;
+            min-width: 140px;
+            background: var(--bg-subtle);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+        }
+        .btn-action:hover {
+            border-color: var(--accent);
+            background: var(--bg-card-hover);
+        }
+
+        /* EMPTY & LOADING STATES */
+        .state-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 40px 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            box-shadow: var(--card-shadow);
+        }
+        .state-icon {
+            font-size: 44px;
+            line-height: 1;
+        }
+        .state-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .state-desc {
+            font-size: 13px;
+            color: var(--text-sub);
+            max-width: 420px;
+            line-height: 1.5;
+        }
+
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3.5px solid rgba(56, 189, 248, 0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* FOOTER */
+        .app-footer {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* PRINT STYLING */
+        @media print {
+            body {
+                background: #FFFFFF !important;
+                color: #000000 !important;
+                padding: 0 !important;
+            }
+            .app-header, .search-card, .receipt-actions, .app-footer, .theme-toggle-btn {
+                display: none !important;
+            }
+            .receipt-card {
+                border: none !important;
+                box-shadow: none !important;
+            }
+            .receipt-image {
+                box-shadow: none !important;
+                width: 100% !important;
+            }
+            .thermal-container {
+                background: transparent !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- APP HEADER -->
+    <header class="app-header">
+        <div class="header-title-box">
+            <div class="header-icon">🧾</div>
+            <div>
+                <h1 class="header-title">Cek Struk Transaksi</h1>
+                <p class="header-subtitle">Layanan Mandiri Pelanggan KSP Check</p>
+            </div>
+        </div>
+        <button id="themeToggleBtn" class="theme-toggle-btn" title="Ganti Tema">🌙</button>
+    </header>
+
+    <!-- SEARCH CARD -->
+    <section class="search-card">
+        <label for="queryInput" class="search-label">
+            <span>🔍</span> Masukkan Nomor HP atau No. Meter PLN:
+        </label>
+        <div class="search-input-wrapper">
+            <input
+                type="tel"
+                id="queryInput"
+                class="search-input"
+                placeholder="Contoh: 08123456789 atau 14253647589"
+                autocomplete="tel"
+                enterkeyhint="search"
+            />
+            <button id="clearBtn" class="clear-btn" title="Hapus input">✕</button>
+        </div>
+        <button id="searchBtn" class="btn-search">
+            <span>🔍</span> Cari Struk Transaksi
+        </button>
+        <div class="search-hints">
+            <span>💡</span>
+            <span>Ketik nomor tujuan pengisian pulsa/data atau ID Pelanggan / No. Meter PLN saat bertransaksi di kasir.</span>
+        </div>
+    </section>
+
+    <!-- RESULTS SECTION -->
+    <main id="resultsContainer" class="results-container">
+        <!-- Initial prompt state -->
+        <div class="state-card" id="initialState">
+            <div class="state-icon">📱</div>
+            <div class="state-title">Cari Bukti Pembayaran Anda</div>
+            <div class="state-desc">
+                Masukkan nomor HP atau nomor meter Anda di formulir di atas untuk melihat gambar struk thermal resmi dan menyalin kode Token PLN.
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+        <p>&copy; <span id="currentYear"></span> KSP Check • Bukti Transaksi Resmi Konter Digital</p>
+        <p style="margin-top: 4px; font-size: 11px;">Privasi terjaga: Saldo toko disanitasi secara otomatis sebelum struk diunggah.</p>
+    </footer>
+</div>
+
+<script>
+    // Theme Management
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    function initTheme() {
+        const saved = localStorage.getItem('ksp_theme');
+        if (saved === 'light') {
+            document.body.classList.add('light-theme');
+            themeToggleBtn.textContent = '☀️';
+        } else {
+            document.body.classList.remove('light-theme');
+            themeToggleBtn.textContent = '🌙';
+        }
+    }
+    themeToggleBtn.addEventListener('click', () => {
+        const isLight = document.body.classList.toggle('light-theme');
+        localStorage.setItem('ksp_theme', isLight ? 'light' : 'dark');
+        themeToggleBtn.textContent = isLight ? '☀️' : '🌙';
+    });
+    initTheme();
+
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+    // Elements
+    const queryInput = document.getElementById('queryInput');
+    const clearBtn = document.getElementById('clearBtn');
+    const searchBtn = document.getElementById('searchBtn');
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    // Input Events
+    queryInput.addEventListener('input', () => {
+        clearBtn.style.display = queryInput.value.trim() ? 'block' : 'none';
+    });
+    clearBtn.addEventListener('click', () => {
+        queryInput.value = '';
+        clearBtn.style.display = 'none';
+        queryInput.focus();
+    });
+    queryInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performSearch();
+        }
+    });
+    searchBtn.addEventListener('click', () => {
+        performSearch();
+    });
+
+    // Supabase RPC & REST Helper
+    function getSupabaseConfig() {
+        if (window.KSP_SYNC_CONFIG && window.KSP_SYNC_CONFIG.url && window.KSP_SYNC_CONFIG.key) {
+            return window.KSP_SYNC_CONFIG;
+        }
+        return {
+            url: "https://nigvcwpxswvwzqtteanj.supabase.co",
+            key: "sb_publishable_TVMTb_JhsDbcbz5hLjIHWQ_kthdNAJF"
+        };
+    }
+
+    async function callSupabaseRpc(fnName, params = {}) {
+        const cfg = getSupabaseConfig();
+        const endpoint = cfg.url.replace(/\/+$/, '') + '/rest/v1/rpc/' + fnName;
+        const headers = {
+            'Content-Type': 'application/json',
+            'apikey': cfg.key
+        };
+        if (!String(cfg.key).startsWith('sb_')) {
+            headers['Authorization'] = 'Bearer ' + cfg.key;
+        }
+
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(params)
+        });
+
+        if (!res.ok) {
+            const errTxt = await res.text();
+            throw new Error(`HTTP ${res.status}: ${errTxt || res.statusText}`);
+        }
+
+        return await res.json();
+    }
+
+    async function querySupabaseTableFallback(cleanNumber) {
+        const cfg = getSupabaseConfig();
+        // Coba format 08xx dan 628xx
+        let altNumber = cleanNumber;
+        if (cleanNumber.startsWith('62')) {
+            altNumber = '0' + cleanNumber.substring(2);
+        } else if (cleanNumber.startsWith('0')) {
+            altNumber = '62' + cleanNumber.substring(1);
+        }
+
+        const endpoint = cfg.url.replace(/\/+$/, '') +
+            `/rest/v1/customer_receipts?target_number=in.("${cleanNumber}","${altNumber}")&order=created_at.desc&limit=10`;
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'apikey': cfg.key
+        };
+        if (!String(cfg.key).startsWith('sb_')) {
+            headers['Authorization'] = 'Bearer ' + cfg.key;
+        }
+
+        const res = await fetch(endpoint, {
+            method: 'GET',
+            headers: headers
+        });
+
+        if (!res.ok) {
+            const errTxt = await res.text();
+            throw new Error(`HTTP ${res.status}: ${errTxt || res.statusText}`);
+        }
+
+        return await res.json();
+    }
+
+    // Normalisasi input (hanya digit angka)
+    function cleanInput(val) {
+        return (val || '').replace(/[^0-9]/g, '');
+    }
+
+    // Format Rupiah
+    function fmtRupiah(val) {
+        const num = Number(val || 0);
+        return 'Rp ' + num.toLocaleString('id-ID');
+    }
+
+    // Format Tanggal
+    function fmtDate(isoStr) {
+        if (!isoStr) return '-';
+        try {
+            const d = new Date(isoStr);
+            return d.toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            return isoStr;
+        }
+    }
+
+    // Escape HTML
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    // Eksekusi Pencarian
+    async function performSearch() {
+        const rawQuery = queryInput.value.trim();
+        const cleanQuery = cleanInput(rawQuery);
+
+        if (!cleanQuery || cleanQuery.length < 5) {
+            alert('Silakan masukkan nomor tujuan atau nomor meter yang valid (minimal 5 digit).');
+            queryInput.focus();
+            return;
+        }
+
+        // Tampilkan State Loading
+        searchBtn.disabled = true;
+        resultsContainer.innerHTML = `
+            <div class="state-card">
+                <div class="spinner"></div>
+                <div class="state-title">Mencari Bukti Transaksi...</div>
+                <div class="state-desc">Sedang mengambil struk untuk nomor <strong>${escapeHtml(cleanQuery)}</strong> dari Supabase Cloud...</div>
+            </div>
+        `;
+
+        try {
+            let receipts = [];
+            let rpcFailed = false;
+
+            // 1. Coba lewat RPC search_customer_receipts (Aman & Anti-Scraping)
+            try {
+                receipts = await callSupabaseRpc('search_customer_receipts', { p_query: cleanQuery });
+            } catch (errRpc) {
+                console.warn('RPC search_customer_receipts gagal, mencoba fallback REST:', errRpc.message);
+                rpcFailed = true;
+            }
+
+            // 2. Jika RPC belum terpasang di database, gunakan query PostgREST langsung
+            if (rpcFailed || !Array.isArray(receipts)) {
+                receipts = await querySupabaseTableFallback(cleanQuery);
+            }
+
+            if (!Array.isArray(receipts) || receipts.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="state-card">
+                        <div class="state-icon">🔎</div>
+                        <div class="state-title">Struk Tidak Ditemukan</div>
+                        <div class="state-desc">
+                            Tidak ditemukan bukti transaksi untuk nomor <strong>${escapeHtml(cleanQuery)}</strong>.<br><br>
+                            Pastikan nomor yang diketik sama persis dengan saat transaksi di kasir, atau tanyakan kasir konter jika transaksi baru saja selesai.
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Render hasil struk yang ditemukan
+            renderReceipts(receipts);
+
+        } catch (err) {
+            console.error('Error saat mencari struk:', err);
+            resultsContainer.innerHTML = `
+                <div class="state-card">
+                    <div class="state-icon" style="color: var(--danger);">⚠️</div>
+                    <div class="state-title" style="color: var(--danger);">Gagal Menghubungi Server</div>
+                    <div class="state-desc">
+                        Terjadi kendala koneksi ke server Cloud: ${escapeHtml(err.message)}.<br>
+                        Silakan periksa koneksi internet Anda atau coba lagi beberapa saat lagi.
+                    </div>
+                </div>
+            `;
+        } finally {
+            searchBtn.disabled = false;
+        }
+    }
+
+    // Render Hasil Struk
+    function renderReceipts(receipts) {
+        resultsContainer.innerHTML = receipts.map((r, idx) => {
+            const hasToken = r.token_sn && r.token_sn.trim().length > 0;
+            const tokenSafe = escapeHtml(r.token_sn || '');
+            const imgSrc = r.image_base64 && r.image_base64.startsWith('data:image')
+                ? r.image_base64
+                : ('data:image/png;base64,' + (r.image_base64 || ''));
+
+            return `
+                <article class="receipt-card">
+                    <div class="receipt-header">
+                        <div>
+                            <div class="receipt-title">🧾 ${escapeHtml(r.store_name || 'KSP Check')}</div>
+                            <div class="receipt-time">⏰ ${fmtDate(r.created_at)}</div>
+                        </div>
+                        <span class="status-badge status-success">● ${escapeHtml(r.status || 'BERHASIL')}</span>
+                    </div>
+
+                    <div class="receipt-body">
+                        ${hasToken ? `
+                            <div class="token-box">
+                                <div class="token-label">⚡ KODE TOKEN PLN / SERIAL NUMBER</div>
+                                <div class="token-code" id="tokenText_${idx}">${tokenSafe}</div>
+                                <button class="btn-copy-token" onclick="copyTokenText('tokenText_${idx}', this)">
+                                    📋 Salin Kode Token / SN
+                                </button>
+                            </div>
+                        ` : ''}
+
+                        <div class="details-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">Nomor Tujuan / ID</span>
+                                <span class="detail-val" style="font-family: 'JetBrains Mono', monospace;">${escapeHtml(r.target_number || '-')}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Produk / Layanan</span>
+                                <span class="detail-val">${escapeHtml(r.product_name || '-')}</span>
+                            </div>
+                            ${r.customer_name ? `
+                                <div class="detail-item">
+                                    <span class="detail-label">Nama Pelanggan</span>
+                                    <span class="detail-val">${escapeHtml(r.customer_name)}</span>
+                                </div>
+                            ` : ''}
+                            <div class="detail-item">
+                                <span class="detail-label">Total Pembayaran</span>
+                                <span class="detail-val" style="color: var(--accent);">${fmtRupiah(r.total_bayar || (r.amount + r.admin_fee))}</span>
+                            </div>
+                        </div>
+
+                        <!-- Gambar Struk Thermal Asli -->
+                        <div class="thermal-container">
+                            <img src="${imgSrc}" alt="Struk Transaksi" class="receipt-image" id="receiptImg_${idx}" />
+                        </div>
+
+                        <!-- Aksi Pelanggan -->
+                        <div class="receipt-actions">
+                            <button class="btn-action" onclick="downloadReceiptPng('${imgSrc}', 'Struk_${escapeHtml(r.target_number)}_${Date.now()}.png')">
+                                💾 Unduh Gambar (PNG)
+                            </button>
+                            <button class="btn-action" onclick="printReceipt('${imgSrc}')">
+                                🖨️ Cetak Struk
+                            </button>
+                            ${r.receipt_text ? `
+                                <button class="btn-action" onclick="copyReceiptText('${escapeHtml(r.receipt_text).replace(/'/g, "\\'")}', this)">
+                                    📋 Salin Teks
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </article>
+            `;
+        }).join('');
+    }
+
+    // Salin Kode Token
+    function copyTokenText(elementId, btn) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        const text = el.textContent.trim();
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '✅ Tersalin!';
+            btn.style.background = 'var(--success)';
+            btn.style.color = '#FFFFFF';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = '';
+                btn.style.color = '';
+            }, 2000);
+        }).catch(err => {
+            alert('Gagal menyalin token: ' + err.message);
+        });
+    }
+
+    // Salin Teks Struk
+    function copyReceiptText(text, btn) {
+        navigator.clipboard.writeText(text).then(() => {
+            const original = btn.innerHTML;
+            btn.innerHTML = '✅ Teks Tersalin!';
+            setTimeout(() => { btn.innerHTML = original; }, 2000);
+        }).catch(() => {
+            alert('Gagal menyalin teks struk.');
+        });
+    }
+
+    // Unduh File Gambar PNG
+    function downloadReceiptPng(base64Data, filename) {
+        const a = document.createElement('a');
+        a.href = base64Data;
+        a.download = filename || 'Struk_KSP_Check.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    // Cetak Struk Langsung
+    function printReceipt(imgSrc) {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            window.print();
+            return;
+        }
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Cetak Struk</title>
+                <style>
+                    body {
+                        margin: 0;
+                        padding: 10px;
+                        display: flex;
+                        justify-content: center;
+                        align-items: flex-start;
+                    }
+                    img {
+                        max-width: 100%;
+                        height: auto;
+                    }
+                    @media print {
+                        body { padding: 0; }
+                    }
+                </style>
+            </head>
+            <body>
+                <img src="${imgSrc}" onload="window.print(); window.close();" />
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
+
+    // Otomatis Jalankan Pencarian jika ada parameter URL ?no=...
+    window.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryParam = urlParams.get('no') || urlParams.get('nomor') || urlParams.get('phone');
+        if (queryParam) {
+            queryInput.value = queryParam.trim();
+            clearBtn.style.display = 'block';
+            performSearch();
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,9 +1,10 @@
 /* ============================================================================
  * BL.Barang - katalog Beli Barang (BeliBarangActivity):
  *   pencarian + input barcode/SKU, chip brand berjumlah, grid kartu foto,
- *   tap = tambah ke keranjang, tekan-lama / tombol ⓘ = detail, bar keranjang.
+ *   tap = tambah ke keranjang, tekan-lama / tombol ⓘ = detail.
+ *   Keranjang dan pembayaran memakai BL.CartBar + BL.Checkout (sama dengan voucher).
  *
- * deps: { reload(), openCheckout() }
+ * deps: { reload() }
  * ========================================================================== */
 (function (global) {
     'use strict';
@@ -94,14 +95,6 @@
         return r;
     }
 
-    function updateBar() {
-        const t = store.getBarangTotals();
-        $('bBarBadge').textContent = t.count;
-        $('bBarTotal').textContent = F.rupiah(t.total);
-        $('bBarText').textContent = t.count + ' pcs barang dipilih';
-        $('barangCartBar').hidden = !(t.count > 0 && store.getTab() === 'barang');
-    }
-
     // ---------- Barcode & detail ----------
     async function openBarcodeDialog() {
         const sample = store.getBarangProducts().slice(0, 2).map(function (p) { return p.code; }).filter(Boolean).join(', ');
@@ -184,9 +177,7 @@
             addWithFeedback(pid);   // tap kartu = tambah (atau toast "Stok barang ini habis")
         });
         UI.onLongPress(body, '.b-card', function (card) { showQuickDetail(Number(card.getAttribute('data-pid'))); });
-
-        $('btnOpenCheckout').addEventListener('click', function () { deps.openCheckout(); });
     }
 
-    BL.Barang = { init: init, renderChips: renderChips, renderGrid: renderGrid, updateCard: updateCard, updateBar: updateBar };
+    BL.Barang = { init: init, renderChips: renderChips, renderGrid: renderGrid, updateCard: updateCard };
 })(window);

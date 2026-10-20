@@ -1,9 +1,11 @@
 /* ============================================================================
- * BL.Voucher - sisi voucher (ProductsActivity + CartActivity):
- *   chip provider berwarna -> daftar per kategori (kartu 140px) -> bar keranjang
- *   mengambang -> layar keranjang penuh -> Simpan Transaksi (tanpa metode bayar).
+ * BL.Voucher - katalog voucher (ProductsActivity):
+ *   chip provider berwarna -> daftar per kategori (kartu 140px), tap/tombol = tambah.
  *
- * deps: { reload() }  - muat ulang katalog (setelah simpan / tombol coba lagi)
+ * Keranjang dan pembayaran TIDAK ada di sini lagi: voucher memakai bar keranjang
+ * (BL.CartBar) dan kasir (BL.Checkout) yang sama dengan barang.
+ *
+ * deps: { reload() }  - muat ulang katalog (tombol 🔄 / Coba Lagi)
  * ========================================================================== */
 (function (global) {
     'use strict';
@@ -84,8 +86,8 @@
     /** Perbarui satu kartu tanpa render ulang daftar. */
     function updateCard(pid) {
         const card = $('voucherBody').querySelector('.v-card[data-pid="' + pid + '"]');
-        const entry = card ? findProduct(pid) : null;
-        if (card && entry) card.querySelector('.v-action').innerHTML = actionHtml(entry, store.voucherQty(pid));
+        const product = card ? findProduct(pid) : null;
+        if (card && product) card.querySelector('.v-action').innerHTML = actionHtml(product, store.voucherQty(pid));
     }
     function findProduct(pid) {
         const cats = store.getVoucherCategories();
@@ -100,88 +102,6 @@
         const r = store.voucherAdd(pid);
         if (r === 'out') UI.toast('Stok produk ini habis');
         else if (r === 'max') UI.toast('Maksimum stok tersedia: ' + store.getVoucherMax(pid));
-    }
-
-    // ---------- Bar keranjang mengambang ----------
-    function updateBar() {
-        const t = store.getVoucherTotals();
-        $('vBarBadge').textContent = t.count;
-        $('vBarCount').textContent = t.count + ' item';
-        $('vBarTotal').textContent = F.rupiah(t.total);
-        $('voucherCartBar').hidden = !(t.count > 0 && store.getTab() === 'voucher' && $('vCartScreen').hidden);
-    }
-
-    // ---------- Layar keranjang ----------
-    function cartItemHtml(it) {
-        const bg = L.safeColor(it.provider.bgColor, '#4F8EF7');
-        const fg = L.safeColor(it.provider.textColor, '#FFFFFF');
-        return '<div class="c-card" data-pid="' + it.product.id + '">' +
-            '<div class="c-info"><span class="prov-badge" style="background:' + bg + ';color:' + fg + '">' + esc(it.providerName) + '</span>' +
-            '<div class="c-name">' + esc(it.product.name) + '</div><div class="c-price">' + F.rupiah(it.unitPrice) + '</div></div>' +
-            '<div class="c-qty"><button type="button" class="sq-btn" data-act="c-dec" aria-label="Kurang">−</button>' +
-            '<span class="c-qty-val">' + it.qty + '</span>' +
-            '<button type="button" class="sq-btn fill" data-act="c-inc" aria-label="Tambah">+</button></div>' +
-            '<div class="c-sub">' + F.rupiah(it.subtotal) + '</div></div>';
-    }
-
-    function renderCart() {
-        const items = store.getVoucherCartItems();
-        const t = store.getVoucherTotals();
-        const empty = items.length === 0;
-        $('vCartList').innerHTML = items.map(cartItemHtml).join('');
-        $('vCartList').hidden = empty;
-        $('vCartEmpty').hidden = !empty;
-        $('vCartSummary').hidden = empty;
-        $('vCartItems').textContent = t.count + ' pcs';
-        $('vCartTotal').textContent = F.rupiah(t.total);
-        const sh = BL.Shift.display();
-        $('vCartShiftEmoji').textContent = sh.emoji;
-        $('vCartShift').textContent = sh.text;
-    }
-
-    function openCart() {
-        $('vCartDate').textContent = F.displayDate(new Date());
-        $('vCartScreen').hidden = false;
-        $('voucherCartBar').hidden = true;
-        renderCart();
-    }
-    function closeCart() {
-        $('vCartScreen').hidden = true;
-        updateBar();
-    }
-
-    async function clearWithConfirm() {
-        const ok = await UI.modal({
-            title: 'Kosongkan Keranjang',
-            html: '<p class="dlg-text">Apakah Anda yakin ingin menghapus semua item dari keranjang?</p>',
-            actions: [{ label: 'Batal', kind: 'ghost', value: false }, { label: 'Ya, Hapus', kind: 'danger', value: true }]
-        });
-        if (ok) { store.voucherClear(); renderCart(); UI.toast('Keranjang dikosongkan'); }
-    }
-
-    async function save() {
-        const items = store.getVoucherCartItems();
-        if (items.length === 0) { UI.toast('Keranjang kosong'); return; }
-        const shift = await BL.Shift.ensureConfirmed('checkout');
-        if (shift === null) return;
-        const details = L.expandDetails(items.map(function (it) {
-            return { productId: it.product.id, name: it.product.name, price: it.unitPrice, providerName: it.providerName, qty: it.qty };
-        }), new Date());
-
-        UI.loading(true);
-        let res;
-        try { res = await BL.Data.saveVoucherTransaction({ shift: shift > 0 ? shift : 1, details: details }); }
-        catch (err) { console.error('[BL.Voucher] simpan gagal', err); res = { ok: false }; }
-        UI.loading(false);
-
-        if (res.ok) {
-            UI.toast('✅ Transaksi berhasil disimpan!');
-            store.voucherClear();
-            closeCart();
-            deps.reload();
-        } else {
-            UI.toast('❌ Gagal menyimpan transaksi');
-        }
     }
 
     // ---------- Init ----------
@@ -210,22 +130,7 @@
             const card = e.target.closest('.v-card');
             if (card) addWithFeedback(Number(card.getAttribute('data-pid')));   // tap kartu = tambah 1 (seperti app)
         });
-
-        $('btnOpenVCart').addEventListener('click', openCart);
-        $('btnVCartBack').addEventListener('click', closeCart);
-        $('btnVSave').addEventListener('click', save);
-        $('btnVClear').addEventListener('click', clearWithConfirm);
-        $('vCartList').addEventListener('click', function (e) {
-            const btn = e.target.closest('[data-act]');
-            if (!btn) return;
-            const pid = Number(btn.closest('.c-card').getAttribute('data-pid'));
-            if (btn.getAttribute('data-act') === 'c-inc') addWithFeedback(pid); else store.voucherDec(pid);
-            renderCart();
-        });
     }
 
-    BL.Voucher = {
-        init: init, renderChips: renderChips, renderBody: renderBody, updateCard: updateCard, updateBar: updateBar,
-        renderCart: renderCart, isCartOpen: function () { return !$('vCartScreen').hidden; }
-    };
+    BL.Voucher = { init: init, renderChips: renderChips, renderBody: renderBody, updateCard: updateCard };
 })(window);

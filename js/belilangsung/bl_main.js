@@ -51,12 +51,10 @@
         const d = BL.Shift.display();
         $('badgeShift').textContent = d.emoji + ' ' + d.text;
         $('barangShift').textContent = 'Shift: ' + d.emoji + ' ' + d.text;
-        if (BL.Voucher.isCartOpen()) BL.Voucher.renderCart();
     }
 
     function refreshBars() {
-        BL.Voucher.updateBar();
-        BL.Barang.updateBar();
+        BL.CartBar.update();
         const vc = store.getVoucherTotals().count;
         const bc = store.getBarangTotals().count;
         $('tabBadgeVoucher').textContent = vc;
@@ -170,8 +168,9 @@
         store = BL.createStore();
         BL.Shift.onChange(updateShiftUI);
         BL.Voucher.init(store, { reload: loadVoucher });
-        BL.Barang.init(store, { reload: loadBarang, openCheckout: function () { BL.Checkout.open(); } });
-        BL.Checkout.init(store, { reload: loadBarang });
+        BL.Barang.init(store, { reload: loadBarang });
+        BL.Checkout.init(store, { reload: function (kind) { return kind === 'voucher' ? loadVoucher() : loadBarang(); } });
+        BL.CartBar.init(store, { openCheckout: function (kind) { BL.Checkout.open(kind); } });
         store.subscribe(onStoreEvent);
 
         document.querySelectorAll('.tab').forEach(function (t) {

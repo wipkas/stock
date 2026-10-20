@@ -5,7 +5,7 @@
  *   - changeInfo            <- BeliBarangActivity.updateKembalian
  *   - needsShiftConfirmation<- ShiftSaveGuard.ensureShiftConfirmed
  *   - expandDetails         <- CartActivity.processCheckout / BeliBarangActivity.processTransaction
- *   - receiptText           <- BeliBarangActivity.showReceiptDialog
+ *   - receiptText           <- BeliBarangActivity.showReceiptDialog (judul bisa diganti: voucher memakai struk yang sama)
  * ========================================================================== */
 (function (global) {
     'use strict';
@@ -105,7 +105,7 @@
         const L = [];
         L.push('================================');
         L.push('        KSP CHECK STORE        ');
-        L.push('   STRUK PEMBELIAN BARANG RETAIL');
+        L.push('   ' + (r.title || 'STRUK PEMBELIAN BARANG RETAIL'));
         L.push('================================');
         L.push('Waktu : ' + r.time);
         L.push('Shift : ' + shiftLabel(r.shift));

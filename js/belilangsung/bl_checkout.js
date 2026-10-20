@@ -1,9 +1,12 @@
 /* ============================================================================
- * BL.Checkout - checkout Beli Barang: bottom sheet kasir (daftar belanja, total,
- * metode bayar, tunai + saran nominal + kembalian) dan dialog struk.
+ * BL.Checkout - satu kasir untuk SEMUA keranjang (voucher dan barang): bottom sheet
+ * (daftar belanja, total, metode bayar, tunai + saran nominal + kembalian) dan struk.
  * Port dari BeliBarangActivity.openCheckoutBottomSheet / processTransaction / showReceiptDialog.
  *
- * deps: { reload() }
+ * Perbedaan antar jenis hanya ada di adaptor `ADAPTERS` (sumber item, batas stok,
+ * fungsi simpan, judul struk). Seluruh alur dan tampilan dipakai bersama.
+ *
+ * deps: { reload(kind) }
  * ========================================================================== */
 (function (global) {
     'use strict';
@@ -15,8 +18,40 @@
     const $ = UI.$;
     let store = null;
     let deps = null;
+    let kind = 'barang';
     let payMethod = 'TUNAI';
     let submitting = false;
+
+    /** Satu adaptor per jenis keranjang. Bentuk item: { product:{id,name}, providerName, qty, unitPrice, subtotal }. */
+    const ADAPTERS = {
+        voucher: function () {
+            return {
+                unit: 'Voucher', guard: 'checkout voucher', receiptTitle: 'STRUK PEMBELIAN VOUCHER',
+                items: function () { return store.getVoucherCartItems(); },
+                totals: function () { return store.getVoucherTotals(); },
+                add: function (pid) { return store.voucherAdd(pid); },
+                dec: function (pid) { store.voucherDec(pid); },
+                remove: function (pid) { store.voucherRemove(pid); },
+                clear: function () { store.voucherClear(); },
+                max: function (pid) { return store.getVoucherMax(pid); },
+                save: function (tx) { return BL.Data.saveVoucherTransaction(tx); }
+            };
+        },
+        barang: function () {
+            return {
+                unit: 'Barang', guard: 'checkout barang', receiptTitle: 'STRUK PEMBELIAN BARANG RETAIL',
+                items: function () { return store.getBarangCartItems(); },
+                totals: function () { return store.getBarangTotals(); },
+                add: function (pid) { return store.barangAdd(pid); },
+                dec: function (pid) { store.barangDec(pid); },
+                remove: function (pid) { store.barangRemove(pid); },
+                clear: function () { store.barangClear(); },
+                max: function (pid) { return (store.getBarangProduct(pid) || {}).stock; },
+                save: function (tx) { return BL.Data.saveBarangTransaction(tx); }
+            };
+        }
+    };
+    function A() { return ADAPTERS[kind](); }
 
     function close() { UI.closeSheet('checkoutBackdrop'); }
 
@@ -46,7 +81,7 @@
     }
 
     function updateChange() {
-        const total = store.getBarangTotals().total;
+        const total = A().totals().total;
         const info = L.changeInfo(total, F.digitsToNumber($('shCashInput').value));
         const el = $('shChange');
         el.textContent = info.text;
@@ -55,23 +90,27 @@
 
     /** Render ulang isi sheet (daftar, total, saran nominal, kembalian). Sheet menutup bila keranjang kosong. */
     function render() {
-        const items = store.getBarangCartItems();
+        const a = A();
+        const items = a.items();
         if (items.length === 0) { close(); return; }
-        const t = store.getBarangTotals();
+        const t = a.totals();
         $('shItems').innerHTML = items.map(itemHtml).join('');
-        $('shCount').textContent = 'Total (' + t.count + ' Barang)';
+        $('shCount').textContent = 'Total (' + t.count + ' ' + a.unit + ')';
         $('shTotal').textContent = F.rupiah(t.total);
         renderQuickChips(t.total);
         updateChange();
     }
 
-    function open() {
-        if (store.getBarangCartItems().length === 0) { UI.toast('Keranjang belanja kosong'); return; }
+    /** Buka kasir untuk keranjang `k` ('voucher' | 'barang'). */
+    function open(k) {
+        kind = k === 'voucher' ? 'voucher' : 'barang';
+        const a = A();
+        if (a.items().length === 0) { UI.toast('Keranjang belanja kosong'); return; }
         const sh = BL.Shift.display();
         $('shShift').textContent = sh.emoji + ' ' + sh.text;
         payMethod = 'TUNAI';
         paintPay();
-        $('shCashInput').value = F.number(store.getBarangTotals().total);   // uang pas sebagai nilai awal
+        $('shCashInput').value = F.number(a.totals().total);   // uang pas sebagai nilai awal
         render();
         UI.openSheet('checkoutBackdrop');
     }
@@ -88,7 +127,8 @@
 
     // ---------- Proses transaksi ----------
     async function processTransaction(method, paid, total, shift) {
-        const items = store.getBarangCartItems();
+        const a = A();
+        const items = a.items();
         const now = new Date();
         const details = L.expandDetails(items.map(function (it) {
             return { productId: it.product.id, name: it.product.name, price: it.unitPrice, providerName: it.providerName, qty: it.qty };
@@ -96,23 +136,25 @@
 
         UI.loading(true);
         let res;
-        try { res = await BL.Data.saveBarangTransaction({ shift: shift, method: method, total: total, paid: paid, details: details }); }
+        try { res = await a.save({ shift: shift, method: method, total: total, paid: paid, details: details }); }
         catch (err) { console.error('[BL.Checkout] simpan gagal', err); res = { ok: false }; }
         UI.loading(false);
 
         if (!res.ok) { UI.toast('❌ Gagal menyimpan transaksi', 3200); return; }
         UI.toast('✅ Transaksi berhasil!');
         showReceipt({
-            time: F.dateTime(now), shift: shift, method: method, total: total, paid: paid, change: Math.max(0, paid - total),
+            title: a.receiptTitle, time: F.dateTime(now), shift: shift, method: method, total: total, paid: paid,
+            change: Math.max(0, paid - total),
             items: items.map(function (it) { return { name: it.product.name, qty: it.qty, subtotal: it.subtotal }; })
         });
-        store.barangClear();
-        deps.reload();
+        a.clear();
+        deps.reload(kind);
     }
 
     async function submit() {
         if (submitting) return;
-        const total = store.getBarangTotals().total;
+        const a = A();
+        const total = a.totals().total;
         let paid = total;
         if (payMethod === 'TUNAI') {
             paid = F.digitsToNumber($('shCashInput').value);
@@ -120,7 +162,7 @@
         }
         submitting = true;
         try {
-            const shift = await BL.Shift.ensureConfirmed('checkout barang');
+            const shift = await BL.Shift.ensureConfirmed(a.guard);
             if (shift === null) return;
             close();
             await processTransaction(payMethod, paid, total, shift > 0 ? shift : 1);
@@ -139,18 +181,18 @@
         $('shItems').addEventListener('click', function (e) {
             const btn = e.target.closest('[data-act]');
             if (!btn) return;
+            const a = A();
             const pid = Number(btn.closest('.sh-item').getAttribute('data-pid'));
             const act = btn.getAttribute('data-act');
             if (act === 'c-inc') {
-                const r = store.barangAdd(pid);
-                if (r === 'max') UI.toast('Maksimum stok tersedia: ' + (store.getBarangProduct(pid) || {}).stock);
-            } else if (act === 'c-dec') store.barangDec(pid);
-            else if (act === 'c-del') store.barangRemove(pid);
+                if (a.add(pid) === 'max') UI.toast('Maksimum stok tersedia: ' + a.max(pid));
+            } else if (act === 'c-dec') a.dec(pid);
+            else if (act === 'c-del') a.remove(pid);
             render();
         });
 
         $('shClear').addEventListener('click', function () {
-            store.barangClear();
+            A().clear();
             close();
             UI.toast('Keranjang dikosongkan');
         });

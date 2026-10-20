@@ -80,6 +80,7 @@
             if (cur > 1) v.cart.set(pid, cur - 1); else v.cart.delete(pid);
             emit('voucher:cart', pid);
         }
+        function voucherRemove(pid) { if (v.cart.delete(pid)) emit('voucher:cart', pid); }
         function voucherClear() { v.cart.clear(); emit('voucher:cart'); }
         function getVoucherCartItems() {
             const items = [];
@@ -185,7 +186,7 @@
             setVoucherStatus: setVoucherStatus, getVoucherStatus: getVoucherStatus, setVoucherCatalog: setVoucherCatalog,
             getVoucherProviders: getVoucherProviders, getSelectedVoucherProvider: getSelectedVoucherProvider,
             selectVoucherProvider: selectVoucherProvider, getVoucherCategories: getVoucherCategories,
-            voucherQty: voucherQty, voucherAdd: voucherAdd, voucherDec: voucherDec, voucherClear: voucherClear,
+            voucherQty: voucherQty, voucherAdd: voucherAdd, voucherDec: voucherDec, voucherRemove: voucherRemove, voucherClear: voucherClear,
             getVoucherCartItems: getVoucherCartItems, getVoucherTotals: getVoucherTotals, getVoucherMax: getVoucherMax,
             setBarangStatus: setBarangStatus, getBarangStatus: getBarangStatus, setBarangCatalog: setBarangCatalog,
             getBarangProduct: getBarangProduct, getBarangProducts: getBarangProducts,
