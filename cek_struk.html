@@ -543,15 +543,15 @@
     <!-- SEARCH CARD -->
     <section class="search-card">
         <label for="queryInput" class="search-label">
-            <span>🔍</span> Masukkan Nomor HP atau No. Meter PLN:
+            <span>🔍</span> Masukkan No. HP, No. Meter PLN, atau No. Order/Transaksi:
         </label>
         <div class="search-input-wrapper">
             <input
-                type="tel"
+                type="text"
                 id="queryInput"
                 class="search-input"
-                placeholder="Contoh: 08123456789 atau 14253647589"
-                autocomplete="tel"
+                placeholder="Contoh: 08123456789, 14436829874, atau ID Order"
+                autocomplete="off"
                 enterkeyhint="search"
             />
             <button id="clearBtn" class="clear-btn" title="Hapus input">✕</button>
@@ -561,7 +561,7 @@
         </button>
         <div class="search-hints">
             <span>💡</span>
-            <span>Ketik nomor tujuan pengisian pulsa/data atau ID Pelanggan / No. Meter PLN saat bertransaksi di kasir.</span>
+            <span>Anda dapat mencari menggunakan Nomor HP tujuan, No. Meter PLN, ID Transaksi / No Order, atau Kode Token.</span>
         </div>
     </section>
 
@@ -570,9 +570,9 @@
         <!-- Initial prompt state -->
         <div class="state-card" id="initialState">
             <div class="state-icon">📱</div>
-            <div class="state-title">Cari Bukti Pembayaran Anda</div>
+            <div class="state-title">Cari Bukti Transaksi Anda</div>
             <div class="state-desc">
-                Masukkan nomor HP atau nomor meter Anda di formulir di atas untuk melihat gambar struk thermal resmi dan menyalin kode Token PLN.
+                Masukkan <strong>Nomor HP</strong> tujuan, <strong>Nomor Meter PLN</strong>, atau <strong>ID Transaksi/Order</strong> pada formulir di atas untuk melihat gambar struk thermal resmi dan menyalin kode Token PLN.
             </div>
         </div>
     </main>
@@ -669,16 +669,19 @@
 
     async function querySupabaseTableFallback(cleanNumber) {
         const cfg = getSupabaseConfig();
-        // Coba format 08xx dan 628xx
+        // Coba format 08xx dan 628xx jika berupa nomor telepon
         let altNumber = cleanNumber;
-        if (cleanNumber.startsWith('62')) {
-            altNumber = '0' + cleanNumber.substring(2);
-        } else if (cleanNumber.startsWith('0')) {
-            altNumber = '62' + cleanNumber.substring(1);
+        if (cleanNumber.startsWith('628')) {
+            altNumber = '08' + cleanNumber.substring(3);
+        } else if (cleanNumber.startsWith('08')) {
+            altNumber = '628' + cleanNumber.substring(2);
         }
 
+        // PostgREST multi-field OR filter: target_number, token_sn, id, receipt_text
+        const orConditions = `(target_number.in.("${cleanNumber}","${altNumber}"),token_sn.ilike.*${cleanNumber}*,id.ilike.*${cleanNumber}*,receipt_text.ilike.*${cleanNumber}*)`;
+
         const endpoint = cfg.url.replace(/\/+$/, '') +
-            `/rest/v1/customer_receipts?target_number=in.("${cleanNumber}","${altNumber}")&order=created_at.desc&limit=10`;
+            `/rest/v1/customer_receipts?or=${encodeURIComponent(orConditions)}&order=created_at.desc&limit=10`;
 
         const headers = {
             'Content-Type': 'application/json',
@@ -701,9 +704,17 @@
         return await res.json();
     }
 
-    // Normalisasi input (hanya digit angka)
+    // Normalisasi input pencarian (angka atau kode alfanumerik)
     function cleanInput(val) {
-        return (val || '').replace(/[^0-9]/g, '');
+        if (!val) return '';
+        const trimmed = val.trim();
+        const digitsOnly = trimmed.replace(/[^0-9]/g, '');
+        // Jika dominan angka >= 5 (No HP, No Meter PLN, ID Transaksi), gunakan angka saja
+        if (digitsOnly.length >= 5 && /^[0-9\s\-\.\+]+$/.test(trimmed)) {
+            return digitsOnly;
+        }
+        // Jika berisi huruf (misal ID Struk 'rcpt_...'), bersihkan dari karakter berbahaya
+        return trimmed.replace(/[^a-zA-Z0-9_\-]/g, '');
     }
 
     // Format Rupiah
@@ -746,7 +757,7 @@
         const cleanQuery = cleanInput(rawQuery);
 
         if (!cleanQuery || cleanQuery.length < 5) {
-            alert('Silakan masukkan nomor tujuan atau nomor meter yang valid (minimal 5 digit).');
+            alert('Silakan masukkan nomor HP, nomor meter PLN, atau ID Transaksi yang valid (minimal 5 digit).');
             queryInput.focus();
             return;
         }
@@ -757,7 +768,7 @@
             <div class="state-card">
                 <div class="spinner"></div>
                 <div class="state-title">Mencari Bukti Transaksi...</div>
-                <div class="state-desc">Sedang mengambil struk untuk nomor <strong>${escapeHtml(cleanQuery)}</strong> dari Supabase Cloud...</div>
+                <div class="state-desc">Sedang mengambil struk untuk kata kunci <strong>${escapeHtml(cleanQuery)}</strong> dari Supabase Cloud...</div>
             </div>
         `;
 
@@ -784,8 +795,12 @@
                         <div class="state-icon">🔎</div>
                         <div class="state-title">Struk Tidak Ditemukan</div>
                         <div class="state-desc">
-                            Tidak ditemukan bukti transaksi untuk nomor <strong>${escapeHtml(cleanQuery)}</strong>.<br><br>
-                            Pastikan nomor yang diketik sama persis dengan saat transaksi di kasir, atau tanyakan kasir konter jika transaksi baru saja selesai.
+                            Tidak ditemukan bukti transaksi untuk kata kunci <strong>${escapeHtml(cleanQuery)}</strong>.<br><br>
+                            <strong>💡 Tips Pencarian:</strong><br>
+                            • Coba masukkan <strong>Nomor HP</strong> tujuan transaksi.<br>
+                            • Untuk Token Listrik, masukkan <strong>Nomor Meter PLN</strong> (11-12 digit).<br>
+                            • Masukkan <strong>ID Order / Nomor Transaksi</strong> dari kasir.<br>
+                            • Jika transaksi baru selesai beberapa detik lalu, tunggu sejenak lalu klik Cari lagi.
                         </div>
                     </div>
                 `;

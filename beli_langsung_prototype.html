@@ -6,7 +6,7 @@
     <title>KSP Check - Beli Langsung (Prototype)</title>
     <meta name="theme-color" content="#0F1117">
     <meta name="robots" content="noindex">
-    <link rel="stylesheet" href="css/beli_langsung.css?v=20261016">
+    <link rel="stylesheet" href="css/beli_langsung.css?v=20261019">
 </head>
 <body data-tab="voucher">
 
@@ -64,54 +64,16 @@
         </section>
     </div>
 
-    <!-- BAR KERANJANG VOUCHER (mengambang) -->
-    <div class="cart-float" id="voucherCartBar" hidden>
+    <!-- BAR KERANJANG: satu untuk voucher & barang (isi dan warna mengikuti tab aktif) -->
+    <div class="cart-bar" id="cartBar" hidden>
         <div class="inner">
-            <div class="cart-ico"><span>🛒</span><span class="cart-badge" id="vBarBadge">0</span></div>
-            <div class="cart-info"><div class="cart-sub" id="vBarCount">0 item</div><div class="cart-total" id="vBarTotal">Rp 0</div></div>
-            <button type="button" id="btnOpenVCart" class="btn-white">Keranjang</button>
+            <div class="cart-ico"><span>🛒</span><span class="cart-badge" id="cartBarBadge">0</span></div>
+            <div class="cart-info"><div class="cart-total" id="cartBarTotal">Rp 0</div><div class="cart-sub" id="cartBarText">0 pcs dipilih</div></div>
+            <button type="button" id="btnOpenCheckout" class="btn-accent">Bayar / Kasir ➔</button>
         </div>
     </div>
 
-    <!-- BAR KERANJANG BARANG (menempel) -->
-    <div class="cart-bar" id="barangCartBar" hidden>
-        <div class="inner">
-            <div class="cart-ico green"><span>🛒</span><span class="cart-badge" id="bBarBadge">0</span></div>
-            <div class="cart-info"><div class="cart-total green" id="bBarTotal">Rp 0</div><div class="cart-sub" id="bBarText">0 pcs barang dipilih</div></div>
-            <button type="button" id="btnOpenCheckout" class="btn-green">Bayar / Kasir ➔</button>
-        </div>
-    </div>
-
-    <!-- ============ LAYAR KERANJANG VOUCHER (CartActivity) ============ -->
-    <div class="screen" id="vCartScreen" hidden>
-        <div class="screen-bar">
-            <button type="button" id="btnVCartBack" class="icon-btn" title="Kembali">←</button>
-            <div class="screen-title">Keranjang Products</div>
-        </div>
-        <div class="screen-body">
-            <div class="screen-inner">
-                <div id="vCartList"></div>
-                <div class="state" id="vCartEmpty" hidden>
-                    <div class="state-ico big">🛒</div>
-                    <div class="state-text">Keranjang kosong</div>
-                    <div class="state-sub">Tambahkan produk dari halaman Products</div>
-                </div>
-            </div>
-        </div>
-        <div class="summary" id="vCartSummary">
-            <div class="screen-inner">
-                <div class="sum-row"><span class="sum-ico">📅</span><div class="sum-col"><small>Tanggal Transaksi</small><b id="vCartDate">-</b></div></div>
-                <div class="sum-row"><span class="sum-ico" id="vCartShiftEmoji">☀️</span><div class="sum-col"><small>Shift Transaksi</small><b id="vCartShift">Shift 1 (Pagi)</b></div></div>
-                <div class="sum-line"><span>Total Item</span><b id="vCartItems">0 pcs</b></div>
-                <hr>
-                <div class="sum-line total"><span>Total Harga</span><b id="vCartTotal">Rp 0</b></div>
-                <button type="button" id="btnVSave" class="btn-block">💾 Simpan Transaksi</button>
-                <button type="button" id="btnVClear" class="btn-text-danger">Kosongkan Keranjang</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============ BOTTOM SHEET CHECKOUT BARANG ============ -->
+    <!-- ============ BOTTOM SHEET KASIR (dipakai voucher & barang) ============ -->
     <div class="sheet-backdrop" id="checkoutBackdrop" hidden>
         <div class="sheet" id="checkoutSheet" role="dialog" aria-label="Kasir Pembayaran">
             <div class="sheet-pill"></div>
@@ -136,7 +98,7 @@
                 <div class="quick-row" id="shQuick"></div>
                 <div class="change-row"><span>Kembalian:</span><b class="change zero" id="shChange">Rp 0</b></div>
             </div>
-            <button type="button" id="shSubmit" class="btn-green block">Selesaikan Pembayaran</button>
+            <button type="button" id="shSubmit" class="btn-accent block">Selesaikan Pembayaran</button>
         </div>
     </div>
 
@@ -167,15 +129,16 @@
     <!-- Tema bersama situs -->
     <script src="js/ksp_theme.js?v=20261005"></script>
     <!-- Modul Beli Langsung (urutan penting) -->
-    <script src="js/belilangsung/bl_format.js?v=20261016"></script>
-    <script src="js/belilangsung/bl_logic.js?v=20261016"></script>
-    <script src="js/belilangsung/bl_ui.js?v=20261016"></script>
-    <script src="js/belilangsung/bl_data_mock.js?v=20261016"></script>
-    <script src="js/belilangsung/bl_store.js?v=20261016"></script>
-    <script src="js/belilangsung/bl_shift.js?v=20261016"></script>
-    <script src="js/belilangsung/bl_voucher.js?v=20261016"></script>
-    <script src="js/belilangsung/bl_barang.js?v=20261016"></script>
-    <script src="js/belilangsung/bl_checkout.js?v=20261016"></script>
-    <script src="js/belilangsung/bl_main.js?v=20261016"></script>
+    <script src="js/belilangsung/bl_format.js?v=20261019"></script>
+    <script src="js/belilangsung/bl_logic.js?v=20261019"></script>
+    <script src="js/belilangsung/bl_ui.js?v=20261019"></script>
+    <script src="js/belilangsung/bl_data_mock.js?v=20261019"></script>
+    <script src="js/belilangsung/bl_store.js?v=20261019"></script>
+    <script src="js/belilangsung/bl_shift.js?v=20261019"></script>
+    <script src="js/belilangsung/bl_voucher.js?v=20261019"></script>
+    <script src="js/belilangsung/bl_barang.js?v=20261019"></script>
+    <script src="js/belilangsung/bl_checkout.js?v=20261019"></script>
+    <script src="js/belilangsung/bl_cartbar.js?v=20261019"></script>
+    <script src="js/belilangsung/bl_main.js?v=20261019"></script>
 </body>
 </html>
