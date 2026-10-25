@@ -288,7 +288,8 @@
     // 1. Tarik Tunai
     if (data.tarik && data.tarik.length > 0) {
       let tarikMasuk = 0, tarikKeluar = 0;
-      const isOutcomeOnly = data.tarik.every(item => String(item.type || '').toLowerCase() !== 'income');
+      const isIncomeOnly = data.tarik.length > 0 && data.tarik.every(item => String(item.type || '').toLowerCase() === 'income');
+      const isOutcomeOnly = !isIncomeOnly && data.tarik.length > 0 && data.tarik.every(item => String(item.type || '').toLowerCase() !== 'income');
       let rowsHtml = '';
 
       const sortedTarik = data.tarik.slice().sort((a, b) => ((a.date || '') + ' ' + (a.time || '')).localeCompare((b.date || '') + ' ' + (b.time || '')));
@@ -305,16 +306,20 @@
         const timeFmt = formatDisplayTime(item.date, item.time);
         const jumtar = item.jumtar || amt;
         const adm = item.adm || 0;
-        rowsHtml += opt.renderRowHtml(globalSeqObj.val++, timeFmt, amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, item.date, item.rowId || item.id);
+        rowsHtml += opt.renderRowHtml(globalSeqObj.val++, timeFmt, amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, item.date, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai', isIncomeOnly);
       });
 
       const theadHtml = isOutcomeOnly
         ? '<thead class="lv-thead"><tr><th class="lv-th c" style="width:36px;">#</th><th class="lv-th c time-col" style="width:92px;">Waktu</th><th class="lv-th l">Nama</th><th class="lv-th r" style="width:140px;">Keluar</th></tr></thead>'
-        : '<thead class="lv-thead"><tr><th class="lv-th c">#</th><th class="lv-th c time-col" style="width:92px;">Waktu</th><th class="lv-th r">Keluar</th><th class="lv-th r">Masuk</th></tr></thead>';
+        : (isIncomeOnly
+            ? '<thead class="lv-thead"><tr><th class="lv-th c" style="width:36px;">#</th><th class="lv-th c time-col" style="width:92px;">Waktu</th><th class="lv-th l">Nama</th><th class="lv-th r" style="width:140px;">Masuk</th></tr></thead>'
+            : '<thead class="lv-thead"><tr><th class="lv-th c">#</th><th class="lv-th c time-col" style="width:92px;">Waktu</th><th class="lv-th r">Keluar</th><th class="lv-th r">Masuk</th></tr></thead>');
 
       const metaHtml = isOutcomeOnly
         ? `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.ringkasMode ? '' : 'Keluar: '}${opt.fmtAmt(tarikKeluar)}</span>`
-        : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(tarikKeluar)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(tarikMasuk)}</span>`;
+        : (isIncomeOnly
+            ? `<span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.ringkasMode ? '' : 'Masuk: '}${opt.fmtAmt(tarikMasuk)}</span>`
+            : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(tarikKeluar)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(tarikMasuk)}</span>`);
 
       container.innerHTML += `
         <div class="lv-group" data-group-id="tarik" data-app-key="tarik" data-rekap-label="💸 Tarik Tunai">
@@ -343,7 +348,8 @@
         const items = notifByApp[appKey];
         const displayName = items[0].appName || appKey;
         const icon = opt.getAppIcon(appKey);
-        const isOutcomeOnly = items.every(item => String(item.category || '').toLowerCase() !== 'income');
+        const isIncomeOnly = items.length > 0 && items.every(item => String(item.category || '').toLowerCase() === 'income');
+        const isOutcomeOnly = !isIncomeOnly && items.length > 0 && items.every(item => String(item.category || '').toLowerCase() !== 'income');
         let aIn = 0, aOut = 0, rowsHtml = '';
 
         const sortedItems = items.slice().sort((a, b) => ((a.date || '') + ' ' + (a.time || '')).localeCompare((b.date || '') + ' ' + (b.time || '')));
@@ -358,7 +364,7 @@
           }
           const desc = item.desc || item.name || displayName;
           const timeFmt = formatDisplayTime(item.date, item.time);
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, timeFmt, amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, item.date, item.rowId || item.id);
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, timeFmt, amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, amt, 0, item.date, item.rowId || item.id, item.app || appKey, item.appName || displayName, isIncomeOnly);
         });
 
         const theadHtml = isOutcomeOnly
@@ -367,7 +373,9 @@
 
         const metaHtml = isOutcomeOnly
           ? `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.ringkasMode ? '' : 'Keluar: '}${opt.fmtAmt(aOut)}</span>`
-          : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(aOut)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(aIn)}</span>`;
+          : (isIncomeOnly
+              ? `<span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.ringkasMode ? '' : 'Masuk: '}${opt.fmtAmt(aIn)}</span>`
+              : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(aOut)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(aIn)}</span>`);
 
         container.innerHTML += `
           <div class="lv-group" data-group-id="notif-${appKey}" data-app-key="${appKey}" data-rekap-label="${icon} ${displayName}">
@@ -423,7 +431,8 @@
       });
 
       let tarikMasuk = 0, tarikKeluar = 0;
-      const isOutcomeOnly = data.tarik.every(item => String(item.type || '').toLowerCase() !== 'income');
+      const isIncomeOnly = data.tarik.length > 0 && data.tarik.every(item => String(item.type || '').toLowerCase() === 'income');
+      const isOutcomeOnly = !isIncomeOnly && data.tarik.length > 0 && data.tarik.every(item => String(item.type || '').toLowerCase() !== 'income');
       let rowsHtml = '';
 
       for (const dKey of Object.keys(byDate).sort()) {
@@ -442,12 +451,14 @@
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai');
+          dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai', isIncomeOnly);
         });
 
         const dayMetaStr = isOutcomeOnly
           ? `${items.length} trx · Keluar: ${opt.fmtAmt(dayOut)}`
-          : `${items.length} trx · Keluar: ${opt.fmtAmt(dayOut)} | Masuk: ${opt.fmtAmt(dayIn)}`;
+          : (isIncomeOnly
+              ? `${items.length} trx · Masuk: ${opt.fmtAmt(dayIn)}`
+              : `${items.length} trx · Keluar: ${opt.fmtAmt(dayOut)} | Masuk: ${opt.fmtAmt(dayIn)}`);
 
         rowsHtml += `
           <tr class="lv-date-subhd-row" data-date="${dKey}">
@@ -462,11 +473,15 @@
 
       const theadHtml = isOutcomeOnly
         ? '<thead class="lv-thead"><tr><th class="lv-th c" style="width:36px;">#</th><th class="lv-th c" style="width:65px;">Waktu</th><th class="lv-th l">Nama</th><th class="lv-th r" style="width:140px;">Keluar</th></tr></thead>'
-        : '<thead class="lv-thead"><tr><th class="lv-th c">#</th><th class="lv-th c">Waktu</th><th class="lv-th r">Keluar</th><th class="lv-th r">Masuk</th></tr></thead>';
+        : (isIncomeOnly
+            ? '<thead class="lv-thead"><tr><th class="lv-th c" style="width:36px;">#</th><th class="lv-th c" style="width:65px;">Waktu</th><th class="lv-th l">Nama</th><th class="lv-th r" style="width:140px;">Masuk</th></tr></thead>'
+            : '<thead class="lv-thead"><tr><th class="lv-th c">#</th><th class="lv-th c">Waktu</th><th class="lv-th r">Keluar</th><th class="lv-th r">Masuk</th></tr></thead>');
 
       const metaHtml = isOutcomeOnly
         ? `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.ringkasMode ? '' : 'Keluar: '}${opt.fmtAmt(tarikKeluar)}</span>`
-        : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(tarikKeluar)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(tarikMasuk)}</span>`;
+        : (isIncomeOnly
+            ? `<span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.ringkasMode ? '' : 'Masuk: '}${opt.fmtAmt(tarikMasuk)}</span>`
+            : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(tarikKeluar)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(tarikMasuk)}</span>`);
 
       container.innerHTML += `
         <div class="lv-group" data-group-id="tarik" data-app-key="tarik" data-rekap-label="💸 Tarik Tunai">
@@ -495,7 +510,8 @@
         const appItems = notifByApp[appKey];
         const displayName = appItems[0].appName || appKey;
         const icon = opt.getAppIcon(appKey);
-        const isOutcomeOnly = appItems.every(item => String(item.category || '').toLowerCase() !== 'income');
+        const isIncomeOnly = appItems.length > 0 && appItems.every(item => String(item.category || '').toLowerCase() === 'income');
+        const isOutcomeOnly = !isIncomeOnly && appItems.length > 0 && appItems.every(item => String(item.category || '').toLowerCase() !== 'income');
         let aIn = 0, aOut = 0;
 
         const byDate = {};
@@ -520,12 +536,14 @@
               if (isIncome) { dayIn += calcAmt; aIn += calcAmt; totalMasuk += calcAmt; } else { dayOut += calcAmt; aOut += calcAmt; totalKeluar += calcAmt; }
             }
             const desc = item.desc || item.name || displayName;
-            dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, dKey, item.rowId || item.id, item.app || appKey, item.appName || displayName);
+            dayRows += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, dKey, item.rowId || item.id, item.app || appKey, item.appName || displayName, isIncomeOnly);
           });
 
           const dayMetaStr = isOutcomeOnly
             ? `${items.length} trx · Keluar: ${opt.fmtAmt(dayOut)}`
-            : `${items.length} trx · Keluar: ${opt.fmtAmt(dayOut)} | Masuk: ${opt.fmtAmt(dayIn)}`;
+            : (isIncomeOnly
+                ? `${items.length} trx · Masuk: ${opt.fmtAmt(dayIn)}`
+                : `${items.length} trx · Keluar: ${opt.fmtAmt(dayOut)} | Masuk: ${opt.fmtAmt(dayIn)}`);
 
           rowsHtml += `
             <tr class="lv-date-subhd-row" data-date="${dKey}">
@@ -544,7 +562,9 @@
 
         const metaHtml = isOutcomeOnly
           ? `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.ringkasMode ? '' : 'Keluar: '}${opt.fmtAmt(aOut)}</span>`
-          : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(aOut)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(aIn)}</span>`;
+          : (isIncomeOnly
+              ? `<span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.ringkasMode ? '' : 'Masuk: '}${opt.fmtAmt(aIn)}</span>`
+              : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(aOut)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(aIn)}</span>`);
 
         container.innerHTML += `
           <div class="lv-group" data-group-id="notif-${appKey}" data-app-key="${appKey}" data-rekap-label="${icon} ${displayName}">
@@ -767,7 +787,8 @@
       const dayTarik = (data.tarik || []).filter(item => (item.date || (dates.length === 1 ? dKey : '')) === dKey);
       if (dayTarik.length > 0) {
         let tMasuk = 0, tKeluar = 0;
-        const isOutcomeOnly = dayTarik.every(item => String(item.type || '').toLowerCase() !== 'income');
+        const isIncomeOnly = dayTarik.length > 0 && dayTarik.every(item => String(item.type || '').toLowerCase() === 'income');
+        const isOutcomeOnly = !isIncomeOnly && dayTarik.length > 0 && dayTarik.every(item => String(item.type || '').toLowerCase() !== 'income');
         let rowsHtml = '';
 
         dayTarik.forEach(item => {
@@ -782,7 +803,7 @@
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai');
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai', isIncomeOnly);
         });
 
         const theadHtml = isOutcomeOnly
@@ -791,7 +812,9 @@
 
         const metaHtml = isOutcomeOnly
           ? `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.ringkasMode ? '' : 'Keluar: '}${opt.fmtAmt(tKeluar)}</span>`
-          : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(tKeluar)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(tMasuk)}</span>`;
+          : (isIncomeOnly
+              ? `<span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.ringkasMode ? '' : 'Masuk: '}${opt.fmtAmt(tMasuk)}</span>`
+              : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(tKeluar)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(tMasuk)}</span>`);
 
         dayGroupsHtml += `
           <div class="lv-group" data-date="${dKey}" data-group-id="tarik-${dKey}" data-app-key="tarik" data-rekap-label="💸 Tarik Tunai">
@@ -821,7 +844,8 @@
           const items = notifByApp[appKey];
           const displayName = items[0].appName || appKey;
           const icon = opt.getAppIcon(appKey);
-          const isOutcomeOnly = items.every(item => String(item.category || '').toLowerCase() !== 'income');
+          const isIncomeOnly = items.length > 0 && items.every(item => String(item.category || '').toLowerCase() === 'income');
+          const isOutcomeOnly = !isIncomeOnly && items.length > 0 && items.every(item => String(item.category || '').toLowerCase() !== 'income');
           let aIn = 0, aOut = 0, rowsHtml = '';
 
           items.forEach(item => {
@@ -834,7 +858,7 @@
               if (isIncome) { aIn += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
             }
             const desc = item.desc || item.name || displayName;
-            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, dKey, item.rowId || item.id, item.app || appKey, item.appName || displayName);
+            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, dKey, item.rowId || item.id, item.app || appKey, item.appName || displayName, isIncomeOnly);
           });
 
           const theadHtml = isOutcomeOnly
@@ -938,7 +962,8 @@
       const dayTarik = (data.tarik || []).filter(item => (item.date || (dates.length === 1 ? dKey : '')) === dKey);
       if (dayTarik.length > 0) {
         let tMasuk = 0, tKeluar = 0;
-        const isOutcomeOnly = dayTarik.every(item => String(item.type || '').toLowerCase() !== 'income');
+        const isIncomeOnly = dayTarik.length > 0 && dayTarik.every(item => String(item.type || '').toLowerCase() === 'income');
+        const isOutcomeOnly = !isIncomeOnly && dayTarik.length > 0 && dayTarik.every(item => String(item.type || '').toLowerCase() !== 'income');
         let rowsHtml = '';
 
         dayTarik.forEach(item => {
@@ -953,7 +978,7 @@
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai');
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai', isIncomeOnly);
         });
 
         const theadHtml = isOutcomeOnly
@@ -962,7 +987,9 @@
 
         const metaHtml = isOutcomeOnly
           ? `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.ringkasMode ? '' : 'Keluar: '}${opt.fmtAmt(tKeluar)}</span>`
-          : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(tKeluar)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(tMasuk)}</span>`;
+          : (isIncomeOnly
+              ? `<span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.ringkasMode ? '' : 'Masuk: '}${opt.fmtAmt(tMasuk)}</span>`
+              : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(tKeluar)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(tMasuk)}</span>`);
 
         dayGroupsHtml += `
           <div class="lv-group" data-date="${dKey}" data-group-id="tarik-${dKey}" data-app-key="tarik" data-rekap-label="💸 Tarik Tunai">
@@ -992,7 +1019,8 @@
           const items = notifByApp[appKey];
           const displayName = items[0].appName || appKey;
           const icon = opt.getAppIcon(appKey);
-          const isOutcomeOnly = items.every(item => String(item.category || '').toLowerCase() !== 'income');
+          const isIncomeOnly = items.length > 0 && items.every(item => String(item.category || '').toLowerCase() === 'income');
+          const isOutcomeOnly = !isIncomeOnly && items.length > 0 && items.every(item => String(item.category || '').toLowerCase() !== 'income');
           let aIn = 0, aOut = 0, rowsHtml = '';
 
           items.forEach(item => {
@@ -1005,7 +1033,7 @@
               if (isIncome) { aIn += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
             }
             const desc = item.desc || item.name || displayName;
-            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, dKey, item.rowId || item.id, item.app || appKey, item.appName || displayName);
+            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, dKey, item.rowId || item.id, item.app || appKey, item.appName || displayName, isIncomeOnly);
           });
 
           const theadHtml = isOutcomeOnly
@@ -1087,7 +1115,8 @@
       for (const dKey of Object.keys(byDate).sort()) {
         const items = byDate[dKey];
         let dayIn = 0, dayOut = 0, rowsHtml = '';
-        const isOutcomeOnly = items.every(item => String(item.type || '').toLowerCase() !== 'income');
+        const isIncomeOnly = items.length > 0 && items.every(item => String(item.type || '').toLowerCase() === 'income');
+        const isOutcomeOnly = !isIncomeOnly && items.length > 0 && items.every(item => String(item.type || '').toLowerCase() !== 'income');
 
         items.forEach(item => {
           const isDel = Boolean(item.deleted);
@@ -1101,7 +1130,7 @@
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai');
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai', isIncomeOnly);
         });
 
         const theadHtml = isOutcomeOnly
@@ -1110,7 +1139,9 @@
 
         const metaHtml = isOutcomeOnly
           ? `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.ringkasMode ? '' : 'Keluar: '}${opt.fmtAmt(dayOut)}</span>`
-          : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(dayOut)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(dayIn)}</span>`;
+          : (isIncomeOnly
+              ? `<span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.ringkasMode ? '' : 'Masuk: '}${opt.fmtAmt(dayIn)}</span>`
+              : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(dayOut)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(dayIn)}</span>`);
 
         container.innerHTML += `
           <div class="lv-group" data-date="${dKey}" data-group-id="tarik-${dKey}" data-app-key="tarik" data-rekap-label="💸 Tarik (${formatDisplayDate(dKey)})">
@@ -1145,7 +1176,8 @@
         const items = group.items;
         const displayName = items[0].appName || appKey;
         const icon = opt.getAppIcon(appKey);
-        const isOutcomeOnly = items.every(item => String(item.category || '').toLowerCase() !== 'income');
+        const isIncomeOnly = items.length > 0 && items.every(item => String(item.category || '').toLowerCase() === 'income');
+        const isOutcomeOnly = !isIncomeOnly && items.length > 0 && items.every(item => String(item.category || '').toLowerCase() !== 'income');
         let aIn = 0, aOut = 0, rowsHtml = '';
 
         items.forEach(item => {
@@ -1158,7 +1190,7 @@
             if (isIncome) { aIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; totalKeluar += calcAmt; }
           }
           const desc = item.desc || item.name || displayName;
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, dKey, item.rowId || item.id, item.app || appKey, item.appName || displayName);
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, dKey, item.rowId || item.id, item.app || appKey, item.appName || displayName, isIncomeOnly);
         });
 
         const theadHtml = isOutcomeOnly
@@ -1167,7 +1199,9 @@
 
         const metaHtml = isOutcomeOnly
           ? `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.ringkasMode ? '' : 'Keluar: '}${opt.fmtAmt(aOut)}</span>`
-          : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(aOut)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(aIn)}</span>`;
+          : (isIncomeOnly
+              ? `<span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.ringkasMode ? '' : 'Masuk: '}${opt.fmtAmt(aIn)}</span>`
+              : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(aOut)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(aIn)}</span>`);
 
         container.innerHTML += `
           <div class="lv-group" data-date="${dKey}" data-group-id="notif-${appKey}-${dKey}" data-app-key="${appKey}" data-rekap-label="${icon} ${displayName} (${formatDisplayDate(dKey)})">
@@ -1247,7 +1281,8 @@
       const dayTarik = (data.tarik || []).filter(item => (item.date || (dates.length === 1 ? dKey : '')) === dKey);
       if (dayTarik.length > 0) {
         let tMasuk = 0, tKeluar = 0;
-        const isOutcomeOnly = dayTarik.every(item => String(item.type || '').toLowerCase() !== 'income');
+        const isIncomeOnly = dayTarik.length > 0 && dayTarik.every(item => String(item.type || '').toLowerCase() === 'income');
+        const isOutcomeOnly = !isIncomeOnly && dayTarik.length > 0 && dayTarik.every(item => String(item.type || '').toLowerCase() !== 'income');
         let rowsHtml = '';
 
         dayTarik.forEach(item => {
@@ -1262,7 +1297,7 @@
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai');
+          rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, dKey, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai', isIncomeOnly);
         });
 
         const theadHtml = isOutcomeOnly
@@ -1271,7 +1306,9 @@
 
         const metaHtml = isOutcomeOnly
           ? `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.ringkasMode ? '' : 'Keluar: '}${opt.fmtAmt(tKeluar)}</span>`
-          : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(tKeluar)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(tMasuk)}</span>`;
+          : (isIncomeOnly
+              ? `<span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.ringkasMode ? '' : 'Masuk: '}${opt.fmtAmt(tMasuk)}</span>`
+              : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" style="color:var(--outcome)">${opt.fmtAmt(tKeluar)}</span> / <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" style="color:var(--income)">${opt.fmtAmt(tMasuk)}</span>`);
 
         dayGroupsHtml += `
           <div class="lv-group" data-date="${dKey}" data-group-id="tarik-${dKey}" data-app-key="tarik" data-rekap-label="💸 Tarik Tunai">
@@ -1301,7 +1338,8 @@
           const items = notifByApp[appKey];
           const displayName = items[0].appName || appKey;
           const icon = opt.getAppIcon(appKey);
-          const isOutcomeOnly = items.every(item => String(item.category || '').toLowerCase() !== 'income');
+          const isIncomeOnly = items.length > 0 && items.every(item => String(item.category || '').toLowerCase() === 'income');
+          const isOutcomeOnly = !isIncomeOnly && items.length > 0 && items.every(item => String(item.category || '').toLowerCase() !== 'income');
           let aIn = 0, aOut = 0, rowsHtml = '';
 
           items.forEach(item => {
@@ -1314,7 +1352,7 @@
               if (isIncome) { aIn += calcAmt; dayIn += calcAmt; totalMasuk += calcAmt; } else { aOut += calcAmt; dayOut += calcAmt; totalKeluar += calcAmt; }
             }
             const desc = item.desc || item.name || displayName;
-            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, dKey, item.rowId || item.id, item.app || appKey, item.appName || displayName);
+            rowsHtml += opt.renderRowHtml(globalSeqObj.val++, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, dKey, item.rowId || item.id, item.app || appKey, item.appName || displayName, isIncomeOnly);
           });
 
           const theadHtml = isOutcomeOnly

@@ -701,7 +701,13 @@ function recalcAll() {
 
     const metaMasuk = group.querySelector('.grp-meta-masuk');
     const metaKeluar = group.querySelector('.grp-meta-keluar');
-    if (metaMasuk) metaMasuk.textContent = fmtAmt(grpMasuk);
+    if (metaMasuk) {
+      if (metaKeluar) {
+        metaMasuk.textContent = fmtAmt(grpMasuk);
+      } else {
+        metaMasuk.textContent = (ringkasMode ? '' : 'Masuk: ') + fmtAmt(grpMasuk);
+      }
+    }
     if (metaKeluar) {
       if (metaMasuk) {
         metaKeluar.textContent = fmtAmt(grpKeluar);
@@ -3375,7 +3381,12 @@ function addNewItemBelowCurrent() {
   const isVoucher = grpId === 'voucher' || grpId.startsWith('voucher') || grpAppKey === 'voucher';
   const isTarik = grpId === 'tarik' || grpId.startsWith('tarik') || grpAppKey === 'tarik';
   const isTopup = grpId === 'topup' || grpId.startsWith('topup') || grpAppKey === 'topup';
-  const isOutcomeOnly = isVoucher || !!group.querySelector('.lv-th.l') || !!currentNavRow.querySelector('.lv-td-itemname');
+  const hasItemName = isVoucher || !!group.querySelector('.lv-th.l') || !!currentNavRow.querySelector('.lv-td-itemname');
+  const hasInCol = !!group.querySelector('.lv-td-in') || !!group.querySelector('.lv-thead th.lv-th.r:last-child')?.textContent?.includes('Masuk') || (group.querySelector('.lv-thead')?.textContent?.includes('Masuk'));
+  const hasOutCol = !!group.querySelector('.lv-td-out') || !!group.querySelector('.lv-thead th.lv-th.r:first-of-type')?.textContent?.includes('Keluar') || (group.querySelector('.lv-thead')?.textContent?.includes('Keluar'));
+
+  const isIncomeOnly = hasItemName && !isVoucher && hasInCol && !hasOutCol;
+  const isOutcomeOnly = isVoucher || (hasItemName && hasOutCol && !hasInCol);
 
   // 1. Ambil waktu dari baris aktif di atasnya lalu increment 1 menit
   const prevTime = currentNavRow.dataset.time ||
@@ -3450,14 +3461,14 @@ function addNewItemBelowCurrent() {
   }
 
   const defaultDesc = isVoucher ? (provider ? `${provider} Baru` : 'Voucher Baru') : 'Transaksi Baru';
-  const isIncome = !isOutcomeOnly && currentNavRow.dataset.cat === 'income';
+  const isIncome = isIncomeOnly || (!isOutcomeOnly && currentNavRow.dataset.cat === 'income');
 
   // 6. Render HTML dengan menyertakan isNew=true, dateVal, rowId, targetAppPkg, targetAppName
   let newRowHtml = '';
   if (isVoucher) {
     newRowHtml = renderVoucherRowHtml(0, timeStr, defaultDesc, 0, provider || 'VOUCHER', 0, false, false, true, 0, rowDate, newRowId, targetAppPkg, targetAppName);
   } else {
-    newRowHtml = renderRowHtml(0, timeStr, 0, isIncome, defaultDesc, isOutcomeOnly, 0, false, false, true, 0, 0, rowDate, newRowId, targetAppPkg, targetAppName);
+    newRowHtml = renderRowHtml(0, timeStr, 0, isIncome, defaultDesc, isOutcomeOnly, 0, false, false, true, 0, 0, rowDate, newRowId, targetAppPkg, targetAppName, isIncomeOnly);
   }
 
   currentNavRow.insertAdjacentHTML('afterend', newRowHtml);
@@ -4040,12 +4051,13 @@ function onAmtClick(span, event) {
 function upgradeGroupToDualColumns(group, targetRow, newCat) {
   if (!group) return;
 
+  const isContinuous = !!group.closest('.layout-continuous');
   const thead = group.querySelector('.lv-thead');
   if (thead) {
     thead.innerHTML = `
       <tr>
         <th class="lv-th c" style="width:36px;">#</th>
-        <th class="lv-th c" style="width:65px;">Waktu</th>
+        <th class="${isContinuous ? 'lv-th c time-col' : 'lv-th c'}" style="width:${isContinuous ? '92px' : '65px'};">Waktu</th>
         <th class="lv-th r">Keluar</th>
         <th class="lv-th r">Masuk</th>
       </tr>`;
@@ -4058,7 +4070,7 @@ function upgradeGroupToDualColumns(group, targetRow, newCat) {
     const timeTitle = timeTd ? (timeTd.getAttribute('title') || '') : '';
 
     const isTarget = (r === targetRow);
-    const cat = isTarget ? newCat : (r.dataset.cat || 'outcome');
+    const cat = isTarget ? newCat : (r.dataset.cat || (r.querySelector('.lv-td-in') ? 'income' : 'outcome'));
     r.dataset.cat = cat;
 
     const val = parseFloat(r.dataset.val) || 0;
@@ -4446,7 +4458,9 @@ function getAppIcon(appPackage) {
   return '📱';
 }
 
-function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmount, isDeleted, isRead, isNew, realVal, feeVal, dateVal, rowId, appVal, appNameVal) {
+function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmount, isDeleted, isRead, isNew, realVal, feeVal, dateVal, rowId, appVal, appNameVal, isIncomeOnly) {
+  const incomeOnly = (isIncomeOnly === true) || (isOutcomeOnly === 'income') || (isOutcomeOnly === 'income_only');
+  const outcomeOnly = !incomeOnly && (isOutcomeOnly === true || isOutcomeOnly === 'outcome' || isOutcomeOnly === 'outcome_only');
   const cat = isIncome ? 'income' : 'outcome';
   const descAttr = desc ? ` data-desc="${escapeHtml(desc)}"` : '';
   const timeTitle = desc ? `${escapeHtml(time)} · ${escapeHtml(desc)}` : escapeHtml(time);
@@ -4485,16 +4499,6 @@ function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmo
        </td>`
     : `<td class="lv-td lv-td-out"><span class="lv-empty-cell">—</span></td>`;
 
-  if (isOutcomeOnly) {
-    return `
-      <tr class="lv-row${rowExtraClass}" data-cat="${cat}" data-orig="${orig}" data-val="${amount}"${descAttr}${newAttr}${realAttr}${feeAttr}${dateAttr}${rowIdAttr}${appAttr}${appNameAttr}>
-        <td class="lv-td lv-td-idx">${idx}</td>
-        <td class="lv-td lv-td-time" title="${timeTitle}"><span class="lv-time-text">${escapeHtml(time)}</span>${statusTagHtml}</td>
-        <td class="lv-td lv-td-itemname" onclick="onNameClick(this, event)" title="Klik untuk dengar / ubah: ${escapeHtml(desc || '—')}">${escapeHtml(desc || '—')}</td>
-        ${outCell}
-      </tr>`;
-  }
-
   const inCell = isIncome
     ? `<td class="lv-td lv-td-in">
          <div class="amt-ctrl">
@@ -4504,6 +4508,26 @@ function renderRowHtml(idx, time, amount, isIncome, desc, isOutcomeOnly, origAmo
          </div>
        </td>`
     : `<td class="lv-td lv-td-in"><span class="lv-empty-cell">—</span></td>`;
+
+  if (outcomeOnly) {
+    return `
+      <tr class="lv-row${rowExtraClass}" data-cat="${cat}" data-orig="${orig}" data-val="${amount}"${descAttr}${newAttr}${realAttr}${feeAttr}${dateAttr}${rowIdAttr}${appAttr}${appNameAttr}>
+        <td class="lv-td lv-td-idx">${idx}</td>
+        <td class="lv-td lv-td-time" title="${timeTitle}"><span class="lv-time-text">${escapeHtml(time)}</span>${statusTagHtml}</td>
+        <td class="lv-td lv-td-itemname" onclick="onNameClick(this, event)" title="Klik untuk dengar / ubah: ${escapeHtml(desc || '—')}">${escapeHtml(desc || '—')}</td>
+        ${outCell}
+      </tr>`;
+  }
+
+  if (incomeOnly) {
+    return `
+      <tr class="lv-row${rowExtraClass}" data-cat="${cat}" data-orig="${orig}" data-val="${amount}"${descAttr}${newAttr}${realAttr}${feeAttr}${dateAttr}${rowIdAttr}${appAttr}${appNameAttr}>
+        <td class="lv-td lv-td-idx">${idx}</td>
+        <td class="lv-td lv-td-time" title="${timeTitle}"><span class="lv-time-text">${escapeHtml(time)}</span>${statusTagHtml}</td>
+        <td class="lv-td lv-td-itemname" onclick="onNameClick(this, event)" title="Klik untuk dengar / ubah: ${escapeHtml(desc || '—')}">${escapeHtml(desc || '—')}</td>
+        ${inCell}
+      </tr>`;
+  }
 
   return `
     <tr class="lv-row${rowExtraClass}" data-cat="${cat}" data-orig="${orig}" data-val="${amount}"${descAttr}${newAttr}${realAttr}${feeAttr}${dateAttr}${rowIdAttr}${appAttr}${appNameAttr}>
@@ -4614,7 +4638,8 @@ function renderReport(data) {
         if (!data.tarik || data.tarik.length === 0) return;
         let tarikMasuk = 0;
         let tarikKeluar = 0;
-        const isOutcomeOnly = data.tarik.every(item => String(item.type || '').toLowerCase() !== 'income');
+        const isIncomeOnly = data.tarik.length > 0 && data.tarik.every(item => String(item.type || '').toLowerCase() === 'income');
+        const isOutcomeOnly = !isIncomeOnly && data.tarik.length > 0 && data.tarik.every(item => String(item.type || '').toLowerCase() !== 'income');
         let rowsHtml = '';
 
         data.tarik.forEach((item, idx) => {
@@ -4631,7 +4656,7 @@ function renderReport(data) {
           const desc = item.name || item.desc || item.app || 'Tarik Tunai';
           const jumtar = item.jumtar || amt;
           const adm = item.adm || 0;
-          rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, item.date, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai');
+          rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, jumtar, adm, item.date, item.rowId || item.id, 'com.kspcheck.tarik', 'Tarik Tunai', isIncomeOnly);
         });
 
         const theadHtml = isOutcomeOnly
@@ -4641,17 +4666,26 @@ function renderReport(data) {
               <th class="lv-th l">Nama</th>
               <th class="lv-th r" style="width:140px;">Keluar</th>
             </tr></thead>`
-          : `<thead class="lv-thead"><tr>
-              <th class="lv-th c">#</th>
-              <th class="lv-th c">Waktu</th>
-              <th class="lv-th r">Keluar</th>
-              <th class="lv-th r">Masuk</th>
-            </tr></thead>`;
+          : (isIncomeOnly
+              ? `<thead class="lv-thead"><tr>
+                  <th class="lv-th c" style="width:36px;">#</th>
+                  <th class="lv-th c" style="width:65px;">Waktu</th>
+                  <th class="lv-th l">Nama</th>
+                  <th class="lv-th r" style="width:140px;">Masuk</th>
+                </tr></thead>`
+              : `<thead class="lv-thead"><tr>
+                  <th class="lv-th c">#</th>
+                  <th class="lv-th c">Waktu</th>
+                  <th class="lv-th r">Keluar</th>
+                  <th class="lv-th r">Masuk</th>
+                </tr></thead>`);
 
         const metaHtml = isOutcomeOnly
           ? `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${ringkasMode ? '' : 'Keluar: '}${fmtAmt(tarikKeluar)}</span>`
-          : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${fmtAmt(tarikKeluar)}</span> / 
-             <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" title="Klik untuk salin Masuk" style="color:var(--income)">${fmtAmt(tarikMasuk)}</span>`;
+          : (isIncomeOnly
+              ? `<span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" title="Klik untuk salin Masuk" style="color:var(--income)">${ringkasMode ? '' : 'Masuk: '}${fmtAmt(tarikMasuk)}</span>`
+              : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${fmtAmt(tarikKeluar)}</span> / 
+                 <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" title="Klik untuk salin Masuk" style="color:var(--income)">${fmtAmt(tarikMasuk)}</span>`);
 
         const tarikGroupHtml = `
           <div class="lv-group" data-group-id="tarik" data-rekap-label="💸 Tarik Tunai">
@@ -4705,7 +4739,8 @@ function renderReport(data) {
           const icon = getAppIcon(appKey);
           let appMasuk = 0;
           let appKeluar = 0;
-          const isOutcomeOnly = items.every(item => String(item.category || '').toLowerCase() !== 'income');
+          const isIncomeOnly = items.length > 0 && items.every(item => String(item.category || '').toLowerCase() === 'income');
+          const isOutcomeOnly = !isIncomeOnly && items.length > 0 && items.every(item => String(item.category || '').toLowerCase() !== 'income');
           let rowsHtml = '';
 
           items.forEach((item, idx) => {
@@ -4720,7 +4755,7 @@ function renderReport(data) {
               totalKeluar += amt;
             }
             const desc = item.name || item.title || displayName;
-            rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, item.date, item.rowId || item.id, item.app || appKey, item.appName || displayName);
+            rowsHtml += renderRowHtml(idx + 1, item.time || '00:00', amt, isIncome, desc, isOutcomeOnly, item.orig, item.deleted, item.read, item.isNew, item.real, item.fee, item.date, item.rowId || item.id, item.app || appKey, item.appName || displayName, isIncomeOnly);
           });
 
           const theadHtml = isOutcomeOnly
@@ -4730,17 +4765,26 @@ function renderReport(data) {
                 <th class="lv-th l">Nama</th>
                 <th class="lv-th r" style="width:140px;">Keluar</th>
               </tr></thead>`
-            : `<thead class="lv-thead"><tr>
-                <th class="lv-th c">#</th>
-                <th class="lv-th c">Waktu</th>
-                <th class="lv-th r">Keluar</th>
-                <th class="lv-th r">Masuk</th>
-              </tr></thead>`;
+            : (isIncomeOnly
+                ? `<thead class="lv-thead"><tr>
+                    <th class="lv-th c" style="width:36px;">#</th>
+                    <th class="lv-th c" style="width:65px;">Waktu</th>
+                    <th class="lv-th l">Nama</th>
+                    <th class="lv-th r" style="width:140px;">Masuk</th>
+                  </tr></thead>`
+                : `<thead class="lv-thead"><tr>
+                    <th class="lv-th c">#</th>
+                    <th class="lv-th c">Waktu</th>
+                    <th class="lv-th r">Keluar</th>
+                    <th class="lv-th r">Masuk</th>
+                  </tr></thead>`);
 
           const metaHtml = isOutcomeOnly
             ? `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${ringkasMode ? '' : 'Keluar: '}${fmtAmt(appKeluar)}</span>`
-            : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${fmtAmt(appKeluar)}</span> / 
-               <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" title="Klik untuk salin Masuk" style="color:var(--income)">${fmtAmt(appMasuk)}</span>`;
+            : (isIncomeOnly
+                ? `<span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" title="Klik untuk salin Masuk" style="color:var(--income)">${ringkasMode ? '' : 'Masuk: '}${fmtAmt(appMasuk)}</span>`
+                : `<span class="grp-meta-keluar" onclick="copyGroupValues(this,'outcome',event)" title="Klik untuk salin Keluar" style="color:var(--outcome)">${fmtAmt(appKeluar)}</span> / 
+                   <span class="grp-meta-masuk" onclick="copyGroupValues(this,'income',event)" title="Klik untuk salin Masuk" style="color:var(--income)">${fmtAmt(appMasuk)}</span>`);
 
           const appGroupHtml = `
             <div class="lv-group" data-group-id="${escapeHtml(appKey)}" data-app-key="${escapeHtml(appKey)}" data-rekap-label="${icon} ${escapeHtml(displayName)}">
