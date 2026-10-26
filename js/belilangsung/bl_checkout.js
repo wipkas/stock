@@ -21,6 +21,8 @@
     let kind = 'barang';
     let payMethod = 'TUNAI';
     let submitting = false;
+    // true = kolom tunai mengikuti total (mode "uang pas"); false setelah kasir mengetik nominal sendiri.
+    let cashAuto = true;
 
     /** Satu adaptor per jenis keranjang. Bentuk item: { product:{id,name}, providerName, qty, unitPrice, subtotal }. */
     const ADAPTERS = {
@@ -97,6 +99,7 @@
         $('shItems').innerHTML = items.map(itemHtml).join('');
         $('shCount').textContent = 'Total (' + t.count + ' ' + a.unit + ')';
         $('shTotal').textContent = F.rupiah(t.total);
+        if (cashAuto) $('shCashInput').value = F.number(t.total);   // uang pas: tunai ikut total saat qty berubah
         renderQuickChips(t.total);
         updateChange();
     }
@@ -109,6 +112,7 @@
         const sh = BL.Shift.display();
         $('shShift').textContent = sh.emoji + ' ' + sh.text;
         payMethod = 'TUNAI';
+        cashAuto = true;
         paintPay();
         $('shCashInput').value = F.number(a.totals().total);   // uang pas sebagai nilai awal
         render();
@@ -206,6 +210,7 @@
 
         const cash = $('shCashInput');
         cash.addEventListener('input', function () {
+            cashAuto = false;   // kasir mengetik nominal sendiri: jangan ditimpa saat qty berubah
             const n = F.digitsToNumber(cash.value);
             cash.value = /\d/.test(cash.value) ? F.number(n) : '';
             updateChange();
@@ -213,7 +218,9 @@
         $('shQuick').addEventListener('click', function (e) {
             const q = e.target.closest('.quick');
             if (!q) return;
-            cash.value = F.number(Number(q.getAttribute('data-cash')));
+            const amount = Number(q.getAttribute('data-cash'));
+            cash.value = F.number(amount);
+            cashAuto = amount === A().totals().total;   // hanya "Uang Pas" yang mengaktifkan mode ikut-total
             updateChange();
         });
 

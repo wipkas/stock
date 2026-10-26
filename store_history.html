@@ -363,6 +363,10 @@
                         <span class="btn-icon">⬇️</span>
                     </button>
 
+                    <a href="store_import_xls.html" class="toggle-btn" id="btn-top-import-xls" title="Impor Berkas Excel (XLS Order Kuota)" style="padding: 4px 8px; font-size: 13px; text-decoration: none; color: inherit; display: inline-flex; align-items: center; justify-content: center;">
+                        <span class="btn-icon">📊</span>
+                    </a>
+
                     <button class="toggle-btn" id="btn-hidden-group" onclick="toggleHiddenGroup(this)" title="Lipat / Buka Semua Tabel" style="padding: 4px 8px; font-size: 13px;">
                         <span id="btn-hidden-group-icon">📁</span>
                     </button>
@@ -517,7 +521,14 @@
                 <button class="ksp-modal-close" onclick="KspHistoriku.closeImportModal()" title="Tutup">&times;</button>
             </div>
             <div class="ksp-modal-body">
-                <p style="font-size: 12px; color: var(--muted); margin: 0;">Pilih file laporan HTML atau JSON hasil ekspor dari aplikasi Android KSP Check untuk ditampilkan dan dikelola di cabang ini.</p>
+                <div style="background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 10px; margin-bottom: 12px;">
+                    <div style="font-size: 12.5px; font-weight: 800; color: var(--text); margin-bottom: 3px;">📊 Impor Berkas Excel (XLS Order Kuota)</div>
+                    <p style="font-size: 11px; color: var(--muted); margin-bottom: 8px;">Kalkulasi biaya admin otomatis via Supabase fee_rules, tentukan shift, dan simpan langsung ke riwayat cabang.</p>
+                    <a href="store_import_xls.html" id="linkModalImportXls" class="ksp-btn-pri" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; box-sizing: border-box; background: var(--income); color: #fff; font-weight: 700; font-size: 12px; padding: 8px 12px; border-radius: 6px;">
+                        <span>Buka Halaman Impor XLS</span> ➜
+                    </a>
+                </div>
+                <p style="font-size: 12px; color: var(--muted); margin: 0;">Atau pilih file laporan HTML / JSON hasil ekspor aplikasi Android KSP Check:</p>
                 <input type="file" id="report-file-input" accept=".html,.htm,.json" style="width: 100%; font-size: 12px;" onchange="KspHistoriku.handleFileImport(this.files[0])">
                 <div style="border-top: 1px dashed var(--border); padding-top: 12px; margin-top: 6px;">
                     <div style="font-size: 12px; font-weight: 700; margin-bottom: 8px; color: var(--text);">⚙️ Opsi Ekspor JSON:</div>
@@ -1029,6 +1040,11 @@
                 }
             }
 
+            const btnImportXls = document.getElementById('btn-top-import-xls');
+            if (btnImportXls) btnImportXls.href = 'store_import_xls.html?store=' + encodeURIComponent(currentStoreId);
+            const linkModalImport = document.getElementById('linkModalImportXls');
+            if (linkModalImport) linkModalImport.href = 'store_import_xls.html?store=' + encodeURIComponent(currentStoreId);
+
             // Tombol Sinkronisasi Cloud (Hanya untuk Admin)
             const syncBtn = document.getElementById('btn-sync-cloud');
             if (syncBtn) {
@@ -1267,6 +1283,11 @@
 
             const backBtn = document.getElementById('btnBackToStore');
             if (backBtn) backBtn.href = 'store_manager.html?store=' + encodeURIComponent(currentStoreId);
+
+            const btnImportXls = document.getElementById('btn-top-import-xls');
+            if (btnImportXls) btnImportXls.href = 'store_import_xls.html?store=' + encodeURIComponent(currentStoreId);
+            const linkModalImport = document.getElementById('linkModalImportXls');
+            if (linkModalImport) linkModalImport.href = 'store_import_xls.html?store=' + encodeURIComponent(currentStoreId);
 
             try {
                 const url = new URL(window.location.href);

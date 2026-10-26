@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>HistoriKu - Impor XLS Order Kuota</title>
+
+    <!-- Web App Manifest & Favicons -->
+    <link rel="manifest" href="assets/manifests/manifest-store.json">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-store.svg">
+    <meta name="theme-color" content="#1E293B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- CSS Dependencies -->
+    <link rel="stylesheet" href="css/ksp_historiku.css?v=20261007_v4">
+    <link rel="stylesheet" href="css/ksp_multiday_layouts.css?v=20261013_v2">
+
+    <!-- Core Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/xlsx.full.min.js"></script>
+    <script>if (typeof XLSX === 'undefined') document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>');</script>
+    <script src="js/ksp_sync_config.js?v=20261007_v3"></script>
+    <script src="js/ksp_sync.js?v=20261007_v3"></script>
+    <script src="js/ksp_ui.js?v=20261005"></script>
+    <script src="js/ksp_theme.js?v=20261005"></script>
+    <script src="js/ksp_auth.js?v=20261005"></script>
+
+    <style>
+        /* PIN Security Gate Modal */
+        #pinModal {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            padding: 20px;
+        }
+
+        .pin-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 28px 24px;
+            border-radius: var(--r);
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .pin-title {
+            margin: 0 0 14px 0;
+            font-size: 19px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: var(--text);
+        }
+
+        .pin-input {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 12px;
+            border-radius: var(--r-sm);
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+        }
+
+        .pin-input:focus {
+            border-color: var(--accent);
+        }
+
+        .pin-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: var(--r-sm);
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .pin-btn:hover {
+            opacity: 0.92;
+        }
+
+        /* Top Header Styling */
+        header.historiku-header {
+            position: sticky;
+            top: 0;
+            z-index: 95;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 6px 12px;
+            min-height: 44px;
+            box-shadow: var(--shadow);
+            border-radius: 0 0 var(--r-sm) var(--r-sm);
+            margin-bottom: 12px;
+        }
+
+        .header-main-custom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            width: 100%;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        .header-main-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            flex-shrink: 1;
+        }
+
+        .header-main-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .btn-top-back {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: var(--r-sm);
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-top-back:hover {
+            background: var(--border);
+        }
+
+        .store-select-compact {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 10px;
+            border-radius: var(--r-sm);
+            font-size: 13px;
+            font-weight: 700;
+            outline: none;
+            cursor: pointer;
+            max-width: 200px;
+        }
+
+        /* Layout Container */
+        .import-container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 12px 40px;
+        }
+
+        /* Cards */
+        .ksp-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 16px;
+            margin-bottom: 14px;
+            box-shadow: var(--shadow);
+        }
+
+        .card-header-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 12px;
+            letter-spacing: -0.01em;
+        }
+
+        /* Status Banner */
+        .status-badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .badge-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 700;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .badge-status-pill.online {
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(16, 185, 129, 0.4);
+            color: #10b981;
+        }
+        .badge-status-pill.info {
+            background: rgba(79, 142, 247, 0.12);
+            border-color: rgba(79, 142, 247, 0.4);
+            color: #3b82f6;
+        }
+        .badge-status-pill.warning {
+            background: rgba(245, 158, 11, 0.12);
+            border-color: rgba(245, 158, 11, 0.4);
+            color: #f59e0b;
+        }
+
+        /* Drop Zone */
+        .dropzone-box {
+            border: 2px dashed var(--border);
+            border-radius: var(--r);
+            background: var(--surface2);
+            padding: 28px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .dropzone-box.dragover,
+        .dropzone-box:hover {
+            border-color: var(--accent);
+            background: rgba(200, 98, 43, 0.05);
+        }
+        .dropzone-icon {
+            font-size: 38px;
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+        .dropzone-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+        .dropzone-desc {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+        .dropzone-file-input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* File Loaded Card */
+        .file-loaded-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
+            margin-top: 10px;
+        }
+        .file-meta-text {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .file-size-text {
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        /* Settings Grid */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .setting-label {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .setting-input,
+        .setting-select {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 10px;
+            border-radius: var(--r-sm);
+            font-size: 13px;
+            font-weight: 600;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .setting-checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12.5px;
+            color: var(--text);
+            cursor: pointer;
+            user-select: none;
+            padding-top: 4px;
+        }
+
+        /* Metric Total Cards */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        @media (max-width: 680px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        .metric-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
+            padding: 10px 12px;
+            text-align: left;
+        }
+        .metric-label {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 4px;
+        }
+        .metric-val {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+        }
+        .metric-val.out { color: var(--outcome); }
+        .metric-val.in { color: var(--income); }
+        .metric-val.fee { color: #3b82f6; }
+
+        /* Preview Table */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
+            background: var(--surface);
+            max-height: 480px;
+            overflow-y: auto;
+        }
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        .preview-table th {
+            position: sticky;
+            top: 0;
+            background: var(--surface2);
+            color: var(--text2);
+            padding: 9px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            border-bottom: 1px solid var(--border);
+            z-index: 10;
+        }
+        .preview-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+        }
+        .preview-table tr:hover td {
+            background: rgba(0, 0, 0, 0.03);
+        }
+        [data-theme="dark"] .preview-table tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .shift-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+        }
+        .shift-badge.shift1 {
+            background: rgba(249, 115, 22, 0.15);
+            color: #f97316;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+        }
+        .shift-badge.shift2 {
+            background: rgba(139, 92, 246, 0.15);
+            color: #8b5cf6;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .rule-tag {
+            display: inline-block;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 9.5px;
+            font-weight: 600;
+            background: rgba(59, 130, 246, 0.12);
+            color: #3b82f6;
+            max-width: 140px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        /* Action Buttons */
+        .btn-action-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px 18px;
+            border-radius: var(--r-sm);
+            background: var(--income);
+            color: #fff;
+            border: none;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+            transition: all 0.2s ease;
+        }
+        .btn-action-primary:hover:not(:disabled) {
+            opacity: 0.94;
+            transform: translateY(-1px);
+        }
+        .btn-action-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Modal Overlay */
+        .ksp-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(2px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PIN SECURITY GATE -->
+    <div id="pinModal" style="display: none;">
+        <div class="pin-card">
+            <h2 class="pin-title">🔒 Verifikasi PIN</h2>
+            <p style="font-size: 12px; color: var(--muted); margin-bottom: 16px;">Masukkan PIN / Password untuk mengakses fitur Impor XLS Cabang</p>
+            <form onsubmit="handleHistoryPinSubmit(event)">
+                <input type="password" id="pinInput" class="pin-input" placeholder="PIN / Password..." autocomplete="current-password" autofocus required>
+                <div id="pinError" style="color: var(--outcome); font-size: 11px; margin-bottom: 12px; display: none;">PIN salah!</div>
+                <button type="submit" id="btnUnlock" class="pin-btn">
+                    <span>MASUK</span> ➜
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="mainApp" style="display: none;">
+
+        <!-- TOP BAR HEADER -->
+        <header class="historiku-header">
+            <div class="header-main-custom">
+                <!-- Left: Back button & Title & Store Select -->
+                <div class="header-main-left">
+                    <a href="store_history.html" id="btnBackToHistory" class="btn-top-back" title="Kembali ke Riwayat Transaksi">←</a>
+                    <span style="font-size: 14px; font-weight: 800; color: var(--accent); white-space: nowrap;">📊 Impor XLS</span>
+                    <select id="storeSelect" class="store-select-compact" onchange="onStoreSelectChange(this.value)">
+                        <option value="">Pilih Cabang...</option>
+                    </select>
+                </div>
+
+                <!-- Right: Role Pill, Direct History Link, Theme toggle -->
+                <div class="header-main-right">
+                    <span id="roleBadge" class="badge-status-pill" style="font-size: 11px; padding: 3px 8px;">Admin</span>
+                    <a href="store_history.html" id="btnLinkHistory" class="badge-status-pill info" style="text-decoration: none; cursor: pointer;" title="Buka Halaman HistoriKu">
+                        📖 Riwayat
+                    </a>
+                    <button class="btn-top-back" id="btnToggleTheme" onclick="toggleThemeMode()" title="Ganti Tema (Gelap/Terang)" style="font-size: 14px;">🌓</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTAINER -->
+        <div class="import-container">
+
+            <!-- CARD 1: STATUS CLOUD & FEE RULES -->
+            <div class="ksp-card">
+                <div class="card-header-title">
+                    <span>☁️ Sinkronisasi Aturan Biaya (Fee Rules) Supabase</span>
+                    <button type="button" class="badge-status-pill" onclick="fetchFeeRulesFromSupabase(true)" style="cursor: pointer; font-size: 11px; border: 1px solid var(--border);" title="Perbarui aturan fee dari Supabase">
+                        🔄 Refresh Rules
+                    </button>
+                </div>
+                <div class="status-badge-row">
+                    <span id="supabaseStatusPill" class="badge-status-pill info">⏳ Memeriksa Supabase...</span>
+                    <span id="feeRulesCountPill" class="badge-status-pill warning">⏳ Mengambil Aturan Fee...</span>
+                    <span id="activeStorePill" class="badge-status-pill">🏬 Cabang: -</span>
+                </div>
+                <div id="feeRulesCategoriesText" style="font-size: 11.5px; color: var(--muted); margin-top: 8px;">
+                    Aturan fee otomatis dicocokkan berdasarkan nama produk (SKU), kata kunci, atau rentang modal nominal.
+                </div>
+            </div>
+
+            <!-- CARD 2: DROP ZONE / FILE SELECTOR -->
+            <div class="ksp-card">
+                <div class="card-header-title">
+                    <span>📁 Berkas XLS Order Kuota</span>
+                    <span style="font-size: 11px; color: var(--muted); font-weight: 500;">Format: Laporan_Rekap_DD-MM-YYYY_DD-MM-YYYY.xls</span>
+                </div>
+                
+                <div class="dropzone-box" id="dropzoneBox">
+                    <input type="file" id="xlsFileInput" class="dropzone-file-input" accept=".xls,.xlsx" onchange="handleFileSelect(this.files[0])">
+                    <div class="dropzone-icon">📥</div>
+                    <div class="dropzone-title">Klik atau Seret Berkas XLS ke Sini</div>
+                    <div class="dropzone-desc">Mendukung berkas biner Excel (.xls) dan modern (.xlsx)</div>
+                    <button type="button" class="pin-btn" style="width: auto; margin: 0 auto; padding: 7px 16px; font-size: 12px; pointer-events: none;">
+                        Pilih Berkas Excel
+                    </button>
+                </div>
+
+                <div id="fileLoadedCard" class="file-loaded-info" style="display: none;">
+                    <div>
+                        <div class="file-meta-text" id="fileLoadedName">filename.xls</div>
+                        <div class="file-size-text" id="fileLoadedSize">0 KB</div>
+                    </div>
+                    <button type="button" class="btn-top-back" onclick="resetFileSelection()" title="Hapus Berkas & Pilih Ulang" style="width: 28px; height: 28px; font-size: 13px;">✕</button>
+                </div>
+            </div>
+
+            <!-- CARD 3: IMPORT OPTIONS & CONFIGURATION (AFTER FILE LOADED) -->
+            <div class="ksp-card" id="optionsCard" style="display: none;">
+                <div class="card-header-title">
+                    <span>⚙️ Opsi &amp; Filter Impor</span>
+                    <span id="detectedRowsPill" class="badge-status-pill info">0 Baris Terbaca</span>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- Filter Tanggal -->
+                    <div class="setting-item">
+                        <label class="setting-label">Filter Tanggal:</label>
+                        <select id="optDateFilter" class="setting-select" onchange="applyPreviewFilters()">
+                            <option value="ALL">Semua Tanggal dalam Berkas</option>
+                        </select>
+                    </div>
+
+                    <!-- Shift Assignment -->
+                    <div class="setting-item">
+                        <label class="setting-label">Penetapan Shift:</label>
+                        <select id="optShiftMode" class="setting-select" onchange="applyPreviewFilters()">
+                            <option value="AUTO" selected>Otomatis (Cutoff 15:30 WIB)</option>
+                            <option value="1">Paksa Shift 1 (Pagi)</option>
+                            <option value="2">Paksa Shift 2 (Malam)</option>
+                        </select>
+                    </div>
+
+                    <!-- Kategori Transaksi -->
+                    <div class="setting-item">
+                        <label class="setting-label">Kategori Transaksi:</label>
+                        <select id="optCategory" class="setting-select" onchange="applyPreviewFilters()">
+                            <option value="outcome" selected>Outcome (Penjualan Modal / Keluar)</option>
+                            <option value="income">Income (Pemasukan Kasir / Masuk)</option>
+                        </select>
+                    </div>
+
+                    <!-- Pembulatan Ribuan -->
+                    <div class="setting-item" style="justify-content: flex-end;">
+                        <label class="setting-checkbox-label">
+                            <input type="checkbox" id="optRoundThousand" checked onchange="applyPreviewFilters()" style="accent-color: var(--accent); width: 16px; height: 16px;">
+                            <span>Bulatkan ke atas kelipatan Rp 1.000</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARD 4: PREVIEW METRICS & DATA TABLE -->
+            <div class="ksp-card" id="previewCard" style="display: none;">
+                <div class="card-header-title">
+                    <span>📋 Pratinjau Transaksi yang Akan Diimpor</span>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" id="previewSearchInput" class="setting-input" placeholder="Cari produk / provider / nomor..." style="width: 200px; padding: 4px 8px; font-size: 11.5px;" oninput="applyPreviewFilters()">
+                    </div>
+                </div>
+
+                <!-- Metrics Summary Grid -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Total Transaksi</div>
+                        <div class="metric-val" id="metricTotalTrx">0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Total Modal</div>
+                        <div class="metric-val out" id="metricTotalModal">Rp 0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Total Admin Fee</div>
+                        <div class="metric-val fee" id="metricTotalFee">Rp 0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Total Harga Jual</div>
+                        <div class="metric-val in" id="metricTotalJual">Rp 0</div>
+                    </div>
+                </div>
+
+                <!-- Table Preview -->
+                <div class="table-responsive">
+                    <table class="preview-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 30px; text-align: center;">
+                                    <input type="checkbox" id="cbSelectAll" checked onchange="toggleSelectAllRows(this.checked)" style="accent-color: var(--accent);">
+                                </th>
+                                <th style="width: 32px; text-align: center;">#</th>
+                                <th style="width: 120px;">Waktu &amp; Tanggal</th>
+                                <th style="width: 60px; text-align: center;">Shift</th>
+                                <th>Provider</th>
+                                <th>Produk / SKU</th>
+                                <th>No. Tujuan</th>
+                                <th style="text-align: right;">Modal</th>
+                                <th style="text-align: right;">Fee (Admin)</th>
+                                <th style="text-align: right;">Harga Jual</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewTableBody">
+                            <!-- Diisi secara dinamis -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Push Button -->
+                <div style="margin-top: 16px;">
+                    <button type="button" id="btnPushToSupabase" class="btn-action-primary" onclick="pushTransactionsToSupabase()">
+                        <span>🚀</span> <span id="btnPushLabel">Simpan ke Riwayat Cabang (Supabase)</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- DIALOG SUKSES / PROGRESS OVERLAY -->
+    <div id="progressModal" class="ksp-modal-overlay" style="display: none;">
+        <div class="pin-card" style="max-width: 380px; text-align: center;" onclick="event.stopPropagation()">
+            <div id="progressSpinner" style="font-size: 36px; margin-bottom: 12px; animation: spin 1.2s linear infinite;">⏳</div>
+            <h3 id="progressTitle" style="font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 6px;">Menyimpan Data...</h3>
+            <p id="progressMessage" style="font-size: 12px; color: var(--muted); margin-bottom: 16px;">Mengunggah transaksi ke Supabase cloud</p>
+            <div id="progressActionRow" style="display: none; flex-direction: column; gap: 8px;">
+                <a id="btnGoToStoreHistory" href="store_history.html" class="btn-action-primary" style="text-decoration: none; padding: 10px 14px; font-size: 13px;">
+                    <span>🔍</span> <span>Buka di Riwayat Transaksi (HistoriKu)</span>
+                </a>
+                <button type="button" class="pin-btn" style="background: var(--surface2); color: var(--text); border: 1px solid var(--border);" onclick="closeProgressModal()">
+                    Tutup Dialog
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+
+    <!-- MAIN JAVASCRIPT LOGIC -->
+    <script>
+        // Global State
+        let currentStoreId = '';
+        let currentStoreName = '';
+        let storesList = [];
+        let allFeeRules = [];
+        let parsedRawRows = [];
+        let preparedTransactions = [];
+        let activeUploadedFile = null;
+
+        // Clients Supabase
+        let supabaseClient = null;
+        let masterSupabaseClient = null;
+
+        // On DOM Ready
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Inisialisasi Tema
+            if (window.KspTheme && typeof KspTheme.init === 'function') {
+                KspTheme.init();
+            }
+
+            // Drag and drop listeners
+            setupDropzone();
+
+            // Cek Sesi Otentikasi
+            checkAuthSession();
+        });
+
+        function setupDropzone() {
+            const dropzone = document.getElementById('dropzoneBox');
+            if (!dropzone) return;
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.add('dragover');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.remove('dragover');
+                }, false);
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files && files.length > 0) {
+                    handleFileSelect(files[0]);
+                }
+            }, false);
+        }
+
+        // Otentikasi & PIN Check
+        async function checkAuthSession() {
+            const savedAdminPin = (window.KspAuth && typeof KspAuth.getAdminSession === 'function') 
+                ? KspAuth.getAdminSession() 
+                : localStorage.getItem('kspcheck_viewer_pin');
+
+            const savedEmpCred = (window.KspAuth && typeof KspAuth.getEmployeeCredential === 'function') 
+                ? KspAuth.getEmployeeCredential() 
+                : (sessionStorage.getItem('kspcheck_emp_cred') || localStorage.getItem('kspcheck_emp_cred'));
+
+            if (savedAdminPin) {
+                unlockWithPin(savedAdminPin);
+            } else if (savedEmpCred) {
+                unlockWithPin(savedEmpCred);
+            } else {
+                document.getElementById('pinModal').style.display = 'flex';
+                document.getElementById('mainApp').style.display = 'none';
+            }
+        }
+
+        async function handleHistoryPinSubmit(e) {
+            e.preventDefault();
+            const pin = document.getElementById('pinInput').value.trim();
+            if (!pin) return;
+            unlockWithPin(pin);
+        }
+
+        async function unlockWithPin(pin) {
+            const btn = document.getElementById('btnUnlock');
+            const errBox = document.getElementById('pinError');
+            if (btn) btn.innerHTML = '<span>Membuka...</span>';
+            if (errBox) errBox.style.display = 'none';
+
+            try {
+                let unlocked = false;
+
+                // 1. Coba decrypt config admin
+                try {
+                    const masterCfg = await KspAuth.decryptConfig(pin);
+                    if (masterCfg && masterCfg.supabase_url) {
+                        KspAuth.setAdminSession(pin);
+                        window.MASTER_SUPABASE_CONFIG = masterCfg;
+                        window.CURRENT_AUTH_ROLE = 'admin';
+                        unlocked = true;
+                    }
+                } catch(e) {
+                    unlocked = false;
+                }
+
+                // 2. Karyawan login
+                if (!unlocked) {
+                    if (window.KspSync && KspSync.enabled()) {
+                        const empRes = await KspSync.empLogin(pin);
+                        if (empRes && empRes.ok) {
+                            unlocked = true;
+                            window.CURRENT_AUTH_ROLE = 'employee';
+                            window.CURRENT_EMPLOYEE = empRes.employee;
+                            if (empRes.store) {
+                                currentStoreId = empRes.store.id;
+                                currentStoreName = empRes.store.name;
+                                storesList = [empRes.store];
+                                try { localStorage.setItem('kspcheck_stores_data', JSON.stringify([empRes.store])); } catch(e) {}
+                            }
+                            try {
+                                sessionStorage.setItem('kspcheck_emp_cred', pin);
+                                localStorage.setItem('kspcheck_emp_cred', pin);
+                            } catch(e) {}
+                        } else {
+                            throw new Error('PIN Admin atau Password Karyawan salah!');
+                        }
+                    } else {
+                        throw new Error('PIN Salah!');
+                    }
+                }
+
+                document.getElementById('pinModal').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+
+                initPageAfterAuth();
+            } catch (err) {
+                console.error(err);
+                if (errBox) {
+                    errBox.innerText = err.message || 'PIN / Password Salah!';
+                    errBox.style.display = 'block';
+                }
+                document.getElementById('pinModal').style.display = 'flex';
+                document.getElementById('mainApp').style.display = 'none';
+            } finally {
+                if (btn) btn.innerHTML = '<span>MASUK</span> ➜';
+            }
+        }
+
+        // Inisialisasi Halaman
+        function initPageAfterAuth() {
+            const isEmployee = (window.CURRENT_AUTH_ROLE === 'employee');
+            const roleBadge = document.getElementById('roleBadge');
+            if (roleBadge) {
+                roleBadge.textContent = isEmployee ? '👤 Karyawan' : '👑 Admin';
+                roleBadge.className = isEmployee ? 'badge-status-pill' : 'badge-status-pill info';
+            }
+
+            // Muat Cabang
+            loadStoresList();
+
+            // Setup URL Query Params
+            const params = new URLSearchParams(window.location.search);
+            const storeParam = params.get('store');
+            const nameParam = params.get('name');
+
+            if (isEmployee) {
+                if (window.CURRENT_EMPLOYEE && window.CURRENT_EMPLOYEE.store_id) {
+                    currentStoreId = window.CURRENT_EMPLOYEE.store_id;
+                }
+            } else if (storeParam) {
+                currentStoreId = storeParam;
+                const found = storesList.find(s => s.id === storeParam);
+                currentStoreName = found ? found.name : (nameParam || storeParam);
+            } else if (storesList.length > 0) {
+                currentStoreId = storesList[0].id;
+                currentStoreName = storesList[0].name;
+            } else {
+                currentStoreId = 'store_pusat';
+                currentStoreName = 'Cabang Utama';
+            }
+
+            renderStoreSelectOptions();
+            updateStoreNavLinks();
+
+            // Inisialisasi Supabase Clients & Muat Fee Rules
+            initSupabaseClients();
+            fetchFeeRulesFromSupabase(false);
+        }
+
+        function loadStoresList() {
+            try {
+                const raw = localStorage.getItem('kspcheck_stores_data');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        storesList = parsed;
+                    }
+                }
+            } catch(e) {}
+            if (!storesList || storesList.length === 0) {
+                storesList = [{ id: 'store_pusat', name: 'Cabang Utama' }];
+            }
+        }
+
+        function renderStoreSelectOptions() {
+            const isEmployee = (window.CURRENT_AUTH_ROLE === 'employee');
+            const storeSelect = document.getElementById('storeSelect');
+            if (!storeSelect) return;
+
+            storeSelect.innerHTML = '';
+            storesList.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.name || s.id;
+                if (s.id === currentStoreId) opt.selected = true;
+                storeSelect.appendChild(opt);
+            });
+            storeSelect.disabled = isEmployee;
+
+            const pill = document.getElementById('activeStorePill');
+            if (pill) {
+                pill.textContent = '🏬 Cabang: ' + (currentStoreName || currentStoreId);
+            }
+        }
+
+        function onStoreSelectChange(newStoreId) {
+            currentStoreId = newStoreId;
+            const found = storesList.find(s => s.id === newStoreId);
+            currentStoreName = found ? found.name : newStoreId;
+
+            const pill = document.getElementById('activeStorePill');
+            if (pill) pill.textContent = '🏬 Cabang: ' + currentStoreName;
+
+            updateStoreNavLinks();
+            if (preparedTransactions.length > 0) {
+                applyPreviewFilters();
+            }
+        }
+
+        function updateStoreNavLinks() {
+            const backBtn = document.getElementById('btnBackToHistory');
+            const linkHist = document.getElementById('btnLinkHistory');
+            const targetUrl = 'store_history.html?store=' + encodeURIComponent(currentStoreId);
+            if (backBtn) backBtn.href = targetUrl;
+            if (linkHist) linkHist.href = targetUrl;
+        }
+
+        function toggleThemeMode() {
+            if (window.KspTheme && typeof KspTheme.toggle === 'function') {
+                KspTheme.toggle();
+            } else {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            }
+        }
+
+        // Inisialisasi Supabase Clients
+        function initSupabaseClients() {
+            const cfg = window.KSP_SYNC_CONFIG || {};
+            if (cfg.url && cfg.key && window.supabase && typeof window.supabase.createClient === 'function') {
+                supabaseClient = window.supabase.createClient(cfg.url, cfg.key);
+            }
+            const mCfg = window.MASTER_SUPABASE_CONFIG;
+            if (mCfg && mCfg.supabase_url && mCfg.supabase_anon_key && window.supabase && typeof window.supabase.createClient === 'function') {
+                masterSupabaseClient = window.supabase.createClient(mCfg.supabase_url, mCfg.supabase_anon_key);
+            }
+
+            const pill = document.getElementById('supabaseStatusPill');
+            if (pill) {
+                if (supabaseClient || masterSupabaseClient) {
+                    pill.textContent = '🟢 Supabase Terhubung';
+                    pill.className = 'badge-status-pill online';
+                } else {
+                    pill.textContent = '🔴 Supabase Terputus';
+                    pill.className = 'badge-status-pill warning';
+                }
+            }
+        }
+
+        // Ambil Aturan Fee dari Supabase
+        async function fetchFeeRulesFromSupabase(forceToast = false) {
+            const pill = document.getElementById('feeRulesCountPill');
+            if (pill) {
+                pill.textContent = '⏳ Mengambil Aturan Fee...';
+                pill.className = 'badge-status-pill warning';
+            }
+
+            const client = masterSupabaseClient || supabaseClient;
+            if (!client) {
+                if (pill) pill.textContent = '⚠️ Fee Rules Offline';
+                return;
+            }
+
+            try {
+                let { data, error } = await client
+                    .from('fee_rules')
+                    .select('*')
+                    .eq('is_active', true)
+                    .order('priority', { ascending: true });
+
+                if (error && supabaseClient && supabaseClient !== client) {
+                    const fallback = await supabaseClient
+                        .from('fee_rules')
+                        .select('*')
+                        .eq('is_active', true)
+                        .order('priority', { ascending: true });
+                    data = fallback.data;
+                    error = fallback.error;
+                }
+
+                if (!error && Array.isArray(data)) {
+                    allFeeRules = data;
+                    if (pill) {
+                        pill.textContent = `✅ ${allFeeRules.length} Aturan Fee Aktif`;
+                        pill.className = 'badge-status-pill online';
+                    }
+
+                    // Kumpulkan kategori
+                    const cats = [...new Set(allFeeRules.map(r => r.category).filter(Boolean))];
+                    const catEl = document.getElementById('feeRulesCategoriesText');
+                    if (catEl && cats.length > 0) {
+                        catEl.textContent = `Kategori terdaftar: ${cats.join(', ')} (${allFeeRules.length} aturan). Fee otomatis dihitung per produk/modal.`;
+                    }
+
+                    if (forceToast && window.showToast) {
+                        showToast(`✓ Sukses memuat ${allFeeRules.length} aturan fee dari cloud`);
+                    } else if (forceToast) {
+                        alert(`Sukses memuat ${allFeeRules.length} aturan fee dari Supabase.`);
+                    }
+
+                    // Jika ada transaksi yang sudah diparsing, hitung ulang fee
+                    if (parsedRawRows.length > 0) {
+                        applyPreviewFilters();
+                    }
+                } else {
+                    console.warn('Gagal memuat fee_rules:', error);
+                    if (pill) {
+                        pill.textContent = '⚠️ Fee Rules: ' + (error ? error.message : '0 rule');
+                        pill.className = 'badge-status-pill warning';
+                    }
+                }
+            } catch(e) {
+                console.error(e);
+                if (pill) {
+                    pill.textContent = '⚠️ Fee Rules Error';
+                    pill.className = 'badge-status-pill warning';
+                }
+            }
+        }
+
+        // File Selection & Reading with SheetJS
+        function handleFileSelect(file) {
+            if (!file) return;
+            activeUploadedFile = file;
+
+            // Update UI File Info
+            document.getElementById('fileLoadedCard').style.display = 'flex';
+            document.getElementById('fileLoadedName').textContent = file.name;
+            document.getElementById('fileLoadedSize').textContent = (file.size / 1024).toFixed(1) + ' KB • ' + new Date(file.lastModified).toLocaleDateString('id-ID');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+                        alert('Berkas Excel kosong atau tidak memiliki lembar sheet.');
+                        return;
+                    }
+
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rawRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: false, dateNF: 'yyyy-mm-dd hh:mm:ss' });
+                    
+                    parseOrderKuotaRows(rawRows, file.name);
+                } catch(err) {
+                    console.error(err);
+                    alert('Gagal membaca berkas Excel: ' + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function resetFileSelection() {
+            activeUploadedFile = null;
+            parsedRawRows = [];
+            preparedTransactions = [];
+            document.getElementById('xlsFileInput').value = '';
+            document.getElementById('fileLoadedCard').style.display = 'none';
+            document.getElementById('optionsCard').style.display = 'none';
+            document.getElementById('previewCard').style.display = 'none';
+        }
+
+        // Parser Order Kuota Table Rows
+        function parseOrderKuotaRows(rows, fileName) {
+            if (!rows || rows.length < 3) {
+                alert('Data pada sheet tidak mencukupi untuk diproses.');
+                return;
+            }
+
+            // 1. Temukan Baris Header (cari kata "tanggal" pada 15 baris pertama)
+            let headerRowIndex = -1;
+            let headersMap = {};
+
+            for (let r = 0; r < Math.min(rows.length, 15); r++) {
+                const row = rows[r];
+                if (!Array.isArray(row)) continue;
+                for (let c = 0; c < row.length; c++) {
+                    const cellVal = String(row[c] || '').toLowerCase().trim();
+                    if (cellVal === 'tanggal') {
+                        headerRowIndex = r;
+                        break;
+                    }
+                }
+                if (headerRowIndex !== -1) {
+                    row.forEach((col, cIdx) => {
+                        const h = String(col || '').toLowerCase().trim();
+                        if (h) headersMap[h] = cIdx;
+                    });
+                    break;
+                }
+            }
+
+            if (headerRowIndex === -1) {
+                alert('Tidak dapat menemukan kolom "Tanggal" pada berkas ini. Pastikan format merupakan Laporan Rekap Order Kuota.');
+                return;
+            }
+
+            const colTanggal = findColIndex(headersMap, ['tanggal']);
+            const colProvider = findColIndex(headersMap, ['provider']);
+            const colNominal = findColIndex(headersMap, ['nominal']);
+            const colNoTujuan = findColIndex(headersMap, ['no tujuan', 'tujuan']);
+            const colHargaModal = findColIndex(headersMap, ['harga modal']);
+
+            if (colHargaModal === -1) {
+                alert('Kolom "Harga Modal" tidak ditemukan pada berkas Excel.');
+                return;
+            }
+
+            parsedRawRows = [];
+            const datesSet = new Set();
+
+            for (let r = headerRowIndex + 1; r < rows.length; r++) {
+                const row = rows[r];
+                if (!row || row.length === 0) continue;
+
+                const modalVal = parseNumber(row[colHargaModal]);
+                if (modalVal <= 0) continue; // Skip jika tidak ada modal atau baris kosong
+
+                const rawDate = row[colTanggal];
+                const timestampStr = parseDateString(rawDate) || getTodayDateTimeString();
+                const dateKey = timestampStr.substring(0, 10);
+                datesSet.add(dateKey);
+
+                const provider = colProvider !== -1 ? String(row[colProvider] || '').trim() : '';
+                const nominal = colNominal !== -1 ? String(row[colNominal] || '').trim() : '';
+                const noTujuan = colNoTujuan !== -1 ? String(row[colNoTujuan] || '').trim() : '';
+
+                parsedRawRows.push({
+                    rawIndex: r,
+                    timestamp: timestampStr,
+                    dateKey: dateKey,
+                    timeKey: timestampStr.length >= 19 ? timestampStr.substring(11, 19) : (timestampStr.substring(11, 16) + ':00'),
+                    provider: provider,
+                    nominal: nominal,
+                    noTujuan: noTujuan,
+                    hargaModal: modalVal,
+                    fileName: fileName
+                });
+            }
+
+            if (parsedRawRows.length === 0) {
+                alert('Tidak ada transaksi valid dengan Harga Modal yang dapat dibaca.');
+                return;
+            }
+
+            // Populate Dropdown Filter Tanggal
+            const dateSelect = document.getElementById('optDateFilter');
+            dateSelect.innerHTML = '<option value="ALL">Semua Tanggal dalam Berkas (' + parsedRawRows.length + ' Trx)</option>';
+            
+            const sortedDates = Array.from(datesSet).sort();
+            sortedDates.forEach(d => {
+                const count = parsedRawRows.filter(x => x.dateKey === d).length;
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = `${formatDateId(d)} (${count} Transaksi)`;
+                dateSelect.appendChild(opt);
+            });
+
+            // Jika hanya ada 1 tanggal, default pilih tanggal tersebut
+            if (sortedDates.length === 1) {
+                dateSelect.value = sortedDates[0];
+            }
+
+            document.getElementById('detectedRowsPill').textContent = `${parsedRawRows.length} Transaksi Terbaca`;
+            document.getElementById('optionsCard').style.display = 'block';
+            document.getElementById('previewCard').style.display = 'block';
+
+            applyPreviewFilters();
+        }
+
+        // Filter & Kalkulasi Fee
+        function applyPreviewFilters() {
+            if (!parsedRawRows || parsedRawRows.length === 0) return;
+
+            const selectedDate = document.getElementById('optDateFilter').value;
+            const shiftMode = document.getElementById('optShiftMode').value;
+            const categoryMode = document.getElementById('optCategory').value;
+            const roundThousand = document.getElementById('optRoundThousand').checked;
+            const searchTerm = (document.getElementById('previewSearchInput').value || '').toLowerCase().trim();
+
+            let filtered = parsedRawRows;
+            if (selectedDate !== 'ALL') {
+                filtered = filtered.filter(x => x.dateKey === selectedDate);
+            }
+
+            if (searchTerm) {
+                filtered = filtered.filter(x => 
+                    x.provider.toLowerCase().includes(searchTerm) ||
+                    x.nominal.toLowerCase().includes(searchTerm) ||
+                    x.noTujuan.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // Siapkan objek transaksi dengan perhitungan fee
+            preparedTransactions = filtered.map((item, idx) => {
+                // Tentukan shift
+                let shift = 1;
+                if (shiftMode === 'AUTO') {
+                    shift = determineShiftFromTimestamp(item.timestamp);
+                } else {
+                    shift = parseInt(shiftMode, 10);
+                }
+
+                // Kalkulasi Fee berdasarkan Supabase fee_rules
+                const feeResult = calculateFeeWithSupabaseRules(allFeeRules, item.hargaModal, item.nominal, item.provider, roundThousand);
+
+                // Buat deterministic unique ID
+                const notifId = generateDeterministicId(currentStoreId, item.timestamp, item.provider, item.noTujuan, item.hargaModal);
+
+                return {
+                    id: notifId,
+                    store_id: currentStoreId,
+                    device_id: 'web-xls-import',
+                    device_name: 'Web Import XLS',
+                    module_type: 'notif',
+                    local_id: notifId,
+                    trx_date: item.dateKey,
+                    trx_time: item.timeKey,
+                    timestamp: new Date(item.timestamp.replace(' ', 'T')).getTime() || Date.now(),
+                    shift: shift,
+                    category: categoryMode,
+                    amount: feeResult.amount, // harga jual
+                    real_amount: item.hargaModal, // modal
+                    fee: feeResult.fee,
+                    cost: item.hargaModal,
+                    quantity: 1,
+                    app_package: 'OkaXLS',
+                    app_name: 'OkaXLS',
+                    title: item.provider || 'Order Kuota',
+                    item_name: item.nominal || 'Item XLS',
+                    customer_name: item.noTujuan ? (item.nominal + ' - ' + item.noTujuan) : (item.nominal || item.provider),
+                    is_edited: false,
+                    is_deleted_by_web: false,
+                    extra_data: {
+                        source: 'xls_import',
+                        xls_file: item.fileName,
+                        provider: item.provider,
+                        nominal: item.nominal,
+                        destination: item.noTujuan,
+                        fee_rule_matched: feeResult.matchingRule
+                    },
+                    selected: true
+                };
+            });
+
+            renderPreviewTable();
+            updateMetricsSummary();
+        }
+
+        // Render Tabel Pratinjau
+        function renderPreviewTable() {
+            const tbody = document.getElementById('previewTableBodyBody') || document.getElementById('previewTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (preparedTransactions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 24px; color: var(--muted);">Tidak ada transaksi yang sesuai filter.</td></tr>`;
+                return;
+            }
+
+            const rowsHtml = preparedTransactions.map((tx, idx) => {
+                const shiftClass = tx.shift === 1 ? 'shift1' : 'shift2';
+                const shiftLabel = tx.shift === 1 ? 'Shift 1' : 'Shift 2';
+                const ruleBadge = tx.extra_data && tx.extra_data.fee_rule_matched 
+                    ? `<span class="rule-tag" title="Rule: ${escapeHtml(tx.extra_data.fee_rule_matched)}">🎯 ${escapeHtml(tx.extra_data.fee_rule_matched)}</span>`
+                    : `<span class="rule-tag" style="background:rgba(148,163,184,0.15);color:var(--muted);">Tanpa Rule</span>`;
+
+                return `
+                    <tr>
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="row-select-cb" data-idx="${idx}" ${tx.selected ? 'checked' : ''} onchange="toggleRowSelection(${idx}, this.checked)" style="accent-color: var(--accent);">
+                        </td>
+                        <td style="text-align: center; color: var(--muted);">${idx + 1}</td>
+                        <td>
+                            <div style="font-weight:700;">${tx.trx_time.substring(0, 5)}</div>
+                            <div style="font-size: 10px; color: var(--muted);">${formatDateId(tx.trx_date)}</div>
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="shift-badge ${shiftClass}">${shiftLabel}</span>
+                        </td>
+                        <td style="font-weight: 700;">${escapeHtml(tx.title)}</td>
+                        <td>${escapeHtml(tx.item_name)}</td>
+                        <td style="font-family: monospace; font-size: 11.5px;">${escapeHtml(tx.extra_data.destination || '—')}</td>
+                        <td style="text-align: right; font-weight: 700; color: var(--outcome);">Rp ${formatRupiah(tx.real_amount)}</td>
+                        <td style="text-align: right;">
+                            <div style="font-weight: 700; color: #3b82f6;">+Rp ${formatRupiah(tx.fee)}</div>
+                            <div>${ruleBadge}</div>
+                        </td>
+                        <td style="text-align: right; font-weight: 800; color: var(--income);">Rp ${formatRupiah(tx.amount)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML = rowsHtml;
+        }
+
+        function toggleSelectAllRows(isChecked) {
+            preparedTransactions.forEach(tx => tx.selected = isChecked);
+            const checkboxes = document.querySelectorAll('.row-select-cb');
+            checkboxes.forEach(cb => cb.checked = isChecked);
+            updateMetricsSummary();
+        }
+
+        function toggleRowSelection(idx, isChecked) {
+            if (preparedTransactions[idx]) {
+                preparedTransactions[idx].selected = isChecked;
+            }
+            updateMetricsSummary();
+        }
+
+        function updateMetricsSummary() {
+            const selectedItems = preparedTransactions.filter(x => x.selected);
+            let totalModal = 0;
+            let totalFee = 0;
+            let totalJual = 0;
+
+            selectedItems.forEach(tx => {
+                totalModal += tx.real_amount;
+                totalFee += tx.fee;
+                totalJual += tx.amount;
+            });
+
+            document.getElementById('metricTotalTrx').textContent = `${selectedItems.length} Trx`;
+            document.getElementById('metricTotalModal').textContent = `Rp ${formatRupiah(totalModal)}`;
+            document.getElementById('metricTotalFee').textContent = `Rp ${formatRupiah(totalFee)}`;
+            document.getElementById('metricTotalJual').textContent = `Rp ${formatRupiah(totalJual)}`;
+
+            const btnLabel = document.getElementById('btnPushLabel');
+            if (btnLabel) {
+                btnLabel.textContent = `Simpan ${selectedItems.length} Transaksi ke Supabase (Cabang: ${currentStoreName || currentStoreId})`;
+            }
+
+            const btnPush = document.getElementById('btnPushToSupabase');
+            if (btnPush) {
+                btnPush.disabled = selectedItems.length === 0;
+            }
+        }
+
+        // Kalkulasi Fee Rules (Exact Match -> Regex Word Boundary -> Range Match)
+        function calculateFeeWithSupabaseRules(rules, modal, productCode, provider, roundToThousand = true) {
+            const nameHint = (productCode && productCode.trim()) ? productCode.trim() : (provider || '');
+            const q = nameHint.toLowerCase();
+            let matchingRule = null;
+
+            if (rules && rules.length > 0) {
+                // 1. Exact match by name
+                if (q) {
+                    for (const r of rules) {
+                        if (r.name && q === r.name.toLowerCase().trim()) {
+                            matchingRule = r;
+                            break;
+                        }
+                    }
+                }
+
+                // 2. Word boundary match
+                if (!matchingRule && q) {
+                    for (const r of rules) {
+                        if (r.name && r.name.trim()) {
+                            const rn = r.name.toLowerCase().trim();
+                            try {
+                                const escaped = rn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                const regex = new RegExp('\\b' + escaped + '\\b', 'i');
+                                if (regex.test(q)) {
+                                    matchingRule = r;
+                                    break;
+                                }
+                            } catch(e) {}
+                        }
+                    }
+                }
+
+                // 3. Range matching on modal (targetValue)
+                if (!matchingRule) {
+                    for (const r of rules) {
+                        const min = Number(r.min_amount) || 0;
+                        const max = Number(r.max_amount) || 0;
+                        if (min <= 0 && max <= 0) continue; // Skip catalog items without range
+                        if (modal >= min && (max === 0 || modal <= max)) {
+                            matchingRule = r;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Calculate fee
+            let fee = 0;
+            if (matchingRule) {
+                const fixed = Number(matchingRule.fixed_amount) || 0;
+                const feeFlat = Number(matchingRule.fee_amount) || 0;
+                const feePct = Number(matchingRule.fee_percent) || 0;
+
+                if (fixed > 0) {
+                    fee = Math.max(0, fixed - modal);
+                } else {
+                    fee = feeFlat;
+                    if (feePct > 0) {
+                        fee += (modal * feePct / 100);
+                    }
+                }
+            }
+            if (fee < 0) fee = 0;
+
+            // Round to nearest thousand
+            if (roundToThousand && fee > 0) {
+                const totalBeforeRound = modal + fee;
+                const rounded = Math.ceil(totalBeforeRound / 1000) * 1000;
+                fee = rounded - modal;
+            }
+
+            return {
+                fee: Math.round(fee),
+                amount: Math.round(modal + fee),
+                matchingRule: matchingRule ? matchingRule.name : null
+            };
+        }
+
+        // Kirim ke Supabase
+        async function pushTransactionsToSupabase() {
+            const selectedItems = preparedTransactions.filter(x => x.selected);
+            if (selectedItems.length === 0) {
+                alert('Pilih setidaknya satu transaksi untuk disimpan.');
+                return;
+            }
+
+            const client = masterSupabaseClient || supabaseClient;
+            if (!client) {
+                alert('Koneksi ke Supabase belum siap. Pastikan konfigurasi sinkronisasi aktif.');
+                return;
+            }
+
+            showProgressModal('Menyimpan ke Supabase...', `Menyiapkan ${selectedItems.length} transaksi...`);
+
+            try {
+                // Siapkan payload bersih
+                const payload = selectedItems.map(item => {
+                    const copy = { ...item };
+                    delete copy.selected;
+                    return copy;
+                });
+
+                // Batch chunks of 100
+                const CHUNK_SIZE = 100;
+                let insertedCount = 0;
+                const totalChunks = Math.ceil(payload.length / CHUNK_SIZE);
+
+                for (let i = 0; i < payload.length; i += CHUNK_SIZE) {
+                    const chunk = payload.slice(i, i + CHUNK_SIZE);
+                    const chunkIndex = Math.floor(i / CHUNK_SIZE) + 1;
+                    updateProgressModal(`Mengunggah batch ${chunkIndex}/${totalChunks}...`, `${insertedCount} dari ${payload.length} transaksi terunggah`);
+
+                    // 1. Simpan ke Branch Client (Project B)
+                    if (supabaseClient) {
+                        const resB = await supabaseClient.from('ksp_history_transactions').upsert(chunk, { onConflict: 'id' });
+                        if (resB.error) {
+                            console.warn('Upsert ke Branch Supabase:', resB.error);
+                        }
+                    }
+
+                    // 2. Simpan ke Master Client (Project A) jika admin
+                    if (masterSupabaseClient) {
+                        try {
+                            await masterSupabaseClient.from('ksp_history_transactions').upsert(chunk, { onConflict: 'id' });
+                        } catch(e) {
+                            console.warn('Upsert ke Master Supabase:', e);
+                        }
+                    }
+
+                    insertedCount += chunk.length;
+                }
+
+                // Selesai
+                const targetDate = selectedItems[0].trx_date;
+                const historyUrl = `store_history.html?store=${encodeURIComponent(currentStoreId)}&date=${encodeURIComponent(targetDate)}`;
+
+                showSuccessModal(
+                    '🎉 Impor XLS Berhasil!',
+                    `Sebanyak ${insertedCount} transaksi XLS Order Kuota berhasil disimpan ke Supabase untuk cabang ${currentStoreName}.`,
+                    historyUrl
+                );
+
+            } catch(err) {
+                console.error(err);
+                alert('Terjadi kesalahan saat menyimpan ke Supabase: ' + err.message);
+                closeProgressModal();
+            }
+        }
+
+        // Progress Modal Helpers
+        function showProgressModal(title, msg) {
+            const m = document.getElementById('progressModal');
+            document.getElementById('progressSpinner').style.display = 'block';
+            document.getElementById('progressSpinner').textContent = '⏳';
+            document.getElementById('progressTitle').textContent = title;
+            document.getElementById('progressMessage').textContent = msg;
+            document.getElementById('progressActionRow').style.display = 'none';
+            if (m) m.style.display = 'flex';
+        }
+
+        function updateProgressModal(title, msg) {
+            document.getElementById('progressTitle').textContent = title;
+            document.getElementById('progressMessage').textContent = msg;
+        }
+
+        function showSuccessModal(title, msg, historyUrl) {
+            document.getElementById('progressSpinner').style.display = 'block';
+            document.getElementById('progressSpinner').textContent = '✅';
+            document.getElementById('progressTitle').textContent = title;
+            document.getElementById('progressMessage').textContent = msg;
+            
+            const btnHist = document.getElementById('btnGoToStoreHistory');
+            if (btnHist) btnHist.href = historyUrl;
+
+            document.getElementById('progressActionRow').style.display = 'flex';
+        }
+
+        function closeProgressModal() {
+            const m = document.getElementById('progressModal');
+            if (m) m.style.display = 'none';
+        }
+
+        // Utilities
+        function findColIndex(headersMap, candidates) {
+            for (const c of candidates) {
+                const lower = c.toLowerCase();
+                if (headersMap[lower] !== undefined) return headersMap[lower];
+            }
+            for (const c of candidates) {
+                const lower = c.toLowerCase();
+                for (const [key, idx] of Object.entries(headersMap)) {
+                    if (key.includes(lower)) return idx;
+                }
+            }
+            return -1;
+        }
+
+        function parseNumber(value) {
+            if (value === null || value === undefined) return 0;
+            if (typeof value === 'number') return value;
+            let str = String(value).trim();
+            if (!str) return 0;
+            let cleaned = str.replace(/[^0-9,\.]/g, '');
+            if (!cleaned) return 0;
+
+            if (cleaned.includes(',') && cleaned.includes('.')) {
+                const lastComma = cleaned.lastIndexOf(',');
+                const lastDot = cleaned.lastIndexOf('.');
+                if (lastComma > lastDot) {
+                    cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+                } else {
+                    cleaned = cleaned.replace(/,/g, '');
+                }
+            } else if (cleaned.includes(',')) {
+                const commaIndex = cleaned.lastIndexOf(',');
+                const digitsAfter = cleaned.length - commaIndex - 1;
+                if (digitsAfter <= 2) {
+                    cleaned = cleaned.replace(',', '.');
+                } else {
+                    cleaned = cleaned.replace(/,/g, '');
+                }
+            } else if (cleaned.includes('.')) {
+                const dotIndex = cleaned.lastIndexOf('.');
+                const digitsAfter = cleaned.length - dotIndex - 1;
+                if (digitsAfter > 2) {
+                    cleaned = cleaned.replace(/\./g, '');
+                }
+            }
+
+            const num = parseFloat(cleaned);
+            return isNaN(num) ? 0 : num;
+        }
+
+        function parseDateString(rawVal) {
+            if (!rawVal) return null;
+            if (rawVal instanceof Date) {
+                const y = rawVal.getFullYear();
+                const m = String(rawVal.getMonth() + 1).padStart(2, '0');
+                const d = String(rawVal.getDate()).padStart(2, '0');
+                const hh = String(rawVal.getHours()).padStart(2, '0');
+                const mm = String(rawVal.getMinutes()).padStart(2, '0');
+                const ss = String(rawVal.getSeconds()).padStart(2, '0');
+                return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+            }
+
+            let str = String(rawVal).trim();
+            if (!str) return null;
+
+            // Pattern: DD/MM/YYYY HH:mm:ss or DD-MM-YYYY HH:mm:ss
+            const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+            if (dmyMatch) {
+                const d = String(dmyMatch[1]).padStart(2, '0');
+                const m = String(dmyMatch[2]).padStart(2, '0');
+                const y = dmyMatch[3];
+                const hh = dmyMatch[4] ? String(dmyMatch[4]).padStart(2, '0') : '00';
+                const mm = dmyMatch[5] ? String(dmyMatch[5]).padStart(2, '0') : '00';
+                const ss = dmyMatch[6] ? String(dmyMatch[6]).padStart(2, '0') : '00';
+                return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+            }
+
+            // Pattern: YYYY-MM-DD HH:mm:ss or YYYY/MM/DD HH:mm:ss
+            const ymdMatch = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+            if (ymdMatch) {
+                const y = ymdMatch[1];
+                const m = String(ymdMatch[2]).padStart(2, '0');
+                const d = String(ymdMatch[3]).padStart(2, '0');
+                const hh = ymdMatch[4] ? String(ymdMatch[4]).padStart(2, '0') : '00';
+                const mm = ymdMatch[5] ? String(ymdMatch[5]).padStart(2, '0') : '00';
+                const ss = ymdMatch[6] ? String(ymdMatch[6]).padStart(2, '0') : '00';
+                return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+            }
+
+            // Native Date Parse Fallback
+            const parsed = new Date(str);
+            if (!isNaN(parsed.getTime())) {
+                const y = parsed.getFullYear();
+                const m = String(parsed.getMonth() + 1).padStart(2, '0');
+                const d = String(parsed.getDate()).padStart(2, '0');
+                const hh = String(parsed.getHours()).padStart(2, '0');
+                const mm = String(parsed.getMinutes()).padStart(2, '0');
+                const ss = String(parsed.getSeconds()).padStart(2, '0');
+                return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+            }
+
+            return null;
+        }
+
+        function determineShiftFromTimestamp(timestamp) {
+            if (!timestamp || timestamp.length < 16) return 1;
+            try {
+                const timePart = timestamp.substring(11, 16);
+                const [h, m] = timePart.split(':').map(Number);
+                const minutes = h * 60 + m;
+                // Cutoff 15:30 WIB (930 menit) -> persis seperti ShiftManager di HistoryViewModel Android
+                return minutes < 930 ? 1 : 2;
+            } catch(e) {
+                return 1;
+            }
+        }
+
+        function generateDeterministicId(storeId, timestamp, provider, phone, modal) {
+            const rawKey = `${storeId}|${timestamp || ''}|${provider || ''}|${phone || ''}|${Math.round(modal)}`;
+            if (window.CryptoJS && typeof CryptoJS.MD5 === 'function') {
+                const hash = CryptoJS.MD5(rawKey).toString().substring(0, 16);
+                return `xls_${storeId}_${hash}`;
+            }
+            // Simple string hash fallback
+            let hash = 0;
+            for (let i = 0; i < rawKey.length; i++) {
+                hash = ((hash << 5) - hash) + rawKey.charCodeAt(i);
+                hash |= 0;
+            }
+            return `xls_${storeId}_${Math.abs(hash).toString(16)}`;
+        }
+
+        function formatRupiah(num) {
+            if (num === null || num === undefined || isNaN(num)) return '0';
+            return Math.round(num).toLocaleString('id-ID');
+        }
+
+        function formatDateId(dateStr) {
+            if (!dateStr || dateStr.length < 10) return dateStr || '';
+            const [y, m, d] = dateStr.substring(0, 10).split('-');
+            const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const mIdx = parseInt(m, 10);
+            return `${parseInt(d, 10)} ${months[mIdx] || m} ${y}`;
+        }
+
+        function getTodayDateTimeString() {
+            const d = new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            const ss = String(d.getSeconds()).padStart(2, '0');
+            return `${y}-${m}-${day} ${hh}:${mm}:${ss}`;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+    </script>
+</body>
+</html>
