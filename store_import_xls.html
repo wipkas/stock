@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>HistoriKu - Impor XLS Order Kuota</title>
+    <title>HistoriKu - Impor Data Transaksi (XLS &amp; OCR Gambar)</title>
 
     <!-- Web App Manifest & Favicons -->
     <link rel="manifest" href="assets/manifests/manifest-store.json">
@@ -22,6 +22,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/xlsx.full.min.js"></script>
     <script>if (typeof XLSX === 'undefined') document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>');</script>
+    <!-- Tesseract OCR WebAssembly -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="js/ksp_sync_config.js?v=20261007_v3"></script>
     <script src="js/ksp_sync.js?v=20261007_v3"></script>
     <script src="js/ksp_ui.js?v=20261005"></script>
@@ -494,6 +496,142 @@
             z-index: 10000;
             padding: 16px;
         }
+
+        /* Segmented Import Tab Navigation */
+        .import-tab-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+            background: var(--surface2);
+            padding: 4px;
+            border-radius: var(--r);
+            border: 1px solid var(--border);
+        }
+        .tab-nav-btn {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: var(--r-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tab-nav-btn:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .tab-nav-btn.active {
+            background: var(--surface);
+            color: var(--accent);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        /* OCR Thumbnail Grid & Cards */
+        .ocr-thumbs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .ocr-thumb-card {
+            position: relative;
+            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
+            background: var(--surface2);
+            padding: 6px;
+            text-align: center;
+            overflow: hidden;
+            transition: transform 0.15s ease;
+        }
+        .ocr-thumb-card:hover {
+            transform: translateY(-2px);
+        }
+        .ocr-thumb-img {
+            width: 100%;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 4px;
+            background: #000;
+            cursor: pointer;
+            display: block;
+        }
+        .ocr-thumb-name {
+            font-size: 10px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+        .ocr-thumb-status {
+            font-size: 9.5px;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .ocr-thumb-remove {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.65);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 11px;
+            line-height: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .ocr-thumb-remove:hover {
+            background: var(--outcome);
+        }
+
+        /* OCR Progress Bar */
+        .ocr-progress-bar-wrap {
+            width: 100%;
+            height: 8px;
+            background: var(--surface2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+            border: 1px solid var(--border);
+        }
+        .ocr-progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1, #3b82f6);
+            transition: width 0.3s ease;
+        }
+
+        /* Editable Table Inputs */
+        .editable-cell-input {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            padding: 3px 6px;
+            font-size: 11.5px;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color 0.15s ease;
+        }
+        .editable-cell-input:focus {
+            border-color: var(--accent);
+            outline: none;
+            background: var(--surface);
+        }
     </style>
 </head>
 <body>
@@ -522,7 +660,7 @@
                 <!-- Left: Back button & Title & Store Select -->
                 <div class="header-main-left">
                     <a href="store_history.html" id="btnBackToHistory" class="btn-top-back" title="Kembali ke Riwayat Transaksi">←</a>
-                    <span style="font-size: 14px; font-weight: 800; color: var(--accent); white-space: nowrap;">📊 Impor XLS</span>
+                    <span id="pageTitleText" style="font-size: 14px; font-weight: 800; color: var(--accent); white-space: nowrap;">📊 Impor XLS</span>
                     <select id="storeSelect" class="store-select-compact" onchange="onStoreSelectChange(this.value)">
                         <option value="">Pilih Cabang...</option>
                     </select>
@@ -542,7 +680,17 @@
         <!-- MAIN CONTAINER -->
         <div class="import-container">
 
-            <!-- CARD 1: STATUS CLOUD & FEE RULES -->
+            <!-- TAB SWITCHER NAV -->
+            <div class="import-tab-nav">
+                <button type="button" class="tab-nav-btn active" id="tabBtnXls" onclick="switchImportTab('xls')">
+                    <span>📊</span> <span>Impor XLS Order Kuota</span>
+                </button>
+                <button type="button" class="tab-nav-btn" id="tabBtnOcr" onclick="switchImportTab('ocr')">
+                    <span>📷</span> <span>Impor OCR Gambar Mutasi</span>
+                </button>
+            </div>
+
+            <!-- CARD 1: STATUS CLOUD & FEE RULES (SHARED) -->
             <div class="ksp-card">
                 <div class="card-header-title">
                     <span>☁️ Sinkronisasi Aturan Biaya (Fee Rules) Supabase</span>
@@ -559,6 +707,11 @@
                     Aturan fee otomatis dicocokkan berdasarkan nama produk (SKU), kata kunci, atau rentang modal nominal.
                 </div>
             </div>
+
+            <!-- ========================================== -->
+            <!-- TAB PANEL 1: IMPOR BERKAS XLS ORDER KUOTA  -->
+            <!-- ========================================== -->
+            <div id="panelTabXls">
 
             <!-- CARD 2: DROP ZONE / FILE SELECTOR -->
             <div class="ksp-card">
@@ -685,13 +838,198 @@
                     </table>
                 </div>
 
-                <!-- Push Button -->
+                <!-- Push Button XLS -->
                 <div style="margin-top: 16px;">
                     <button type="button" id="btnPushToSupabase" class="btn-action-primary" onclick="pushTransactionsToSupabase()">
                         <span>🚀</span> <span id="btnPushLabel">Simpan ke Riwayat Cabang (Supabase)</span>
                     </button>
                 </div>
             </div>
+
+            </div> <!-- /#panelTabXls -->
+
+            <!-- ======================================================== -->
+            <!-- TAB PANEL 2: IMPOR OCR GAMBAR MUTASI (DANA/GOPAY/SHOPEE/TEKMO) -->
+            <!-- ======================================================== -->
+            <div id="panelTabOcr" style="display: none;">
+
+                <!-- CARD OCR 1: PENGATURAN SUMBER & ATURAN OCR -->
+                <div class="ksp-card">
+                    <div class="card-header-title">
+                        <span>⚙️ Pengaturan Sumber Aplikasi &amp; Aturan OCR</span>
+                        <span class="badge-status-pill info" id="ocrAppBadge">App: Auto Detect</span>
+                    </div>
+
+                    <div class="settings-grid">
+                        <!-- Pilihan Aplikasi: khusus DANA, GoPay, ShopeePay, Tekmo -->
+                        <div class="setting-item">
+                            <label class="setting-label">Aplikasi Sumber:</label>
+                            <select id="ocrAppSelect" class="setting-select" onchange="onOcrAppSelectChange(this.value)">
+                                <option value="AUTO" selected>✨ Deteksi Otomatis (DANA, GoPay, ShopeePay, Tekmo)</option>
+                                <option value="DANA">💙 DANA</option>
+                                <option value="GOPAY">💚 GoPay</option>
+                                <option value="SHOPEEPAY">🧡 ShopeePay</option>
+                                <option value="TEKMO">💜 Tekmo / Delta Mobile</option>
+                            </select>
+                        </div>
+
+                        <!-- Shift Assignment Mode -->
+                        <div class="setting-item">
+                            <label class="setting-label">Penetapan Shift:</label>
+                            <select id="ocrShiftMode" class="setting-select" onchange="recalculateOcrPreview()">
+                                <option value="AUTO" selected>Otomatis (Cutoff 15:30 WIB)</option>
+                                <option value="1">Paksa Shift 1 (Pagi)</option>
+                                <option value="2">Paksa Shift 2 (Malam)</option>
+                            </select>
+                        </div>
+
+                        <!-- Arah Transaksi -->
+                        <div class="setting-item">
+                            <label class="setting-label">Arah Transaksi:</label>
+                            <select id="ocrDirectionMode" class="setting-select" onchange="recalculateOcrPreview()">
+                                <option value="AUTO" selected>Otomatis (- / Transfer = Outcome, + = Income)</option>
+                                <option value="FORCE_OUTCOME">Paksa Outcome (Pengeluaran Modal)</option>
+                                <option value="FORCE_INCOME">Paksa Income (Pemasukan Kasir)</option>
+                            </select>
+                        </div>
+
+                        <!-- Tanggal Transaksi Fallback -->
+                        <div class="setting-item">
+                            <label class="setting-label">Tanggal Transaksi:</label>
+                            <input type="date" id="ocrFallbackDate" class="setting-input" onchange="recalculateOcrPreview()">
+                        </div>
+
+                        <!-- Pembulatan Ribuan -->
+                        <div class="setting-item" style="justify-content: flex-end; grid-column: span 2;">
+                            <label class="setting-checkbox-label">
+                                <input type="checkbox" id="ocrRoundThousand" checked onchange="recalculateOcrPreview()" style="accent-color: var(--accent); width: 16px; height: 16px;">
+                                <span>Bulatkan harga jual ke atas kelipatan Rp 1.000</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD OCR 2: DROP ZONE / GAMBAR SCREENSHOT & STRUK -->
+                <div class="ksp-card">
+                    <div class="card-header-title">
+                        <span>📷 Unggah Gambar Screenshot / Struk Transaksi</span>
+                        <span style="font-size: 11px; color: var(--muted); font-weight: 500;">Dukung: DANA, GoPay, ShopeePay, Tekmo</span>
+                    </div>
+
+                    <div class="dropzone-box" id="ocrDropzoneBox">
+                        <input type="file" id="ocrImagesInput" class="dropzone-file-input" accept="image/*" multiple onchange="handleOcrImagesSelect(this.files)">
+                        <div class="dropzone-icon">🖼️</div>
+                        <div class="dropzone-title">Klik atau Seret Gambar Screenshot ke Sini</div>
+                        <div class="dropzone-desc">Mendukung multi-gambar atau tekan <b>Ctrl + V</b> untuk menempel langsung dari Clipboard</div>
+                        <button type="button" class="pin-btn" style="width: auto; margin: 0 auto; padding: 7px 16px; font-size: 12px; pointer-events: none;">
+                            Pilih Berkas Gambar
+                        </button>
+                    </div>
+
+                    <!-- Thumbnails Preview List -->
+                    <div id="ocrThumbnailsContainer" style="display: none; margin-top: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 12px; font-weight: 700; color: var(--text);" id="ocrImagesCountLabel">0 Gambar Dimuat</span>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" class="btn-top-back" onclick="clearOcrImages()" title="Hapus Semua Gambar" style="width: auto; padding: 4px 10px; font-size: 11px; color: var(--outcome);">
+                                    🗑️ Hapus Semua
+                                </button>
+                                <button type="button" id="btnStartOcrScan" class="pin-btn" onclick="startOcrBatchProcessing()" style="width: auto; padding: 6px 18px; font-size: 12px; background: #6366f1;">
+                                    ⚡ Mulai Pindai OCR (<span id="btnScanCountLabel">0</span>)
+                                </button>
+                            </div>
+                        </div>
+                        <div class="ocr-thumbs-grid" id="ocrThumbsGrid">
+                            <!-- Diisi thumbnail gambar secara dinamis -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD OCR 3: PROGRESS BAR STATUS OCR -->
+                <div class="ksp-card" id="ocrProgressCard" style="display: none;">
+                    <div class="card-header-title">
+                        <span id="ocrProgressTitle">⚡ Memproses Gambar dengan OCR...</span>
+                        <span id="ocrProgressPercentPill" class="badge-status-pill info">0%</span>
+                    </div>
+                    <div class="ocr-progress-bar-wrap">
+                        <div class="ocr-progress-bar-fill" id="ocrProgressBarFill" style="width: 0%;"></div>
+                    </div>
+                    <div id="ocrProgressStatusText" style="font-size: 11.5px; color: var(--muted); margin-top: 6px;">
+                        Menyiapkan mesin pengenal teks WebAssembly...
+                    </div>
+                </div>
+
+                <!-- CARD OCR 4: PREVIEW METRICS & EDITABLE TABLE -->
+                <div class="ksp-card" id="ocrPreviewCard" style="display: none;">
+                    <div class="card-header-title">
+                        <span>📋 Pratinjau Transaksi Hasil OCR</span>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <button type="button" class="btn-top-back" onclick="addNewManualOcrRow()" title="Tambah Baris Transaksi Manual" style="width: auto; padding: 4px 10px; font-size: 11px;">
+                                ➕ Tambah Baris
+                            </button>
+                            <input type="text" id="ocrSearchInput" class="setting-input" placeholder="Cari keterangan/nominal..." style="width: 170px; padding: 4px 8px; font-size: 11.5px;" oninput="filterOcrPreviewTable()">
+                        </div>
+                    </div>
+
+                    <!-- Alert Edit Guide -->
+                    <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: var(--r-sm); padding: 8px 12px; margin-bottom: 12px; font-size: 11.5px; color: var(--text);">
+                        💡 <b>Tips Kasir:</b> Anda dapat mengoreksi langsung kolom <b>Waktu</b>, <b>Shift</b>, <b>Aplikasi</b>, <b>Keterangan</b>, atau <b>Modal</b> di tabel bila ada salah baca angka sebelum disimpan ke Supabase!
+                    </div>
+
+                    <!-- Metrics Summary Grid -->
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Total Transaksi</div>
+                            <div class="metric-val" id="ocrMetricTotalTrx">0 Trx</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Total Modal / Asli</div>
+                            <div class="metric-val out" id="ocrMetricTotalModal">Rp 0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Total Fee (Admin)</div>
+                            <div class="metric-val fee" id="ocrMetricTotalFee">Rp 0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Total Penjualan</div>
+                            <div class="metric-val in" id="ocrMetricTotalJual">Rp 0</div>
+                        </div>
+                    </div>
+
+                    <!-- Table Responsive -->
+                    <div class="table-responsive">
+                        <table class="preview-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px; text-align: center;">
+                                        <input type="checkbox" id="cbSelectAllOcr" checked onchange="toggleSelectAllOcrRows(this.checked)" style="accent-color: var(--accent);">
+                                    </th>
+                                    <th style="width: 30px; text-align: center;">#</th>
+                                    <th style="width: 175px;">Waktu &amp; Tanggal</th>
+                                    <th style="width: 80px; text-align: center;">Shift</th>
+                                    <th style="width: 110px;">Aplikasi</th>
+                                    <th>Keterangan / Produk</th>
+                                    <th style="text-align: right; width: 105px;">Modal (Rp)</th>
+                                    <th style="text-align: right; width: 125px;">Fee Rules</th>
+                                    <th style="text-align: right; width: 115px;">Harga Jual</th>
+                                    <th style="width: 38px; text-align: center;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ocrPreviewTableBody">
+                                <!-- Diisi baris OCR dinamis -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Push Button -->
+                    <div style="margin-top: 16px;">
+                        <button type="button" id="btnPushOcrToSupabase" class="btn-action-primary" onclick="pushOcrTransactionsToSupabase()">
+                            <span>🚀</span> <span id="btnPushOcrLabel">Simpan Transaksi OCR ke Riwayat Cabang</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div> <!-- /#panelTabOcr -->
 
         </div>
     </div>
@@ -719,7 +1057,7 @@
 
     <!-- MAIN JAVASCRIPT LOGIC -->
     <script>
-        // Global State
+        // Global State (XLS)
         let currentStoreId = '';
         let currentStoreName = '';
         let storesList = [];
@@ -727,6 +1065,45 @@
         let parsedRawRows = [];
         let preparedTransactions = [];
         let activeUploadedFile = null;
+
+        // Global State (OCR)
+        let activeImportTab = 'xls'; // 'xls' | 'ocr'
+        let uploadedOcrImages = []; // { id, file, name, size, dataUrl, imgElement, status, parsedCount }
+        let preparedOcrTransactions = []; // array of OCR transactions
+        let tesseractWorker = null;
+        let isOcrProcessing = false;
+
+        // Supported Apps for OCR (khusus DANA, GoPay, ShopeePay, Tekmo)
+        const SUPPORTED_OCR_APPS = {
+            DANA: {
+                name: 'DANA',
+                pkg: 'id.dana',
+                icon: '💙',
+                color: '#108ee9',
+                defaultCategory: 'outcome'
+            },
+            GOPAY: {
+                name: 'GoPay',
+                pkg: 'com.gojek.app',
+                icon: '💚',
+                color: '#00aa13',
+                defaultCategory: 'outcome'
+            },
+            SHOPEEPAY: {
+                name: 'ShopeePay',
+                pkg: 'com.shopee.id',
+                icon: '🧡',
+                color: '#ee4d2d',
+                defaultCategory: 'outcome'
+            },
+            TEKMO: {
+                name: 'Tekmo',
+                pkg: 'com.otoreport.tekmo',
+                icon: '💜',
+                color: '#8b5cf6',
+                defaultCategory: 'outcome'
+            }
+        };
 
         // Clients Supabase
         let supabaseClient = null;
@@ -741,6 +1118,13 @@
 
             // Drag and drop listeners
             setupDropzone();
+            setupOcrDropzone();
+
+            // Default fallback date hari ini untuk OCR
+            const ocrDateEl = document.getElementById('ocrFallbackDate');
+            if (ocrDateEl && !ocrDateEl.value) {
+                ocrDateEl.value = new Date().toISOString().substring(0, 10);
+            }
 
             // Cek Sesi Otentikasi
             checkAuthSession();
@@ -883,6 +1267,11 @@
             const params = new URLSearchParams(window.location.search);
             const storeParam = params.get('store');
             const nameParam = params.get('name');
+            const tabParam = params.get('tab');
+
+            if (tabParam === 'ocr') {
+                switchImportTab('ocr');
+            }
 
             if (isEmployee) {
                 if (window.CURRENT_EMPLOYEE && window.CURRENT_EMPLOYEE.store_id) {
@@ -1387,83 +1776,181 @@
             }
         }
 
-        // Kalkulasi Fee Rules (Exact Match -> Regex Word Boundary -> Range Match)
+        // Deteksi Kategori Transaksi untuk Isolasi Aturan Fee
+        function detectTransactionCategory(provider, productCode) {
+            const text = ((provider || '') + ' ' + (productCode || '')).toLowerCase();
+            if (text.includes('token') || text.includes('pln')) return 'TOKEN';
+            if (text.includes('dana') || text.includes('gopay') || text.includes('ovo') || text.includes('shopee') || text.includes('linkaja') || text.includes('uang elektronik') || text.includes('ewallet') || text.includes('tarik')) return 'EWALLET';
+            if (text.includes('diamond') || text.includes('mobile legend') || text.includes('free fire') || text.includes('genshin') || text.includes('pubg') || text.includes('game') || text.includes('voucher game')) return 'GAME';
+            if (text.includes('pulsa') || text.includes('tsel') || text.includes('telkomsel') || text.includes('indosat') || text.includes('isat') || text.includes('xl') || text.includes('axis') || text.includes('tri') || text.includes('telepon') || text.includes('paket') || text.includes('data')) return 'PULSA';
+            if (text.includes('bank') || text.includes('bca') || text.includes('bri') || text.includes('bni') || text.includes('mandiri')) return 'BANK';
+            return 'GENERAL';
+        }
+
+        // Ekstraksi Nominal Rupiah Produk (misal: "Token PLN 100.000" -> 100000, "Dana 5.000" -> 5000)
+        function parseNominalFromText(str) {
+            if (!str) return 0;
+            let s = String(str).replace(/[Rr][Pp]\.?\s*/g, '');
+            // Angka dengan titik ribuan
+            const mThousand = s.match(/\b([1-9]\d{0,2}(?:\.\d{3})+)\b/);
+            if (mThousand) return parseInt(mThousand[1].replace(/\./g, ''), 10);
+            // Angka format 50k / 100rb
+            const mK = s.match(/\b([1-9]\d{0,3})\s*(?:k|rb)\b/i);
+            if (mK) return parseInt(mK[1], 10) * 1000;
+            return 0;
+        }
+
+        // Kalkulasi Fee Rules (Exact Match -> Regex Word Boundary -> Category Range Match)
         function calculateFeeWithSupabaseRules(rules, modal, productCode, provider, roundToThousand = true) {
-            const nameHint = (productCode && productCode.trim()) ? productCode.trim() : (provider || '');
-            const q = nameHint.toLowerCase();
+            const pCode = (productCode || '').trim();
+            const prov = (provider || '').trim();
+            const trxCat = detectTransactionCategory(prov, pCode);
+            const nominalExtracted = parseNominalFromText(pCode) || parseNominalFromText(prov);
+
             let matchingRule = null;
 
             if (rules && rules.length > 0) {
-                // 1. Exact match by name
-                if (q) {
-                    for (const r of rules) {
-                        if (r.name && q === r.name.toLowerCase().trim()) {
-                            matchingRule = r;
-                            break;
-                        }
+                // Normalisasi rules (dukung snake_case dari Supabase maupun camelCase dari format JSON editor)
+                const normalizedRules = rules.filter(r => r.is_active !== false && r.isActive !== false).map(r => ({
+                    raw: r,
+                    name: (r.name || '').trim(),
+                    category: (r.category || '').toUpperCase().trim(),
+                    min: Number(r.min_amount != null ? r.min_amount : r.minAmount) || 0,
+                    max: Number(r.max_amount != null ? r.max_amount : r.maxAmount) || 0,
+                    feeAmount: Number(r.fee_amount != null ? r.fee_amount : r.feeAmount) || 0,
+                    feePercent: Number(r.fee_percent != null ? r.fee_percent : r.feePercent) || 0,
+                    fixedAmount: Number(r.fixed_amount != null ? r.fixed_amount : r.fixedAmount) || 0,
+                    priority: Number(r.priority) || 10
+                }));
+
+                // Urutkan berdasarkan prioritas terkecil
+                normalizedRules.sort((a, b) => a.priority - b.priority);
+
+                // TAHAP 1: MATCHING NAMA PERSIS (Exact Match pada SKU Produk / Provider)
+                for (const r of normalizedRules) {
+                    if (!r.name) continue;
+                    const rn = r.name.toLowerCase();
+                    if (pCode.toLowerCase() === rn || prov.toLowerCase() === rn) {
+                        matchingRule = r;
+                        break;
                     }
                 }
 
-                // 2. Word boundary match
-                if (!matchingRule && q) {
-                    for (const r of rules) {
-                        if (r.name && r.name.trim()) {
-                            const rn = r.name.toLowerCase().trim();
-                            try {
-                                const escaped = rn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                                const regex = new RegExp('\\b' + escaped + '\\b', 'i');
-                                if (regex.test(q)) {
-                                    matchingRule = r;
-                                    break;
-                                }
-                            } catch(e) {}
-                        }
-                    }
-                }
-
-                // 3. Range matching on modal (targetValue)
+                // TAHAP 2: MATCHING KATA DENGAN WORD BOUNDARY
                 if (!matchingRule) {
-                    for (const r of rules) {
-                        const min = Number(r.min_amount) || 0;
-                        const max = Number(r.max_amount) || 0;
-                        if (min <= 0 && max <= 0) continue; // Skip catalog items without range
-                        if (modal >= min && (max === 0 || modal <= max)) {
+                    for (const r of normalizedRules) {
+                        if (!r.name) continue;
+                        const rn = r.name.toLowerCase();
+                        try {
+                            const escaped = rn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp('\\b' + escaped + '\\b', 'i');
+                            if (regex.test(pCode) || regex.test(prov)) {
+                                matchingRule = r;
+                                break;
+                            }
+                        } catch(e) {}
+                    }
+                }
+
+                // TAHAP 3: RANGE MATCHING TERISOLASI KATEGORI
+                // SYARAT PENTING:
+                // 1. Rule dengan fixedAmount > 0 (item harga tetap katalog seperti "5 Diamond", "2180 Diamond")
+                //    TIDAK BOLEH ikut range matching agar tidak salah mencocokkan produk lain!
+                // 2. Rule dengan max >= 99999999 (dummy range tak hingga) TIDAK BOLEH ikut range matching!
+                if (!matchingRule) {
+                    const targetVal = (nominalExtracted > 0 && Math.abs(nominalExtracted - modal) < nominalExtracted * 0.3)
+                        ? nominalExtracted
+                        : modal;
+
+                    // 3a. Range matching pada kategori yang sama persis
+                    for (const r of normalizedRules) {
+                        if (r.fixedAmount > 0) continue;
+                        if (r.min <= 0 && (r.max <= 0 || r.max >= 99999999)) continue;
+
+                        const isCatMatch = (r.category === trxCat) || 
+                                           (trxCat === 'TOKEN' && (r.category === 'PLN' || r.category === 'TOKEN')) ||
+                                           (trxCat === 'EWALLET' && (r.category === 'EWALLET' || r.category === 'TOPUP')) ||
+                                           (trxCat === 'PULSA' && (r.category === 'PULSA' || r.category === 'TELKOMSEL' || r.category === 'TSEL'));
+
+                        if (isCatMatch && targetVal >= r.min && (r.max === 0 || targetVal <= r.max)) {
                             matchingRule = r;
                             break;
+                        }
+                    }
+
+                    // 3b. Range matching pada kategori umum (GENERAL / KSP / ALL)
+                    if (!matchingRule) {
+                        for (const r of normalizedRules) {
+                            if (r.fixedAmount > 0) continue;
+                            if (r.min <= 0 && (r.max <= 0 || r.max >= 99999999)) continue;
+
+                            const isGeneralCat = !r.category || r.category === 'GENERAL' || r.category === 'ALL' || r.category === 'KSP';
+                            if (isGeneralCat && targetVal >= r.min && (r.max === 0 || targetVal <= r.max)) {
+                                matchingRule = r;
+                                break;
+                            }
                         }
                     }
                 }
             }
 
-            // Calculate fee
+            // HITUNG HARGA JUAL DAN FEE
             let fee = 0;
-            if (matchingRule) {
-                const fixed = Number(matchingRule.fixed_amount) || 0;
-                const feeFlat = Number(matchingRule.fee_amount) || 0;
-                const feePct = Number(matchingRule.fee_percent) || 0;
+            let sellingPrice = 0;
 
-                if (fixed > 0) {
-                    fee = Math.max(0, fixed - modal);
+            if (matchingRule) {
+                // Kasus 1: Rule Harga Tetap (Fixed Amount, misal: "5 Diamond" -> fixedAmount: 3000)
+                if (matchingRule.fixedAmount > 0) {
+                    sellingPrice = matchingRule.fixedAmount;
+                    fee = Math.max(0, sellingPrice - modal);
                 } else {
-                    fee = feeFlat;
-                    if (feePct > 0) {
-                        fee += (modal * feePct / 100);
+                    // Kasus 2: Fee Flat / Percent
+                    let calcFee = matchingRule.feeAmount;
+                    if (matchingRule.feePercent > 0) {
+                        calcFee += (modal * matchingRule.feePercent / 100);
+                    }
+
+                    // Khusus Token PLN atau Pulsa / E-wallet dengan nominal yang jelas:
+                    // Basis perhitungan harga jual adalah Nominal Produk + Fee (misal Token 100.000 + 3.000 = 103.000)
+                    const isNominalBased = nominalExtracted > 0 && 
+                        (trxCat === 'TOKEN' || trxCat === 'PULSA' || trxCat === 'EWALLET');
+
+                    if (isNominalBased) {
+                        sellingPrice = nominalExtracted + calcFee;
+                        if (roundToThousand && calcFee > 0) {
+                            sellingPrice = Math.ceil(sellingPrice / 1000) * 1000;
+                        }
+                        fee = Math.max(0, sellingPrice - modal);
+                    } else {
+                        // Berbasis modal asli
+                        let totalBeforeRound = modal + calcFee;
+                        if (roundToThousand && calcFee > 0) {
+                            sellingPrice = Math.ceil(totalBeforeRound / 1000) * 1000;
+                            fee = sellingPrice - modal;
+                        } else {
+                            fee = calcFee;
+                            sellingPrice = modal + fee;
+                        }
                     }
                 }
-            }
-            if (fee < 0) fee = 0;
-
-            // Round to nearest thousand
-            if (roundToThousand && fee > 0) {
-                const totalBeforeRound = modal + fee;
-                const rounded = Math.ceil(totalBeforeRound / 1000) * 1000;
-                fee = rounded - modal;
+            } else {
+                // Fallback default margin jika belum ada rule yang cocok (misal 2.000)
+                const defaultMargin = 2000;
+                if (roundToThousand) {
+                    sellingPrice = Math.ceil((modal + defaultMargin) / 1000) * 1000;
+                    fee = sellingPrice - modal;
+                } else {
+                    fee = defaultMargin;
+                    sellingPrice = modal + fee;
+                }
             }
 
             return {
                 fee: Math.round(fee),
-                amount: Math.round(modal + fee),
-                matchingRule: matchingRule ? matchingRule.name : null
+                amount: Math.round(sellingPrice),
+                matchingRule: matchingRule ? matchingRule.name : null,
+                nominalExtracted: nominalExtracted,
+                categoryDetected: trxCat
             };
         }
 
@@ -1736,6 +2223,957 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
+        }
+
+        // ================================================================
+        // MODUL WEB OCR TRANSAKSI (DANA, GOPAY, SHOPEEPAY, TEKMO)
+        // ================================================================
+
+        function switchImportTab(tab) {
+            activeImportTab = tab;
+            const btnXls = document.getElementById('tabBtnXls');
+            const btnOcr = document.getElementById('tabBtnOcr');
+            const panelXls = document.getElementById('panelTabXls');
+            const panelOcr = document.getElementById('panelTabOcr');
+            const pageTitle = document.getElementById('pageTitleText');
+
+            if (tab === 'xls') {
+                if (btnXls) btnXls.classList.add('active');
+                if (btnOcr) btnOcr.classList.remove('active');
+                if (panelXls) panelXls.style.display = 'block';
+                if (panelOcr) panelOcr.style.display = 'none';
+                if (pageTitle) pageTitle.textContent = '📊 Impor XLS Order Kuota';
+            } else {
+                if (btnOcr) btnOcr.classList.add('active');
+                if (btnXls) btnXls.classList.remove('active');
+                if (panelOcr) panelOcr.style.display = 'block';
+                if (panelXls) panelXls.style.display = 'none';
+                if (pageTitle) pageTitle.textContent = '📷 Impor OCR Gambar Mutasi';
+
+                const ocrDateEl = document.getElementById('ocrFallbackDate');
+                if (ocrDateEl && !ocrDateEl.value) {
+                    ocrDateEl.value = new Date().toISOString().substring(0, 10);
+                }
+            }
+        }
+
+        function onOcrAppSelectChange(val) {
+            const badge = document.getElementById('ocrAppBadge');
+            if (badge) {
+                if (val === 'AUTO') badge.textContent = 'App: Auto Detect';
+                else if (SUPPORTED_OCR_APPS[val]) badge.textContent = `App: ${SUPPORTED_OCR_APPS[val].name}`;
+            }
+        }
+
+        function setupOcrDropzone() {
+            const dropzone = document.getElementById('ocrDropzoneBox');
+            if (!dropzone) return;
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.add('dragover');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.remove('dragover');
+                }, false);
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files && files.length > 0) {
+                    handleOcrImagesSelect(files);
+                }
+            }, false);
+
+            // Listener Paste Global (Ctrl + V)
+            window.addEventListener('paste', (e) => {
+                if (activeImportTab !== 'ocr') return;
+                const targetTag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+                if (targetTag === 'input' && e.target.type !== 'file') return;
+                if (targetTag === 'textarea' || targetTag === 'select') return;
+
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                if (!items) return;
+                let pasteFiles = [];
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type && items[i].type.indexOf('image') !== -1) {
+                        const file = items[i].getAsFile();
+                        if (file) pasteFiles.push(file);
+                    }
+                }
+                if (pasteFiles.length > 0) {
+                    e.preventDefault();
+                    handleOcrImagesSelect(pasteFiles);
+                }
+            });
+        }
+
+        function handleOcrImagesSelect(fileList) {
+            if (!fileList || fileList.length === 0) return;
+            const validFiles = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+            if (validFiles.length === 0) {
+                alert('Berkas yang dipilih bukan berkas gambar yang didukung (gunakan format JPG, PNG, WEBP).');
+                return;
+            }
+
+            validFiles.forEach(file => {
+                const id = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        uploadedOcrImages.push({
+                            id: id,
+                            file: file,
+                            name: file.name || `Screenshot_${Date.now()}.png`,
+                            size: (file.size / 1024).toFixed(1) + ' KB',
+                            dataUrl: e.target.result,
+                            imgElement: img,
+                            status: 'ready',
+                            parsedCount: 0
+                        });
+                        renderOcrThumbnails();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function renderOcrThumbnails() {
+            const container = document.getElementById('ocrThumbnailsContainer');
+            const grid = document.getElementById('ocrThumbsGrid');
+            const countLabel = document.getElementById('ocrImagesCountLabel');
+            const scanCountLabel = document.getElementById('btnScanCountLabel');
+            const btnStart = document.getElementById('btnStartOcrScan');
+
+            if (!container || !grid) return;
+
+            if (uploadedOcrImages.length === 0) {
+                container.style.display = 'none';
+                grid.innerHTML = '';
+                return;
+            }
+
+            container.style.display = 'block';
+            if (countLabel) countLabel.textContent = `${uploadedOcrImages.length} Gambar Dimuat`;
+            if (scanCountLabel) scanCountLabel.textContent = `${uploadedOcrImages.length}`;
+            if (btnStart) btnStart.disabled = isOcrProcessing;
+
+            grid.innerHTML = uploadedOcrImages.map((img, idx) => {
+                let statusBadge = '';
+                if (img.status === 'ready') {
+                    statusBadge = `<span style="color:var(--muted);">⏳ Siap</span>`;
+                } else if (img.status === 'processing') {
+                    statusBadge = `<span style="color:#6366f1;">⚡ Memindai...</span>`;
+                } else if (img.status === 'success') {
+                    statusBadge = `<span style="color:var(--income);">✅ ${img.parsedCount} Trx</span>`;
+                } else if (img.status === 'no_rows') {
+                    statusBadge = `<span style="color:var(--warning);">⚠️ 0 Trx</span>`;
+                } else if (img.status === 'error') {
+                    statusBadge = `<span style="color:var(--outcome);">❌ Gagal</span>`;
+                }
+
+                return `
+                    <div class="ocr-thumb-card">
+                        <button type="button" class="ocr-thumb-remove" onclick="removeOcrImage(${idx})" title="Hapus gambar ini">✕</button>
+                        <img src="${img.dataUrl}" class="ocr-thumb-img" alt="${escapeHtml(img.name)}" onclick="previewOcrImageModal('${img.id}')" title="Klik untuk pratinjau penuh">
+                        <div class="ocr-thumb-name" title="${escapeHtml(img.name)}">${escapeHtml(img.name)}</div>
+                        <div class="ocr-thumb-status">${statusBadge}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function removeOcrImage(idx) {
+            if (isOcrProcessing) return;
+            uploadedOcrImages.splice(idx, 1);
+            renderOcrThumbnails();
+        }
+
+        function clearOcrImages() {
+            if (isOcrProcessing) return;
+            uploadedOcrImages = [];
+            preparedOcrTransactions = [];
+            renderOcrThumbnails();
+            renderOcrPreviewTable();
+            updateOcrMetricsSummary();
+            const prevCard = document.getElementById('ocrPreviewCard');
+            if (prevCard) prevCard.style.display = 'none';
+            const progCard = document.getElementById('ocrProgressCard');
+            if (progCard) progCard.style.display = 'none';
+        }
+
+        function previewOcrImageModal(imgId) {
+            const item = uploadedOcrImages.find(x => x.id === imgId);
+            if (!item) return;
+            const w = window.open('');
+            if (w) {
+                w.document.write(`<title>${escapeHtml(item.name)}</title><body style="margin:0;background:#0f172a;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${item.dataUrl}" style="max-width:96%;max-height:96%;object-fit:contain;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.5);"></body>`);
+            }
+        }
+
+        // Pre-Processing Kanvas untuk Mempertajam Teks Angka
+        function preprocessImageCanvas(img) {
+            const canvas = document.createElement('canvas');
+            let width = img.naturalWidth || img.width;
+            let height = img.naturalHeight || img.height;
+
+            // Skala up jika gambar kecil agar karakter angka terbaca tajam
+            let scale = 1;
+            if (width < 1000) {
+                scale = Math.min(2.0, 1400 / width);
+            }
+            canvas.width = Math.round(width * scale);
+            canvas.height = Math.round(height * scale);
+
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Grayscale & Contrast Stretching
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const d = imgData.data;
+            let minLum = 255;
+            let maxLum = 0;
+            const lumArray = new Uint8ClampedArray(d.length / 4);
+
+            for (let i = 0, j = 0; i < d.length; i += 4, j++) {
+                const lum = Math.round(0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2]);
+                lumArray[j] = lum;
+                if (lum < minLum) minLum = lum;
+                if (lum > maxLum) maxLum = lum;
+            }
+
+            const lumRange = (maxLum - minLum) || 1;
+
+            for (let i = 0, j = 0; i < d.length; i += 4, j++) {
+                let stretched = Math.round(((lumArray[j] - minLum) / lumRange) * 255);
+                if (stretched < 128) {
+                    stretched = Math.max(0, stretched - 15);
+                } else {
+                    stretched = Math.min(255, stretched + 15);
+                }
+                d[i] = stretched;
+                d[i+1] = stretched;
+                d[i+2] = stretched;
+            }
+
+            ctx.putImageData(imgData, 0, 0);
+            return canvas;
+        }
+
+        // Eksekusi Pindai OCR Batch
+        async function startOcrBatchProcessing() {
+            if (uploadedOcrImages.length === 0) {
+                alert('Silakan pilih atau tempel gambar screenshot terlebih dahulu.');
+                return;
+            }
+            if (isOcrProcessing) return;
+
+            if (typeof Tesseract === 'undefined') {
+                alert('Library Tesseract OCR belum selesai dimuat. Harap periksa koneksi internet Anda atau muat ulang halaman.');
+                return;
+            }
+
+            isOcrProcessing = true;
+            renderOcrThumbnails();
+
+            const progCard = document.getElementById('ocrProgressCard');
+            if (progCard) progCard.style.display = 'block';
+
+            const progTitle = document.getElementById('ocrProgressTitle');
+            const progText = document.getElementById('ocrProgressStatusText');
+            const progPercent = document.getElementById('ocrProgressPercentPill');
+            const progFill = document.getElementById('ocrProgressBarFill');
+
+            function updateProgress(title, text, pct) {
+                if (progTitle) progTitle.textContent = title;
+                if (progText) progText.textContent = text;
+                if (progPercent) progPercent.textContent = pct + '%';
+                if (progFill) progFill.style.width = pct + '%';
+            }
+
+            updateProgress('⚡ Menginisialisasi Mesin OCR...', 'Memuat model WebAssembly Bahasa Indonesia & Angka...', 5);
+
+            try {
+                if (!tesseractWorker) {
+                    tesseractWorker = await Tesseract.createWorker('ind+eng', 1, {
+                        logger: m => {
+                            if (m.status === 'recognizing text' && m.progress) {
+                                // sub logger
+                            }
+                        }
+                    });
+                }
+
+                const newlyParsedTransactions = [];
+
+                for (let i = 0; i < uploadedOcrImages.length; i++) {
+                    const item = uploadedOcrImages[i];
+                    item.status = 'processing';
+                    renderOcrThumbnails();
+
+                    const basePct = Math.round((i / uploadedOcrImages.length) * 90);
+                    updateProgress(
+                        `⚡ Memproses Gambar ${i + 1} dari ${uploadedOcrImages.length}`,
+                        `Menganalisis teks pada ${escapeHtml(item.name)}...`,
+                        basePct + 5
+                    );
+
+                    // 1. Preprocess Kanvas
+                    const canvas = preprocessImageCanvas(item.imgElement);
+
+                    // 2. Tesseract Recognition
+                    const ret = await tesseractWorker.recognize(canvas);
+
+                    // 3. Ekstraksi Transaksi dengan Algoritma Spatial Row Clustering
+                    const rows = parseOcrTransactions(ret.data, item);
+                    item.parsedCount = rows.length;
+                    item.status = rows.length > 0 ? 'success' : 'no_rows';
+                    newlyParsedTransactions.push(...rows);
+                    renderOcrThumbnails();
+                }
+
+                updateProgress('✅ Pemrosesan OCR Selesai!', `Berhasil mengekstrak ${newlyParsedTransactions.length} transaksi dari ${uploadedOcrImages.length} gambar.`, 100);
+
+                preparedOcrTransactions = newlyParsedTransactions;
+                renderOcrPreviewTable();
+                updateOcrMetricsSummary();
+
+                const prevCard = document.getElementById('ocrPreviewCard');
+                if (prevCard) {
+                    prevCard.style.display = preparedOcrTransactions.length > 0 ? 'block' : 'none';
+                }
+
+                if (preparedOcrTransactions.length === 0) {
+                    alert('Tidak ada transaksi dengan nominal yang terdeteksi pada gambar. Pastikan gambar memuat teks nominal seperti Rp 50.000 atau format mutasi.');
+                }
+
+            } catch (err) {
+                console.error('Error saat pemrosesan OCR:', err);
+                alert('Terjadi kendala saat memproses OCR: ' + (err.message || err));
+                if (progText) progText.textContent = 'Gagal memproses gambar: ' + err.message;
+            } finally {
+                isOcrProcessing = false;
+                renderOcrThumbnails();
+            }
+        }
+
+        // Algoritma Parser Transaksi OCR (Replikasi SpatialRowParser.java)
+        function parseOcrTransactions(ocrData, imageMeta) {
+            if (!ocrData) return [];
+
+            const fullRawText = ocrData.text || '';
+            const lowerFullText = fullRawText.toLowerCase();
+
+            // 1. Pilihan / Deteksi Aplikasi Sumber (Hanya DANA, GoPay, ShopeePay, Tekmo)
+            const appSelectVal = document.getElementById('ocrAppSelect').value;
+            let detectedApp = appSelectVal;
+
+            if (detectedApp === 'AUTO') {
+                if (lowerFullText.includes('tekmo') || lowerFullText.includes('delta mobile') || (lowerFullText.includes('sukses') && (lowerFullText.includes('sn:') || lowerFullText.includes('produk:')))) {
+                    detectedApp = 'TEKMO';
+                } else if (lowerFullText.includes('dana') || lowerFullText.includes('kirim uang') || lowerFullText.includes('saldo dana') || lowerFullText.includes('proteksi dana')) {
+                    detectedApp = 'DANA';
+                } else if (lowerFullText.includes('gopay') || lowerFullText.includes('gojek') || lowerFullText.includes('transfer ke') || lowerFullText.includes('gopay saldo')) {
+                    detectedApp = 'GOPAY';
+                } else if (lowerFullText.includes('shopeepay') || lowerFullText.includes('shopee') || lowerFullText.includes('transfer saldo')) {
+                    detectedApp = 'SHOPEEPAY';
+                } else {
+                    detectedApp = 'DANA'; // Default ke DANA
+                }
+            }
+
+            const appConfig = SUPPORTED_OCR_APPS[detectedApp] || SUPPORTED_OCR_APPS.DANA;
+
+            const shiftMode = document.getElementById('ocrShiftMode').value;
+            const directionMode = document.getElementById('ocrDirectionMode').value;
+            const roundThousand = document.getElementById('ocrRoundThousand').checked;
+            let fallbackDate = document.getElementById('ocrFallbackDate').value;
+            if (!fallbackDate) {
+                fallbackDate = new Date().toISOString().substring(0, 10);
+            }
+
+            // Pola Regex Heuristik
+            const AMOUNT_PATTERN = /-?Rp\.?\s?([0-9OoIl.,]+)/i;
+            const AMOUNT_PATTERN_NO_PREFIX = /-?\b([1-9][0-9OoIl]{0,2}(?:\.[0-9OoIl]{3})+)\b/;
+            const TIME_PATTERN = /\b([01]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?\b/;
+
+            const rawLines = (ocrData.lines || []).filter(l => l.text && l.text.trim().length > 0);
+            rawLines.sort((a, b) => (a.bbox ? a.bbox.y0 : 0) - (b.bbox ? b.bbox.y0 : 0));
+
+            // Pengelompokan Baris berbasis Toleransi Y (Spatial Row Clustering)
+            const imgHeight = (ocrData.image && ocrData.image.height) ? ocrData.image.height : 1000;
+            const yTolerance = Math.max(10, Math.round(imgHeight / 50));
+            const clusters = [];
+
+            rawLines.forEach(line => {
+                const y0 = line.bbox ? line.bbox.y0 : 0;
+                const y1 = line.bbox ? line.bbox.y1 : 0;
+                let merged = false;
+                for (const c of clusters) {
+                    if (y0 <= c.maxY + yTolerance && y1 >= c.minY - yTolerance) {
+                        c.lines.push(line);
+                        c.minY = Math.min(c.minY, y0);
+                        c.maxY = Math.max(c.maxY, y1);
+                        merged = true;
+                        break;
+                    }
+                }
+                if (!merged) {
+                    clusters.push({
+                        lines: [line],
+                        minY: y0,
+                        maxY: y1
+                    });
+                }
+            });
+
+            const parsedTransactions = [];
+            let syntheticTimeOffsetMinutes = 0;
+
+            let globalPageDate = extractDateFromText(fullRawText);
+            if (!globalPageDate) globalPageDate = fallbackDate;
+
+            clusters.forEach(c => {
+                c.lines.sort((a, b) => (a.bbox ? a.bbox.x0 : 0) - (b.bbox ? b.bbox.x0 : 0));
+                const clusterText = c.lines.map(l => l.text.trim()).join(' ');
+
+                let amount = 0;
+                let isNegative = false;
+                let isPositive = false;
+
+                let mAmount = clusterText.match(AMOUNT_PATTERN);
+                if (mAmount) {
+                    isNegative = mAmount[0].startsWith('-');
+                    isPositive = mAmount[0].startsWith('+');
+                    const cleanDigits = mAmount[1].replace(/[Oo]/g, '0').replace(/[Il]/g, '1').replace(/[.,]/g, '');
+                    amount = parseInt(cleanDigits, 10);
+                } else {
+                    mAmount = clusterText.match(AMOUNT_PATTERN_NO_PREFIX);
+                    if (mAmount) {
+                        isNegative = mAmount[0].startsWith('-');
+                        isPositive = mAmount[0].startsWith('+');
+                        const cleanDigits = mAmount[1].replace(/[Oo]/g, '0').replace(/[Il]/g, '1').replace(/[.,]/g, '');
+                        amount = parseInt(cleanDigits, 10);
+                    }
+                }
+
+                if (!amount || isNaN(amount) || amount < 100 || amount > 100000000) {
+                    return;
+                }
+
+                // Arah Transaksi (Outcome / Income)
+                let isOutcome = true;
+                if (directionMode === 'FORCE_OUTCOME') {
+                    isOutcome = true;
+                } else if (directionMode === 'FORCE_INCOME') {
+                    isOutcome = false;
+                } else {
+                    const lowerCluster = clusterText.toLowerCase();
+                    if (isNegative) {
+                        isOutcome = true;
+                    } else if (isPositive) {
+                        isOutcome = false;
+                    } else if (lowerCluster.includes('isi saldo') || lowerCluster.includes('top up') || lowerCluster.includes('terima') || lowerCluster.includes('masuk') || lowerCluster.includes('tambah saldo')) {
+                        isOutcome = false;
+                    } else if (lowerCluster.includes('kirim') || lowerCluster.includes('transfer') || lowerCluster.includes('bayar') || lowerCluster.includes('sukses') || lowerCluster.includes('beli') || lowerCluster.includes('tarik tunai')) {
+                        isOutcome = true;
+                    } else {
+                        isOutcome = appConfig.defaultCategory === 'outcome';
+                    }
+                }
+
+                // Tanggal Baris
+                let rowDate = extractDateFromText(clusterText);
+                if (!rowDate) rowDate = globalPageDate;
+
+                // Jam Baris
+                let rowTime = '';
+                const mTime = clusterText.match(TIME_PATTERN);
+                if (mTime) {
+                    rowTime = mTime[1].length === 5 ? (mTime[1] + ':00') : mTime[1];
+                } else {
+                    const now = new Date(Date.now() - (syntheticTimeOffsetMinutes * 60000));
+                    syntheticTimeOffsetMinutes++;
+                    const hh = String(now.getHours()).padStart(2, '0');
+                    const mm = String(now.getMinutes()).padStart(2, '0');
+                    const ss = String(now.getSeconds()).padStart(2, '0');
+                    rowTime = `${hh}:${mm}:${ss}`;
+                }
+
+                // Shift
+                let shift = 1;
+                if (shiftMode === 'AUTO') {
+                    const [h, m] = rowTime.split(':').map(Number);
+                    const totalMins = (h || 0) * 60 + (m || 0);
+                    shift = totalMins < 930 ? 1 : 2; // Cutoff 15:30 WIB
+                } else {
+                    shift = parseInt(shiftMode, 10);
+                }
+
+                // Pembersihan Deskripsi Transaksi
+                let desc = clusterText;
+                if (mAmount) desc = desc.replace(mAmount[0], '');
+                desc = desc.replace(TIME_PATTERN, '');
+                const DATE_TEXT_PATTERN = /\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|Mei|Jun|Jul|Agu|Sep|Okt|Nov|Des|January|February|March|April|May|June|July|August|September|October|November|December)\w*\s+(\d{4}|\d{2})\b/i;
+                const DATE_SLASH_PATTERN = /\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/;
+                desc = desc.replace(DATE_TEXT_PATTERN, '').replace(DATE_SLASH_PATTERN, '');
+                desc = desc.replace(/(?i)(berhasil|sukses|transaksi|rincian|saldo|rp)/gi, '');
+                desc = desc.replace(/[\•\·\*\-]/g, ' ').replace(/\s+/g, ' ').trim();
+
+                if (!desc || desc.length < 2) {
+                    desc = isOutcome ? `Transfer / Transaksi ${appConfig.name}` : `Top Up / Pemasukan ${appConfig.name}`;
+                }
+
+                // Khusus Tekmo: Deteksi Produk / Nomor Tujuan jika ada
+                if (detectedApp === 'TEKMO') {
+                    const mProd = clusterText.match(/(?:Produk|Item)[:\s]+([A-Za-z0-9_]+)/i);
+                    const mDest = clusterText.match(/(?:Tujuan|No|ID)[:\s]+([0-9]{8,16})/i);
+                    if (mProd || mDest) {
+                        desc = `${mProd ? mProd[1] : 'Tekmo'} ${mDest ? ('- ' + mDest[1]) : ''}`.trim();
+                    }
+                }
+
+                // Kalkulasi Fee Aturan Supabase
+                const feeResult = calculateFeeWithSupabaseRules(allFeeRules, amount, desc, appConfig.name, roundThousand);
+                const timestampStr = `${rowDate} ${rowTime}`;
+                const timestampMs = new Date(timestampStr.replace(' ', 'T')).getTime() || Date.now();
+
+                parsedTransactions.push({
+                    id: generateOcrDeterministicId(currentStoreId, timestampStr, appConfig.name, desc, amount),
+                    selected: true,
+                    imageName: imageMeta.name,
+                    appName: appConfig.name,
+                    appPackage: appConfig.pkg,
+                    category: isOutcome ? 'outcome' : 'income',
+                    trx_date: rowDate,
+                    trx_time: rowTime,
+                    timestampMs: timestampMs,
+                    shift: shift,
+                    title: isOutcome ? `Penjualan ${appConfig.name}` : `Pemasukan ${appConfig.name}`,
+                    description: desc,
+                    modal: amount,
+                    fee: feeResult.fee,
+                    amount: feeResult.amount, // modal + fee
+                    ruleMatched: feeResult.matchingRule,
+                    isEdited: false
+                });
+            });
+
+            return parsedTransactions;
+        }
+
+        function extractDateFromText(text) {
+            if (!text) return null;
+            const DATE_TEXT_PATTERN = /\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|Mei|Jun|Jul|Agu|Sep|Okt|Nov|Des|January|February|March|April|May|June|July|August|September|October|November|December)\w*\s+(\d{4}|\d{2})\b/i;
+            const DATE_SLASH_PATTERN = /\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/;
+
+            const mText = text.match(DATE_TEXT_PATTERN);
+            if (mText) {
+                const d = String(mText[1]).padStart(2, '0');
+                const monthName = mText[2].toLowerCase();
+                let monthMap = {
+                    jan: '01', feb: '02', mar: '03', apr: '04', mei: '05', may: '05',
+                    jun: '06', jul: '07', agu: '08', aug: '08', sep: '09', okt: '10', oct: '10',
+                    nov: '11', des: '12', dec: '12'
+                };
+                const m = monthMap[monthName.substring(0, 3)] || '01';
+                let y = mText[3];
+                if (y.length === 2) y = '20' + y;
+                return `${y}-${m}-${d}`;
+            }
+
+            const mSlash = text.match(DATE_SLASH_PATTERN);
+            if (mSlash) {
+                const d = String(mSlash[1]).padStart(2, '0');
+                const m = String(mSlash[2]).padStart(2, '0');
+                let y = mSlash[3];
+                if (y.length === 2) y = '20' + y;
+                return `${y}-${m}-${d}`;
+            }
+
+            return null;
+        }
+
+        // Render Tabel Pratinjau Interaktif OCR
+        function renderOcrPreviewTable() {
+            const tbody = document.getElementById('ocrPreviewTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const searchVal = (document.getElementById('ocrSearchInput') ? document.getElementById('ocrSearchInput').value : '').toLowerCase().trim();
+
+            const filtered = preparedOcrTransactions.filter(tx => {
+                if (!searchVal) return true;
+                return (tx.description && tx.description.toLowerCase().includes(searchVal)) ||
+                       (tx.appName && tx.appName.toLowerCase().includes(searchVal)) ||
+                       (String(tx.modal).includes(searchVal)) ||
+                       (String(tx.amount).includes(searchVal));
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 24px; color: var(--muted);">Tidak ada transaksi OCR yang sesuai kriteria.</td></tr>`;
+                return;
+            }
+
+            const rowsHtml = filtered.map((tx, idx) => {
+                const realIndex = preparedOcrTransactions.indexOf(tx);
+                const ruleBadge = tx.ruleMatched 
+                    ? `<span class="rule-tag" title="Rule: ${escapeHtml(tx.ruleMatched)}">🎯 ${escapeHtml(tx.ruleMatched)}</span>`
+                    : `<span class="rule-tag" style="background:rgba(148,163,184,0.15);color:var(--muted);">Tanpa Rule</span>`;
+
+                const appBadgeColor = SUPPORTED_OCR_APPS[tx.appName ? tx.appName.toUpperCase() : ''] ? SUPPORTED_OCR_APPS[tx.appName.toUpperCase()].color : '#3b82f6';
+
+                return `
+                    <tr>
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="ocr-row-select-cb" data-idx="${realIndex}" ${tx.selected ? 'checked' : ''} onchange="toggleOcrRowSelection(${realIndex}, this.checked)" style="accent-color: var(--accent);">
+                        </td>
+                        <td style="text-align: center; color: var(--muted);">${realIndex + 1}</td>
+                        <td>
+                            <div style="display:flex; gap:4px; align-items:center;">
+                                <input type="time" class="editable-cell-input" style="width: 75px;" value="${tx.trx_time.substring(0, 5)}" onchange="updateOcrRowField(${realIndex}, 'time', this.value)">
+                                <input type="date" class="editable-cell-input" style="width: 105px;" value="${tx.trx_date}" onchange="updateOcrRowField(${realIndex}, 'date', this.value)">
+                            </div>
+                        </td>
+                        <td style="text-align: center;">
+                            <select class="editable-cell-input" style="width: 75px; font-weight:700;" onchange="updateOcrRowField(${realIndex}, 'shift', this.value)">
+                                <option value="1" ${tx.shift === 1 ? 'selected' : ''}>Shift 1</option>
+                                <option value="2" ${tx.shift === 2 ? 'selected' : ''}>Shift 2</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select class="editable-cell-input" style="width: 105px; font-weight:700; color:${appBadgeColor};" onchange="updateOcrRowField(${realIndex}, 'appName', this.value)">
+                                <option value="DANA" ${tx.appName === 'DANA' ? 'selected' : ''}>💙 DANA</option>
+                                <option value="GoPay" ${tx.appName === 'GoPay' ? 'selected' : ''}>💚 GoPay</option>
+                                <option value="ShopeePay" ${tx.appName === 'ShopeePay' ? 'selected' : ''}>🧡 ShopeePay</option>
+                                <option value="Tekmo" ${tx.appName === 'Tekmo' ? 'selected' : ''}>💜 Tekmo</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" class="editable-cell-input" value="${escapeHtml(tx.description)}" onchange="updateOcrRowField(${realIndex}, 'description', this.value)" placeholder="Keterangan transaksi...">
+                        </td>
+                        <td style="text-align: right;">
+                            <input type="number" class="editable-cell-input" style="text-align:right; font-weight:700; color:var(--outcome); width: 95px;" value="${tx.modal}" onchange="updateOcrRowField(${realIndex}, 'modal', this.value)">
+                        </td>
+                        <td style="text-align: right;">
+                            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
+                                <input type="number" class="editable-cell-input" style="text-align:right; font-weight:700; color:#3b82f6; width: 75px;" value="${tx.fee}" onchange="updateOcrRowField(${realIndex}, 'fee', this.value)">
+                                <div>${ruleBadge}</div>
+                            </div>
+                        </td>
+                        <td style="text-align: right; font-weight: 800; color: var(--income); font-size:12.5px;">
+                            Rp ${formatRupiah(tx.amount)}
+                        </td>
+                        <td style="text-align: center;">
+                            <button type="button" class="btn-top-back" style="width:26px; height:26px; color:var(--outcome); font-size:11px;" onclick="deleteOcrRow(${realIndex})" title="Hapus baris transaksi ini">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML = rowsHtml;
+        }
+
+        function updateOcrRowField(idx, field, value) {
+            const tx = preparedOcrTransactions[idx];
+            if (!tx) return;
+
+            if (field === 'time') {
+                tx.trx_time = value.length === 5 ? (value + ':00') : value;
+            } else if (field === 'date') {
+                tx.trx_date = value;
+            } else if (field === 'shift') {
+                tx.shift = parseInt(value, 10);
+            } else if (field === 'appName') {
+                tx.appName = value;
+                const appKey = value.toUpperCase();
+                if (SUPPORTED_OCR_APPS[appKey]) {
+                    tx.appPackage = SUPPORTED_OCR_APPS[appKey].pkg;
+                }
+                const roundThousand = document.getElementById('ocrRoundThousand').checked;
+                const feeRes = calculateFeeWithSupabaseRules(allFeeRules, tx.modal, tx.description, tx.appName, roundThousand);
+                tx.fee = feeRes.fee;
+                tx.amount = tx.modal + tx.fee;
+                tx.ruleMatched = feeRes.matchingRule;
+            } else if (field === 'description') {
+                tx.description = value;
+            } else if (field === 'modal') {
+                tx.modal = Math.max(0, parseInt(value, 10) || 0);
+                const roundThousand = document.getElementById('ocrRoundThousand').checked;
+                const feeRes = calculateFeeWithSupabaseRules(allFeeRules, tx.modal, tx.description, tx.appName, roundThousand);
+                tx.fee = feeRes.fee;
+                tx.amount = tx.modal + tx.fee;
+                tx.ruleMatched = feeRes.matchingRule;
+            } else if (field === 'fee') {
+                tx.fee = Math.max(0, parseInt(value, 10) || 0);
+                tx.amount = tx.modal + tx.fee;
+            }
+
+            tx.isEdited = true;
+            renderOcrPreviewTable();
+            updateOcrMetricsSummary();
+        }
+
+        function deleteOcrRow(idx) {
+            preparedOcrTransactions.splice(idx, 1);
+            renderOcrPreviewTable();
+            updateOcrMetricsSummary();
+            if (preparedOcrTransactions.length === 0) {
+                const prevCard = document.getElementById('ocrPreviewCard');
+                if (prevCard) prevCard.style.display = 'none';
+            }
+        }
+
+        function addNewManualOcrRow() {
+            const today = new Date();
+            const dStr = today.toISOString().substring(0, 10);
+            const hh = String(today.getHours()).padStart(2, '0');
+            const mm = String(today.getMinutes()).padStart(2, '0');
+            const tStr = `${hh}:${mm}:00`;
+            const shift = (today.getHours() * 60 + today.getMinutes()) < 930 ? 1 : 2;
+
+            const roundThousand = document.getElementById('ocrRoundThousand').checked;
+            const defaultModal = 50000;
+            const feeRes = calculateFeeWithSupabaseRules(allFeeRules, defaultModal, 'Transfer DANA', 'DANA', roundThousand);
+
+            preparedOcrTransactions.unshift({
+                id: generateOcrDeterministicId(currentStoreId, `${dStr} ${tStr}`, 'DANA', 'Manual Tambah', defaultModal),
+                selected: true,
+                imageName: 'Manual_Input',
+                appName: 'DANA',
+                appPackage: 'id.dana',
+                category: 'outcome',
+                trx_date: dStr,
+                trx_time: tStr,
+                timestampMs: Date.now(),
+                shift: shift,
+                title: 'Penjualan DANA',
+                description: 'Transaksi Manual',
+                modal: defaultModal,
+                fee: feeRes.fee,
+                amount: defaultModal + feeRes.fee,
+                ruleMatched: feeRes.matchingRule,
+                isEdited: true
+            });
+
+            const prevCard = document.getElementById('ocrPreviewCard');
+            if (prevCard) prevCard.style.display = 'block';
+
+            renderOcrPreviewTable();
+            updateOcrMetricsSummary();
+        }
+
+        function filterOcrPreviewTable() {
+            renderOcrPreviewTable();
+        }
+
+        function recalculateOcrPreview() {
+            const shiftMode = document.getElementById('ocrShiftMode').value;
+            const directionMode = document.getElementById('ocrDirectionMode').value;
+            const roundThousand = document.getElementById('ocrRoundThousand').checked;
+            const fallbackDate = document.getElementById('ocrFallbackDate').value;
+
+            preparedOcrTransactions.forEach(tx => {
+                if (!tx.isEdited) {
+                    if (shiftMode !== 'AUTO') {
+                        tx.shift = parseInt(shiftMode, 10);
+                    }
+                    if (directionMode === 'FORCE_OUTCOME') {
+                        tx.category = 'outcome';
+                    } else if (directionMode === 'FORCE_INCOME') {
+                        tx.category = 'income';
+                    }
+                    if (fallbackDate && !tx.trx_date) {
+                        tx.trx_date = fallbackDate;
+                    }
+                }
+                const feeRes = calculateFeeWithSupabaseRules(allFeeRules, tx.modal, tx.description, tx.appName, roundThousand);
+                tx.fee = feeRes.fee;
+                tx.amount = tx.modal + tx.fee;
+                tx.ruleMatched = feeRes.matchingRule;
+            });
+
+            renderOcrPreviewTable();
+            updateOcrMetricsSummary();
+        }
+
+        function toggleSelectAllOcrRows(isChecked) {
+            preparedOcrTransactions.forEach(tx => tx.selected = isChecked);
+            const checkboxes = document.querySelectorAll('.ocr-row-select-cb');
+            checkboxes.forEach(cb => cb.checked = isChecked);
+            updateOcrMetricsSummary();
+        }
+
+        function toggleOcrRowSelection(idx, isChecked) {
+            if (preparedOcrTransactions[idx]) {
+                preparedOcrTransactions[idx].selected = isChecked;
+            }
+            updateOcrMetricsSummary();
+        }
+
+        function updateOcrMetricsSummary() {
+            const selectedItems = preparedOcrTransactions.filter(x => x.selected);
+            let totalModal = 0;
+            let totalFee = 0;
+            let totalJual = 0;
+
+            selectedItems.forEach(tx => {
+                totalModal += tx.modal;
+                totalFee += tx.fee;
+                totalJual += tx.amount;
+            });
+
+            const elTotalTrx = document.getElementById('ocrMetricTotalTrx');
+            const elTotalModal = document.getElementById('ocrMetricTotalModal');
+            const elTotalFee = document.getElementById('ocrMetricTotalFee');
+            const elTotalJual = document.getElementById('ocrMetricTotalJual');
+            const btnPush = document.getElementById('btnPushOcrToSupabase');
+            const btnLabel = document.getElementById('btnPushOcrLabel');
+
+            if (elTotalTrx) elTotalTrx.textContent = `${selectedItems.length} Trx`;
+            if (elTotalModal) elTotalModal.textContent = `Rp ${formatRupiah(totalModal)}`;
+            if (elTotalFee) elTotalFee.textContent = `Rp ${formatRupiah(totalFee)}`;
+            if (elTotalJual) elTotalJual.textContent = `Rp ${formatRupiah(totalJual)}`;
+
+            if (btnLabel) {
+                btnLabel.textContent = `Simpan ${selectedItems.length} Transaksi OCR ke Supabase (${currentStoreName || currentStoreId})`;
+            }
+            if (btnPush) {
+                btnPush.disabled = selectedItems.length === 0;
+            }
+        }
+
+        function generateOcrDeterministicId(storeId, timestamp, appName, title, modal) {
+            const rawKey = `ocr|${storeId}|${timestamp || ''}|${appName || ''}|${title || ''}|${Math.round(modal)}|${Math.random().toString(36).substr(2, 6)}`;
+            if (window.CryptoJS && typeof CryptoJS.MD5 === 'function') {
+                const hash = CryptoJS.MD5(rawKey).toString().substring(0, 16);
+                return `ocr_${storeId}_${hash}`;
+            }
+            let hash = 0;
+            for (let i = 0; i < rawKey.length; i++) {
+                hash = ((hash << 5) - hash) + rawKey.charCodeAt(i);
+                hash |= 0;
+            }
+            return `ocr_${storeId}_${Math.abs(hash).toString(16)}`;
+        }
+
+        // Simpan Transaksi OCR ke Supabase
+        async function pushOcrTransactionsToSupabase() {
+            const selectedItems = preparedOcrTransactions.filter(x => x.selected);
+            if (selectedItems.length === 0) {
+                alert('Pilih setidaknya satu transaksi OCR untuk disimpan.');
+                return;
+            }
+
+            const client = masterSupabaseClient || supabaseClient;
+            if (!client) {
+                alert('Koneksi ke Supabase belum siap. Pastikan konfigurasi sinkronisasi aktif.');
+                return;
+            }
+
+            showProgressModal('Menyimpan Transaksi OCR ke Supabase...', `Menyiapkan ${selectedItems.length} transaksi...`);
+
+            try {
+                const payload = selectedItems.map(item => {
+                    const dtString = `${item.trx_date} ${item.trx_time}`;
+                    const timeMs = new Date(dtString.replace(' ', 'T')).getTime() || item.timestampMs || Date.now();
+                    return {
+                        id: item.id,
+                        store_id: currentStoreId,
+                        device_id: 'web-ocr-scanner',
+                        device_name: 'Web OCR Scanner',
+                        module_type: 'notif',
+                        local_id: item.id,
+                        trx_date: item.trx_date,
+                        trx_time: item.trx_time,
+                        timestamp: timeMs,
+                        shift: item.shift,
+                        category: item.category,
+                        amount: item.amount, // harga jual
+                        real_amount: item.modal, // modal
+                        fee: item.fee,
+                        cost: item.modal,
+                        quantity: 1,
+                        app_package: item.appPackage,
+                        app_name: item.appName,
+                        title: item.title,
+                        item_name: item.description,
+                        customer_name: item.description,
+                        is_edited: item.isEdited,
+                        is_deleted_by_web: false,
+                        extra_data: {
+                            source: 'ocr_scanner',
+                            image_file: item.imageName,
+                            app: item.appName,
+                            package: item.appPackage,
+                            fee_rule_matched: item.ruleMatched
+                        }
+                    };
+                });
+
+                const CHUNK_SIZE = 100;
+                let insertedCount = 0;
+                const totalChunks = Math.ceil(payload.length / CHUNK_SIZE);
+
+                for (let i = 0; i < payload.length; i += CHUNK_SIZE) {
+                    const chunk = payload.slice(i, i + CHUNK_SIZE);
+                    const chunkIndex = Math.floor(i / CHUNK_SIZE) + 1;
+                    updateProgressModal(`Mengunggah batch ${chunkIndex}/${totalChunks}...`, `${insertedCount} dari ${payload.length} transaksi terunggah`);
+
+                    // 1. Simpan ke Branch Client (Project B)
+                    if (supabaseClient) {
+                        const resB = await supabaseClient.from('ksp_history_transactions').upsert(chunk, { onConflict: 'id' });
+                        if (resB.error) {
+                            console.warn('Upsert ke Branch Supabase:', resB.error);
+                        }
+                    }
+
+                    // 2. Simpan ke Master Client (Project A)
+                    if (masterSupabaseClient) {
+                        try {
+                            await masterSupabaseClient.from('ksp_history_transactions').upsert(chunk, { onConflict: 'id' });
+                        } catch(e) {
+                            console.warn('Upsert ke Master Supabase:', e);
+                        }
+                    }
+
+                    insertedCount += chunk.length;
+                }
+
+                updateProgressModal('Berhasil Disimpan!', `${insertedCount} transaksi OCR berhasil disimpan ke Supabase.`);
+                const spinner = document.getElementById('progressSpinner');
+                if (spinner) spinner.textContent = '🎉';
+                const actionRow = document.getElementById('progressActionRow');
+                if (actionRow) actionRow.style.display = 'flex';
+
+                const historyBtn = document.getElementById('btnGoToStoreHistory');
+                if (historyBtn) {
+                    historyBtn.href = `store_history.html?store=${encodeURIComponent(currentStoreId)}`;
+                }
+
+                preparedOcrTransactions.forEach(x => {
+                    if (x.selected) x.selected = false;
+                });
+                renderOcrPreviewTable();
+                updateOcrMetricsSummary();
+
+            } catch (err) {
+                console.error('Error saat menyimpan transaksi OCR ke Supabase:', err);
+                alert('Gagal menyimpan transaksi: ' + (err.message || err));
+                closeProgressModal();
+            }
         }
     </script>
 </body>
