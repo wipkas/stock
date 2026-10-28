@@ -2729,7 +2729,7 @@
                 const DATE_TEXT_PATTERN = /\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|Mei|Jun|Jul|Agu|Sep|Okt|Nov|Des|January|February|March|April|May|June|July|August|September|October|November|December)\w*\s+(\d{4}|\d{2})\b/i;
                 const DATE_SLASH_PATTERN = /\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/;
                 desc = desc.replace(DATE_TEXT_PATTERN, '').replace(DATE_SLASH_PATTERN, '');
-                desc = desc.replace(/(?i)(berhasil|sukses|transaksi|rincian|saldo|rp)/gi, '');
+                desc = desc.replace(/(berhasil|sukses|transaksi|rincian|saldo|rp)/gi, '');
                 desc = desc.replace(/[\•\·\*\-]/g, ' ').replace(/\s+/g, ' ').trim();
 
                 if (!desc || desc.length < 2) {
